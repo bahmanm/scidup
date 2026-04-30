@@ -14,7 +14,7 @@
  * along with Scid. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "bytebuf.h"
+#include "scidup/database/bytebuf.h"
 #include <gtest/gtest.h>
 
 TEST(Test_decodeMove, pawn_white) {

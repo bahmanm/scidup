@@ -23,11 +23,11 @@
 #ifndef SEARCHPOS_H
 #define SEARCHPOS_H
 
-#include "common.h"
-#include "matsig.h"
-#include "position.h"
-#include "scidbase.h"
-#include "stored.h"
+#include "scidup/database/common.h"
+#include "scidup/database/matsig.h"
+#include "scidup/database/position.h"
+#include "scidup/database/scidbase.h"
+#include "scidup/database/stored.h"
 #include <algorithm>
 #include <memory>
 

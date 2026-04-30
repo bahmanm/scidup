@@ -20,9 +20,9 @@
  * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "board_def.h"
-#include "position.h"
-#include "stored.h"
+#include "scidup/database/board_def.h"
+#include "scidup/database/position.h"
+#include "scidup/database/stored.h"
 #include <gtest/gtest.h>
 
 // 1.d4 Nf6 2.c4 e6 3.Nc3 Bb4 4.Qc2 O-O

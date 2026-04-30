@@ -15,7 +15,7 @@
  */
 
 #include "dbasepool.h"
-#include "scidbase.h"
+#include "scidup/database/scidbase.h"
 #include <filesystem>
 #include <gtest/gtest.h>
 #include <string>

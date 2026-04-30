@@ -14,11 +14,11 @@
  * along with Scid. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "game.h"
-#include "pgnparse.h"
-#include "scidbase.h"
+#include "scidup/database/game.h"
+#include "scidup/database/pgnparse.h"
+#include "scidup/database/scidbase.h"
 #include <algorithm>
-#include <bytebuf.h>
+#include "scidup/database/bytebuf.h"
 #include <cstring>
 #include <gtest/gtest.h>
 #include <memory>

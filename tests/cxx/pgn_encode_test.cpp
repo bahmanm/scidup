@@ -20,9 +20,9 @@
  * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "game.h"
-#include "pgn_encode.h"
-#include "pgnparse.h"
+#include "scidup/database/game.h"
+#include "scidup/database/pgn_encode.h"
+#include "scidup/database/pgnparse.h"
 #include <gtest/gtest.h>
 #include <string>
 #include <string_view>

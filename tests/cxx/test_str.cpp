@@ -14,7 +14,7 @@
 * along with Scid. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "misc.h"
+#include "scidup/database/misc.h"
 #include "timer.h"
 #include <gtest/gtest.h>
 #include <random>

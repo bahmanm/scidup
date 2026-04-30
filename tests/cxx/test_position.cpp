@@ -14,9 +14,9 @@
  * along with Scid. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "gameview.h"
-#include "pgnparse.h"
-#include "position.h"
+#include "scidup/database/gameview.h"
+#include "scidup/database/pgnparse.h"
+#include "scidup/database/position.h"
 #include "searchpos.h"
 #include <cstring>
 #include <gtest/gtest.h>

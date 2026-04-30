@@ -14,7 +14,7 @@
  * along with Scid. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "scidbase.h"
+#include "scidup/database/scidbase.h"
 #include "sortcache.h"
 #include <array>
 #include <gtest/gtest.h>

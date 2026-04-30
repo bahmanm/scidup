@@ -14,7 +14,7 @@
 * along with Scid. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "hfilter.h"
+#include "scidup/database/hfilter.h"
 #include <algorithm>
 #include <functional>
 #include <gtest/gtest.h>

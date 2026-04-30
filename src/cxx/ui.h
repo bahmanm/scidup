@@ -19,7 +19,7 @@
 #ifndef SCID_UI_H
 #define SCID_UI_H
 
-#include "misc.h"
+#include "scidup/database/misc.h"
 #ifndef CHECKUIDEP
 #include "ui_tcltk.h"
 #else

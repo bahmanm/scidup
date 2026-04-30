@@ -17,8 +17,8 @@
 #ifndef SCID_CROSSTAB_H
 #define SCID_CROSSTAB_H
 
-#include "common.h"
-#include "date.h"
+#include "scidup/database/common.h"
+#include "scidup/database/date.h"
 #include "spellchk.h"
 
 class DString;

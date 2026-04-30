@@ -14,8 +14,8 @@
 * along with Scid. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "scidbase.h"
-#include "pgnparse.h"
+#include "scidup/database/scidbase.h"
+#include "scidup/database/pgnparse.h"
 #include <string>
 #include <vector>
 #include <map>

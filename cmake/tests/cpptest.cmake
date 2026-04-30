@@ -38,6 +38,9 @@ add_executable(
 target_compile_definitions(
     scidup_tests_bins_cpptest
     PRIVATE SCIDUP_TEST_RESOURCES_DIR=\"${CMAKE_SOURCE_DIR}/tests/cxx/\" )
+target_include_directories(
+    scidup_tests_bins_cpptest
+    PRIVATE "${CMAKE_SOURCE_DIR}/src/database/private" )
 target_link_libraries(
     scidup_tests_bins_cpptest
     PRIVATE ScidUp::Tests::Libs::CppBase gtest_main )

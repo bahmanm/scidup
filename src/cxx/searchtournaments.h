@@ -19,8 +19,8 @@
 #ifndef SEARCHTOURNAMENTS_H
 #define SEARCHTOURNAMENTS_H
 
-#include "common.h"
-#include "misc.h"
+#include "scidup/database/common.h"
+#include "scidup/database/misc.h"
 #include <algorithm>
 #include <numeric>
 #include <vector>

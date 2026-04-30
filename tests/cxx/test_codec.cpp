@@ -14,12 +14,12 @@
 * along with Scid. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "bytebuf.h"
-#include "codec.h"
-#include "game.h"
-#include "index.h"
-#include "misc.h"
-#include "namebase.h"
+#include "scidup/database/bytebuf.h"
+#include "scidup/database/codec.h"
+#include "scidup/database/game.h"
+#include "scidup/database/index.h"
+#include "scidup/database/misc.h"
+#include "scidup/database/namebase.h"
 #include <cstring>
 #include <gtest/gtest.h>
 #include <iterator>

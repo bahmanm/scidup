@@ -12,9 +12,9 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "attacks.h"
+#include "scidup/database/attacks.h"
 #include "engine.h"
-#include "sqmove.h"
+#include "scidup/database/sqmove.h"
 #include <algorithm>
 
 // The Engine class implements the Scid built-in chess engine.
