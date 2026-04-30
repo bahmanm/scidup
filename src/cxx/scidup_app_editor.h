@@ -103,8 +103,8 @@ public:
 		if (err != OK)
 			return err;
 
-		if (base_->dbFilter->Get(gameId) > 0) {
-			s.game->MoveToPly(base_->dbFilter->Get(gameId) - 1);
+		if (base_->defaultFilterGet(gameId) > 0) {
+			s.game->MoveToPly(base_->defaultFilterGet(gameId) - 1);
 		} else {
 			s.game->MoveToStart();
 		}

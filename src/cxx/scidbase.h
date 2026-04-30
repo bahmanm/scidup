@@ -201,6 +201,11 @@ struct scidBaseT {
 	std::string newFilter();
 	void deleteFilter(const char* filterId);
 	HFilter getFilter(std::string_view filterId) const;
+	HFilter defaultFilter() const { return HFilter(dbFilter); }
+	gamenumT defaultFilterCount() const { return dbFilter->Count(); }
+	byte defaultFilterGet(gamenumT g) const { return dbFilter->Get(g); }
+	void defaultFilterSet(gamenumT g, byte value) { dbFilter->Set(g, value); }
+	void defaultFilterFill(byte value) { dbFilter->Fill(value); }
 
 	/// A composed filter is a special construct created combining two filters
 	/// and includes only the games contained in both filters. It should NOT be
@@ -404,10 +409,10 @@ struct scidBaseT {
 public:
 	bool inUse; // true if the database is open (in use).
 	TreeCache treeCache;
-	Filter* dbFilter;
 	Filter* treeFilter;
 
 private:
+	Filter* dbFilter;
 	std::unique_ptr<ICodecDatabase> codec_;
 	Index* idx;
 	NameBase* nb_;

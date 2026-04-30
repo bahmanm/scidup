@@ -564,10 +564,10 @@ sc_base_export (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     } else { //TODO: remove this (duplicate of sc_filter export)
         Progress progress = UI_CreateProgress(ti);
         uint numSeen = 0;
-        uint numToExport = db->dbFilter->Count();
+        uint numToExport = db->defaultFilterCount();
         Game * g = scratchGame;
         for (gamenumT i=0, n=db->numGames(); i < n; i++) {
-            if (db->dbFilter->Get(i)) { // Export this game:
+            if (db->defaultFilterGet(i)) { // Export this game:
                 if (++numSeen % 1024 == 0) {  // Update the percentage done bar:
                     if (!progress.report(numSeen, numToExport)) break;
                 }
@@ -646,7 +646,7 @@ sc_base_piecetrack (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // If current base is unused, filter is empty, or no track
     // squares specified, then just return a zero-filled list:
 
-    if (! db->inUse  ||  db->dbFilter->Count() == 0  ||  nTrackSquares == 0) {
+    if (! db->inUse  ||  db->defaultFilterCount() == 0  ||  nTrackSquares == 0) {
         for (uint i=0; i < 64; i++) { appendUintElement (ti, 0); }
         return TCL_OK;
     }
@@ -973,7 +973,7 @@ UI_res_t sc_base_duplicates(scidBaseT* dbase, UI_handle_t ti, int argc,
         const IndexEntry* ie = dbase->getIndexEntry(i);
         if (! ie->GetDeleteFlag()  /* &&  !ie->GetStartFlag() */
             &&  (!skipShortGames  ||  ie->GetNumHalfMoves() >= 10)
-            &&  (!onlyFilterGames  ||  dbase->dbFilter->Get(i) > 0)) {
+            &&  (!onlyFilterGames  ||  dbase->defaultFilterGet(i) > 0)) {
 
             uint32_t wh = ie->GetWhite();
             uint32_t bl = ie->GetBlack();
@@ -1584,7 +1584,7 @@ int
 sc_filter_first(ClientData, Tcl_Interp * ti, int, const char**)
 {
 	for (uint gnum=0; gnum < db->numGames(); gnum++) {
-		if (db->dbFilter->Get(gnum) == 0) continue;
+		if (db->defaultFilterGet(gnum) == 0) continue;
 		return setUintResult (ti, gnum +1);
 	}
 	return setUintResult (ti, 0);
@@ -1599,7 +1599,7 @@ sc_filter_last(ClientData, Tcl_Interp * ti, int, const char**)
 {
 	long gnum = db->numGames();
 	for (gnum--; gnum >= 0; gnum--) {
-		if (db->dbFilter->Get(gnum) == 0) continue;
+		if (db->defaultFilterGet(gnum) == 0) continue;
 		return setUintResult (ti, gnum +1);
 	}
 	return setUintResult (ti, 0);
@@ -1616,7 +1616,7 @@ sc_filter_next(ClientData, Tcl_Interp * ti, int, const char**)
         auto loadedGameId = editor.loadedGameId();
         uint nextNumber = loadedGameId ? *loadedGameId + 1 : 0;
         while (nextNumber < db->numGames()) {
-            if (db->dbFilter->Get(nextNumber) > 0) {
+            if (db->defaultFilterGet(nextNumber) > 0) {
                 return setUintResult (ti, nextNumber + 1);
             }
             nextNumber++;
@@ -1637,7 +1637,7 @@ sc_filter_prev(ClientData, Tcl_Interp * ti, int, const char**)
                              ? static_cast<int>(*editor.loadedGameId()) - 1
                              : -1;
         while (prevNumber >= 0) {
-            if (db->dbFilter->Get(prevNumber) > 0) {
+            if (db->defaultFilterGet(prevNumber) > 0) {
                 return setIntResult (ti, prevNumber + 1);
             }
             prevNumber--;
@@ -2346,7 +2346,7 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         // If option is OPT_FILTER, adjust the filter and continue &&&
         if (option == OPT_FILTER) {
-            db->dbFilter->Set (i, 1);
+            db->defaultFilterSet(i, 1);
             continue;
         }
 
@@ -5673,7 +5673,7 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     dateT firstGameDate = ZERO_DATE;
     dateT lastGameDate = ZERO_DATE;
 
-    if (setFilter || setOpponent) db->dbFilter->Fill(0);
+    if (setFilter || setOpponent) db->defaultFilterFill(0);
 
     for (uint i=0, n = db->numGames(); i < n; i++) {
         const IndexEntry* ie = db->getIndexEntry(i);
@@ -5704,7 +5704,7 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             bothscore[STATS_ALL][result]++;
             whitecount[STATS_ALL]++;
             totalcount[STATS_ALL]++;
-            if (db->dbFilter->Get(i) > 0) {
+            if (db->defaultFilterGet(i) > 0) {
                 whitescore[STATS_FILTER][result]++;
                 bothscore[STATS_FILTER][result]++;
                 whitecount[STATS_FILTER]++;
@@ -5716,11 +5716,11 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 whitecount[STATS_OPP]++;
                 totalcount[STATS_OPP]++;
                 if (setOpponent  &&  filter[WHITE][result]) {
-                    db->dbFilter->Set (i, 1);
+                    db->defaultFilterSet(i, 1);
                 }
             }
             if (setFilter  &&  filter[WHITE][result]) {
-                db->dbFilter->Set (i, 1);
+                db->defaultFilterSet(i, 1);
             }
         } else if (blackId == id) {
             date = ie->GetDate();
@@ -5733,7 +5733,7 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             bothscore[STATS_ALL][result]++;
             blackcount[STATS_ALL]++;
             totalcount[STATS_ALL]++;
-            if (db->dbFilter->Get(i) > 0) {
+            if (db->defaultFilterGet(i) > 0) {
                 blackscore[STATS_FILTER][result]++;
                 bothscore[STATS_FILTER][result]++;
                 blackcount[STATS_FILTER]++;
@@ -5745,11 +5745,11 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 blackcount[STATS_OPP]++;
                 totalcount[STATS_OPP]++;
                 if (setOpponent  &&  filter[BLACK][result]) {
-                    db->dbFilter->Set (i, 1);
+                    db->defaultFilterSet(i, 1);
                 }
             }
             if (setFilter  &&  filter[BLACK][result]) {
-                db->dbFilter->Set (i, 1);
+                db->defaultFilterSet(i, 1);
             }
         }
 
@@ -7015,7 +7015,7 @@ sc_report_create (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             if (!progress.report(gnum, n)) break;
         }
 
-        byte ply = db->dbFilter->Get(gnum);
+        byte ply = db->defaultFilterGet(gnum);
         const IndexEntry* ie = db->getIndexEntry(gnum);
         if (ply != 0) {
             if (db->getGame(*ie, *scratchGame) != OK) {
@@ -7067,13 +7067,13 @@ sc_report_select (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     uint * matches = report->SelectGames (type, number);
     uint * match = matches;
-    db->dbFilter->Fill(0);
+    db->defaultFilterFill(0);
     while (*match != 0) {
         uint gnum = *match - 1;
         match++;
         uint ply = *match + 1;
         match++;
-        db->dbFilter->Set (gnum, ply);
+        db->defaultFilterSet(gnum, ply);
     }
     delete[] matches;
 
