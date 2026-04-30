@@ -3,6 +3,10 @@ file(
     CONFIGURE_DEPENDS
     "${CMAKE_SOURCE_DIR}/src/cxx/*.h"
     "${CMAKE_SOURCE_DIR}/src/cxx/*.cpp" )
+list(
+    REMOVE_ITEM
+    SCIDUP_MAIN_SOURCES
+    ${SCIDUP_LIBS_DATABASE_SOURCES} )
 
 	if( MSVC )
 	    add_executable(
@@ -66,7 +70,7 @@ target_include_directories(
     PRIVATE "${SCIDUP_GENERATED_INCLUDE_DIR}" )
 target_link_libraries(
     scidup_main
-    PRIVATE ScidUp::Libs::Polyglot Threads::Threads ScidUp::Libs::Tcl )
+    PRIVATE ScidUp::Libs::Database ScidUp::Libs::Polyglot Threads::Threads ScidUp::Libs::Tcl )
 
 option( SPELLCHKVALIDATE "Verify the integrity of spelling files" OFF )
 if( SPELLCHKVALIDATE )

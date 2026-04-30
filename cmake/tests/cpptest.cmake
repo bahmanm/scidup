@@ -13,15 +13,7 @@ set( gtest_force_shared_crt ON CACHE BOOL "Always use msvcrt.dll" FORCE )
 
 set(
     SCIDUP_TESTS_LIBS_CPPSUPPORT_SOURCES
-    "${CMAKE_SOURCE_DIR}/src/cxx/codec_scid4.cpp"
     "${CMAKE_SOURCE_DIR}/src/cxx/dbasepool.cpp"
-    "${CMAKE_SOURCE_DIR}/src/cxx/scidbase.cpp"
-    "${CMAKE_SOURCE_DIR}/src/cxx/sortcache.cpp"
-    "${CMAKE_SOURCE_DIR}/src/cxx/stored.cpp"
-    "${CMAKE_SOURCE_DIR}/src/cxx/game.cpp"
-    "${CMAKE_SOURCE_DIR}/src/cxx/position.cpp"
-    "${CMAKE_SOURCE_DIR}/src/cxx/textbuf.cpp"
-    "${CMAKE_SOURCE_DIR}/src/cxx/misc.cpp"
 )
 add_library(
     scidup_tests_libs_cppsupport
@@ -31,7 +23,7 @@ target_include_directories(
     PUBLIC "${CMAKE_SOURCE_DIR}/src/cxx" )
 target_link_libraries(
     scidup_tests_libs_cppsupport
-    PUBLIC Threads::Threads )
+    PUBLIC ScidUp::Libs::Database Threads::Threads )
 add_library(
     ScidUp::Tests::Libs::CppBase
     ALIAS scidup_tests_libs_cppsupport )
