@@ -83,6 +83,7 @@ static UI_res_t doOpenBase(UI_handle_t ti, const char* codec, fileModeT fMode,
 	if (err != OK && err != ERROR_NameDataLoss)
 		return UI_Result(ti, err);
 
+	scidup::app::editor::reset(*dbase);
 	int res = DBasePool::switchCurrent(dbase);
 	return UI_Result(ti, err, res);
 }
@@ -96,6 +97,7 @@ UI_res_t sc_base_close(scidBaseT* dbase, UI_handle_t ti, int, const char**) {
 		return UI_Result(ti, ERROR_BadArg, "Cannot close clipbase.");
 	}
 	dbase->Close();
+	scidup::app::editor::reset(*dbase);
 	return UI_Result(ti, OK);
 }
 

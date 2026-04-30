@@ -1089,7 +1089,8 @@ sc_clipbase (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     case CLIP_PASTE: // Paste the active clipbase game
         if (db != clipbase) {
             auto editor = scidup::app::editor::gameSession(*db);
-            editor.replace(clipbase->game->clone(), std::nullopt, true);
+            auto clipEditor = scidup::app::editor::gameSession(*clipbase);
+            editor.replace(clipEditor.game().clone(), std::nullopt, true);
         }
         break;
 
@@ -2272,7 +2273,8 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     // Load crosstable game if necessary:
-    Game * g = db->game;
+    auto editor = scidup::app::editor::gameSession(*db);
+    Game * g = &editor.game();
     if (gameNumber > 0) {
         g = scratchGame;
         g->Clear();
@@ -2435,9 +2437,10 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     DString * dstr = new DString;
     if (mode != CROSSTABLE_AllPlayAll) { apaLimit = 0; }
-    auto editor = scidup::app::editor::gameSession(*db);
+    auto currentEditor = scidup::app::editor::gameSession(*db);
     ctable->PrintTable(
-        dstr, mode, apaLimit, editor.loadedGameId() ? *editor.loadedGameId() + 1 : 0);
+        dstr, mode, apaLimit,
+        currentEditor.loadedGameId() ? *currentEditor.loadedGameId() + 1 : 0);
 
     AppendResult (ti, dstr->Data(), NULL);
     if (option == OPT_LATEX) {
@@ -3292,7 +3295,8 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // First, move to the deepest ECO position in the game.
     // This code is adapted from sc_eco_game().
-    Game* g = base->game;
+    auto editor = scidup::app::editor::gameSession(*base);
+    Game* g = &editor.game();
     if (ecoBook) {
         while (g->MoveForward() == OK) {}
         while (ecoBook->findECOstr(g->GetCurrentPos()).empty()) {
@@ -3371,8 +3375,9 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         OPT_NOMARKS, OPT_UNICODE,
     };
 
-    const scidBaseT* base = db;
-    Game * g = db->game;
+    scidBaseT* base = db;
+    auto editor = scidup::app::editor::gameSession(*base);
+    Game * g = &editor.game();
     uint lineWidth = 99999;
     g->ResetPgnStyle();
     g->SetPgnFormat (PGN_FORMAT_Plain);
@@ -3409,7 +3414,8 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         } else if (index == OPT_BASE) {
             base = DBasePool::getBase(value);
             if (base == 0) return UI_Result(ti, ERROR_FileNotOpen);
-            g = base->game;
+            editor = scidup::app::editor::gameSession(*base);
+            g = &editor.game();
 
         } else if (index == OPT_GAME_NUMBER) {
             // Print the numbered game instead of the active game:
@@ -3615,7 +3621,9 @@ UI_res_t sc_base_gamesummary(const scidBaseT& base, UI_handle_t ti, int argc,
 			return UI_Result(ti, ERROR_BadArg, usage);
 		}
 	} else {
-		g = base.game;
+		auto editor =
+		    scidup::app::editor::gameSession(const_cast<scidBaseT&>(base));
+		g = &editor.game();
 	}
 
     UI_List res(3);
@@ -3751,7 +3759,8 @@ sc_game_tags_get (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     const char * usage = "Usage: sc_game tags get [-last] <tagName>";
     const char * tagName;
-    Game * g = db->game;
+    auto editor = scidup::app::editor::gameSession(*db);
+    Game * g = &editor.game();
 
     if (argc < 4  ||  argc > 5) {
         return errorResult (ti, usage);
@@ -5412,7 +5421,8 @@ sc_name_edit (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     idNumberT eventId = 0, siteId = 0;
     dateT eventDate = 0;
     if (editSelection == EDIT_CTABLE) {
-        Game* g = dbase->game;
+        auto editor = scidup::app::editor::gameSession(*dbase);
+        Game* g = &editor.game();
         auto nb = dbase->getNameBase();
         if (nb->FindExactName(NAME_EVENT, g->GetEventStr(), &eventId) != OK)
             return UI_Result(ti, OK, 0);
@@ -6989,7 +6999,9 @@ sc_report_create (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (reports[reportType] != NULL) {
         delete reports[reportType];
     }
-    OpTable* report = new OpTable(reportTypeName[reportType], db->game, ecoBook.get());
+    auto editor = scidup::app::editor::gameSession(*db);
+    OpTable* report =
+        new OpTable(reportTypeName[reportType], &editor.game(), ecoBook.get());
     reports[reportType] = report;
     report->SetMaxTableLines (maxLines);
     report->SetExcludeMove (excludeMove);

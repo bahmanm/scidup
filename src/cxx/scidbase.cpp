@@ -57,9 +57,6 @@ ICodecDatabase::open(Codec codec, fileModeT fMode, const char* filename,
 scidBaseT::scidBaseT() {
 	idx = new Index;
 	nb_ = new NameBase;
-	game = new Game;
-	gameNumber = -1;
-	gameAltered = false;
 	inUse = false;
 	fileMode_ = FMODE_None;
 	dbFilter = new Filter(0);
@@ -73,7 +70,6 @@ scidBaseT::~scidBaseT() {
 
 	delete idx;
 	delete nb_;
-	delete game;
 	delete stats_;
 	delete dbFilter;
 	delete treeFilter;
@@ -92,7 +88,6 @@ errorT scidBaseT::openHelper(ICodecDatabase::Codec dbtype, fileModeT fMode,
 		codec_.reset(db);
 		inUse = true;
 		fileMode_ = (fMode == FMODE_Create) ? FMODE_Both : fMode;
-		gameNumber = -1;
 		err_open_ = err;
 
 		// Initialize the filters: all the games are included by default.
@@ -124,10 +119,7 @@ void scidBaseT::Close() {
 	codec_ = nullptr;
 
 	clear();
-	game->Clear();
 	fileMode_ = FMODE_None;
-	gameNumber = -1;
-	gameAltered = false;
 	all_filter_.Init(0);
 	dbFilter->Init(0);
 	treeFilter->Init(0);

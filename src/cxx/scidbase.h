@@ -407,13 +407,6 @@ public:
 	Filter* dbFilter;
 	Filter* treeFilter;
 
-	// TODO: this vars do not belong to scidBaseT class
-	Game* game;       // the active game for this base.
-	int gameNumber;   // game number of active game.
-	bool gameAltered; // true if game is modified
-	UndoRedo<Game, 100> gameAlterations;
-	std::pair<Game*, bool> deprecated_push_pop;
-
 private:
 	std::unique_ptr<ICodecDatabase> codec_;
 	Index* idx;

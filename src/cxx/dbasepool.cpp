@@ -18,6 +18,7 @@
 
 #include "dbasepool.h"
 #include "scidbase.h"
+#include "scidup_app_editor.h"
 
 
 
@@ -42,10 +43,14 @@ void DBasePool::init() {
 void DBasePool::clearClipBase() {
 	dbList[CLIPBASE_NUM].open("MEMORY", FMODE_Create, "<clipbase>");
 	dbList[CLIPBASE_NUM].setExtraInfo("type", "2");
+	scidup::app::editor::reset(dbList[CLIPBASE_NUM]);
 }
 
 void DBasePool::closeAll() {
 	ASSERT(dbList != NULL);
+	for (int i = 0; i < MAX_BASES; ++i) {
+		scidup::app::editor::release(dbList[i]);
+	}
 	delete[] dbList;
 }
 
