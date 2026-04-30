@@ -192,12 +192,23 @@ errorT scidBaseT::endTransaction(gamenumT gNum) {
 	return res;
 }
 
+errorT scidBaseT::loadGame(gamenumT gNum, Game& dest) const {
+	const auto* ie = getIndexEntry_bounds(gNum);
+	if (!ie)
+		return ERROR_BadArg;
+	return getGame(*ie, dest);
+}
+
 errorT scidBaseT::saveGame(Game* game, gamenumT replacedGameId) {
+	return saveGame(*game, replacedGameId);
+}
+
+errorT scidBaseT::saveGame(Game const& game, gamenumT replacedGameId) {
 	if (auto errModify = beginTransaction())
 		return errModify;
 
 	std::vector<byte> buf;
-	auto [ie, tags] = game->Encode(buf);
+	auto [ie, tags] = game.Encode(buf);
 	auto gamedata = ByteBuffer(buf.data(), buf.size());
 
 	errorT err = (replacedGameId < numGames())

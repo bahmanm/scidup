@@ -35,6 +35,7 @@
 #include "polyglot.h"
 #include "position.h"
 #include "scidbase.h"
+#include "scidup_app_editor.h"
 #include "searchpos.h"
 #include "spellchk.h"
 #include "stored.h"
@@ -558,7 +559,8 @@ sc_base_export (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     if (!exportFilter) {
-        exportGame (db->game, exportFile, outputFormat, pgnStyle);
+        auto editor = scidup::app::editor::gameSession(*db);
+        exportGame (&editor.game(), exportFile, outputFormat, pgnStyle);
     } else { //TODO: remove this (duplicate of sc_filter export)
         Progress progress = UI_CreateProgress(ti);
         uint numSeen = 0;
@@ -1086,10 +1088,8 @@ sc_clipbase (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     case CLIP_PASTE: // Paste the active clipbase game
         if (db != clipbase) {
-            delete db->game;
-            db->game = clipbase->game->clone();
-            db->gameNumber = -1;
-            db->gameAltered = true;
+            auto editor = scidup::app::editor::gameSession(*db);
+            editor.replace(clipbase->game->clone(), std::nullopt, true);
         }
         break;
 
@@ -1981,12 +1981,13 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
     };
     int index = -1;
     char old_language = 0;
+    auto editor = scidup::app::editor::gameSession(*db);
 
     if (argc > 1) { index = strUniqueMatch (argv[1], options);}
 
     switch (index) {
     case GAME_ALTERED:
-        return UI_Result(ti, OK, db->gameAltered);
+        return UI_Result(ti, OK, editor.isDirty());
 
     case GAME_CROSSTABLE:
         return sc_game_crosstable (cd, ti, argc, argv);
@@ -2016,14 +2017,15 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_game_moves (cd, ti, argc, argv);
 
     case GAME_NEW:
-        db->gameAlterations.clear();
+        editor.clearHistory();
         return sc_game_new (cd, ti, argc, argv);
 
     case GAME_NOVELTY:
         return sc_game_novelty (cd, ti, argc, argv);
 
     case GAME_NUMBER:
-        return setUintResult (ti, db->gameNumber + 1);
+        return setUintResult(
+            ti, editor.loadedGameId() ? *editor.loadedGameId() + 1 : 0);
 
     case GAME_PGN:
         return sc_game_pgn (cd, ti, argc, argv);
@@ -2036,7 +2038,7 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case GAME_SANTOUCI:
         if (argc == 3) {
-            auto pos = db->game->GetCurrentPos();
+            auto pos = editor.game().GetCurrentPos();
             simpleMoveT sm;
             auto end = argv[2] + std::strlen(argv[2]);
             if (auto err = pos->ParseMove(&sm, argv[2], end))
@@ -2066,52 +2068,43 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         if (argc > 2 && strIsPrefix (argv[2], "-start")) {
             // "sc_game truncate -start" truncates the moves up to the
             // current position:
-            db->game->TruncateStart();
+            editor.game().TruncateStart();
         } else {
             // Truncate from the current position to the end of the game
-            db->game->Truncate();
+            editor.game().Truncate();
         }
-        db->gameAltered = true;
+        editor.setDirty();
         language = old_language;
         break;
 
     case GAME_VARIANT:
         return UI_Result(ti, OK,
-                         db->game->currentPos()->isChess960() ? "chess960"
-                                                              : "standard");
+                         editor.game().currentPos()->isChess960()
+                             ? "chess960"
+                             : "standard");
 
     case GAME_UCI_CURRENTPOS:
-        return UI_Result(ti, OK, db->game->currentPosUCI());
+        return UI_Result(ti, OK, editor.game().currentPosUCI());
 
     case GAME_UNDO:
         if (argc > 2 && strCompare("size", argv[2]) == 0) {
-            return UI_Result(ti, OK, (uint) db->gameAlterations.undoSize());
+            return UI_Result(ti, OK, static_cast<uint>(editor.undoSize()));
         }
-        db->game = db->gameAlterations.undo(db->game);
+        editor.undo();
         return UI_Result(ti, OK);
 
     case GAME_UNDO_ALL:
-        db->gameAltered = false;
-        db->gameAlterations.clear();
-        if (db->gameNumber < 0) {
-            db->game->Clear();
-        } else {
-            const IndexEntry* ie = db->getIndexEntry(db->gameNumber);
-            errorT err = db->getGame(*ie, *db->game);
-            if (err != OK) return UI_Result(ti, err);
-            db->game->MoveToStart();
-        }
-        return UI_Result(ti, OK);
+        return UI_Result(ti, editor.undoAll());
 
     case GAME_UNDO_POINT:
-        db->gameAlterations.store(db->game);
+        editor.storeUndoPoint();
         break;
 
     case GAME_REDO:
         if (argc > 2 && strCompare("size", argv[2]) == 0) {
-            return UI_Result(ti, OK, (uint) db->gameAlterations.redoSize());
+            return UI_Result(ti, OK, static_cast<uint>(editor.redoSize()));
         }
-        db->game = db->gameAlterations.redo(db->game);
+        editor.redo();
         return UI_Result(ti, OK);
 
     default:
@@ -2535,11 +2528,12 @@ sc_game_firstMoves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     int plyCount = strGetInteger (argv[2]);
     // Check plyCount is a reasonable value, or set it to current plycount.
-    if (plyCount < 0)  plyCount = db->game->GetCurrentPly();
+    auto editor = scidup::app::editor::gameSession(*db);
+    if (plyCount < 0)  plyCount = editor.game().GetCurrentPly();
     if (plyCount == 0) plyCount = 1;
 
     DString dstr;
-    db->game->GetPartialMoveList (&dstr, plyCount);
+    editor.game().GetPartialMoveList (&dstr, plyCount);
     return UI_Result(ti, OK, std::string(dstr.Data()));
 }
 
@@ -2547,17 +2541,18 @@ int sc_game_import(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 	if (argc != 3)
 		return errorResult(ti, "Usage: sc_game import <pgn-text>");
 
-	db->gameAltered = true;
+	auto editor = scidup::app::editor::gameSession(*db);
+	editor.setDirty();
 	bool new_variation = false;
-	if (db->game->MoveForward() == OK) {
-		new_variation = (db->game->AddVariation() == OK);
+	if (editor.game().MoveForward() == OK) {
+		new_variation = (editor.game().AddVariation() == OK);
 	}
 
 	PgnParseLog pgn;
-	auto ok = pgnParseGame(argv[2], std::strlen(argv[2]), *db->game, pgn);
+	auto ok = pgnParseGame(argv[2], std::strlen(argv[2]), editor.game(), pgn);
 
-	if (new_variation && db->game->AtEmptyVar()) {
-		db->game->DeleteVariation();
+	if (new_variation && editor.game().AtEmptyVar()) {
+		editor.game().DeleteVariation();
 	}
 
 	if (!ok && pgn.log.empty())
@@ -3013,15 +3008,13 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_game_load (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     if (!db->inUse) {
         return errorResult (ti, errMsgNotOpen(ti));
     }
     if (argc != 3) {
         return errorResult (ti, "Usage: sc_game load <gameNumber>");
     }
-
-    db->gameAlterations.clear();
-
     uint gnum = strGetUnsigned (argv[2]);
 
     // Check the game number is valid::
@@ -3031,22 +3024,10 @@ sc_game_load (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // We number games from 0 internally, so subtract one:
     gnum--;
-    const char * corruptMsg = "Sorry, this game appears to be corrupt.";
-
-    const IndexEntry* ie = db->getIndexEntry(gnum);
-
-    if (db->getGame(*ie, *db->game) != OK) {
-        return errorResult (ti, corruptMsg);
+    auto err = editor.load(gnum);
+    if (err != OK) {
+        return errorResult (ti, "Sorry, this game appears to be corrupt.");
     }
-
-    if (db->dbFilter->Get(gnum) > 0) {
-        db->game->MoveToPly(db->dbFilter->Get(gnum) - 1);
-    } else {
-        db->game->MoveToStart();
-    }
-
-    db->gameNumber = gnum;
-    db->gameAltered = false;
     return OK;
 }
 
@@ -3203,7 +3184,8 @@ sc_game_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     const uint MAXMOVES = 500;
     sanStringT * moveStrings = new sanStringT [MAXMOVES];
     uint plyCount = 0;
-    Game * g = db->game;
+    auto editor = scidup::app::editor::gameSession(*db);
+    Game * g = &editor.game();
     for (int arg = 2; arg < argc; arg++) {
         if (argv[arg][0] == 'c') { sanFormat = false; }
         if (argv[arg][0] == 'n') { printMoves = false; }
@@ -3263,9 +3245,8 @@ sc_game_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_game_new(ClientData, Tcl_Interp*, int, const char**)
 {
-    db->game->Clear();
-    db->gameNumber = -1;
-    db->gameAltered = false;
+    auto editor = scidup::app::editor::gameSession(*db);
+    editor.resetToNewGame();
     return TCL_OK;
 }
 
@@ -3488,14 +3469,8 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_game_pop(ClientData, Tcl_Interp*, int, const char**)
 {
-    if (db->deprecated_push_pop.first) {
-        delete db->game;
-        db->game = db->deprecated_push_pop.first;
-        db->gameAltered = db->deprecated_push_pop.second;
-        db->deprecated_push_pop.first = nullptr;
-    } else {
-        ASSERT(0);
-    }
+    auto editor = scidup::app::editor::gameSession(*db);
+    editor.pop();
     return TCL_OK;
 }
 
@@ -3508,6 +3483,7 @@ sc_game_pop(ClientData, Tcl_Interp*, int, const char**)
 int
 sc_game_push (ClientData, Tcl_Interp*, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     bool copy = false;
 
     if ( argc > 2 && !strcmp( argv[2], "copy" ) ) {
@@ -3517,15 +3493,7 @@ sc_game_push (ClientData, Tcl_Interp*, int argc, const char ** argv)
         copy = true;
     }
 
-    Game* g = (copy) ? db->game->clone() : new Game;
-    if (db->deprecated_push_pop.first) {
-        ASSERT(0);
-        delete db->deprecated_push_pop.first;
-    }
-    db->deprecated_push_pop = {db->game, db->gameAltered};
-    db->game = g;
-    db->gameAltered = false;
-
+    editor.push(copy);
     return TCL_OK;
 }
 
@@ -3536,8 +3504,9 @@ sc_game_push (ClientData, Tcl_Interp*, int argc, const char ** argv)
 int
 sc_game_save (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     auto dbase = db;
-    Game* currGame = db->game;
+    Game& currGame = editor.game();
     if (argc == 4) {
         dbase = DBasePool::getBase(strGetUnsigned(argv[3]));
         if (dbase == 0) return errorResult (ti, "Invalid database number.");
@@ -3556,17 +3525,17 @@ sc_game_save (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         // was loaded, but the user may have changed them.
         char buf[IndexEntry::IDX_NUM_FLAGS + 1];
         ieOld->GetFlagStr(buf, "WBMENPTKQ!?U123456");
-        currGame->SetScidFlags(buf);
+        currGame.SetScidFlags(buf);
     }
-    auto location = currGame->currentLocation();
+    auto location = currGame.currentLocation();
     errorT res = dbase->saveGame(currGame, gnum);
-    currGame->restoreLocation(location);
+    currGame.restoreLocation(location);
     if (res == OK) {
         if (gnum == INVALID_GAMEID && db == dbase) {
             // Saved new game, so set gameNumber to the saved game number:
-            db->gameNumber = db->numGames() - 1;
+            editor.setLoadedGameId(db->numGames() - 1);
         }
-        db->gameAltered = false;
+        editor.setDirty(false);
     }
 
     return UI_Result(ti, res);;
@@ -3582,17 +3551,18 @@ sc_game_save (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_game_startBoard (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     if (argc == 2) {
-        return UI_Result(ti, OK, db->game->HasNonStandardStart());
+        return UI_Result(ti, OK, editor.game().HasNonStandardStart());
     } else if (argc != 3) {
         return errorResult (ti, "Usage: sc_game startBoard <fenString>");
     }
     const char * str = argv[2];
-    auto err = db->game->SetStartFen(str);
+    auto err = editor.game().SetStartFen(str);
     if (err != OK)
         return errorResult(ti, "Invalid FEN string.");
 
-    db->gameAltered = true;
+    editor.setDirty();
     return UI_Result(ti, OK);
 }
 
@@ -3600,14 +3570,15 @@ sc_game_startBoard (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 // sc_game_strip:
 //    Strips all comments, variations or annotations from a game.
 int sc_game_strip(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
+	auto editor = scidup::app::editor::gameSession(*db);
 	if (argc == 3 && !strcmp("variations", argv[2])) {
-		db->game->strip(true, false, false);
+		editor.game().strip(true, false, false);
 	} else if (argc == 3 && !strcmp("comments", argv[2])) {
-		db->game->strip(false, true, true);
+		editor.game().strip(false, true, true);
 	} else {
 		return errorResult(ti, "Usage: sc_game strip [comments|variations]");
 	}
-	db->gameAltered = true;
+	editor.setDirty();
 	return UI_Result(ti, OK);
 }
 

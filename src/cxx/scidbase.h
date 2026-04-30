@@ -166,6 +166,7 @@ struct scidBaseT {
 	errorT getGame(const IndexEntry& ie, Game& dest) const {
 		return dest.Decode(ie, tagRoster(ie), getGame(ie));
 	}
+	errorT loadGame(gamenumT gNum, Game& dest) const;
 
 	errorT importGames(const scidBaseT* srcBase, const HFilter& filter,
 	                   const Progress& progress);
@@ -179,7 +180,10 @@ struct scidBaseT {
 	 *                        If >= numGames(), a new game will be added.
 	 * @returns OK if successful or an error code.
 	 */
+	errorT saveGame(Game const& game,
+	                gamenumT replacedGameId = INVALID_GAMEID);
 	errorT saveGame(Game* game, gamenumT replacedGameId = INVALID_GAMEID);
+	errorT addGame(Game const& game) { return saveGame(game, INVALID_GAMEID); }
 
 	bool getFlag(uint flag, uint gNum) const {
 		return idx->GetEntry(gNum)->GetFlag(flag);

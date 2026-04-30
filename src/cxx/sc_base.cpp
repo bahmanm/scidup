@@ -20,6 +20,7 @@
 #include "dbasepool.h"
 #include "misc.h"
 #include "scidbase.h"
+#include "scidup_app_editor.h"
 #include "searchtournaments.h"
 #include "ui.h"
 #include <algorithm>
@@ -490,10 +491,11 @@ UI_res_t sc_base_getGame(scidBaseT* dbase, UI_handle_t ti, int argc,
 		return UI_Result(ti, ERROR_BadArg, usage);
 
 	gamenumT gNum = strGetUnsigned(argv[3]);
-	if (live && dbase->gameNumber == (static_cast<long long>(gNum) - 1)) {
-		auto location = dbase->game->currentLocation();
-		auto res = sc_base_getGameHelper(ti, *(dbase->game));
-		dbase->game->restoreLocation(location);
+	auto editor = scidup::app::editor::gameSession(*dbase);
+	if (live && gNum > 0 && editor.matchesLoadedGame(gNum - 1)) {
+		auto location = editor.game().currentLocation();
+		auto res = sc_base_getGameHelper(ti, editor.game());
+		editor.game().restoreLocation(location);
 		return res;
 	}
 
