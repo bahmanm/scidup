@@ -232,6 +232,9 @@ public:
 	explicit HFilter(Filter* main, const Filter* mask = 0)
 	    : main_(main), mask_(mask) {}
 
+	Filter* mainFilter() const { return main_; }
+	const Filter* maskFilter() const { return mask_; }
+
 	void clear() { return main_->Fill(0); }
 	void erase(gamenumT gnum) { return main_->Set(gnum, 0); }
 	void insert_or_assign(gamenumT gnum, uint8_t ply) {

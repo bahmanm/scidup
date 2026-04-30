@@ -341,7 +341,7 @@ TEST_F(Test_Scidbase, new_compose_delete_get_Filter) {
 
 	std::vector<std::pair<std::string, bool>> tests = {
 	    {" dbfilter", false},   {"dbfilter ", false}, {"dbfilter", true},
-	    {"tree", true},         {"+dbfilter", false}, {"++dbfilter", false},
+	    {"tree", false},        {"+dbfilter", false}, {"++dbfilter", false},
 	    {"++dbfilter+", false}, {"", false},          {"+", false},
 	    {"++", false},          {"+++", false},       {" +", false},
 	    {"+ ", false}

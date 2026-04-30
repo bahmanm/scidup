@@ -92,6 +92,7 @@ struct scidBaseT {
 	void Close();
 
 	std::string getFileName() const;
+	bool isOpen() const { return inUse; }
 	bool isReadOnly() const { return fileMode_ == FMODE_ReadOnly; }
 	gamenumT numGames() const { return idx->GetNumGames(); }
 
@@ -206,6 +207,7 @@ struct scidBaseT {
 	byte defaultFilterGet(gamenumT g) const { return dbFilter->Get(g); }
 	void defaultFilterSet(gamenumT g, byte value) { dbFilter->Set(g, value); }
 	void defaultFilterFill(byte value) { dbFilter->Fill(value); }
+	uint64_t cacheInvalidationToken() const { return cacheInvalidationToken_; }
 
 	/// A composed filter is a special construct created combining two filters
 	/// and includes only the games contained in both filters. It should NOT be
@@ -406,12 +408,8 @@ struct scidBaseT {
 		return duplicates_ ? duplicates_[gNum] : 0;
 	}
 
-public:
-	bool inUse; // true if the database is open (in use).
-	TreeCache treeCache;
-	Filter* treeFilter;
-
 private:
+	bool inUse; // true if the database is open (in use).
 	Filter* dbFilter;
 	std::unique_ptr<ICodecDatabase> codec_;
 	Index* idx;
@@ -426,6 +424,7 @@ private:
 	std::vector<std::pair<std::string, SortCache*>> sortCaches_;
 	mutable std::unordered_map<idNumberT, eloT> peakEloCache_;
 	errorT err_open_ = OK;
+	uint64_t cacheInvalidationToken_ = 0;
 
 private:
 	errorT openHelper(ICodecDatabase::Codec dbtype, fileModeT mode,

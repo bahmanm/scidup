@@ -60,7 +60,6 @@ scidBaseT::scidBaseT() {
 	inUse = false;
 	fileMode_ = FMODE_None;
 	dbFilter = new Filter(0);
-	treeFilter = new Filter(0);
 	stats_ = NULL;
 }
 
@@ -72,7 +71,6 @@ scidBaseT::~scidBaseT() {
 	delete nb_;
 	delete stats_;
 	delete dbFilter;
-	delete treeFilter;
 }
 
 errorT scidBaseT::openHelper(ICodecDatabase::Codec dbtype, fileModeT fMode,
@@ -93,11 +91,7 @@ errorT scidBaseT::openHelper(ICodecDatabase::Codec dbtype, fileModeT fMode,
 		// Initialize the filters: all the games are included by default.
 		all_filter_.Init(numGames());
 		dbFilter->Init(numGames());
-		treeFilter->Init(numGames());
 		ASSERT(filters_.empty());
-
-		// Default treeCache size: 250
-		treeCache.CacheResize(250);
 	} else {
 		idx->Close();
 		nb_->Clear();
@@ -122,7 +116,6 @@ void scidBaseT::Close() {
 	fileMode_ = FMODE_None;
 	all_filter_.Init(0);
 	dbFilter->Init(0);
-	treeFilter->Init(0);
 	for (size_t i = 0, n = filters_.size(); i < n; i++)
 		delete filters_[i].second;
 	filters_.clear();
@@ -135,11 +128,11 @@ void scidBaseT::clear() {
 		stats_ = NULL;
 	}
 	duplicates_.reset();
-	treeCache.Clear();
 	for (nameT nt = NAME_PLAYER; nt < NUM_NAME_TYPES; nt++) {
 		nameFreq_[nt].resize(0);
 	}
 	peakEloCache_.clear();
+	++cacheInvalidationToken_;
 }
 
 std::string scidBaseT::getFileName() const {
@@ -171,7 +164,6 @@ errorT scidBaseT::endTransaction(gamenumT gNum) {
 	if (dbFilter->Size() != n_games) {
 		all_filter_.Resize(n_games);
 		dbFilter->Resize(n_games);
-		treeFilter->Resize(n_games);
 		for (auto& filter : filters_) {
 			filter.second->Resize(n_games);
 		}
@@ -375,8 +367,6 @@ HFilter scidBaseT::getFilter(std::string_view filterId) const {
 	const auto findFilter = [&](auto const& id) -> Filter* {
 		if (id == "dbfilter")
 			return dbFilter;
-		if (id == "tree")
-			return treeFilter;
 		if (id == "all")
 			return &all_filter_;
 

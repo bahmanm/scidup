@@ -36,6 +36,7 @@
 #include "position.h"
 #include "scidbase.h"
 #include "scidup_app_editor.h"
+#include "scidup_app_tree.h"
 #include "searchpos.h"
 #include "spellchk.h"
 #include "stored.h"
@@ -379,7 +380,7 @@ sc_base_inUse (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         if (basePtr == 0) return UI_Result(ti, OK, false);
     }
 
-    return UI_Result(ti, OK, basePtr->inUse);
+    return UI_Result(ti, OK, basePtr->isOpen());
 }
 
 
@@ -454,7 +455,7 @@ sc_base_export (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, usage);
     }
 
-    if (exportFilter  &&  !db->inUse) {
+    if (exportFilter  &&  !db->isOpen()) {
         return errorResult (ti, errMsgNotOpen(ti));
     }
 
@@ -646,7 +647,7 @@ sc_base_piecetrack (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // If current base is unused, filter is empty, or no track
     // squares specified, then just return a zero-filled list:
 
-    if (! db->inUse  ||  db->defaultFilterCount() == 0  ||  nTrackSquares == 0) {
+    if (! db->isOpen()  ||  db->defaultFilterCount() == 0  ||  nTrackSquares == 0) {
         for (uint i=0; i < 64; i++) { appendUintElement (ti, 0); }
         return TCL_OK;
     }
@@ -1181,7 +1182,7 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: sc_eco base <bool:all_games> <bool:extensions>");
     }
     if (!ecoBook) { return errorResult (ti, "No ECO Book is loaded."); }
-    if (! db->inUse) return errorResult (ti, ERROR_FileNotOpen);
+    if (! db->isOpen()) return errorResult (ti, ERROR_FileNotOpen);
 
     int option = -1;
     enum {ECO_NOCODE, ECO_ALL, ECO_DATE, ECO_FILTER};
@@ -1253,7 +1254,7 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     std::string filter =
         (option == ECO_FILTER) ? "dbfilter" : dbase.newFilter();
-    auto hf = dbase.getFilter(filter);
+    auto hf = scidup::app::tree::resolveFilter(dbase, filter);
     auto changes = dbase.transformIndex(hf, UI_CreateProgress(ti), entry_op);
     if (option == ECO_FILTER)
         dbase.deleteFilter(filter.c_str());
@@ -1612,7 +1613,7 @@ int
 sc_filter_next(ClientData, Tcl_Interp * ti, int, const char**)
 {
     auto editor = scidup::app::editor::gameSession(*db);
-    if (db->inUse) {
+    if (db->isOpen()) {
         auto loadedGameId = editor.loadedGameId();
         uint nextNumber = loadedGameId ? *loadedGameId + 1 : 0;
         while (nextNumber < db->numGames()) {
@@ -1632,7 +1633,7 @@ int
 sc_filter_prev(ClientData, Tcl_Interp * ti, int, const char**)
 {
     auto editor = scidup::app::editor::gameSession(*db);
-    if (db->inUse) {
+    if (db->isOpen()) {
         int prevNumber = editor.loadedGameId()
                              ? static_cast<int>(*editor.loadedGameId()) - 1
                              : -1;
@@ -1800,12 +1801,12 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
     if (argc < 4) return errorResult (ti, "Usage: sc_filter <cmd> baseId filterName");
     auto dbase = DBasePool::getBase(strGetUnsigned(argv[2]));
     if (dbase == NULL) return errorResult (ti, "sc_filter: invalid baseId");
-    HFilter filter = dbase->getFilter(argv[3]);
+    HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
     if (filter == 0) return errorResult (ti, "sc_filter: invalid filterName");
     switch (index) {
     case FILTER_AND:
         if (argc == 5) {
-            const HFilter f = dbase->getFilter(argv[4]);
+            const HFilter f = scidup::app::tree::resolveFilter(*dbase, argv[4]);
             if (f != 0) {
                 for (uint i=0, n = dbase->numGames(); i < n; i++) {
                     if (filter.get(i) != 0 && f.get(i) == 0) filter.set(i, 0);
@@ -1817,7 +1818,7 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case FILTER_OR:
         if (argc == 5) {
-            const HFilter f = dbase->getFilter(argv[4]);
+            const HFilter f = scidup::app::tree::resolveFilter(*dbase, argv[4]);
             if (f != 0) {
                 for (uint i=0, n = dbase->numGames(); i < n; i++) {
                     if (filter.get(i) == 0) filter.set(i, f.get(i));
@@ -1829,7 +1830,7 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case FILTER_COPY:
         if (argc == 5) {
-            const HFilter f = dbase->getFilter(argv[4]);
+            const HFilter f = scidup::app::tree::resolveFilter(*dbase, argv[4]);
             if (f != 0) {
                 for (uint i=0, n = dbase->numGames(); i < n; i++) {
                     filter.set(i, f.get(i));
@@ -1869,7 +1870,7 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                     auto editor = scidup::app::editor::gameSession(*db);
                     auto const& pos = *editor.game().GetCurrentPos();
                     if (useCache &&
-                        dbase->treeCache.cacheRestore(pos, *dbase->treeFilter))
+                        scidup::app::tree::session(*dbase).cacheRestore(pos))
                         return UI_Result(ti, OK);
 
                     if (!SearchPos(pos).setFilter(
@@ -1877,7 +1878,7 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                         return UI_Result(ti, ERROR_UserCancel);
 
                     if (useCache)
-                        dbase->treeCache.cacheAdd(pos, *dbase->treeFilter);
+                        scidup::app::tree::session(*dbase).cacheAdd(pos);
 
                     return UI_Result(ti, OK);
                 }
@@ -2262,7 +2263,7 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             default: return errorResult (ti, usageMsg);
         }
     }
-    if (!db->inUse) { return TCL_OK; }
+    if (!db->isOpen()) { return TCL_OK; }
 
     const char * newlineStr = "";
     switch (option) {
@@ -2535,7 +2536,7 @@ sc_game_firstMoves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (argc != 3) {
         return errorResult (ti, "Usage: sc_game firstMoves <numMoves>");
     }
-    if (!db->inUse) {
+    if (!db->isOpen()) {
         return errorResult (ti, errMsgNotOpen(ti));
     }
 
@@ -3025,7 +3026,7 @@ int
 sc_game_load (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     auto editor = scidup::app::editor::gameSession(*db);
-    if (!db->inUse) {
+    if (!db->isOpen()) {
         return errorResult (ti, errMsgNotOpen(ti));
     }
     if (argc != 3) {
@@ -3309,7 +3310,7 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // is found, until a position not in any database game is reached:
     Progress progress = UI_CreateProgress(ti);
     std::string filtername = base->newFilter();
-    HFilter filter = base->getFilter(filtername);
+    HFilter filter = scidup::app::tree::resolveFilter(*base, filtername);
     dateT currentDate = g->GetDate();
     while (g->MoveForward() == OK) {
         SearchPos(*g->GetCurrentPos()).setFilter(*base, filter, Progress());
@@ -3988,7 +3989,7 @@ int
 sc_game_tags_reload(ClientData, Tcl_Interp*, int, const char**)
 {
     auto editor = scidup::app::editor::gameSession(*db);
-    if (!db->inUse) { return TCL_OK; }
+    if (!db->isOpen()) { return TCL_OK; }
     const auto ie = editor.loadedIndexEntry();
     if (!ie) { return TCL_OK; }
     editor.game().LoadStandardTags(*ie, db->tagRoster(*ie));
@@ -4034,7 +4035,7 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (gn2 > db->numGames()) { return TCL_OK; }
 
     // Do nothing if the base is not writable:
-    if (!db->inUse  ||  db->isReadOnly()) { return TCL_OK; }
+    if (!db->isOpen()  ||  db->isReadOnly()) { return TCL_OK; }
 
     // Make a local copy of each index entry:
     IndexEntry ie1 = *(db->getIndexEntry(gn1 - 1));
@@ -5438,7 +5439,7 @@ sc_name_edit (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     std::string filter =
         (editSelection == EDIT_FILTER) ? "dbfilter" : dbase->newFilter();
-    auto hf = dbase->getFilter(filter);
+    auto hf = scidup::app::tree::resolveFilter(*dbase, filter);
     auto prg = UI_CreateProgress(ti);
     std::pair<errorT, size_t> changes;
     switch (option) {
@@ -6425,7 +6426,7 @@ UI_res_t sc_name_ratings (UI_handle_t ti, scidBaseT& dbase, const SpellChecker& 
     };
 
     std::string filter = (filterOnly) ? "dbfilter" : dbase.newFilter();
-    auto hf = dbase.getFilter(filter);
+    auto hf = scidup::app::tree::resolveFilter(dbase, filter);
     auto changes = dbase.transformIndex(hf, UI_CreateProgress(ti), entry_op);
     if (!filterOnly)
         dbase.deleteFilter(filter.c_str());
@@ -6657,7 +6658,7 @@ UI_res_t sc_name(UI_extra_t cd, UI_handle_t ti, int argc, const char** argv) {
     int index = -1;
     if (argc > 1) { index = strUniqueMatch (argv[1], options); }
 
-    if (!db->inUse) {
+    if (!db->isOpen()) {
         return errorResult (ti, ERROR_FileNotOpen, errMsgNotOpen(ti));
     }
 
@@ -6762,7 +6763,7 @@ sc_report (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
     DString * dstr = NULL;
     int index = strUniqueMatch (argv[2], options);
 
-    if (! db->inUse) {
+    if (! db->isOpen()) {
         return errorResult (ti, errMsgNotOpen(ti));
     }
     if (index >= 0  &&  index != OPT_CREATE  &&  report == NULL) {
@@ -7135,7 +7136,7 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (!base)
         return UI_Result(ti, ERROR_BadArg, usage);
 
-    HFilter filter = base->getFilter(argv[3]);
+    HFilter filter = scidup::app::tree::resolveFilter(*base, argv[3]);
     if (filter == nullptr)
         return UI_Result(ti, ERROR_BadArg, usage);
 
@@ -7297,7 +7298,7 @@ sc_tree_cachesize (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     return errorResult (ti, "Usage: sc_tree cachesize <base> <size>");
   }
   auto base = DBasePool::getBase(strGetInteger(argv[2]));
-  if (base) base->treeCache.CacheResize(strGetUnsigned(argv[3]));
+  if (base) scidup::app::tree::session(*base).cacheResize(strGetUnsigned(argv[3]));
   return TCL_OK;
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -7311,7 +7312,7 @@ sc_tree_cacheinfo (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
   }
   auto base = DBasePool::getBase(strGetInteger(argv[2]));
   if (base)
-      return UI_Result(ti, OK, base->treeCache.Size());
+      return UI_Result(ti, OK, scidup::app::tree::session(*base).cacheSize());
 
   return UI_Result(ti, OK, 0);
 }
@@ -7330,7 +7331,7 @@ sc_search (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
     if (argc > 1) { index = strUniqueMatch (argv[1], options); }
     int ret = TCL_OK;
 
-    if (!db->inUse) {
+    if (!db->isOpen()) {
         return errorResult (ti, errMsgNotOpen(ti));
     }
 
@@ -7666,7 +7667,7 @@ parsePattern (const char * str, patternT * patt)
 int
 sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
-    if (! db->inUse) {
+    if (! db->isOpen()) {
         return errorResult (ti, "Not an open database.");
     }
 
