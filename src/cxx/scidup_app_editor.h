@@ -21,6 +21,11 @@ public:
 		return static_cast<gamenumT>(base_->gameNumber);
 	}
 
+	const IndexEntry* loadedIndexEntry() const {
+		const auto gameId = loadedGameId();
+		return gameId ? base_->getIndexEntry(*gameId) : nullptr;
+	}
+
 	void setLoadedGameId(std::optional<gamenumT> gameId) const {
 		base_->gameNumber = gameId ? static_cast<int>(*gameId) : -1;
 	}

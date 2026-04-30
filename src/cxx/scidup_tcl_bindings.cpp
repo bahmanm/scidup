@@ -1268,6 +1268,8 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
+    Game& game = editor.game();
     uint returnPly = 0;
     if (argc > 2) {
         if (argc == 3  &&  strIsPrefix (argv[2], "ply")) {
@@ -1278,15 +1280,15 @@ sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
     if (!ecoBook) { return TCL_OK; }
 
-    auto location = db->game->currentLocation();
-    db->game->MoveToEnd();
+    auto location = game.currentLocation();
+    game.MoveToEnd();
     ecoT ecoCode = ECO_None;
     do {
-        ecoCode = ecoBook->findECO(db->game->GetCurrentPos());
-    } while (ecoCode == ECO_None && db->game->MoveBackup() == OK);
+        ecoCode = ecoBook->findECO(game.GetCurrentPos());
+    } while (ecoCode == ECO_None && game.MoveBackup() == OK);
 
-    auto ply = db->game->GetCurrentPly();
-    db->game->restoreLocation(location);
+    auto ply = game.GetCurrentPly();
+    game.restoreLocation(location);
 
     if (ecoCode == ECO_None)
         return UI_Result(ti, OK);
@@ -1608,8 +1610,10 @@ sc_filter_last(ClientData, Tcl_Interp * ti, int, const char**)
 int
 sc_filter_next(ClientData, Tcl_Interp * ti, int, const char**)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     if (db->inUse) {
-        uint nextNumber = db->gameNumber + 1;
+        auto loadedGameId = editor.loadedGameId();
+        uint nextNumber = loadedGameId ? *loadedGameId + 1 : 0;
         while (nextNumber < db->numGames()) {
             if (db->dbFilter->Get(nextNumber) > 0) {
                 return setUintResult (ti, nextNumber + 1);
@@ -1626,8 +1630,11 @@ sc_filter_next(ClientData, Tcl_Interp * ti, int, const char**)
 int
 sc_filter_prev(ClientData, Tcl_Interp * ti, int, const char**)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     if (db->inUse) {
-        int prevNumber = db->gameNumber - 1;
+        int prevNumber = editor.loadedGameId()
+                             ? static_cast<int>(*editor.loadedGameId()) - 1
+                             : -1;
         while (prevNumber >= 0) {
             if (db->dbFilter->Get(prevNumber) > 0) {
                 return setIntResult (ti, prevNumber + 1);
@@ -1858,7 +1865,8 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                     // sc_filter search baseId filterTo board [filterFrom]
                     bool useCache = (argc == 5);
 
-                    auto const& pos = *db->game->GetCurrentPos();
+                    auto editor = scidup::app::editor::gameSession(*db);
+                    auto const& pos = *editor.game().GetCurrentPos();
                     if (useCache &&
                         dbase->treeCache.cacheRestore(pos, *dbase->treeFilter))
                         return UI_Result(ti, OK);
@@ -2427,7 +2435,9 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     DString * dstr = new DString;
     if (mode != CROSSTABLE_AllPlayAll) { apaLimit = 0; }
-    ctable->PrintTable (dstr, mode, apaLimit, db->gameNumber+1);
+    auto editor = scidup::app::editor::gameSession(*db);
+    ctable->PrintTable(
+        dstr, mode, apaLimit, editor.loadedGameId() ? *editor.loadedGameId() + 1 : 0);
 
     AppendResult (ti, dstr->Data(), NULL);
     if (option == OPT_LATEX) {
@@ -2573,6 +2583,9 @@ int sc_game_import(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 int
 sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
+    Game& g = editor.game();
+    const auto loadedGameId = editor.loadedGameId();
     bool hideNextMove = false;
     bool showMaterialValue = false;
     bool showFEN = false;
@@ -2619,70 +2632,70 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 commentHeight = strGetBoolean(argv[arg]);
             }
         } else if (strIsPrefix (argv[arg], "white")) {
-            AppendResult (ti, db->game->GetWhiteStr(), NULL);
+            AppendResult (ti, g.GetWhiteStr(), NULL);
             return TCL_OK;
         } else if (strIsPrefix (argv[arg], "welo")) {
-            return setIntResult (ti, db->game->GetWhiteElo() );
+            return setIntResult (ti, g.GetWhiteElo() );
         } else if (strIsPrefix (argv[arg], "black")) {
-            AppendResult (ti, db->game->GetBlackStr(), NULL);
+            AppendResult (ti, g.GetBlackStr(), NULL);
             return TCL_OK;
         } else if (strIsPrefix (argv[arg], "belo")) {
-            return setIntResult (ti, db->game->GetBlackElo() );
+            return setIntResult (ti, g.GetBlackElo() );
         } else if (strIsPrefix (argv[arg], "event")) {
-            AppendResult (ti, db->game->GetEventStr(), NULL);
+            AppendResult (ti, g.GetEventStr(), NULL);
             return TCL_OK;
         } else if (strIsPrefix (argv[arg], "site")) {
-            AppendResult (ti, db->game->GetSiteStr(), NULL);
+            AppendResult (ti, g.GetSiteStr(), NULL);
             return TCL_OK;
         } else if (strIsPrefix (argv[arg], "round")) {
-            AppendResult (ti, db->game->GetRoundStr(), NULL);
+            AppendResult (ti, g.GetRoundStr(), NULL);
             return TCL_OK;
         } else if (strIsPrefix (argv[arg], "date")) {
             char dateStr [12];
-            date_DecodeToString (db->game->GetDate(), dateStr);
+            date_DecodeToString (g.GetDate(), dateStr);
             AppendResult (ti, dateStr, NULL);
             return TCL_OK;
         } else if (strIsPrefix (argv[arg], "year")) {
-            return setUintResult (ti, date_GetYear (db->game->GetDate()));
+            return setUintResult (ti, date_GetYear (g.GetDate()));
         } else if (strIsPrefix (argv[arg], "result")) {
-            return setResult (ti, RESULT_STR[db->game->GetResult()]);
+            return setResult (ti, RESULT_STR[g.GetResult()]);
         } else if (strIsPrefix (argv[arg], "nextMove")) {
-            db->game->GetSAN (temp);
+            g.GetSAN (temp);
             transPieces(temp);
             AppendResult (ti, temp, NULL);
             return TCL_OK;
 // nextMoveNT is the same as nextMove, except that the move is not translated
         } else if (strIsPrefix (argv[arg], "nextMoveNT")) {
-            db->game->GetSAN (temp);
+            g.GetSAN (temp);
             AppendResult (ti, temp, NULL);
             return TCL_OK;
 // returns next move played in UCI format
         } else if (strIsPrefix (argv[arg], "nextMoveUCI")) {
-          db->game->GetNextMoveUCI (temp);
+          g.GetNextMoveUCI (temp);
           AppendResult (ti, temp, NULL);
           return TCL_OK;
         } else if (strIsPrefix (argv[arg], "previousMove")) {
-            db->game->GetPrevSAN (temp);
+            g.GetPrevSAN (temp);
             transPieces(temp);
             AppendResult (ti, temp, NULL);
             return TCL_OK;
 // previousMoveNT is the same as previousMove, except that the move is not translated
         } else if (strIsPrefix (argv[arg], "previousMoveNT")) {
-            db->game->GetPrevSAN (temp);
+            g.GetPrevSAN (temp);
             AppendResult (ti, temp, NULL);
             return TCL_OK;
 // returns previous move played in UCI format
         } else if (strIsPrefix (argv[arg], "previousMoveUCI")) {
-            db->game->GetPrevMoveUCI (temp);
+            g.GetPrevMoveUCI (temp);
             AppendResult (ti, temp, NULL);
             return TCL_OK;
         } else if (strIsPrefix (argv[arg], "duplicate")) {
-            uint dupGameNum = db->getDuplicates(db->gameNumber);
+            uint dupGameNum = loadedGameId ? db->getDuplicates(*loadedGameId) : 0;
             return setUintResult (ti, dupGameNum);
         } else if (strIsPrefix(argv[arg], "ECO")) {
             std::string str;
             if (ecoBook) {
-                auto ecoStr = ecoBook->findECOstr(db->game->GetCurrentPos());
+                auto ecoStr = ecoBook->findECOstr(g.GetCurrentPos());
                 if (!ecoStr.empty())
                     str.append(ecoStr);
             }
@@ -2693,26 +2706,26 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     const char * gameStr = translate (ti, "game");
     std::snprintf(temp, sizeof(temp), "%c%s %u:  <pi %s>%s</pi>", toupper(gameStr[0]),
-             gameStr + 1, db->gameNumber + 1,
-             db->game->GetWhiteStr(), db->game->GetWhiteStr());
-    if (auto whCountry = db->game->FindExtraTag("WhiteCountry"))
+             gameStr + 1, loadedGameId ? *loadedGameId + 1 : 0,
+             g.GetWhiteStr(), g.GetWhiteStr());
+    if (auto whCountry = g.FindExtraTag("WhiteCountry"))
         std::snprintf(temp + std::strlen(temp), sizeof(temp) - std::strlen(temp),
                       " (%s)", whCountry);
 
     AppendResult (ti, temp, NULL);
-    eloT elo = db->game->GetWhiteElo();
+    eloT elo = g.GetWhiteElo();
     if (elo != 0) {
         std::snprintf(temp, sizeof(temp), " <red>%u</red>", elo);
         AppendResult (ti, temp, NULL);
     }
     std::snprintf(temp, sizeof(temp), "  --  <pi %s>%s</pi>",
-             db->game->GetBlackStr(), db->game->GetBlackStr());
-    if (auto blCountry = db->game->FindExtraTag("BlackCountry"))
+             g.GetBlackStr(), g.GetBlackStr());
+    if (auto blCountry = g.FindExtraTag("BlackCountry"))
         std::snprintf(temp + std::strlen(temp), sizeof(temp) - std::strlen(temp),
                       " (%s)", blCountry);
 
     AppendResult (ti, temp, NULL);
-    elo = db->game->GetBlackElo();
+    elo = g.GetBlackElo();
     if (elo != 0) {
         std::snprintf(temp, sizeof(temp), " <red>%u</red>", elo);
         AppendResult (ti, temp, NULL);
@@ -2723,14 +2736,14 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                  translate (ti, "Result"), translate (ti, "hidden"));
     } else {
         std::snprintf(temp, sizeof(temp), "<br>%s <red>(%u)</red>",
-                 RESULT_LONGSTR[db->game->GetResult()],
-                 (db->game->GetNumHalfMoves() + 1) / 2);
+                 RESULT_LONGSTR[g.GetResult()],
+                 (g.GetNumHalfMoves() + 1) / 2);
     }
     AppendResult (ti, temp, NULL);
 
-    if (db->game->GetEco() != 0) {
+    if (g.GetEco() != 0) {
         ecoStringT fullEcoStr;
-        eco_ToExtendedString (db->game->GetEco(), fullEcoStr);
+        eco_ToExtendedString (g.GetEco(), fullEcoStr);
         ecoStringT basicEcoStr;
         strCopy (basicEcoStr, fullEcoStr);
         if (strLength(basicEcoStr) >= 4) { basicEcoStr[3] = 0; }
@@ -2739,13 +2752,13 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                           "</run></blue>", NULL);
     }
     char dateStr[20];
-    date_DecodeToString (db->game->GetDate(), dateStr);
+    date_DecodeToString (g.GetDate(), dateStr);
     strTrimDate (dateStr);
     AppendResult (ti, "   <red>", dateStr, "</red>", NULL);
 
-    if (db->gameNumber >= 0) {
+    if (loadedGameId) {
         // Check if this game is deleted or has other user-settable flags:
-        const IndexEntry* ie = db->getIndexEntry(db->gameNumber);
+        const IndexEntry* ie = db->getIndexEntry(*loadedGameId);
         if (ie->GetDeleteFlag()) {
             AppendResult (ti, "   <gray>(",
                               translate (ti, "deleted"), ")</gray>", NULL);
@@ -2788,38 +2801,38 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             }
         }
 
-        if (db->game->FindExtraTag("Bib") != NULL) {
+        if (g.FindExtraTag("Bib") != NULL) {
            AppendResult (ti, "  <red><run ::Bibliography::ShowRef>Bib</run></red>", NULL);
         }
 
         // Check if this game has a twin (duplicate):
-        if (db->getDuplicates(db->gameNumber) != 0) {
+        if (db->getDuplicates(*loadedGameId) != 0) {
             AppendResult (ti, "   <blue><run updateTwinChecker>(",
                               translate (ti, "twin"), ")</run></blue>", NULL);
         }
     }
     std::snprintf(temp, sizeof(temp),
                   "<br><gray><run ::crosstab::Open>%s:  %s</run> (%s)</gray><br>",
-             db->game->GetSiteStr(),
-             db->game->GetEventStr(),
-             db->game->GetRoundStr());
+             g.GetSiteStr(),
+             g.GetEventStr(),
+             g.GetRoundStr());
     AppendResult (ti, temp, NULL);
 
     char san [20];
     char tempTrans[20];
     byte * nags;
-    colorT toMove = db->game->GetCurrentPos()->GetToMove();
-    uint moveCount = db->game->GetCurrentPos()->GetFullMoveCount();
+    colorT toMove = g.GetCurrentPos()->GetToMove();
+    uint moveCount = g.GetCurrentPos()->GetFullMoveCount();
     uint prevMoveCount = moveCount;
     if (toMove == WHITE) { prevMoveCount--; }
 
-    db->game->GetPrevSAN (san);
+    g.GetPrevSAN (san);
     strcpy(tempTrans, san);
     transPieces(tempTrans);
     bool printNags = true;
     if (san[0] == 0) {
         strCopy (temp, "(");
-        strAppend (temp, db->game->GetVarLevel() == 0 ?
+        strAppend (temp, g.GetVarLevel() == 0 ?
                    translate (ti, "GameStart", "Start of game") :
                    translate (ti, "LineStart", "Start of line"));
         strAppend (temp, ")");
@@ -2831,7 +2844,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
     AppendResult (ti, translate (ti, "LastMove", "Last move"), NULL);
     AppendResult (ti, ": <darkblue>", temp, "</darkblue>", NULL);
-    nags = db->game->GetNags();
+    nags = g.GetNags();
     if (printNags  &&  *nags != 0  &&  !hideNextMove) {
         AppendResult (ti, "<red>", NULL);
         for (uint nagCount = 0 ; nags[nagCount] != 0; nagCount++) {
@@ -2847,12 +2860,12 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Now print next move:
 
-    db->game->GetSAN (san);
+    g.GetSAN (san);
     strcpy(tempTrans, san);
     transPieces(tempTrans);
     if (san[0] == 0) {
         strCopy (temp, "(");
-        strAppend (temp, db->game->GetVarLevel() == 0 ?
+        strAppend (temp, g.GetVarLevel() == 0 ?
                    translate (ti, "GameEnd", "End of game") :
                    translate (ti, "LineEnd", "End of line"));
         strAppend (temp, ")");
@@ -2869,7 +2882,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
     AppendResult (ti, "   ", translate (ti, "NextMove", "Next"), NULL);
     AppendResult (ti, ": <darkblue>", temp, "</darkblue>", NULL);
-    nags = db->game->GetNextNags();
+    nags = g.GetNextNags();
     if (printNags  &&  !hideNextMove  &&  *nags != 0) {
         AppendResult (ti, "<red>", NULL);
         for (uint nagCount = 0 ; nags[nagCount] != 0; nagCount++) {
@@ -2883,14 +2896,14 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         AppendResult (ti, "</red>", NULL);
     }
 
-    if (db->game->GetVarLevel() > 0) {
+    if (g.GetVarLevel() > 0) {
         AppendResult (ti, "   <green><run sc_var exit; updateBoard -animate>",
                           "(<lt>-Var)", "</run></green>", NULL);
     }
 
     if (showMaterialValue) {
-        uint mWhite = db->game->GetCurrentPos()->MaterialValue (WHITE);
-        uint mBlack = db->game->GetCurrentPos()->MaterialValue (BLACK);
+        uint mWhite = g.GetCurrentPos()->MaterialValue (WHITE);
+        uint mBlack = g.GetCurrentPos()->MaterialValue (BLACK);
         std::snprintf(temp, sizeof(temp), "    <gray>(%u-%u", mWhite, mBlack);
         AppendResult (ti, temp, NULL);
         if (mWhite > mBlack) {
@@ -2905,13 +2918,13 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Print first few variations if there are any:
 
-    uint varCount = db->game->GetNumVariations();
+    uint varCount = g.GetNumVariations();
     if (!hideNextMove  &&  varCount > 0) {
         AppendResult (ti, "<br>", translate (ti, "Variations"), ":", NULL);
         for (uint vnum = 0; vnum < varCount && vnum < 5; vnum++) {
             char s[20];
-            db->game->MoveIntoVariation (vnum);
-            db->game->GetSAN (s);
+            g.MoveIntoVariation (vnum);
+            g.GetSAN (s);
             strcpy(tempTrans, s);
             transPieces(tempTrans);
             std::snprintf(temp, sizeof(temp), "   <run sc_var enter %u; updateBoard -animate>v%u",
@@ -2924,22 +2937,22 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 	                         moveCount, toMove == WHITE ? "" : "..", tempTrans);//s);
             }
             AppendResult (ti, temp, NULL);
-            byte * firstNag = db->game->GetNextNags();
+            byte * firstNag = g.GetNextNags();
             if (*firstNag >= NAG_GoodMove  &&  *firstNag <= NAG_DubiousMove) {
                 game_printNag (*firstNag, s, true, PGN_FORMAT_Plain);
                 AppendResult (ti, "<red>", s, "</red>", NULL);
             }
             AppendResult (ti, "</run>", NULL);
-            db->game->MoveExitVariation ();
+            g.MoveExitVariation ();
         }
     }
 
     // Check if this move has a comment:
 
-    if (db->game->GetMoveComment() != NULL) {
+    if (g.GetMoveComment() != NULL) {
         AppendResult (ti, "<br>", translate(ti, "Comment"),
                           " <green><run makeCommentWin>", NULL);
-        char * str = strDuplicate(db->game->GetMoveComment());
+        char * str = strDuplicate(g.GetMoveComment());
         strTrimMarkCodes (str);
         const char * s = str;
         uint len;
@@ -2979,7 +2992,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Now check ECO book for the current position:
     if (ecoBook) {
-        auto ecoStr = ecoBook->findECOstr(db->game->GetCurrentPos());
+        auto ecoStr = ecoBook->findECOstr(g.GetCurrentPos());
         if (!ecoStr.empty()) {
             std::string ecoComment(ecoStr);
             ecoT eco = eco_FromString(ecoComment.c_str());
@@ -2996,7 +3009,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
     if (showFEN) {
         char boardStr [200];
-        db->game->GetCurrentPos()->PrintFEN(boardStr, sizeof(boardStr));
+        g.GetCurrentPos()->PrintFEN(boardStr, sizeof(boardStr));
         AppendResult (ti, "<br><gray>", boardStr, "</gray>", NULL);
     }
     return TCL_OK;
@@ -3038,6 +3051,8 @@ sc_game_load (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
+    Game& game = editor.game();
     const char * usage = "Usage: sc_game merge <baseNum> <gameNum> [<endPly>]";
     if (argc < 4  ||  argc > 5) { return errorResult (ti, usage); }
 
@@ -3055,13 +3070,13 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     gnum--;
 
     // Check that the specified game can be merged:
-    if (base == db  &&  (int)gnum == db->gameNumber) {
+    if (base == db && editor.matchesLoadedGame(gnum)) {
         return errorResult (ti, "This game cannot be merged into itself.");
     }
-    if (db->game->AtStart()  &&  db->game->AtEnd()) {
+    if (game.AtStart()  &&  game.AtEnd()) {
         return errorResult (ti, "The current game has no moves.");
     }
-    if (db->game->HasNonStandardStart()) {
+    if (game.HasNonStandardStart()) {
         return errorResult (ti, "The current game has a non-standard start position.");
     }
 
@@ -3089,16 +3104,16 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Now find the deepest position in the current game that occurs
     // in the merge game:
-    db->game->MoveToStart();
+    game.MoveToStart();
     uint matchPly = 0;
     uint mergePly = 0;
     uint ply = 0;
     bool done = false;
     while (!done) {
-        if (db->game->MoveForward() != OK) { done = true; }
+        if (game.MoveForward() != OK) { done = true; }
         ply++;
         compactBoardStr currentBoard;
-        db->game->GetCurrentPos()->PrintCompactStr (currentBoard);
+        game.GetCurrentPos()->PrintCompactStr (currentBoard);
         for (uint n=0; n < nMergePos; n++) {
             if (strEqual (currentBoard, mergeBoards[n])) {
                 matchPly = ply;
@@ -3112,23 +3127,23 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // Now the games match at the locations matchPly in the current
     // game and mergePly in the merge game.
     // Create a new variation and add merge-game moves to it:
-    db->game->MoveToPly (matchPly);
-    bool atLastMove = db->game->AtEnd();
+    game.MoveToPly (matchPly);
+    bool atLastMove = game.AtEnd();
     simpleMoveT * sm = NULL;
     if (atLastMove) {
         // At end of game, so remember final game move for replicating
         // at the start of the variation:
-        db->game->MoveBackup();
-        sm = db->game->GetCurrentMove();
+        game.MoveBackup();
+        sm = game.GetCurrentMove();
         ASSERT(sm);
-        db->game->MoveForward();
+        game.MoveForward();
     }
-    db->game->MoveForward();
-    db->game->AddVariation();
-    db->gameAltered = true;
+    game.MoveForward();
+    game.AddVariation();
+    editor.setDirty();
     if (sm) {
         // We need to replicate the last move of the current game.
-        db->game->AddMove(*sm);
+        game.AddMove(*sm);
     }
     merge->MoveToPly (mergePly);
     ply = mergePly;
@@ -3136,7 +3151,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         simpleMoveT * mergeMove = merge->GetCurrentMove();
         if (merge->MoveForward() != OK) { break; }
         if (mergeMove == NULL) { break; }
-        if (db->game->AddMove(*mergeMove) != OK) { break; }
+        if (game.AddMove(*mergeMove) != OK) { break; }
         ply++;
     }
 
@@ -3162,10 +3177,10 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     dstr.Append(" (", tags.round, ")");
     dstr.Append(", ", tags.site);
     dstr.Append(" ", ie->GetYear());
-    db->game->SetMoveComment(dstr.Data());
+    game.SetMoveComment(dstr.Data());
 
     // And exit the new variation:
-    db->game->MoveExitVariation();
+    game.MoveExitVariation();
     return TCL_OK;
 }
 
@@ -3872,6 +3887,8 @@ static uint strGetRatingType (const char * name) {
 int
 sc_game_tags_set (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
+    Game& game = editor.game();
     const char * options[] = {
         "-event", "-site", "-date", "-round", "-white", "-black", "-result",
         "-whiteElo", "-whiteRatingType", "-blackElo", "-blackRatingType",
@@ -3896,32 +3913,32 @@ sc_game_tags_set (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         arg += 2;
 
         switch (index) {
-            case T_EVENT: db->game->SetEventStr (value); break;
-            case T_SITE: db->game->SetSiteStr (value); break;
+            case T_EVENT: game.SetEventStr (value); break;
+            case T_SITE: game.SetSiteStr (value); break;
             case T_DATE:
-                db->game->SetDate (date_EncodeFromString(value));
+                game.SetDate (date_EncodeFromString(value));
                 break;
-            case T_ROUND: db->game->SetRoundStr (value); break;
-            case T_WHITE: db->game->SetWhiteStr (value); break;
-            case T_BLACK: db->game->SetBlackStr (value); break;
-            case T_RESULT: db->game->SetResult (strGetResult(value)); break;
+            case T_ROUND: game.SetRoundStr (value); break;
+            case T_WHITE: game.SetWhiteStr (value); break;
+            case T_BLACK: game.SetBlackStr (value); break;
+            case T_RESULT: game.SetResult (strGetResult(value)); break;
             case T_WHITE_ELO:
-                db->game->SetWhiteElo (strGetUnsigned(value)); break;
+                game.SetWhiteElo (strGetUnsigned(value)); break;
             case T_WHITE_RTYPE:
-                db->game->SetWhiteRatingType (strGetRatingType (value)); break;
+                game.SetWhiteRatingType (strGetRatingType (value)); break;
             case T_BLACK_ELO:
-                db->game->SetBlackElo (strGetUnsigned(value)); break;
+                game.SetBlackElo (strGetUnsigned(value)); break;
             case T_BLACK_RTYPE:
-                db->game->SetBlackRatingType (strGetRatingType (value)); break;
+                game.SetBlackRatingType (strGetRatingType (value)); break;
             case T_ECO:
-                db->game->SetEco (eco_FromString (value)); break;
+                game.SetEco (eco_FromString (value)); break;
             case T_EVENTDATE:
-                db->game->SetEventDate (date_EncodeFromString(value));
+                game.SetEventDate (date_EncodeFromString(value));
                 break;
             case T_EXTRA:
                 {
                     // Add all the nonstandard tags:
-                    db->game->ClearExtraTags ();
+                    game.ClearExtraTags ();
 
                     Tcl_Obj* list = Tcl_NewStringObj(value, -1);
                     Tcl_IncrRefCount(list);
@@ -3939,7 +3956,7 @@ sc_game_tags_set (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                         decltype(objv) v;
                         // We expect a pair. Invalid entries are ignored.
                         if (Tcl_ListObjGetElements(ti, *it, &n, &v) == TCL_OK && n == 2) {
-                            db->game->addTag(Tcl_GetString(v[0]), Tcl_GetString(v[1]));
+                            game.addTag(Tcl_GetString(v[0]), Tcl_GetString(v[1]));
                         }
                     }
                     Tcl_DecrRefCount(list);
@@ -3961,9 +3978,11 @@ sc_game_tags_set (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_game_tags_reload(ClientData, Tcl_Interp*, int, const char**)
 {
-    if (!db->inUse  ||   db->gameNumber < 0) { return TCL_OK; }
-    const auto ie = db->getIndexEntry(db->gameNumber);
-    db->game->LoadStandardTags(*ie, db->tagRoster(*ie));
+    auto editor = scidup::app::editor::gameSession(*db);
+    if (!db->inUse) { return TCL_OK; }
+    const auto ie = editor.loadedIndexEntry();
+    if (!ie) { return TCL_OK; }
+    editor.game().LoadStandardTags(*ie, db->tagRoster(*ie));
     return TCL_OK;
 }
 
@@ -4379,6 +4398,7 @@ sc_info_limit (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_move (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     static const char * options [] = {
         "add", "addSan", "back", "end", "endVar", "forward",
         "pgn", "ply", "start", NULL
@@ -4402,11 +4422,11 @@ sc_move (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_move_back (cd, ti, argc, argv);
 
     case MOVE_END:
-        db->game->MoveToEnd();
+        editor.game().MoveToEnd();
         break;
 
     case MOVE_ENDVAR:
-        while (db->game->MoveForward() == OK) {
+        while (editor.game().MoveForward() == OK) {
         }
         break;
 
@@ -4418,13 +4438,13 @@ sc_move (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case MOVE_PLY:
         if (argc == 3) {
-            db->game->MoveToPly(strGetUnsigned(argv[2]));
+            editor.game().MoveToPly(strGetUnsigned(argv[2]));
             return UI_Result(ti, OK);
         }
         return errorResult (ti, "Usage: sc_move ply <plynumber>");
 
     case MOVE_START:
-        db->game->MoveToStart();
+        editor.game().MoveToStart();
         break;
 
     default:
@@ -4440,6 +4460,7 @@ sc_move (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_move_add (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
 
     if (argc != 5) {
         return errorResult (ti, "Usage: sc_move add <sq> <sq> <promo>");
@@ -4462,12 +4483,12 @@ sc_move_add (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         s[5] = 0;
     }
     simpleMoveT sm;
-    Position * pos = db->game->GetCurrentPos();
+    Position * pos = editor.game().GetCurrentPos();
     errorT err = pos->ReadCoordMove(&sm, s, s[4] == 0 ? 4 : 5, true);
     if (err == OK) {
-        err = db->game->AddMove(sm);
+        err = editor.game().AddMove(sm);
         if (err == OK) {
-            db->gameAltered = true;
+            editor.setDirty();
             return TCL_OK;
         }
     }
@@ -4481,10 +4502,11 @@ sc_move_add (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 //    list elements, or a mixture of both. Move numbers are ignored
 //    but variations/comments/annotations are parsed and added.
 int sc_move_addSan(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
+	auto editor = scidup::app::editor::gameSession(*db);
 	PgnParseLog parser;
 	for (int i = 2; i < argc; ++i) {
-		db->gameAltered = true;
-		if (!pgnParseGame(argv[i], std::strlen(argv[i]), *db->game, parser))
+		editor.setDirty();
+		if (!pgnParseGame(argv[i], std::strlen(argv[i]), editor.game(), parser))
 			return UI_Result(ti, ERROR_InvalidMove, argv[i]);
 	}
 	return UI_Result(ti, OK);
@@ -4496,6 +4518,7 @@ int sc_move_addSan(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 int
 sc_move_back (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     int numMovesTakenBack = 0;
     int count = 1;
     if (argc > 2) {
@@ -4504,7 +4527,7 @@ sc_move_back (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     for (int i = 0; i < count; i++) {
-        if (db->game->MoveBackup() != OK) { break; }
+        if (editor.game().MoveBackup() != OK) { break; }
         numMovesTakenBack++;
     }
 
@@ -4518,6 +4541,7 @@ sc_move_back (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_move_forward (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     int numMovesMade = 0;
     int count = 1;
     if (argc > 2) {
@@ -4527,7 +4551,7 @@ sc_move_forward (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     for (int i = 0; i < count; i++) {
-        if (db->game->MoveForward() != OK) { break; }
+        if (editor.game().MoveForward() != OK) { break; }
         numMovesMade++;
     }
 
@@ -4543,15 +4567,16 @@ sc_move_forward (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_move_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     if (argc == 2)
-        return UI_Result(ti, OK, db->game->GetLocationInPGN());
+        return UI_Result(ti, OK, editor.game().GetLocationInPGN());
 
     if (argc != 3) {
         return errorResult (ti, "Usage: sc_move pgn [offset]");
     }
 
     uint offset = strGetUnsigned (argv[2]);
-    db->game->MoveToLocationInPGN (offset);
+    editor.game().MoveToLocationInPGN (offset);
     return TCL_OK;
 }
 
@@ -4563,6 +4588,8 @@ sc_move_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
+    Game& g = editor.game();
     static const char * options [] = {
         "addNag", "analyze", "bestSquare", "board", "clearNags",
         "fen", "getComment", "getNags", "hash", "html",
@@ -4596,7 +4623,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case POS_BOARD:
         if (argc == 2) {
-            db->game->currentPos()->MakeLongStr(boardStr);
+            g.currentPos()->MakeLongStr(boardStr);
             return UI_Result(ti, OK, boardStr);
         }
         if (argc == 4) {
@@ -4624,25 +4651,25 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return UI_Result(ti, ERROR_BadArg, "sc_pos board [startpos moves]");
 
     case POS_CLEARNAGS:
-        db->game->ClearNags();
-        db->gameAltered = true;
+        g.ClearNags();
+        editor.setDirty();
         break;
 
     case POS_FEN:
-        db->game->GetCurrentPos()->PrintFEN(boardStr, sizeof(boardStr));
+        g.GetCurrentPos()->PrintFEN(boardStr, sizeof(boardStr));
         AppendResult (ti, boardStr, NULL);
         break;
 
     case POS_GETCOMMENT:
         const char * tempStr;
-        tempStr = db->game->GetMoveComment();
+        tempStr = g.GetMoveComment();
         if (tempStr) {
             AppendResult (ti, tempStr, NULL);
         }
         break;
 
     case POS_GETPREVCOMMENT: {
-        auto comments = db->game->previousComments();
+        auto comments = g.previousComments();
         UI_List res(2);
         res.push_back(comments.first);
         res.push_back(comments.second);
@@ -4661,7 +4688,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_pos_isAt (cd, ti, argc, argv);
 
     case POS_ISCHECK:
-        return UI_Result(ti, OK, db->game->GetCurrentPos()->IsKingInCheck());
+        return UI_Result(ti, OK, g.GetCurrentPos()->IsKingInCheck());
 
     case POS_ISLEGAL:
         return sc_pos_isLegal (cd, ti, argc, argv);
@@ -4678,17 +4705,17 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         // but that value is wrong for games with non-standard
         // start positions. The correct value to return is:
         //     db->game->GetCurrentPos()->GetFullMoveCount()
-        return setUintResult (ti, db->game->GetCurrentPos()->GetFullMoveCount());
+        return setUintResult (ti, g.GetCurrentPos()->GetFullMoveCount());
 
     case POS_PGNOFFSET:
-        setUintResult (ti, db->game->GetPgnOffset());
+        setUintResult (ti, g.GetPgnOffset());
         break;
 
     case POS_SETCOMMENT:
         return sc_pos_setComment (cd, ti, argc, argv);
 
     case POS_SIDE:
-        setResult (ti, (db->game->GetCurrentPos()->GetToMove() == WHITE)
+        setResult (ti, (g.GetCurrentPos()->GetToMove() == WHITE)
                    ? "white" : "black");
         break;
 
@@ -4697,18 +4724,18 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             bool flip = false;
             if (argc > 2  &&  strIsPrefix (argv[2], "flip")) { flip = true; }
             DString * dstr = new DString;
-            db->game->GetCurrentPos()->DumpLatexBoard (dstr, flip);
+            g.GetCurrentPos()->DumpLatexBoard (dstr, flip);
             AppendResult (ti, dstr->Data(), NULL);
             delete dstr;
         }
         break;
 
     case LOCATION:
-        return UI_Result(ti, OK, db->game->GetCurrentPly());
+        return UI_Result(ti, OK, g.GetCurrentPly());
 
     case POS_ATTACKS:
         {
-            Position pos(*db->game->GetCurrentPos());
+            Position pos(*g.GetCurrentPos());
             for (colorT c = WHITE; c <= BLACK; c++) {
                 for (uint i = 0; i < pos.GetCount(c); i++) {
                     squareT sq = pos.GetList(c)[i];
@@ -4774,21 +4801,22 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_pos_addNag (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     if (argc != 3) {
         return errorResult (ti, "Usage: sc_pos addNag <nagvalue>");
     }
     const char * nagStr = argv[2];
 	if( strcmp(nagStr, "X") == 0)
-		db->game->RemoveNag( true);
+		editor.game().RemoveNag( true);
 	else if( strcmp(nagStr, "Y") == 0)
-		db->game->RemoveNag( false);
+		editor.game().RemoveNag( false);
 	else
 	{
 		byte nag = game_parseNag({nagStr, nagStr + std::strlen(nagStr)});
 		if (nag != 0) {
-			db->game->AddNag ((byte) nag);
+			editor.game().AddNag ((byte) nag);
 		}
-		db->gameAltered = true;
+		editor.setDirty();
 	}
     return TCL_OK;
 }
@@ -4804,6 +4832,7 @@ sc_pos_addNag (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_pos_analyze (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     const char * usage = "Usage: sc_pos analyze [<option> <value> ...]";
 
     uint searchTime = 1000;   // Default = 1000 milliseconds
@@ -4841,7 +4870,7 @@ sc_pos_analyze (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (arg != argc) { return errorResult (ti, usage); }
 
     // Generate all legal moves:
-    Position * pos = db->game->GetCurrentPos();
+    Position * pos = editor.game().GetCurrentPos();
     MoveList mlist;
     pos->GenerateMoves(&mlist);
 
@@ -4879,11 +4908,12 @@ sc_pos_analyze (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_pos_bestSquare (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     if (argc != 3) {
         return errorResult (ti, "Usage: sc_pos bestSquare <square>");
     }
 
-    Position * pos = db->game->GetCurrentPos();
+    Position * pos = editor.game().GetCurrentPos();
 
     // Try to read the square parameter as algebraic ("h8") or numeric (63):
     squareT sq = strGetSquare (argv[2]);
@@ -4969,7 +4999,8 @@ sc_pos_bestSquare (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_pos_getNags(ClientData, Tcl_Interp* ti, int, const char**)
 {
-    byte * nag = db->game->GetNags();
+    auto editor = scidup::app::editor::gameSession(*db);
+    byte * nag = editor.game().GetNags();
     if (nag[0] == 0) {
         return setResult (ti, "0");
     }
@@ -4989,6 +5020,7 @@ sc_pos_getNags(ClientData, Tcl_Interp* ti, int, const char**)
 int
 sc_pos_hash (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     const char * usage = "Usage: sc_pos hash [full|pawn]";
     bool pawnHashOnly = false;
     if (argc > 3) { return errorResult (ti, usage); }
@@ -4999,7 +5031,7 @@ sc_pos_hash (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             default:  return errorResult (ti, usage);
         }
     }
-    Position * pos = db->game->GetCurrentPos();
+    Position * pos = editor.game().GetCurrentPos();
     uint hash = pos->HashValue();
     if (pawnHashOnly) {
         hash = pos->PawnHashValue();
@@ -5018,6 +5050,7 @@ sc_pos_hash (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_pos_html (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     const char * usage = "Usage: sc_pos html [-flip <boolean>] [-path <path>] [<style:0|1>]";
     uint style = htmlDiagStyle;
     bool flip = false;
@@ -5038,7 +5071,7 @@ sc_pos_html (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (argc == arg+1) { style = strGetUnsigned (argv[arg]); }
 
     DString * dstr = new DString;
-    db->game->GetCurrentPos()->DumpHtmlBoard (dstr, style, path, flip);
+    editor.game().GetCurrentPos()->DumpHtmlBoard (dstr, style, path, flip);
     AppendResult (ti, dstr->Data(), NULL);
     delete dstr;
     return TCL_OK;
@@ -5053,6 +5086,7 @@ sc_pos_html (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_pos_isAt (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     static const char * options [] = {
         "start", "end", "vstart", "vend", NULL
     };
@@ -5064,16 +5098,16 @@ sc_pos_isAt (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     switch (index) {
     case OPT_START:
-        return UI_Result(ti, OK, db->game->AtStart());
+        return UI_Result(ti, OK, editor.game().AtStart());
 
     case OPT_END:
-        return UI_Result(ti, OK, db->game->AtEnd());
+        return UI_Result(ti, OK, editor.game().AtEnd());
 
     case OPT_VSTART:
-        return UI_Result(ti, OK, db->game->AtVarStart());
+        return UI_Result(ti, OK, editor.game().AtVarStart());
 
     case OPT_VEND:
-        return UI_Result(ti, OK, db->game->AtVarEnd());
+        return UI_Result(ti, OK, editor.game().AtVarEnd());
 
     default:
         return errorResult (ti, "Usage: sc_pos isAt start|end|vstart|vend");
@@ -5088,11 +5122,12 @@ sc_pos_isAt (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_pos_isPromo (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     if (argc != 4) {
         return errorResult (ti, "Usage: sc_pos isPromotion <square> <square>");
     }
 
-    Position * pos = db->game->GetCurrentPos();
+    Position * pos = editor.game().GetCurrentPos();
     int fromSq = strGetInteger (argv[2]);
     int toSq = strGetInteger (argv[3]);
 
@@ -5109,6 +5144,7 @@ sc_pos_isPromo (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_pos_isLegal (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     if (argc != 4) {
         return errorResult (ti, "Usage: sc_pos isLegal <square> <square>");
     }
@@ -5119,7 +5155,7 @@ sc_pos_isLegal (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return UI_Result(ti, OK, false);
     }
 
-    auto pos = db->game->GetCurrentPos();
+    auto pos = editor.game().GetCurrentPos();
     bool legal = pos->IsLegalMove(sq1, sq2, EMPTY) ||
                  pos->IsLegalMove(sq2, sq1, EMPTY) ||
                  pos->IsLegalMove(sq1, sq2, QUEEN) ||
@@ -5131,12 +5167,13 @@ sc_pos_isLegal (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 // sc_pos_moves: Return the list of legal moves in SAN notation
 //
 UI_res_t sc_pos_moves(UI_handle_t ti, int argc, const char** argv) {
+    auto editor = scidup::app::editor::gameSession(*db);
     const char* usage = "Usage: sc_pos moves [bIncludeLongNotation]";
     if (argc != 2 && argc != 3)
         return UI_Result(ti, ERROR_BadArg, usage);
 
     bool coordMoves = argc == 3 && strGetBoolean(argv[2]);
-    auto pos = db->game->GetCurrentPos();
+    auto pos = editor.game().GetCurrentPos();
     MoveList moves;
     pos->GenerateMoves(&moves);
     UI_List res(moves.Size() * (coordMoves ? 2 : 1));
@@ -5158,23 +5195,24 @@ UI_res_t sc_pos_moves(UI_handle_t ti, int argc, const char** argv) {
 int
 sc_pos_setComment (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
     if (argc != 3) {
         return errorResult (ti, "Usage: sc_pos setComment <comment-text>");
     }
     const char * str = argv[2];
-    const char * oldComment = db->game->GetMoveComment();
+    const char * oldComment = editor.game().GetMoveComment();
 
     if (str[0] == 0  || (isspace((char)str[0]) && str[1] == 0)) {
         // No comment: nullify comment if necessary:
         if (oldComment != NULL) {
-            db->game->SetMoveComment (NULL);
-            db->gameAltered = true;
+            editor.game().SetMoveComment (NULL);
+            editor.setDirty();
         }
     } else {
         // Only set the comment if it has actually changed:
         if (oldComment == NULL  ||  !strEqual (str, oldComment)) {
-            db->game->SetMoveComment (str);
-            db->gameAltered = true;
+            editor.game().SetMoveComment (str);
+            editor.setDirty();
         }
     }
     return TCL_OK;
@@ -5586,10 +5624,11 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // Try to find opponent in this database:
     idNumberT opponentId = 0;
     const char * opponent = NULL;
-    if (strEqual (playerName, db->game->GetWhiteStr())) {
-        opponent = db->game->GetBlackStr();
-    } else if (strEqual (playerName, db->game->GetBlackStr())) {
-        opponent = db->game->GetWhiteStr();
+    auto editor = scidup::app::editor::gameSession(*db);
+    if (strEqual (playerName, editor.game().GetWhiteStr())) {
+        opponent = editor.game().GetBlackStr();
+    } else if (strEqual (playerName, editor.game().GetBlackStr())) {
+        opponent = editor.game().GetWhiteStr();
     }
 
     if (opponent != NULL) {
@@ -7094,7 +7133,8 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (sortMethod < 0)
         return UI_Result(ti, ERROR_BadArg, usage);
 
-    Position searchPos = *(db->game->GetCurrentPos());
+    auto editor = scidup::app::editor::gameSession(*db);
+    Position searchPos = *(editor.game().GetCurrentPos());
     auto tree = base->getTreeStat(filter);
 
     auto calc_eco = [&](auto const& move) {
@@ -7348,7 +7388,8 @@ int sc_search_board(Tcl_Interp* ti, const scidBaseT* dbase, HFilter filter,
     bool flip = false;
     flip = strGetBoolean (argv[5]);
 
-    Position * pos = db->game->GetCurrentPos();
+    auto editor = scidup::app::editor::gameSession(*db);
+    Position * pos = editor.game().GetCurrentPos();
 
     Progress progress = UI_CreateProgress(ti);
     Timer timer;  // Start timing this search.
@@ -8218,6 +8259,8 @@ sc_search_header (ClientData, Tcl_Interp * ti, scidBaseT* base, HFilter& filter,
 int
 sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
+    Game& game = editor.game();
     static const char * options [] = {
         "count", "number", "create", "delete", "enter", "exit", "first",
         "level", "list", "moveInto", "promote", NULL
@@ -8232,16 +8275,16 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     switch (index) {
     case VAR_COUNT:
-        return setUintResult (ti, db->game->GetNumVariations());
+        return setUintResult (ti, game.GetNumVariations());
 
     case VAR_NUMBER:
-        return setUintResult (ti, db->game->GetVarNumber());
+        return setUintResult (ti, game.GetVarNumber());
 
     case VAR_CREATE:
-        if (! (db->game->AtVarStart()  &&  db->game->AtVarEnd())) {
-            db->game->MoveForward();
-            db->game->AddVariation();
-            db->gameAltered = true;
+        if (! (game.AtVarStart()  &&  game.AtVarEnd())) {
+            game.MoveForward();
+            game.AddVariation();
+            editor.setDirty();
         }
         break;
 
@@ -8252,14 +8295,14 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_var_enter (cd, ti, argc, argv);
 
     case VAR_EXIT:
-        db->game->MoveExitVariation();
+        game.MoveExitVariation();
         break;
 
     case VAR_FIRST:
         return sc_var_first (cd, ti, argc, argv);
 
     case VAR_LEVEL:
-        return setUintResult (ti, db->game->GetVarLevel());
+        return setUintResult (ti, game.GetVarLevel());
 
     case VAR_LIST:
         return sc_var_list (cd, ti, argc, argv);
@@ -8268,8 +8311,8 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_var_enter (cd, ti, argc, argv);
 
     case VAR_PROMOTE:
-        db->gameAltered = true;
-        return UI_Result(ti, db->game->MainVariation ());
+        editor.setDirty();
+        return UI_Result(ti, game.MainVariation ());
 
     default:
         return InvalidCommand (ti, "sc_var", options);
@@ -8282,9 +8325,10 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 // sc_var_delete:
 //    Deletes a specified variation.
 int sc_var_delete(ClientData, Tcl_Interp* ti, int, const char**) {
-	auto err = db->game->DeleteVariation();
+	auto editor = scidup::app::editor::gameSession(*db);
+	auto err = editor.game().DeleteVariation();
 	if (err != ERROR_NoVariation)
-		db->gameAltered = true;
+		editor.setDirty();
 	return UI_Result(ti, err);
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -8292,9 +8336,10 @@ int sc_var_delete(ClientData, Tcl_Interp* ti, int, const char**) {
 //    Promotes the specified variation of the current to be the
 //    first in the list.
 int sc_var_first(ClientData, Tcl_Interp* ti, int, const char**) {
-	auto err = db->game->FirstVariation();
+	auto editor = scidup::app::editor::gameSession(*db);
+	auto err = editor.game().FirstVariation();
 	if (err != ERROR_NoVariation)
-		db->gameAltered = true;
+		editor.setDirty();
 	return UI_Result(ti, err);
 }
 
@@ -8304,16 +8349,18 @@ int sc_var_first(ClientData, Tcl_Interp* ti, int, const char**) {
 int
 sc_var_list (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
+    Game& game = editor.game();
     bool uci = (argc > 2) && ! strCompare("UCI", argv[2]);
-    uint varCount = db->game->GetNumVariations();
+    uint varCount = game.GetNumVariations();
     char s[100];
     for (uint varNumber = 0; varNumber < varCount; varNumber++) {
-        db->game->MoveIntoVariation (varNumber);
-        if (uci) db->game->GetNextMoveUCI (s);
-        else db->game->GetSAN (s);
+        game.MoveIntoVariation (varNumber);
+        if (uci) game.GetNextMoveUCI (s);
+        else game.GetSAN (s);
         // if (s[0] == 0) { strCopy (s, "(empty)"); }
         AppendElement (ti, s);
-        db->game->MoveExitVariation ();
+        game.MoveExitVariation ();
     }
     return TCL_OK;
 }
@@ -8324,21 +8371,23 @@ sc_var_list (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_var_enter (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
+    auto editor = scidup::app::editor::gameSession(*db);
+    Game& game = editor.game();
     if (argc != 3) {
         return errorResult (ti, "Usage: sc_var enter <number>");
     }
 
     uint varNumber = strGetUnsigned (argv[2]);
-    if (varNumber >= db->game->GetNumVariations()) {
+    if (varNumber >= game.GetNumVariations()) {
         return errorResult (ti, "No such variation!");
     }
 
-    db->game->MoveIntoVariation (varNumber);
+    game.MoveIntoVariation (varNumber);
     // Should moving into a variation also automatically play
     // the first variation move? Maybe it should depend on
     // whether there is a comment before the first move.
     // Uncomment the following line to auto-play the first move:
-    db->game->MoveForward();
+    game.MoveForward();
 
     return TCL_OK;
 }
@@ -8440,7 +8489,8 @@ sc_book_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
     uint slot = strGetUnsigned (argv[2]);
     char boardStr[100];
-    db->game->GetCurrentPos()->PrintFEN(boardStr, sizeof(boardStr));
+    auto editor = scidup::app::editor::gameSession(*db);
+    editor.game().GetCurrentPos()->PrintFEN(boardStr, sizeof(boardStr));
 
     char moves[1024] = {};
     auto extra_info = polyglot_moves(moves, boardStr, slot);
@@ -8469,7 +8519,8 @@ sc_book_positions (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: sc_book positions slot");
     }
 	    uint slot = strGetUnsigned (argv[2]);
-			db->game->GetCurrentPos()->PrintFEN(boardStr, sizeof(boardStr));
+			auto editor = scidup::app::editor::gameSession(*db);
+			editor.game().GetCurrentPos()->PrintFEN(boardStr, sizeof(boardStr));
 			polyglot_positions(moves, (const char *) boardStr, slot);
     AppendResult (ti, moves, NULL);
     return TCL_OK;
