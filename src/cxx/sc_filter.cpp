@@ -18,6 +18,7 @@
 
 #include "dbasepool.h"
 #include "scidbase.h"
+#include "scidup_app_tree.h"
 #include "ui.h"
 #include <algorithm>
 
@@ -47,7 +48,7 @@ UI_res_t sc_filter_components(UI_handle_t ti, const scidBaseT& dbase, int argc,
 	if (argc != 4)
 		return UI_Result(ti, ERROR_BadArg, usage);
 
-	auto filters = dbase.getFilterComponents(argv[3]);
+	auto filters = scidup::app::tree::getFilterComponents(dbase, argv[3]);
 	UI_List res(2);
 	res.push_back(filters.first);
 	res.push_back(filters.second);
@@ -76,7 +77,7 @@ UI_res_t sc_filter_compose(UI_handle_t ti, const scidBaseT& dbase, int argc,
 	const char* usage = "Usage: sc_filter compose baseId filterId maskfilterId";
 	if (argc != 5) return UI_Result(ti, ERROR_BadArg, usage);
 
-	std::string res = dbase.composeFilter(argv[3], argv[4]);
+	std::string res = scidup::app::tree::composeFilter(dbase, argv[3], argv[4]);
 	if (res.empty())
 		return UI_Result(ti, ERROR_BadArg, "sc_filter: invalid filterId");
 
@@ -255,7 +256,7 @@ UI_res_t sc_filter(UI_extra_t cd, UI_handle_t ti, int argc, const char** argv) {
 		if (!dbase)
 			return UI_Result(ti, ERROR_BadArg, usage);
 
-		HFilter filter = dbase->getFilter(argv[3]);
+		HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
 		if (filter == nullptr)
 			return UI_Result(ti, ERROR_BadArg, usage);
 

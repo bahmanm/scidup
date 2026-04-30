@@ -20,6 +20,8 @@
 #include "dbasepool.h"
 #include "misc.h"
 #include "scidbase.h"
+#include "scidup_app_editor.h"
+#include "scidup_app_tree.h"
 #include "searchtournaments.h"
 #include "ui.h"
 #include <algorithm>
@@ -82,6 +84,8 @@ static UI_res_t doOpenBase(UI_handle_t ti, const char* codec, fileModeT fMode,
 	if (err != OK && err != ERROR_NameDataLoss)
 		return UI_Result(ti, err);
 
+	scidup::app::editor::reset(*dbase);
+	scidup::app::tree::reset(*dbase);
 	int res = DBasePool::switchCurrent(dbase);
 	return UI_Result(ti, err, res);
 }
@@ -95,6 +99,8 @@ UI_res_t sc_base_close(scidBaseT* dbase, UI_handle_t ti, int, const char**) {
 		return UI_Result(ti, ERROR_BadArg, "Cannot close clipbase.");
 	}
 	dbase->Close();
+	scidup::app::editor::reset(*dbase);
+	scidup::app::tree::reset(*dbase);
 	return UI_Result(ti, OK);
 }
 
@@ -145,7 +151,7 @@ UI_res_t sc_base_copygames(scidBaseT* dbase, UI_handle_t ti, int argc, const cha
 		return UI_Result(ti, ERROR_BadArg, "sc_base copygames error: wrong targetBaseId");
 
 	errorT err = OK;
-	const HFilter filter = dbase->getFilter(argv[3]);
+	const HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
 	if (filter != 0) {
 		err = targetBase->importGames(dbase, filter, UI_CreateProgress(ti));
 	} else {
@@ -253,7 +259,7 @@ UI_res_t sc_base_gameflag(scidBaseT* dbase, UI_handle_t ti, int argc, const char
 		cmd = 4;
 	uint flagType = IndexEntry::CharToFlagMask(argv[5][0]);
 	if (flagType != 0 && cmd != 0) {
-		const HFilter filter = dbase->getFilter(argv[3]);
+		const HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
 		if (filter != 0) {
 			switch (cmd) {
 			case 2: return UI_Result(ti, dbase->setFlags(true, flagType, filter));
@@ -296,7 +302,7 @@ UI_res_t sc_base_gamelocation(scidBaseT* dbase, UI_handle_t ti, int argc, const 
 	const char* usage = "Usage: sc_base gamelocation baseId filterName sortCrit <gnumber | 0 text start_pos forward_dir>";
 	if (argc < 6) return UI_Result(ti, ERROR_BadArg, usage);
 
-	const HFilter filter = dbase->getFilter(argv[3]);
+	const HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
 	if (filter == 0) return UI_Result(ti, ERROR_BadArg, usage);
 
 	const char* sort = argv[4];
@@ -349,7 +355,7 @@ UI_res_t sc_base_gameslist(scidBaseT* dbase, UI_handle_t ti, int argc, const cha
 
 	size_t start = strGetUnsigned(argv[3]);
 	size_t count = strGetUnsigned(argv[4]);
-	const HFilter filter = dbase->getFilter(argv[5]);
+	const HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[5]);
 	if (filter == NULL)
 		return UI_Result(ti, ERROR_BadArg, usage);
 	gamenumT* idxList = new gamenumT[count];
@@ -490,10 +496,11 @@ UI_res_t sc_base_getGame(scidBaseT* dbase, UI_handle_t ti, int argc,
 		return UI_Result(ti, ERROR_BadArg, usage);
 
 	gamenumT gNum = strGetUnsigned(argv[3]);
-	if (live && dbase->gameNumber == (static_cast<long long>(gNum) - 1)) {
-		auto location = dbase->game->currentLocation();
-		auto res = sc_base_getGameHelper(ti, *(dbase->game));
-		dbase->game->restoreLocation(location);
+	auto editor = scidup::app::editor::gameSession(*dbase);
+	if (live && gNum > 0 && editor.matchesLoadedGame(gNum - 1)) {
+		auto location = editor.game().currentLocation();
+		auto res = sc_base_getGameHelper(ti, editor.game());
+		editor.game().restoreLocation(location);
 		return res;
 	}
 
@@ -808,7 +815,7 @@ UI_res_t sc_base_tournaments(const scidBaseT* dbase, UI_handle_t ti, int argc, c
 	const char* usage = "Usage: sc_base tournaments baseId filterName n_maxResults [-avgelo range] [-n_games range] [-n_players range] [-sort criteria] ";
 	if (argc < 5) return UI_Result(ti, ERROR_BadArg, usage);
 
-	const HFilter filter = dbase->getFilter(argv[3]);
+	const HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
 	if (filter == 0) return UI_Result(ti, ERROR_BadArg, usage);
 
 	SearchTournaments search(dbase, filter);
@@ -915,7 +922,7 @@ UI_res_t sc_base_player_elo(const scidBaseT& dbase, UI_handle_t ti, int argc,
 	if (argc != 5)
 		return UI_Result(ti, ERROR_BadArg, usage);
 
-	const HFilter filter = dbase.getFilter(argv[3]);
+	const HFilter filter = scidup::app::tree::resolveFilter(dbase, argv[3]);
 	if (filter == nullptr)
 		return UI_Result(ti, ERROR_BadArg, usage);
 

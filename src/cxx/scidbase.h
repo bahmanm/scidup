@@ -92,6 +92,7 @@ struct scidBaseT {
 	void Close();
 
 	std::string getFileName() const;
+	bool isOpen() const { return inUse; }
 	bool isReadOnly() const { return fileMode_ == FMODE_ReadOnly; }
 	gamenumT numGames() const { return idx->GetNumGames(); }
 
@@ -166,6 +167,7 @@ struct scidBaseT {
 	errorT getGame(const IndexEntry& ie, Game& dest) const {
 		return dest.Decode(ie, tagRoster(ie), getGame(ie));
 	}
+	errorT loadGame(gamenumT gNum, Game& dest) const;
 
 	errorT importGames(const scidBaseT* srcBase, const HFilter& filter,
 	                   const Progress& progress);
@@ -179,7 +181,10 @@ struct scidBaseT {
 	 *                        If >= numGames(), a new game will be added.
 	 * @returns OK if successful or an error code.
 	 */
+	errorT saveGame(Game const& game,
+	                gamenumT replacedGameId = INVALID_GAMEID);
 	errorT saveGame(Game* game, gamenumT replacedGameId = INVALID_GAMEID);
+	errorT addGame(Game const& game) { return saveGame(game, INVALID_GAMEID); }
 
 	bool getFlag(uint flag, uint gNum) const {
 		return idx->GetEntry(gNum)->GetFlag(flag);
@@ -197,6 +202,12 @@ struct scidBaseT {
 	std::string newFilter();
 	void deleteFilter(const char* filterId);
 	HFilter getFilter(std::string_view filterId) const;
+	HFilter defaultFilter() const { return HFilter(dbFilter); }
+	gamenumT defaultFilterCount() const { return dbFilter->Count(); }
+	byte defaultFilterGet(gamenumT g) const { return dbFilter->Get(g); }
+	void defaultFilterSet(gamenumT g, byte value) { dbFilter->Set(g, value); }
+	void defaultFilterFill(byte value) { dbFilter->Fill(value); }
+	uint64_t cacheInvalidationToken() const { return cacheInvalidationToken_; }
 
 	/// A composed filter is a special construct created combining two filters
 	/// and includes only the games contained in both filters. It should NOT be
@@ -397,20 +408,9 @@ struct scidBaseT {
 		return duplicates_ ? duplicates_[gNum] : 0;
 	}
 
-public:
-	bool inUse; // true if the database is open (in use).
-	TreeCache treeCache;
-	Filter* dbFilter;
-	Filter* treeFilter;
-
-	// TODO: this vars do not belong to scidBaseT class
-	Game* game;       // the active game for this base.
-	int gameNumber;   // game number of active game.
-	bool gameAltered; // true if game is modified
-	UndoRedo<Game, 100> gameAlterations;
-	std::pair<Game*, bool> deprecated_push_pop;
-
 private:
+	bool inUse; // true if the database is open (in use).
+	Filter* dbFilter;
 	std::unique_ptr<ICodecDatabase> codec_;
 	Index* idx;
 	NameBase* nb_;
@@ -424,6 +424,7 @@ private:
 	std::vector<std::pair<std::string, SortCache*>> sortCaches_;
 	mutable std::unordered_map<idNumberT, eloT> peakEloCache_;
 	errorT err_open_ = OK;
+	uint64_t cacheInvalidationToken_ = 0;
 
 private:
 	errorT openHelper(ICodecDatabase::Codec dbtype, fileModeT mode,

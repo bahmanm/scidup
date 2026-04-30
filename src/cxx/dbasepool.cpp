@@ -18,6 +18,8 @@
 
 #include "dbasepool.h"
 #include "scidbase.h"
+#include "scidup_app_editor.h"
+#include "scidup_app_tree.h"
 
 
 
@@ -42,16 +44,22 @@ void DBasePool::init() {
 void DBasePool::clearClipBase() {
 	dbList[CLIPBASE_NUM].open("MEMORY", FMODE_Create, "<clipbase>");
 	dbList[CLIPBASE_NUM].setExtraInfo("type", "2");
+	scidup::app::editor::reset(dbList[CLIPBASE_NUM]);
+	scidup::app::tree::reset(dbList[CLIPBASE_NUM]);
 }
 
 void DBasePool::closeAll() {
 	ASSERT(dbList != NULL);
+	for (int i = 0; i < MAX_BASES; ++i) {
+		scidup::app::editor::release(dbList[i]);
+		scidup::app::tree::release(dbList[i]);
+	}
 	delete[] dbList;
 }
 
 int DBasePool::find(const char* filename) {
 	for (int i = 0, n = MAX_BASES; i < n; i++) {
-		if (dbList[i].inUse && dbList[i].getFileName() == filename)
+		if (dbList[i].isOpen() && dbList[i].getFileName() == filename)
 			return i + 1;
 	}
 	return 0;
@@ -60,7 +68,7 @@ int DBasePool::find(const char* filename) {
 scidBaseT* DBasePool::getBase(int baseHandle) {
 	if (baseHandle < 1 || baseHandle > MAX_BASES) return 0;
 	scidBaseT* res = &(dbList[baseHandle - 1]);
-	return res->inUse ? res : 0;
+	return res->isOpen() ? res : 0;
 }
 
 int DBasePool::getClipBase() {
@@ -69,7 +77,7 @@ int DBasePool::getClipBase() {
 
 scidBaseT* DBasePool::getFreeSlot() {
 	for (int i = 0, n = MAX_BASES; i < n; i++) {
-		if (!dbList[i].inUse) { return &(dbList[i]); }
+		if (!dbList[i].isOpen()) { return &(dbList[i]); }
 	}
 	return 0;
 }
@@ -77,7 +85,7 @@ scidBaseT* DBasePool::getFreeSlot() {
 std::vector<int> DBasePool::getHandles() {
 	std::vector<int> res;
 	for (int i = 0, n = MAX_BASES; i < n; i++) {
-		if (dbList[i].inUse) res.push_back(i + 1);
+		if (dbList[i].isOpen()) res.push_back(i + 1);
 	}
 	return res;
 }

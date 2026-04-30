@@ -67,7 +67,7 @@ TEST_F(Test_DBasePool, clipbase_is_initialised) {
 
 	auto* clipbase = DBasePool::getBase(clipbaseHandle);
 	ASSERT_NE(nullptr, clipbase);
-	EXPECT_TRUE(clipbase->inUse);
+	EXPECT_TRUE(clipbase->isOpen());
 	EXPECT_EQ("<clipbase>", clipbase->getFileName());
 
 	std::vector<int> handles = DBasePool::getHandles();
@@ -84,8 +84,8 @@ TEST_F(Test_DBasePool, open_two_databases_and_find_them_by_filename) {
 	ASSERT_NE(nullptr, first);
 	ASSERT_NE(nullptr, second);
 
-	EXPECT_TRUE(first->inUse);
-	EXPECT_TRUE(second->inUse);
+	EXPECT_TRUE(first->isOpen());
+	EXPECT_TRUE(second->isOpen());
 	EXPECT_EQ(1, DBasePool::find(first->getFileName().c_str()));
 	EXPECT_EQ(2, DBasePool::find(second->getFileName().c_str()));
 	EXPECT_EQ(0, DBasePool::find(dbPath("missing_db").c_str()));
