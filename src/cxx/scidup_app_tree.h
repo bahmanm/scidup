@@ -1,6 +1,10 @@
 #ifndef SCIDUP_APP_TREE_H
 #define SCIDUP_APP_TREE_H
 
+// ScidUp application state. This keeps the UI/tree workflow's special "tree"
+// filter and cache out of the database library boundary while preserving the
+// existing Tcl-facing filter contract.
+
 #include "scidbase.h"
 #include <memory>
 #include <string>

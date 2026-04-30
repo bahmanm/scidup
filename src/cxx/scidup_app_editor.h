@@ -1,6 +1,10 @@
 #ifndef SCIDUP_APP_EDITOR_H
 #define SCIDUP_APP_EDITOR_H
 
+// ScidUp application state. This is intentionally not part of the database
+// library boundary: the database loads and saves Game objects, while ScidUp
+// owns the current editing session, dirty state, undo/redo, and push/pop state.
+
 #include "scidbase.h"
 #include <memory>
 #include <optional>
