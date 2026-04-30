@@ -22,7 +22,7 @@
 #include "scidup/database/scidbase.h"
 #include "scidup_app_editor.h"
 #include "scidup_app_tree.h"
-#include "searchtournaments.h"
+#include "scidup/database/searchtournaments.h"
 #include "ui.h"
 #include <algorithm>
 #include <cstring>

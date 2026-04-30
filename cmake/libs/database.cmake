@@ -43,6 +43,8 @@ set(
     "${CMAKE_SOURCE_DIR}/src/database/include/scidup/database/pgnparse.h"
     "${CMAKE_SOURCE_DIR}/src/database/include/scidup/database/position.h"
     "${CMAKE_SOURCE_DIR}/src/database/include/scidup/database/scidbase.h"
+    "${CMAKE_SOURCE_DIR}/src/database/include/scidup/database/searchpos.h"
+    "${CMAKE_SOURCE_DIR}/src/database/include/scidup/database/searchtournaments.h"
     "${CMAKE_SOURCE_DIR}/src/database/include/scidup/database/sqmove.h"
     "${CMAKE_SOURCE_DIR}/src/database/include/scidup/database/stored.h"
     "${CMAKE_SOURCE_DIR}/src/database/include/scidup/database/tree.h"

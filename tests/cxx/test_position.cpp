@@ -17,7 +17,7 @@
 #include "scidup/database/gameview.h"
 #include "scidup/database/pgnparse.h"
 #include "scidup/database/position.h"
-#include "searchpos.h"
+#include "scidup/database/searchpos.h"
 #include <cstring>
 #include <gtest/gtest.h>
 #include <unordered_set>

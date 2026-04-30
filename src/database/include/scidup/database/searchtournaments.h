@@ -21,6 +21,7 @@
 
 #include "scidup/database/common.h"
 #include "scidup/database/misc.h"
+#include "scidup/database/scidbase.h"
 #include <algorithm>
 #include <numeric>
 #include <vector>
