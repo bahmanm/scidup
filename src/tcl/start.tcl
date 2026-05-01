@@ -693,7 +693,7 @@ proc createFonts {} {
     if {$f ne ""} {
       font create font_$name -family $f -size $sz -weight $w -slant $s
     } else {
-      font create font_$name
+      font create font_$name {*}[font configure TkDefaultFont]
       if {$name eq "Small"} {
         font configure font_$name -size [expr {int([font actual font_$name -size] * 0.85)}]
       } elseif {$name eq "Tiny"} {
