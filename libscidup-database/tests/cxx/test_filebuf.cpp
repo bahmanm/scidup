@@ -225,7 +225,7 @@ TEST_F(Test_Filebuf, readAll) {
 	EXPECT_EQ(bEnd, line + 1);
 	{ // Verify that Filebuf::getline behaves like std::fstream::getline
 		const char* s = buf.get();
-		std::fstream stl(filename);
+		std::fstream stl(filename, std::ios::in | std::ios::binary);
 		char stlBuf[1024];
 		while (stl.getline(stlBuf, sizeof stlBuf)) {
 			std::string tmp(stlBuf);
