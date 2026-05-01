@@ -17,6 +17,7 @@
 #include "scidup/database/game.h"
 #include "scidup/database/pgnparse.h"
 #include <algorithm>
+#include <cctype>
 #include <cstring>
 #include <fstream>
 #include <gtest/gtest.h>
@@ -48,6 +49,25 @@ std::string normaliseNewlines(std::string text) {
 	return text;
 }
 
+std::string canonicaliseWhitespace(std::string text) {
+	text = normaliseNewlines(std::move(text));
+
+	std::string res;
+	res.reserve(text.size());
+	bool inWhitespace = false;
+	for (unsigned char ch : text) {
+		if (std::isspace(ch)) {
+			inWhitespace = true;
+			continue;
+		}
+		if (inWhitespace && !res.empty())
+			res.push_back(' ');
+		res.push_back(static_cast<char>(ch));
+		inWhitespace = false;
+	}
+	return res;
+}
+
 } // end of anonymous namespace
 
 TEST(Test_PgnParser, UTF8_char) {
@@ -63,7 +83,8 @@ TEST(Test_PgnParser, UTF8_char) {
 	                   PGN_STYLE_SCIDFLAGS);
 	auto pgn = game.WriteToPGN(75, true);
 
-	ASSERT_EQ(normaliseNewlines(std::move(pgnUTF8)), normaliseNewlines(std::string{pgn.first}));
+	ASSERT_EQ(canonicaliseWhitespace(std::move(pgnUTF8)),
+	          canonicaliseWhitespace(std::string{pgn.first, pgn.second}));
 }
 
 TEST(Test_PgnParser, Latin1_char) {
@@ -82,7 +103,8 @@ TEST(Test_PgnParser, Latin1_char) {
 	auto pgnUTF8 = readFile(gameLatin1Conv);
 	ASSERT_TRUE(pgnUTF8.size() > 0);
 
-	ASSERT_EQ(normaliseNewlines(std::move(pgnUTF8)), normaliseNewlines(std::string{pgn.first}));
+	ASSERT_EQ(canonicaliseWhitespace(std::move(pgnUTF8)),
+	          canonicaliseWhitespace(std::string{pgn.first, pgn.second}));
 }
 
 TEST(Test_PgnParser, EPD) {

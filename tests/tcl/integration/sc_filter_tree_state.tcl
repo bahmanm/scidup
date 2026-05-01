@@ -22,7 +22,7 @@ file mkdir $root
 set exitCode 0
 
 try {
-    set basePath [file join [pwd] tests database cxx res_database]
+    set basePath [file join [pwd] libscidup-database tests cxx res_database]
     set base [sc_base open SCID4 $basePath]
     set total [sc_base numGames $base]
 
