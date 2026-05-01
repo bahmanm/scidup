@@ -1,0 +1,142 @@
+cmake_minimum_required( VERSION 3.23 )
+
+project(
+    libscidup-database
+    LANGUAGES CXX )
+
+find_package( Threads REQUIRED )
+
+set(
+    SCIDUP_DATABASE_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/codec_scid4.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/filter.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/game.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/matsig.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/misc.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/position.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/scidbase.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/searchindex.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/sortcache.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/stored.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/textbuf.cpp" )
+
+set(
+    SCIDUP_DATABASE_PUBLIC_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/board_def.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/attacks.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/bytebuf.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/codec.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/common.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/containers.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/date.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/dstring.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/error.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/filebuf.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/fullmove.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/gameview.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/hash.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/hfilter.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/index.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/indexentry.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/matsig.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/misc.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/movegen.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/movelist.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/movetree.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/namebase.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/pgn_encode.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/pgn_lexer.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/pgnparse.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/position.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/scidbase.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/searchpos.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/searchtournaments.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/sqmove.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/stored.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/tree.h" )
+
+set(
+    SCIDUP_DATABASE_PRIVATE_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/private/codec_memory.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/private/codec_pgn.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/private/codec_proxy.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/private/codec_scid4.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/private/codec_scid5.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/private/naglatex.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/private/nagtext.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/private/sortcache.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/private/textbuf.h" )
+
+add_library(
+    scidup_libs_database
+    ${SCIDUP_DATABASE_SOURCES} )
+add_library(
+    ScidUp::Libs::Database
+    ALIAS scidup_libs_database )
+target_sources(
+    scidup_libs_database
+    PUBLIC
+        FILE_SET public_headers
+        TYPE HEADERS
+        BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        FILES ${SCIDUP_DATABASE_PUBLIC_HEADERS}
+    PRIVATE
+        ${SCIDUP_DATABASE_PRIVATE_HEADERS} )
+target_compile_features(
+    scidup_libs_database
+    PUBLIC cxx_std_20 )
+target_include_directories(
+    scidup_libs_database
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/private" )
+target_link_libraries(
+    scidup_libs_database
+    PUBLIC Threads::Threads )
+
+if( PROJECT_IS_TOP_LEVEL )
+    include( CTest )
+endif()
+
+if( BUILD_TESTING )
+    if( NOT TARGET gtest_main )
+        include( FetchContent )
+        set( INSTALL_GTEST OFF CACHE BOOL "Disable installation rules for googletest." FORCE )
+        set( BUILD_GMOCK OFF CACHE BOOL "Do not build GoogleMock; database tests use GoogleTest only." FORCE )
+        set( gtest_force_shared_crt ON CACHE BOOL "Always use msvcrt.dll" FORCE )
+
+        fetchcontent_declare(
+            googletest
+            URL https://github.com/google/googletest/archive/refs/tags/v1.17.0.tar.gz
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+            URL_HASH SHA256=65fab701d9829d38cb77c14acdc431d2108bfdbf8979e40eb8ae567edf10b27c )
+        fetchcontent_makeavailable( googletest )
+    endif()
+
+    file(
+        GLOB SCIDUP_DATABASE_TEST_SOURCES
+        CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/cxx/*.cpp" )
+    add_executable(
+        scidup_tests_database_cpp
+        ${SCIDUP_DATABASE_TEST_SOURCES} )
+    target_compile_definitions(
+        scidup_tests_database_cpp
+        PRIVATE SCIDUP_TEST_RESOURCES_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/tests/cxx/\" )
+    target_include_directories(
+        scidup_tests_database_cpp
+        PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/private" )
+    target_link_libraries(
+        scidup_tests_database_cpp
+        PRIVATE ScidUp::Libs::Database gtest_main )
+    add_executable(
+        ScidUp::Tests::Database::Cpp
+        ALIAS scidup_tests_database_cpp )
+
+    add_test(
+        NAME database_cpp_test
+        COMMAND $<TARGET_FILE:ScidUp::Tests::Database::Cpp> )
+    set_tests_properties(
+        database_cpp_test
+        PROPERTIES LABELS "cpp;database" )
+endif()
