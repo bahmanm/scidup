@@ -19,8 +19,8 @@
 #ifndef SPELLCHK_H
 #define SPELLCHK_H
 
-#include "namebase.h"
-#include "date.h"
+#include "scidup/database/namebase.h"
+#include "scidup/database/date.h"
 #include <string>
 #include <vector>
 #include <utility>

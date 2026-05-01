@@ -15,9 +15,9 @@
 #ifndef SCID_OPTABLE_H
 #define SCID_OPTABLE_H
 
-#include "common.h"
-#include "game.h"
-#include "indexentry.h"
+#include "scidup/database/common.h"
+#include "scidup/database/game.h"
+#include "scidup/database/indexentry.h"
 #include <string>
 class PBook;
 

@@ -18,9 +18,9 @@
 */
 
 #include "spellchk.h"
-#include "date.h"
-#include "filebuf.h"
-#include "misc.h"
+#include "scidup/database/date.h"
+#include "scidup/database/filebuf.h"
+#include "scidup/database/misc.h"
 
 
 namespace {

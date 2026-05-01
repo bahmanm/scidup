@@ -21,8 +21,8 @@
 #ifndef SCID_PBOOK_H
 #define SCID_PBOOK_H
 
-#include "common.h"
-#include "misc.h"
+#include "scidup/database/common.h"
+#include "scidup/database/misc.h"
 #include <algorithm>
 #include <memory>
 #include <string>

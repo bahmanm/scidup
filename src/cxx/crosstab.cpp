@@ -15,7 +15,7 @@
 #ifndef WINCE
 
 #include "crosstab.h"
-#include "dstring.h"
+#include "scidup/database/dstring.h"
 #include <cstdio>
 
 // Expected differences in rating according to performance

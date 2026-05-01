@@ -19,9 +19,9 @@
  */
 
 #include "pbook.h"
-#include "common.h"
-#include "misc.h"
-#include "position.h"
+#include "scidup/database/common.h"
+#include "scidup/database/misc.h"
+#include "scidup/database/position.h"
 #include <fstream>
 
 namespace {

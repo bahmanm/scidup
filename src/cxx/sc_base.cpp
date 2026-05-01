@@ -16,13 +16,13 @@
 * along with Scid. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "common.h"
+#include "scidup/database/common.h"
 #include "dbasepool.h"
-#include "misc.h"
-#include "scidbase.h"
+#include "scidup/database/misc.h"
+#include "scidup/database/scidbase.h"
 #include "scidup_app_editor.h"
 #include "scidup_app_tree.h"
-#include "searchtournaments.h"
+#include "scidup/database/searchtournaments.h"
 #include "ui.h"
 #include <algorithm>
 #include <cstring>

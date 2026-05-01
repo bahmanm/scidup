@@ -17,7 +17,7 @@
 */
 
 #include "dbasepool.h"
-#include "scidbase.h"
+#include "scidup/database/scidbase.h"
 #include "scidup_app_editor.h"
 #include "scidup_app_tree.h"
 
