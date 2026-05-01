@@ -58,15 +58,15 @@ set(
 
 set(
     SCIDUP_DATABASE_PRIVATE_HEADERS
-    "${CMAKE_CURRENT_SOURCE_DIR}/private/codec_memory.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/private/codec_pgn.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/private/codec_proxy.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/private/codec_scid4.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/private/codec_scid5.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/private/naglatex.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/private/nagtext.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/private/sortcache.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/private/textbuf.h" )
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_memory.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_pgn.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_proxy.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_scid4.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_scid5.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/naglatex.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/nagtext.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/sortcache.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/textbuf.h" )
 
 add_library(
     scidup_libs_database
@@ -89,7 +89,7 @@ target_compile_features(
 target_include_directories(
     scidup_libs_database
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/private" )
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/internal" )
 target_link_libraries(
     scidup_libs_database
     PUBLIC Threads::Threads )
@@ -125,7 +125,7 @@ if( BUILD_TESTING )
         PRIVATE SCIDUP_TEST_RESOURCES_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/tests/cxx/\" )
     target_include_directories(
         scidup_tests_database_cpp
-        PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/private" )
+        PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/internal" )
     target_link_libraries(
         scidup_tests_database_cpp
         PRIVATE ScidUp::Libs::Database gtest_main )
