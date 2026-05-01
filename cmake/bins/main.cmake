@@ -3,10 +3,6 @@ file(
     CONFIGURE_DEPENDS
     "${CMAKE_SOURCE_DIR}/src/cxx/*.h"
     "${CMAKE_SOURCE_DIR}/src/cxx/*.cpp" )
-list(
-    REMOVE_ITEM
-    SCIDUP_MAIN_SOURCES
-    ${SCIDUP_LIBS_DATABASE_SOURCES} )
 
 	if( MSVC )
 	    add_executable(

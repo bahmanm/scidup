@@ -15,9 +15,13 @@
 */
 
 #include "scidup/database/misc.h"
-#include "timer.h"
+#include <algorithm>
+#include <cstring>
+#include <cctype>
 #include <gtest/gtest.h>
 #include <random>
+#include <string>
+#include <vector>
 
 namespace v4_6_2 {
 	uint strTrimRight(char * target, const char * trimChars);
