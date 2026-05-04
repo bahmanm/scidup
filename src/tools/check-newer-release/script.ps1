@@ -16,7 +16,7 @@ if ($args.Count -lt 1 -or [string]::IsNullOrWhiteSpace($args[0])) {
 
 $localVersion = $args[0].Trim()
 
-$repo = if ($env:SCIDUP_GITHUB_REPO) { $env:SCIDUP_GITHUB_REPO } else { "bahmanm/scid-up" }
+$repo = if ($env:SCIDUP_GITHUB_REPO) { $env:SCIDUP_GITHUB_REPO } else { "bahmanm/scidup" }
 $releasesAtomUrl = "https://github.com/$repo/releases.atom"
 
 function ReleaseUrl([string]$tag) {

@@ -63,7 +63,7 @@ inline int Main (int argc, char* argv[], void (*exit) (void*)) {
 			if (0 != Tcl_Access(sourceFileName, 4)) {
 				strcpy (dirname, "../tcl/start.tcl");
 				if (0 != Tcl_Access(sourceFileName, 4)) {
-					strcpy (dirname, "../share/scid-up/tcl/start.tcl");
+					strcpy (dirname, "../share/scidup/tcl/start.tcl");
 				}
 			}
 			char* newArgv[10] = { argv[0], sourceFileName };

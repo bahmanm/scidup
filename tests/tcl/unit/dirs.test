@@ -51,13 +51,13 @@ test dirs-configRoot-prefers-xdg-config-home-1.0 {configRoot prefers XDG_CONFIG_
     set exeDir [file join $tmp exe]
 
     set actual [::scidup::dirs::configRoot $::tcl_platform(platform) $::tcl_platform(os) $exeDir]
-    set expected [file nativename [file join $::env(XDG_CONFIG_HOME) scid-up]]
+    set expected [file nativename [file join $::env(XDG_CONFIG_HOME) scidup]]
     list $actual $expected
 } -cleanup {
     ::dirs_test::cleanup
 } -result [list \
-    [file nativename [file join [::scid_test::tempDir] xdg_home scid-up]] \
-    [file nativename [file join [::scid_test::tempDir] xdg_home scid-up]]]
+    [file nativename [file join [::scid_test::tempDir] xdg_home scidup]] \
+    [file nativename [file join [::scid_test::tempDir] xdg_home scidup]]]
 
 test dirs-configRoot-prefers-scidup-config-home-1.0 {configRoot prefers SCIDUP_CONFIG_HOME over XDG_CONFIG_HOME} -setup {
     ::dirs_test::setup
@@ -84,53 +84,53 @@ test dirs-configRoot-xdg-home-wins-over-xdg-dir-1.0 {configRoot prefers XDG_CONF
     set exeDir [file join $tmp exe]
 
     set actual [::scidup::dirs::configRoot $::tcl_platform(platform) $::tcl_platform(os) $exeDir]
-    set expected [file nativename [file join $::env(XDG_CONFIG_HOME) scid-up]]
+    set expected [file nativename [file join $::env(XDG_CONFIG_HOME) scidup]]
     list $actual $expected
 } -cleanup {
     ::dirs_test::cleanup
 } -result [list \
-    [file nativename [file join [::scid_test::tempDir] xdg_home2 scid-up]] \
-    [file nativename [file join [::scid_test::tempDir] xdg_home2 scid-up]]]
+    [file nativename [file join [::scid_test::tempDir] xdg_home2 scidup]] \
+    [file nativename [file join [::scid_test::tempDir] xdg_home2 scidup]]]
 
-test dirs-configRoot-falls-back-to-linux-config-dir-1.0 {configRoot falls back to ~/.config/scid-up on Unix when XDG is unset} -setup {
+test dirs-configRoot-falls-back-to-linux-config-dir-1.0 {configRoot falls back to ~/.config/scidup on Unix when XDG is unset} -setup {
     ::dirs_test::setup
 } -body {
     set exeDir [file join [::scid_test::tempDir] exe]
     set actual [::scidup::dirs::configRoot unix Linux $exeDir]
-    set expected [file nativename [file join [file normalize [glob ~]] .config scid-up]]
+    set expected [file nativename [file join [file normalize [glob ~]] .config scidup]]
     list $actual $expected
 } -cleanup {
     ::dirs_test::cleanup
 } -result [list \
-    [file nativename [file join [file normalize [glob ~]] .config scid-up]] \
-    [file nativename [file join [file normalize [glob ~]] .config scid-up]]]
+    [file nativename [file join [file normalize [glob ~]] .config scidup]] \
+    [file nativename [file join [file normalize [glob ~]] .config scidup]]]
 
-test dirs-configRoot-falls-back-to-macos-config-dir-1.0 {configRoot falls back to ~/Library/Application Support/scid-up on macOS when XDG is unset} -setup {
+test dirs-configRoot-falls-back-to-macos-config-dir-1.0 {configRoot falls back to ~/Library/Application Support/scidup on macOS when XDG is unset} -setup {
     ::dirs_test::setup
 } -body {
     set exeDir [file join [::scid_test::tempDir] exe]
     set actual [::scidup::dirs::configRoot unix Darwin $exeDir]
-    set expected [file nativename [file join [file normalize [glob ~]] Library {Application Support} scid-up]]
+    set expected [file nativename [file join [file normalize [glob ~]] Library {Application Support} scidup]]
     list $actual $expected
 } -cleanup {
     ::dirs_test::cleanup
 } -result [list \
-    [file nativename [file join [file normalize [glob ~]] Library {Application Support} scid-up]] \
-    [file nativename [file join [file normalize [glob ~]] Library {Application Support} scid-up]]]
+    [file nativename [file join [file normalize [glob ~]] Library {Application Support} scidup]] \
+    [file nativename [file join [file normalize [glob ~]] Library {Application Support} scidup]]]
 
-test dirs-configRoot-falls-back-to-windows-appdata-1.0 {configRoot falls back to %APPDATA%\\scid-up on Windows when XDG is unset} -setup {
+test dirs-configRoot-falls-back-to-windows-appdata-1.0 {configRoot falls back to %APPDATA%\\scidup on Windows when XDG is unset} -setup {
     ::dirs_test::setup
 } -body {
     set ::env(APPDATA) [file join [::scid_test::tempDir] appdata]
     set exeDir [file join [::scid_test::tempDir] exe]
     set actual [::scidup::dirs::configRoot windows Windows $exeDir]
-    set expected [file nativename [file join $::env(APPDATA) scid-up]]
+    set expected [file nativename [file join $::env(APPDATA) scidup]]
     list $actual $expected
 } -cleanup {
     ::dirs_test::cleanup
 } -result [list \
-    [file nativename [file join [::scid_test::tempDir] appdata scid-up]] \
-    [file nativename [file join [::scid_test::tempDir] appdata scid-up]]]
+    [file nativename [file join [::scid_test::tempDir] appdata scidup]] \
+    [file nativename [file join [::scid_test::tempDir] appdata scidup]]]
 
 test dirs-configRoot-falls-back-to-windows-exedir-when-appdata-missing-1.0 {configRoot falls back to exeDir on Windows when APPDATA is missing} -setup {
     ::dirs_test::setup

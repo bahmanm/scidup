@@ -1,4 +1,4 @@
-[![Build, Lint and Test](https://github.com/bahmanm/scid-up/actions/workflows/ci.yml/badge.svg)](https://github.com/bahmanm/scid-up/actions/workflows/ci.yml) ![Static Badge](https://img.shields.io/badge/license-gplv2-blue?style=flat&label=license) [![FOSSA Status](https://app.fossa.com/api/projects/custom%2B49633%2Fscid-up.svg?type=shield&issueType=license)](https://app.fossa.com/projects/custom%2B49633%2Fscid-up?ref=badge_shield&issueType=license)
+[![Build, Lint and Test](https://github.com/bahmanm/scidup/actions/workflows/ci.yml/badge.svg)](https://github.com/bahmanm/scidup/actions/workflows/ci.yml) ![Static Badge](https://img.shields.io/badge/license-gplv2-blue?style=flat&label=license) [![FOSSA Status](https://app.fossa.com/api/projects/custom%2B49633%2Fscidup.svg?type=shield&issueType=license)](https://app.fossa.com/projects/custom%2B49633%2Fscidup?ref=badge_shield&issueType=license)
 
 <p align="center">
   <img src="docs/assets/img/ScidUp-16x9.png" alt="ScidUp Logo - A Winged Pawn"/>
@@ -28,13 +28,13 @@ Cross-Platform Chess Database and Analysis GUI. A fork of [the magnificent Scid 
 
 # Download and Run
 
-1. Head over to the [Releases](https://github.com/bahmanm/scid-up/releases) page.
+1. Head over to the [Releases](https://github.com/bahmanm/scidup/releases) page.
 2. Download the archive that matches your platform (Linux, macOS Apple Silicon, macOS Intel, Windows).
 3. Extract the archive into a directory of your choice.
 4. Read the included `README.txt` inside the extracted folder (platform-specific instructions).
    _TL;DR_
-   - Linux/macOS: `./bin/scid-up`
-   - Windows: open `bin/` and double-click `scid-up.exe`
+   - Linux/macOS: `./bin/scidup`
+   - Windows: open `bin/` and double-click `scidup.exe`
 
 ---
 

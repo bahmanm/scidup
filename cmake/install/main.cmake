@@ -4,7 +4,7 @@ install(
 
 set(
     SCIDUP_DATA_INSTALL_DIR
-    "${CMAKE_INSTALL_DATADIR}/scid-up" )
+    "${CMAKE_INSTALL_DATADIR}/scidup" )
 
 install(
     DIRECTORY "${CMAKE_SOURCE_DIR}/resources/books"

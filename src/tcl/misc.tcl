@@ -1581,7 +1581,7 @@ namespace eval html {
 
     puts $f "<br /><span class=\"VH\">$result</span>"
     puts $f "<p>"
-    puts $f "<a href=\"https://github.com/bahmanm/scid-up\" style=\"font-size: 0.8em\">Created with ScidUp</a>"
+    puts $f "<a href=\"https://github.com/bahmanm/scidup\" style=\"font-size: 0.8em\">Created with ScidUp</a>"
     puts $f "</div>"
     puts $f "</div>"
     puts $f "</div>"

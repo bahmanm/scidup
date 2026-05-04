@@ -7,12 +7,12 @@
 
 # The "\" at the end of the comment line below is necessary! It means
 #   that the "exec" line is a comment to Tcl but not to /bin/sh.
-# The next line restarts using scid-up, the ScidUp Tcl interpreter: \
+# The next line restarts using scidup, the ScidUp Tcl interpreter: \
 bindir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-if [ -x "$bindir/scid-up" ]; then
-  exec "$bindir/scid-up" "$0" "$@"
+if [ -x "$bindir/scidup" ]; then
+  exec "$bindir/scidup" "$0" "$@"
 else
-  exec scid-up "$0" "$@"
+  exec scidup "$0" "$@"
 fi
 
 if {$argc < 2} { 

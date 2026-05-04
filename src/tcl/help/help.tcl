@@ -3758,9 +3758,9 @@ set helpText(Options) {<h1>Options and preferences</h1>
   <p>
   In ScidUp, the options file is <b>options.dat</b> in the configuration directory.
   If <b>$SCIDUP_CONFIG_HOME</b> is set, it is always used (on all platforms).
-  Otherwise, if <b>$XDG_CONFIG_HOME</b> is set, it is used as <b>$XDG_CONFIG_HOME/scid-up</b>.
-  Otherwise, ScidUp uses <b>%APPDATA%\\scid-up</b> on Windows, <b>~/Library/Application Support/scid-up</b> on macOS,
-  and <b>~/.config/scid-up</b> on other Unix platforms.
+  Otherwise, if <b>$XDG_CONFIG_HOME</b> is set, it is used as <b>$XDG_CONFIG_HOME/scidup</b>.
+  Otherwise, ScidUp uses <b>%APPDATA%\\scidup</b> on Windows, <b>~/Library/Application Support/scidup</b> on macOS,
+  and <b>~/.config/scidup</b> on other Unix platforms.
   </p>
   
   <h3><name MyPlayerNames>Setting your player names</name></h3>

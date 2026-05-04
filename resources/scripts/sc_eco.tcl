@@ -5,12 +5,12 @@
 #
 # Usage:  sc_spell <scid-database> <eco-file>
 
-# The next line restarts using scid-up: \
+# The next line restarts using scidup: \
 bindir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-if [ -x "$bindir/scid-up" ]; then
-  exec "$bindir/scid-up" "$0" "$@"
+if [ -x "$bindir/scidup" ]; then
+  exec "$bindir/scidup" "$0" "$@"
 else
-  exec scid-up "$0" "$@"
+  exec scidup "$0" "$@"
 fi
 
 set args [llength $argv]

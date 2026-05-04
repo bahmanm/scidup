@@ -17,17 +17,17 @@
 
 # The "\" at the end of the comment line below is necessary! It means
 #   that the "exec" line is a comment to Tcl/Tk, but not to /bin/sh.
-# The next line restarts using scid-up: \
-exec `dirname $0`/../../../bin/scid-up "$0" "$@"
+# The next line restarts using scidup: \
+exec `dirname $0`/../../../bin/scidup "$0" "$@"
 
-# The above launches scid-up from a location relative to this script.
+# The above launches scidup from a location relative to this script.
 # Alternatively, you can change the top line of this startup script
-# to start scid-up directly from a specific location, e.g.:
+# to start scidup directly from a specific location, e.g.:
 
-# For the above to work, scid-up must be in a directory in your PATH.
-# Alternatively, you can set the first line to start scid-up directly
-# by specifying the full name of scid-up, e.g.:
-# #!/home/myname/bin/scid-up
+# For the above to work, scidup must be in a directory in your PATH.
+# Alternatively, you can set the first line to start scidup directly
+# by specifying the full name of scidup, e.g.:
+# #!/home/myname/bin/scidup
 
 ############################################################
 
@@ -137,7 +137,7 @@ proc InitDirs {} {
 
   # scidShareDir, scidImgDir, scidTclDir, scidBooksDir, scidBasesDir, ecoFile:
   # Location of Scid resources
-  set scidShareDir [file normalize [file join $scidExeDir "../share/scid-up"]]
+  set scidShareDir [file normalize [file join $scidExeDir "../share/scidup"]]
   if {! [file isdirectory $::scidShareDir]} {
     set scidShareDir $::scidExeDir
   }
@@ -200,7 +200,7 @@ proc InitImg {} {
   global scidImgDir boardStyle boardStyles textureSquare
 
   #Set app icon
-  set scidIconFile [file nativename [file join $scidImgDir "icons" "scid-up.png"]]
+  set scidIconFile [file nativename [file join $scidImgDir "icons" "scidup.png"]]
   if {[file readable $scidIconFile]} {
     wm iconphoto . -default [image create photo -file "$scidIconFile"]
   }
