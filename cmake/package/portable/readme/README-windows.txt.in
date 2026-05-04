@@ -25,14 +25,14 @@ For instance:
 2️⃣ How to run
 
 1. Open the bin folder.
-2. Double-click scid-up.exe.
+2. Double-click scidup.exe.
 
 --------------------------------------------------------------------------------
 
 3️⃣ Where are my settings?
 
 ScidUp stores settings under:
-- %APPDATA%\\scid-up
+- %APPDATA%\\scidup
 
 You can also set SCIDUP_CONFIG_HOME to use a custom settings directory.
 
@@ -40,8 +40,8 @@ You can also set SCIDUP_CONFIG_HOME to use a custom settings directory.
 
 4️⃣ Something broken? Report it, please!
 
-- Create a new issue: https://github.com/bahmanm/scid-up/issues/new
-- See existing issues: https://github.com/bahmanm/scid-up/issues
+- Create a new issue: https://github.com/bahmanm/scidup/issues/new
+- See existing issues: https://github.com/bahmanm/scidup/issues
 
 When reporting a bug, please include:
 - Windows version

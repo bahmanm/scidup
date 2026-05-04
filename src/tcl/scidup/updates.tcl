@@ -32,7 +32,7 @@ proc ::scidup::updates::defaultScriptPath {} {
     set shareDir $::scidShareDir
   } else {
     set exeDir [file dirname [info nameofexecutable]]
-    set candidate [file normalize [file join $exeDir "../share/scid-up"]]
+    set candidate [file normalize [file join $exeDir "../share/scidup"]]
     if {[file isdirectory $candidate]} {
       set shareDir $candidate
     } else {

@@ -19,7 +19,7 @@ fi
 
 local_version="$1"
 
-REPO="${SCIDUP_GITHUB_REPO:-bahmanm/scid-up}"
+REPO="${SCIDUP_GITHUB_REPO:-bahmanm/scidup}"
 releases_atom_url="https://github.com/${REPO}/releases.atom"
 
 if ! command -v curl >/dev/null 2>&1; then

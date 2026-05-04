@@ -9,7 +9,7 @@ file(
 	        scidup_main
 	        WIN32
 	        ${SCIDUP_MAIN_SOURCES}
-	        "${CMAKE_SOURCE_DIR}/resources/win/scid-up.rc"
+	        "${CMAKE_SOURCE_DIR}/resources/win/scidup.rc"
 	        "${CMAKE_SOURCE_DIR}/resources/win/scid.manifest" )
 	    target_link_options(
 	        scidup_main
@@ -28,7 +28,7 @@ add_executable(
     ALIAS scidup_main )
 set_target_properties(
     scidup_main
-    PROPERTIES OUTPUT_NAME "scid-up" )
+    PROPERTIES OUTPUT_NAME "scidup" )
 
 if( SCIDUP_PORTABLE_ARCHIVE )
     target_compile_definitions(

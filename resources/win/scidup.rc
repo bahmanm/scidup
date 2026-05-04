@@ -27,7 +27,7 @@ BEGIN
             VALUE "FileDescription", "Cross-Platform Chess Database and Analysis GUI"
             VALUE "FileVersion", "1.0.0.0"
             VALUE "LegalCopyright", "Copyright (C) 1999-2022"
-            VALUE "OriginalFilename", "scid-up.exe"
+            VALUE "OriginalFilename", "scidup.exe"
             VALUE "ProductName", "ScidUp"
             VALUE "ProductVersion", "1.0.0.0"
         END

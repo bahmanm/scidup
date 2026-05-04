@@ -21,14 +21,14 @@ For instance, assuming you want to install ScidUp in $HOME/ScidUp:
 2️⃣ How to run
 
 In Terminal, assuming you installed ScidUp in $HOME/ScidUp:
-        $HOME/ScidUp/bin/scid-up
+        $HOME/ScidUp/bin/scidup
 
 --------------------------------------------------------------------------------
 
 3️⃣ Where are my settings?
 
 ScidUp stores settings under:
-- ~/Library/Application Support/scid-up
+- ~/Library/Application Support/scidup
 
 You can also set SCIDUP_CONFIG_HOME to use a custom settings directory.
 
@@ -36,8 +36,8 @@ You can also set SCIDUP_CONFIG_HOME to use a custom settings directory.
 
 4️⃣ Something broken? Report it, please!
 
-- Create a new issue: https://github.com/bahmanm/scid-up/issues/new
-- See existing issues: https://github.com/bahmanm/scid-up/issues
+- Create a new issue: https://github.com/bahmanm/scidup/issues/new
+- See existing issues: https://github.com/bahmanm/scidup/issues
 
 When reporting a bug, please include:
 - macOS version

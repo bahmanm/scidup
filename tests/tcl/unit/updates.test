@@ -66,8 +66,8 @@ proc ::updates_test::onResult {resultDict} {
 }
 
 test updates-parse-accepts-release-1.0 {Parses a valid release TSV line} -body {
-    ::scidup::updates::_parseScriptOutput "release\t2\thttps://github.com/bahmanm/scid-up/releases/tag/v2\n"
-} -result [dict create kind release version 2 url https://github.com/bahmanm/scid-up/releases/tag/v2]
+    ::scidup::updates::_parseScriptOutput "release\t2\thttps://github.com/bahmanm/scidup/releases/tag/v2\n"
+} -result [dict create kind release version 2 url https://github.com/bahmanm/scidup/releases/tag/v2]
 
 test updates-parse-accepts-none-1.0 {Parses a valid none TSV line} -body {
     ::scidup::updates::_parseScriptOutput "none\t-\t-\n"
@@ -97,12 +97,12 @@ test updates-runner-success-on-exit-0-1.0 {Exit 0 parses stdout and returns ok} 
     if {$::tcl_platform(platform) eq "windows"} {
         set script [::updates_test::trackFile [file join [::scid_test::tempDir] updates_test_ok.ps1]]
         ::updates_test::writePowerShellScript $script [list \
-            {Write-Output "release`t2`thttps://github.com/bahmanm/scid-up/releases/tag/v2"} \
+            {Write-Output "release`t2`thttps://github.com/bahmanm/scidup/releases/tag/v2"} \
             {exit 0}]
     } else {
         set script [::updates_test::trackFile [file join [::scid_test::tempDir] updates_test_ok.tcl]]
         ::updates_test::writeExecutableTclScript $script [list \
-            {puts "release\t2\thttps://github.com/bahmanm/scid-up/releases/tag/v2"} \
+            {puts "release\t2\thttps://github.com/bahmanm/scidup/releases/tag/v2"} \
             {exit 0}]
     }
 

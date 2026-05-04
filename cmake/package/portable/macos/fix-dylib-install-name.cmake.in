@@ -3,7 +3,7 @@
 
 set( _scidup_destdir "$ENV{DESTDIR}" )
 
-set( _scidup_exe_path "${_scidup_destdir}@CMAKE_INSTALL_PREFIX@@CMAKE_INSTALL_BINDIR@/scid-up" )
+set( _scidup_exe_path "${_scidup_destdir}@CMAKE_INSTALL_PREFIX@@CMAKE_INSTALL_BINDIR@/scidup" )
 cmake_path( NORMAL_PATH _scidup_exe_path )
 
 if( NOT EXISTS "${_scidup_exe_path}" )
