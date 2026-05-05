@@ -95,7 +95,7 @@ std::string_view Book::findEcoString(const Position& position) const {
 	return res.substr(0, res.find('\n'));
 }
 
-ecoT Book::findEco(const Position& position) const {
+Code Book::findEco(const Position& position) const {
 	auto it = findEcoString(position);
 	if (it.empty())
 		return ECO_None;
@@ -132,7 +132,7 @@ std::vector<Book::Line> Book::linesWithPrefix(const std::string_view prefix) con
 	return res;
 }
 
-std::pair<errorT, Book>
+std::pair<Error, Book>
 Book::load(const std::filesystem::path& path) {
     std::filebuf fp;
     if (!fp.open(path, std::ios::in | std::ios::binary))
@@ -145,9 +145,9 @@ Book::load(const std::filesystem::path& path) {
     std::string text;
     std::string moves;
     ecoStringT ecoStr;
-    ecoT ecoCode;
+    Code ecoCode;
     int ch;
-    errorT err = OK;
+    Error err = OK;
     bool done = false;
 
     // Loop to read in and add all positions:
@@ -235,7 +235,7 @@ Book::load(const std::filesystem::path& path) {
         book.comments_.push_back(it->second.comment.get());
         book.leastMaterial_ = std::min(book.leastMaterial_, pos.TotalMaterial());
     }
-    return std::pair<errorT, Book>(OK, std::move(book));
+    return std::pair<Error, Book>(OK, std::move(book));
 
 corrupt:
     return std::make_pair(ERROR_Corrupt, Book{});

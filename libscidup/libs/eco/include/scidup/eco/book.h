@@ -32,6 +32,15 @@ class Position;
 
 namespace scidup::eco {
 
+using Code = ::ecoT;
+using Error = ::errorT;
+using Position = ::Position;
+
+inline constexpr Code ECO_None = ::ECO_None;
+inline constexpr Error OK = ::OK;
+inline constexpr Error ERROR_FileOpen = ::ERROR_FileOpen;
+inline constexpr Error ERROR_Corrupt = ::ERROR_Corrupt;
+
 /**
  * A Book is a collection of chess positions, each with the corresponding ECO
  * code, a mnemonic name, and the list of moves to reach the position.
@@ -66,10 +75,10 @@ public:
 	 * C50a "Italian Game"  1.e4 e5 2.Nf3 Nc6 3.Bc4 *
 	 * @param path: the path of the file to be read.
 	 * @returns
-	 * - on success, a @e std::pair containing OK and the newly created object.
+	 * - on success, a @e std::pair containing scidup::eco::OK and the newly created object.
 	 * - on failure, a @e std::pair containing an error code and an empty object.
 	 */
-	static std::pair<errorT, Book> load(const std::filesystem::path& path);
+	static std::pair<Error, Book> load(const std::filesystem::path& path);
 
 	/**
 	 * Retrieve an ECO string containing the ECO code and the mnemonic name.
@@ -81,9 +90,9 @@ public:
 	/**
 	 * Retrieve the ECO code of a position.
 	 * @param position: the position to search for.
-	 * @returns the corresponding ECO code or ECO_None if not found.
+	 * @returns the corresponding ECO code or scidup::eco::ECO_None if not found.
 	 */
-	ecoT findEco(const Position& position) const;
+	Code findEco(const Position& position) const;
 
 	std::vector<Line> linesWithPrefix(std::string_view ecoPrefix) const;
 

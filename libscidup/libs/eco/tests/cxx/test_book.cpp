@@ -55,7 +55,7 @@ C50a "Italian Game" 1.e4 e5 2.Nf3 Nc6 3.Bc4 *
 TEST_F(EcoBookTest, MissingFileReturnsOpenError) {
 	auto [err, book] = scidup::eco::Book::load(path_);
 
-	EXPECT_EQ(ERROR_FileOpen, err);
+	EXPECT_EQ(scidup::eco::ERROR_FileOpen, err);
 	EXPECT_EQ(0u, book.size());
 }
 
@@ -63,7 +63,7 @@ TEST_F(EcoBookTest, LoadIndexesPositionsAndClassifiesKnownLines) {
 	writeFile(path_, kEcoFile);
 
 	auto [err, book] = scidup::eco::Book::load(path_);
-	ASSERT_EQ(OK, err);
+	ASSERT_EQ(scidup::eco::OK, err);
 	EXPECT_EQ(3u, book.size());
 
 	Position position;
@@ -81,7 +81,7 @@ TEST_F(EcoBookTest, LinesWithPrefixReturnsStructuredRows) {
 	writeFile(path_, kEcoFile);
 
 	auto [err, book] = scidup::eco::Book::load(path_);
-	ASSERT_EQ(OK, err);
+	ASSERT_EQ(scidup::eco::OK, err);
 
 	auto lines = book.linesWithPrefix("C50");
 	ASSERT_EQ(1u, lines.size());
@@ -95,6 +95,6 @@ TEST_F(EcoBookTest, CorruptFileReturnsCorruptError) {
 
 	auto [err, book] = scidup::eco::Book::load(path_);
 
-	EXPECT_EQ(ERROR_Corrupt, err);
+	EXPECT_EQ(scidup::eco::ERROR_Corrupt, err);
 	EXPECT_EQ(0u, book.size());
 }

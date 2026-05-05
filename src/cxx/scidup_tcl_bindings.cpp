@@ -1223,14 +1223,14 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         if (g->DecodeSkipTags(&bbuf) != OK)
             return false;
 
-        ecoT ecoCode = ECO_None;
+        scidup::eco::Code ecoCode = scidup::eco::ECO_None;
         for (;;) {
             auto pos = g->GetCurrentPos();
             if (pos->TotalMaterial() < ecoBook->fewestPieces())
                 break;
 
             const auto eco = ecoBook->findEco(*pos);
-            if (eco != ECO_None) {
+            if (eco != scidup::eco::ECO_None) {
                 ecoCode = eco;
             }
 
@@ -1284,15 +1284,15 @@ sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     auto location = game.currentLocation();
     game.MoveToEnd();
-    ecoT ecoCode = ECO_None;
+    scidup::eco::Code ecoCode = scidup::eco::ECO_None;
     do {
         ecoCode = ecoBook->findEco(*game.GetCurrentPos());
-    } while (ecoCode == ECO_None && game.MoveBackup() == OK);
+    } while (ecoCode == scidup::eco::ECO_None && game.MoveBackup() == OK);
 
     auto ply = game.GetCurrentPly();
     game.restoreLocation(location);
 
-    if (ecoCode == ECO_None)
+    if (ecoCode == scidup::eco::ECO_None)
         return UI_Result(ti, OK);
 
     if (returnPly)
@@ -1313,8 +1313,8 @@ sc_eco_read (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (argc < 3) { return TCL_OK; }
     ecoBook = nullptr;
     auto book = scidup::eco::Book::load(argv[2]);
-    if (book.first != OK) {
-        if (book.first == ERROR_FileOpen) {
+    if (book.first != scidup::eco::OK) {
+        if (book.first == scidup::eco::ERROR_FileOpen) {
             AppendResult (ti, "Unable to open the ECO file:\n",
                               argv[2], NULL);
         } else {
@@ -4990,12 +4990,12 @@ sc_pos_bestSquare (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         // position is found, do a small chess engine search to find
         // the best move.
 
-        ecoT bestEco = ECO_None;
-        ecoT secondBestEco = ECO_None;
+        scidup::eco::Code bestEco = scidup::eco::ECO_None;
+        scidup::eco::Code secondBestEco = scidup::eco::ECO_None;
         if (ecoBook != NULL) {
             for (uint i=0; i < mlist.Size(); i++) {
                 pos->DoSimpleMove(*mlist.Get(i));
-                ecoT eco = ecoBook->findEco(*pos);
+                scidup::eco::Code eco = ecoBook->findEco(*pos);
                 pos->UndoSimpleMove (*mlist.Get(i));
                 if (eco >= bestEco) {
                     secondBestEco = bestEco;
@@ -5006,7 +5006,7 @@ sc_pos_bestSquare (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             }
         }
 
-        if (bestEco == ECO_None  ||  bestEco == secondBestEco) {
+        if (bestEco == scidup::eco::ECO_None  ||  bestEco == secondBestEco) {
             // No matching ECO position found, or a tie. So do a short
             // engine search to find the best move; 25 ms (= 1/40 s)
             // is enough to reach a few ply and select reasonable
@@ -7182,7 +7182,7 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     auto tree = base->getTreeStat(filter);
 
     auto calc_eco = [&](auto const& move) {
-        ecoT eco = ECO_None;
+        scidup::eco::Code eco = scidup::eco::ECO_None;
         if (ecoBook && move) {
             simpleMoveT sm;
             if (move.isCastle()) {
