@@ -69,13 +69,13 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/textbuf.h" )
 
 add_library(
-    scidup_libs_database
+    scidup_database
     ${SCIDUP_DATABASE_SOURCES} )
 add_library(
-    ScidUp::Libs::Database
-    ALIAS scidup_libs_database )
+    ScidUp::Database
+    ALIAS scidup_database )
 target_sources(
-    scidup_libs_database
+    scidup_database
     PUBLIC
         FILE_SET public_headers
         TYPE HEADERS
@@ -84,14 +84,14 @@ target_sources(
     PRIVATE
         ${SCIDUP_DATABASE_PRIVATE_HEADERS} )
 target_compile_features(
-    scidup_libs_database
+    scidup_database
     PUBLIC cxx_std_20 )
 target_include_directories(
-    scidup_libs_database
+    scidup_database
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/internal" )
 target_link_libraries(
-    scidup_libs_database
+    scidup_database
     PUBLIC Threads::Threads )
 
 if( PROJECT_IS_TOP_LEVEL )
@@ -128,7 +128,7 @@ if( BUILD_TESTING )
         PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/internal" )
     target_link_libraries(
         scidup_tests_database_cpp
-        PRIVATE ScidUp::Libs::Database gtest_main )
+        PRIVATE ScidUp::Database gtest_main )
     add_executable(
         ScidUp::Tests::Database::Cpp
         ALIAS scidup_tests_database_cpp )
