@@ -37,13 +37,12 @@ From this directory:
 
 ```sh
 cmake -S . -B build -DBUILD_TESTING=ON
-cmake --build build --target scidup_libs_database scidup_tests_database_cpp
+cmake --build build --target scidup_database scidup_tests_database_cpp
 ctest --test-dir build --output-on-failure
 ```
 
-The current CMake target is `scidup_libs_database`. The target name and package
-export shape may be renamed before the library is released as a standalone
-package.
+The concrete CMake target is `scidup_database`; consumers should link the
+namespaced alias `ScidUp::Database`.
 
 # 4. Minimal Example
 
