@@ -38,7 +38,7 @@
 #include "scidup_app_editor.h"
 #include "scidup_app_tree.h"
 #include "scidup/database/searchpos.h"
-#include "spellchk.h"
+#include <scidup/spelling/spellchk.h>
 #include "scidup/database/stored.h"
 #include "timer.h"
 #include "scidup/database/tree.h"

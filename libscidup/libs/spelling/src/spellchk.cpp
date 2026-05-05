@@ -17,7 +17,7 @@
 * along with Scid. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "spellchk.h"
+#include <scidup/spelling/spellchk.h>
 #include "scidup/database/date.h"
 #include "scidup/database/filebuf.h"
 #include "scidup/database/misc.h"

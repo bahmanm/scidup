@@ -13,3 +13,4 @@ endif()
 
 add_subdirectory( libs/database )
 add_subdirectory( libs/eco )
+add_subdirectory( libs/spelling )

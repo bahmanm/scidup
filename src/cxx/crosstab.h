@@ -19,7 +19,7 @@
 
 #include "scidup/database/common.h"
 #include "scidup/database/date.h"
-#include "spellchk.h"
+#include <scidup/spelling/spellchk.h>
 
 class DString;
 
