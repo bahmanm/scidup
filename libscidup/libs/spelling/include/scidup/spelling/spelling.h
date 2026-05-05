@@ -26,10 +26,6 @@
 #include <string>
 #include <vector>
 #include <utility>
-#include <algorithm>
-#ifdef SCIDUP_SPELLING_VALIDATE
-#include <fstream>
-#endif
 
 /*
 * A "spelling" file contains the correct names for players, events, sites and rounds.
@@ -66,42 +62,7 @@ public:
 	 *
 	 * Return: count of corrections applied
 	 */
-	size_t normalize(std::string* name) const {
-		size_t corrections = 0;
-		Cont::const_iterator it;
-
-		for (it = prefix_.begin(); it != prefix_.end(); it++) {
-			const std::string& s = it->first;
-			if (name->compare(0, s.length(), s) == 0) {
-				corrections++;
-				name->replace(0, s.length(), it->second);
-				break;
-			}
-		}
-
-		for (it = infix_.begin(); it != infix_.end(); it++) {
-			const std::string& s = it->first;
-			size_t pos = name->find(s);
-			while (pos != std::string::npos) {
-				corrections++;
-				name->replace(pos, s.length(), it->second);
-				pos = name->find(s, pos + it->second.length());
-			}
-		}
-
-		for (it = suffix_.begin(); it != suffix_.end(); it++) {
-			const std::string& s = it->first;
-			if (name->length() < s.length()) continue;
-			size_t pos = name->length() - s.length();
-			if (name->compare(pos, s.length(), s) == 0) {
-				corrections++;
-				name->replace(pos, s.length(), it->second);
-				break;
-			}
-		}
-
-		return corrections;
-	}
+	size_t normalize(std::string* name) const;
 
 	/**
 	 * add*fix() - add a general correction
@@ -111,29 +72,12 @@ public:
 	 * %Suffix "wrong suffix" "correct suffix"
 	 * Return: OK if successful
 	 */
-	errorT addPrefix(const char* s) { return add(prefix_, s); }
-	errorT addInfix (const char* s) { return add(infix_, s); }
-	errorT addSuffix(const char* s) { return add(suffix_,s); }
+	errorT addPrefix(const char* s);
+	errorT addInfix (const char* s);
+	errorT addSuffix(const char* s);
 
 private:
-	errorT add(Cont& v, const char* s) {
-		ASSERT(s != 0);
-		std::vector<size_t> parse;
-		for (size_t i=0; *(s+i) != 0; i++) {
-			if (*(s+i) == '"') parse.push_back(i);
-		}
-		if (parse.size() != 4) return ERROR_CorruptData;
-		parse[0] += 1; //skip "
-		parse[1] -= parse[0]; //n_chars
-		if (parse[1] == 0) return ERROR_CorruptData;
-		parse[2] += 1; //skip "
-		parse[3] -= parse[2]; //n_chars
-		v.push_back(std::make_pair(
-			std::string(s + parse[0], parse[1]),
-			std::string(s + parse[2], parse[3])
-		));
-		return OK;
-	}
+	errorT add(Cont& v, const char* s);
 };
 
 
@@ -149,76 +93,10 @@ class PlayerElo {
 public:
 	void addEloData(const char* str);
 
-	eloT getElo (dateT date) const {
-		uint year = date_GetYear (date);
-		auto itBegin = std::find_if(elo_.begin(), elo_.end(),
-		                            [&](const std::pair<uint16_t, eloT>& e) {
-			                            return e.first == year;
-		                            });
-		auto itEnd = std::find_if(itBegin, elo_.end(),
-		                          [&](const std::pair<uint16_t, eloT>& e) {
-			                          return e.first != year;
-		                          });
-
-		size_t n = std::distance(itBegin, itEnd);
-		if (n == 0) return 0; // No data for that year
-
-		uint month = date_GetMonth (date);
-		if (month == 0 || month > 12) month = 0;
-		else month -= 1;
-
-		size_t idx;
-		if (year == 2009 && n == 5) {
-			//2 trimonthly + 3 bimonthly
-			idx = (month < 6) ? month / 3 : (month - 2)/2;
-
-		} else if (year == 2012 && n == 9) {
-			//3 bimonthly + 6 monthly
-			idx = (month < 6) ? month / 2 : month - 3;
-
-		} else if (year > 2012) {
-			// monthly
-			if (month >= n) return 0;
-			idx = month;
-
-		} else {
-			idx = month * n / 12;
-		}
-
-		return (itBegin + idx)->second;
-	}
+	eloT getElo (dateT date) const;
 
 #ifdef SCIDUP_SPELLING_VALIDATE
-	std::string isValid() const {
-		for (size_t i=1, n=elo_.size(); i < n; i++) {
-			if (elo_[i].first < elo_[i -1].first) return "unsorted";
-		}
-
-		auto count = [this](uint year) {
-			return std::count_if(this->elo_.begin(), this->elo_.end(),
-				[&](const std::pair<uint16_t, eloT>& e) { return e.first == year; });
-		};
-
-		auto expected = [](uint year) {
-			if (year < 1990) return 1;
-			if (year < 2001) return 2;
-			if (year < 2009) return 4;
-			if (year < 2010) return 5;
-			if (year < 2012) return 6;
-			if (year < 2013) return 9;
-			return 12;
-		};
-
-		for (uint y=1970; y<2015; y++) {
-			auto n = count(y);
-			if (n == 0) continue;
-			if (n != expected(y))
-				return std::to_string(y) + ": " + std::to_string(n) + "(" +
-				       std::to_string(expected(y)) + ")";
-		}
-
-		return std::string();
-	}
+	std::string isValid() const;
 #endif
 };
 
@@ -247,9 +125,7 @@ public:
 	dateT getBirthdate() const;
 	dateT getDeathdate() const;
 	eloT getPeakRating() const;
-	const char* getComment() const {
-		return (comment_ != 0) ? comment_ : "";
-	}
+	const char* getComment() const;
 };
 
 
@@ -264,10 +140,10 @@ class SpellChecker {
 		std::string alias;
 		int32_t idx;
 
-		Idx() {}
-		Idx(const std::string& a, int32_t i) : alias(a), idx(i) {}
-		bool operator<(const Idx& b) const { return alias < b.alias; }
-		bool operator<(const std::string& b)  const { return alias < b; }
+		Idx();
+		Idx(const std::string& a, int32_t i);
+		bool operator<(const Idx& b) const;
+		bool operator<(const std::string& b) const;
 	};
 	typedef std::vector<Idx>::const_iterator IdxIt;
 
@@ -291,14 +167,7 @@ public:
 	 * - on error the ERROR_*CODE* and nullptr.
 	 */
 	static std::pair<errorT, std::unique_ptr<SpellChecker>> create(
-	    const char* filename, const Progress& progress) {
-		auto res = std::unique_ptr<SpellChecker>(new SpellChecker);
-		errorT err = res->read(filename, progress);
-		if (err != OK) {
-			res.reset();
-		}
-		return std::make_pair(err, std::move(res));
-	}
+	    const char* filename, const Progress& progress);
 
 	/**
 	 * find() - search for correct names
@@ -312,26 +181,9 @@ public:
 	 * contain only the corresponding correct name, otherwise will contain all
 	 * the correct names that have @name as a prefix.
 	 */
-	std::vector<const char*> find(const nameT& nt, const char* name, uint nMaxRes = 10) const {
-		ASSERT(nt < NUM_NAME_TYPES);
-		ASSERT(name != 0);
-		std::vector<const char*> res;
-		std::pair<IdxIt, IdxIt> it;
-		if (nt != NAME_PLAYER) it = idxFind(nt, name);
-		else it = idxFindPlayer(name);
-		for (; it.first != it.second && res.size() < nMaxRes; it.first++) {
-			const char* corrected = names_[nt][it.first->idx];
-			if (std::find(res.begin(), res.end(), corrected) == res.end()) {
-				res.push_back(corrected);
-			}
-		}
-		return res;
-	}
+	std::vector<const char*> find(const nameT& nt, const char* name, uint nMaxRes = 10) const;
 
-	const NameNormalizer& getGeneralCorrections(const nameT& nt) const {
-		ASSERT(nt < NUM_NAME_TYPES);
-		return general_[nt];
-	}
+	const NameNormalizer& getGeneralCorrections(const nameT& nt) const;
 
 	/**
 	* SpellChecker::getPlayerInfo() - get extra info about a player
@@ -346,31 +198,13 @@ public:
 	*   returns NULL and @bio is untouched.
 	*/
 	const PlayerInfo* getPlayerInfo(const char* name,
-	                                std::vector<const char*>* bio = 0) const {
-		ASSERT(name != 0);
-		IdxIt it = idxFindPlayerUnambiguous(name);
-		if (it == idx_[NAME_PLAYER].end()) return 0; // not found
+	                                std::vector<const char*>* bio = 0) const;
 
-		if (bio != 0) *bio = pInfo_[it->idx].bio_;
-		return &(pInfo_[it->idx]);
-	}
+	const PlayerElo* getPlayerElo(const char* name) const;
 
-	const PlayerElo* getPlayerElo(const char* name) const {
-		ASSERT(name != 0);
-		if (!hasEloData()) return 0;
-		IdxIt it = idxFindPlayerUnambiguous(name);
-		if (it == idx_[NAME_PLAYER].end()) return 0; // not found
-		return &(pElo_[it->idx]);
-	}
+	bool hasEloData() const;
 
-	bool hasEloData () const {
-		return pElo_.size() != 0;
-	}
-
-	size_t numCorrectNames(const nameT& nt) const {
-		ASSERT(nt < NUM_NAME_TYPES);
-		return names_[nt].size();
-	}
+	size_t numCorrectNames(const nameT& nt) const;
 
 private:
 	SpellChecker() = default;
@@ -379,115 +213,17 @@ private:
 
 	errorT read(const char* filename, const Progress& progress);
 
-	const char* storeString(const char* s) {
-		if (s == nullptr) return nullptr;
-		strings_.push_back(s);
-		return strings_.back().c_str();
-	}
+	const char* storeString(const char* s);
 
-	std::string normalizeAndTransform(const nameT& nt, const char* s) const { 
-		std::string res;
-		for (const char* i = s; *i != 0; i++) {
-			if (excludeChars_[nt].find(*i) != std::string::npos) continue;
+	std::string normalizeAndTransform(const nameT& nt, const char* s) const;
 
-			res += *i;
-		}
-		return res;
-	}
+	std::pair<IdxIt, IdxIt> idxFind(const nameT& nt, const char* prefix) const;
 
-	std::pair<IdxIt, IdxIt> idxFind(const nameT& nt, const char* prefix) const {
-		std::pair<IdxIt, IdxIt> res;
-		std::string s = normalizeAndTransform(nt, prefix);
-		res.first = std::lower_bound(idx_[nt].begin(), idx_[nt].end(), s);
-		for (res.second = res.first; res.second != idx_[nt].end(); res.second++) {
-			if (res.second->alias.compare(0, s.length(), s) != 0) break;
-			if (res.second->alias == s) return std::make_pair(res.second, res.second +1);
-		}
-		return res;
-	}
+	std::pair<IdxIt, IdxIt> idxFindPlayer(const char* prefix) const;
 
-	std::pair<IdxIt, IdxIt> idxFindPlayer(const char* prefix) const {
-		std::pair<IdxIt, IdxIt> res = idxFind(NAME_PLAYER, prefix);
-		if (res.first == res.second) {
-			// For spelling of player names (not other types), Scid will also try
-			// to move the text after the last space in the name to the start of
-			// the name for correction purposes, when it cannot find a correction.
-			// This is done to correct names where the surname is last.
-			std::string s = prefix;
-			size_t pos = s.rfind(' ');
-			if (pos != std::string::npos) {
-				std::string inv = s.substr(pos);
-				inv.append(s, 0, pos);
-				return idxFind(NAME_PLAYER, inv.c_str());
-			}
-		}
-		return res;
-	}
+	IdxIt idxFindPlayerUnambiguous(const char* name) const;
 
-	IdxIt idxFindPlayerUnambiguous(const char* name) const {
-		std::pair<IdxIt, IdxIt> it = idxFindPlayer(name);
-		if (it.first == it.second) return idx_[NAME_PLAYER].end();
-
-		for (IdxIt i = it.first; i != it.second; i++) {
-			if (i->idx != it.first->idx) //ambiguous
-				return idx_[NAME_PLAYER].end();
-		}
-		return it.first;
-	}
-
-
-#ifndef SCIDUP_SPELLING_VALIDATE
-	class SpellingValidate {
-	public:
-		SpellingValidate(const char*, const SpellChecker&) {}
-		void ignoredLine(const char*) {}
-		void idxDuplicates(const nameT&) {}
-		void checkEloData() {}
-	};
-#else
-	class SpellingValidate {
-		const SpellChecker& spell_;
-		std::ofstream f_;
-
-	public:
-		SpellingValidate(const char* spellfile, const SpellChecker& sp) : spell_(sp) {
-			f_.open(spellfile + std::string(".validate"));
-		}
-		void ignoredLine(const char* line) {
-			f_ << "Ignored line:" << '\n';
-			f_ << line << '\n';
-			f_ << '\n';
-		}
-		static bool cmpIdxAlias(const Idx& a, const Idx& b) {
-			return a.alias == b.alias;
-		}
-		void idxDuplicates(const nameT& nt) {
-			IdxIt it = spell_.idx_[nt].begin();
-			IdxIt it_end = spell_.idx_[nt].end();
-			for (;;) {
-				it = std::adjacent_find(it, it_end, cmpIdxAlias);
-				if (it == it_end) return;
-
-				IdxIt it_endDuplicates = std::upper_bound(it, it_end, *it);
-				f_ << "Duplicate hash: " << it->alias << '\n';
-				for(; it != it_endDuplicates; it++) {
-					f_ << spell_.names_[nt][it->idx];
-					f_ << " - Idx:" << it->idx << '\n';
-				}
-				f_ << '\n';
-			}
-		}
-		void checkEloData() {
-			for (size_t i=0, n = spell_.pElo_.size(); i < n; i++) {
-				std::string s = spell_.pElo_[i].isValid();
-				if (! s.empty()) {
-					f_ << "Elo error: " << s << " --- ";
-					f_ << spell_.names_[NAME_PLAYER][i] << '\n';
-				}
-			}
-		}
-	};
-#endif
+	class SpellingValidate;
 
 };
 
