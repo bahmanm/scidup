@@ -17,7 +17,7 @@
 * along with Scid. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <scidup/spelling/spellchk.h>
+#include <scidup/spelling/spelling.h>
 #include "scidup/database/date.h"
 #include "scidup/database/filebuf.h"
 #include "scidup/database/misc.h"
@@ -119,25 +119,27 @@ Parser::Parser(char* line) {
 } // End of anonymous namespace
 
 
+namespace scidup::spelling {
+
 /**
- * class SpellChkLoader - load data into a SpellChecker object
+ * class SpellingLoader - load data into a SpellChecker object
  *
  * This class take parsed "spelling" data and store it into the right
  * data members of the associated SpellChecker object.
  * Reading from a "spelling" file is not stateless and the Parser object
- * cannot contain all the necessary data: a SpellChkLoader object keep track
+ * cannot contain all the necessary data: a SpellingLoader object keep track
  * of the current nameT section and the current correct name.
- * The SpellChkValidate object is used to log ignored data, usually
+ * The SpellingValidate object is used to log ignored data, usually
  * caused by typos like "@Eol" or "@Preffix".
  */
-class SpellChkLoader {
+class SpellingLoader {
 	SpellChecker& sp_;
-	SpellChecker::SpellChkValidate& validate_;
+	SpellChecker::SpellingValidate& validate_;
 	nameT nt_;
 	int32_t nameIdx_;
 
 public:
-	SpellChkLoader(SpellChecker& sp, SpellChecker::SpellChkValidate& v)
+	SpellingLoader(SpellChecker& sp, SpellChecker::SpellingValidate& v)
 	: sp_(sp), validate_(v), nt_(NAME_INVALID), nameIdx_(-1) {
 	}
 
@@ -243,7 +245,7 @@ private:
  * this function twice, because this is the only non-const member function.
  * If the function fails (result != OK) the object state is undefined
  * and the only valid operation is to destroy the object.
- * If SPELLCHKVALIDATE is defined, it also creates a @filename.validate log.
+ * If SCIDUP_SPELLING_VALIDATE is defined, it also creates a @filename.validate log.
  */
 errorT SpellChecker::read(const char* filename, const Progress& progress)
 {
@@ -259,7 +261,7 @@ errorT SpellChecker::read(const char* filename, const Progress& progress)
 	}
 	if (fileSize == -1) return ERROR_FileOpen;
 
-	SpellChkValidate validate(filename, *this);
+	SpellingValidate validate(filename, *this);
 
 	// Parse the file lines
 	staticStrings_ = (char*) malloc(fileSize + 1);
@@ -268,7 +270,7 @@ errorT SpellChecker::read(const char* filename, const Progress& progress)
 	size_t nRead;
 	uint report_i = 0;
 	std::streamsize report_done = 0;
-	SpellChkLoader loader(*this, validate);
+	SpellingLoader loader(*this, validate);
 	while ((nRead = file.getline(line, std::distance(line, bEnd))) != 0) {
 		report_done += nRead;
 		if ((++report_i % 10000) == 0) {
@@ -321,7 +323,7 @@ errorT SpellChecker::read(const char* filename, const Progress& progress)
 
 //////////////////////////////////////////////////////////////////////
 //
-//  FILE:       spellchk.cpp
+//  FILE:       spelling.cpp
 //              SpellChecker class methods
 //
 //  Part of:    Scid (Shane's Chess Information Database)
@@ -498,5 +500,7 @@ PlayerInfo::getDeathdate() const
 }
 
 //////////////////////////////////////////////////////////////////////
-//  EOF: spellchk.cpp
+//  EOF: spelling.cpp
 //////////////////////////////////////////////////////////////////////
+
+} // namespace scidup::spelling

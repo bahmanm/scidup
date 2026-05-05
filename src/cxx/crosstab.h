@@ -19,7 +19,7 @@
 
 #include "scidup/database/common.h"
 #include "scidup/database/date.h"
-#include <scidup/spelling/spellchk.h>
+#include <scidup/spelling/spelling.h>
 
 class DString;
 
@@ -181,7 +181,8 @@ class Crosstable
     void   SetNumberedColumns (bool b) { APAColumnNums = b; }
 
     uint   NumPlayers() { return PlayerCount; }
-    errorT AddPlayer (idNumberT id, const char * name, eloT elo, const SpellChecker*);
+    errorT AddPlayer (idNumberT id, const char * name, eloT elo,
+                      const scidup::spelling::SpellChecker*);
     errorT AddResult (uint gameNumber, idNumberT white, idNumberT black,
                       resultT result, uint round, dateT date);
 

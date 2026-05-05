@@ -6,11 +6,11 @@ project(
 
 set(
     SCIDUP_SPELLING_SOURCES
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/spellchk.cpp" )
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/spelling.cpp" )
 
 set(
     SCIDUP_SPELLING_PUBLIC_HEADERS
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/spelling/spellchk.h" )
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/spelling/spelling.h" )
 
 add_library(
     scidup_spelling
@@ -35,7 +35,7 @@ target_link_libraries(
     scidup_spelling
     PUBLIC ScidUp::Database )
 
-option( SPELLCHKVALIDATE "Verify the integrity of spelling files" OFF )
-if( SPELLCHKVALIDATE )
-    target_compile_definitions( scidup_spelling PRIVATE SPELLCHKVALIDATE )
+option( SCIDUP_SPELLING_VALIDATE "Verify the integrity of spelling files" OFF )
+if( SCIDUP_SPELLING_VALIDATE )
+    target_compile_definitions( scidup_spelling PRIVATE SCIDUP_SPELLING_VALIDATE )
 endif()

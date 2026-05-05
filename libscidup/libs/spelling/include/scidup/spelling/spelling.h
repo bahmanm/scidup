@@ -16,8 +16,8 @@
 * along with Scid. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SPELLCHK_H
-#define SPELLCHK_H
+#ifndef SCIDUP_SPELLING_SPELLING_H
+#define SCIDUP_SPELLING_SPELLING_H
 
 #include "scidup/database/namebase.h"
 #include "scidup/database/date.h"
@@ -25,7 +25,7 @@
 #include <vector>
 #include <utility>
 #include <algorithm>
-#ifdef SPELLCHKVALIDATE
+#ifdef SCIDUP_SPELLING_VALIDATE
 #include <fstream>
 #endif
 
@@ -35,6 +35,7 @@
 * See the header of spelling.ssp for a more detailed description of the format.
 */
 
+namespace scidup::spelling {
 
 /**
  * class NameNormalizer - apply general corrections to a name
@@ -185,7 +186,7 @@ public:
 		return (itBegin + idx)->second;
 	}
 
-#ifdef SPELLCHKVALIDATE
+#ifdef SCIDUP_SPELLING_VALIDATE
 	std::string isValid() const {
 		for (size_t i=1, n=elo_.size(); i < n; i++) {
 			if (elo_[i].first < elo_[i -1].first) return "unsorted";
@@ -234,7 +235,7 @@ class PlayerInfo {
 	const char* comment_;
 	std::vector<const char*> bio_;
 
-	friend class SpellChkLoader;
+	friend class SpellingLoader;
 	friend class SpellChecker;
 
 public:
@@ -254,7 +255,7 @@ public:
  * class SpellChecker - name spelling
  *
  * Read a spell file and allow to retrieve corrected names and players data.
- * if SPELLCHKVALIDATE is defined also check the spell file for errors.
+ * if SCIDUP_SPELLING_VALIDATE is defined also check the spell file for errors.
  */
 class SpellChecker {
 	struct Idx {
@@ -276,7 +277,7 @@ class SpellChecker {
 	std::vector<PlayerElo>  pElo_;
 	char* staticStrings_;
 
-	friend class SpellChkLoader;
+	friend class SpellingLoader;
 
 public:
 	~SpellChecker() {
@@ -433,21 +434,21 @@ private:
 	}
 
 
-#ifndef SPELLCHKVALIDATE
-	class SpellChkValidate {
+#ifndef SCIDUP_SPELLING_VALIDATE
+	class SpellingValidate {
 	public:
-		SpellChkValidate(const char*, const SpellChecker&) {}
+		SpellingValidate(const char*, const SpellChecker&) {}
 		void ignoredLine(const char*) {}
 		void idxDuplicates(const nameT&) {}
 		void checkEloData() {}
 	};
 #else
-	class SpellChkValidate {
+	class SpellingValidate {
 		const SpellChecker& spell_;
 		std::ofstream f_;
 
 	public:
-		SpellChkValidate(const char* spellfile, const SpellChecker& sp) : spell_(sp) {
+		SpellingValidate(const char* spellfile, const SpellChecker& sp) : spell_(sp) {
 			f_.open(spellfile + std::string(".validate"));
 		}
 		void ignoredLine(const char* line) {
@@ -488,5 +489,7 @@ private:
 
 };
 
+
+} // namespace scidup::spelling
 
 #endif

@@ -38,7 +38,7 @@
 #include "scidup_app_editor.h"
 #include "scidup_app_tree.h"
 #include "scidup/database/searchpos.h"
-#include <scidup/spelling/spellchk.h>
+#include <scidup/spelling/spelling.h>
 #include "scidup/database/stored.h"
 #include "timer.h"
 #include "scidup/database/tree.h"
@@ -81,7 +81,7 @@ const int MAX_BASES = 9;
 
 static Game * scratchGame = NULL;      // "scratch" game for searches, etc.
 static std::unique_ptr<scidup::eco::Book> ecoBook; // eco classification book.
-static SpellChecker* spellChk;         // Name correction.
+static scidup::spelling::SpellChecker* spellChk;         // Name correction.
 static OpTable * reports[2] = {NULL, NULL};
 
 void scid_Exit(void*) {
@@ -2360,7 +2360,7 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     // Find all games that should be listed in the crosstable:
-    const SpellChecker* spell = spellChk;
+    const scidup::spelling::SpellChecker* spell = spellChk;
     bool tableFullMessage = false;
     for (uint i=0, n = db->numGames(); i < n; i++) {
         const IndexEntry* ie = db->getIndexEntry(i);
@@ -5532,7 +5532,7 @@ sc_name_edit (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // sc_name_retrievename:
 //    Check for the right name in spellcheck and return it.
-UI_res_t sc_name_retrievename (UI_handle_t ti, const SpellChecker& sp, int argc, const char ** argv)
+UI_res_t sc_name_retrievename (UI_handle_t ti, const scidup::spelling::SpellChecker& sp, int argc, const char ** argv)
 {
     const char * usageStr = "Usage: sc_name retrievename <player>";
     if (argc != 3 ) { return errorResult (ti, usageStr); }
@@ -5543,7 +5543,7 @@ UI_res_t sc_name_retrievename (UI_handle_t ti, const SpellChecker& sp, int argc,
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // sc_name_elo:
 //    Search for Elo-Ratings in spellcheck file.
-static UI_res_t sc_name_elo(UI_handle_t ti, const SpellChecker& sp, int argc,
+static UI_res_t sc_name_elo(UI_handle_t ti, const scidup::spelling::SpellChecker& sp, int argc,
                             const char** argv) {
 	auto usage = "Usage: sc_name elo [year] <player>";
 	if (argc < 3 || argc > 4)
@@ -5812,13 +5812,13 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (tWidth > wbtWidth) { wbtWidth = tWidth; }
     const char * fmt = \
      "%s  %-*s %3u%c%02u%%   +%s%3u%s  =%s%3u%s  -%s%3u%s  %4u%c%c /%s%4u%s";
-    SpellChecker* spChecker = spellChk;
+    scidup::spelling::SpellChecker* spChecker = spellChk;
 
     AppendResult (ti, startBold, playerName, endBold, newline, NULL);
 
     // Show title, country, etc if listed in player spellcheck file:
     if (spChecker != NULL) {
-        const PlayerInfo* pInfo = spChecker->getPlayerInfo(playerName);
+        const scidup::spelling::PlayerInfo* pInfo = spChecker->getPlayerInfo(playerName);
         if (pInfo) { AppendResult (ti, "  ", pInfo->GetComment(), newline, NULL); }
     }
     std::snprintf(temp, sizeof(temp), "  %s%u%s %s (%s: %u)",
@@ -5845,7 +5845,7 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // Print biography if applicable:
     if (spChecker != NULL) {
         std::vector<const char*> bio;
-        const PlayerInfo* pInfo = spChecker->getPlayerInfo(playerName, &bio);
+        const scidup::spelling::PlayerInfo* pInfo = spChecker->getPlayerInfo(playerName, &bio);
         if (pInfo != 0) {
             for (size_t i=0, n=bio.size(); i < n; i++) {
                 if (i == 0) {
@@ -6377,7 +6377,7 @@ sc_name_plist (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 //
 //   Returns a two-integer list: the number of changed ratings, and
 //   the number of changed games.
-UI_res_t sc_name_ratings (UI_handle_t ti, scidBaseT& dbase, const SpellChecker& sp, int argc, const char ** argv)
+UI_res_t sc_name_ratings (UI_handle_t ti, scidBaseT& dbase, const scidup::spelling::SpellChecker& sp, int argc, const char ** argv)
 {
     const char * options[] = {
         "-update", "-test", "-change", "-filter" };
@@ -6418,7 +6418,7 @@ UI_res_t sc_name_ratings (UI_handle_t ti, scidBaseT& dbase, const SpellChecker& 
     uint numChangedGames = 0;
     const NameBase* nb = dbase.getNameBase();
     std::vector<bool> cached(nb->GetNumNames(NAME_PLAYER), false);
-    std::vector<const PlayerElo*> vElo(nb->namebase_size(NAME_PLAYER), NULL);
+    std::vector<const scidup::spelling::PlayerElo*> vElo(nb->namebase_size(NAME_PLAYER), NULL);
 
     auto getElo = [&](idNumberT id, dateT date) {
         if (!cached[id]) {
@@ -6485,7 +6485,8 @@ sc_name_read (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (argc > 2) {
         const char * filename = argv[2];
         Progress progress = UI_CreateProgress(ti);
-        std::pair<errorT, SpellChecker*> newSpell = SpellChecker::Create(filename, progress);
+        std::pair<errorT, scidup::spelling::SpellChecker*> newSpell =
+            scidup::spelling::SpellChecker::Create(filename, progress);
         if (newSpell.first != OK) {
             return UI_Result(ti, newSpell.first, "Error reading name spellcheck file.");
         }
@@ -6505,7 +6506,7 @@ sc_name_read (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // sc_name_spellcheck:
 //   Scan the current database for spelling corrections.
-UI_res_t sc_name_spellcheck (UI_handle_t ti, scidBaseT& dbase, const SpellChecker& sp, int argc, const char ** argv)
+UI_res_t sc_name_spellcheck (UI_handle_t ti, scidBaseT& dbase, const scidup::spelling::SpellChecker& sp, int argc, const char ** argv)
 {
     nameT nt = NAME_INVALID;
     uint maxCorrections = 20000;
@@ -6614,7 +6615,7 @@ UI_res_t sc_name_spellcheck (UI_handle_t ti, scidBaseT& dbase, const SpellChecke
             correctCmd += tempStr;
 
             if (nt == NAME_PLAYER) { // Look for a player birthdate:
-                const PlayerInfo* pInfo = sp.getPlayerInfo(corrections[i]);
+                const scidup::spelling::PlayerInfo* pInfo = sp.getPlayerInfo(corrections[i]);
                 dateT birthdate = pInfo->getBirthdate();
                 dateT deathdate = pInfo->getDeathdate();
                 if (birthdate != ZERO_DATE  ||  deathdate != ZERO_DATE) {
@@ -8156,7 +8157,7 @@ sc_search_header (ClientData, Tcl_Interp * ti, scidBaseT* base, HFilter& filter,
             mWhite.resize(numNames, true);
             for (i=0; i < numNames; i++) {
                 const char * name = base->getNameBase()->GetName (NAME_PLAYER, i);
-                const PlayerInfo* pInfo = spellChk->getPlayerInfo(name);
+                const scidup::spelling::PlayerInfo* pInfo = spellChk->getPlayerInfo(name);
                 const char * title = (pInfo) ? pInfo->getTitle() : "";
                 if ((!wTitles[TITLE_GM]  &&  strEqual(title, "gm"))
                     || (!wTitles[TITLE_GM]  &&  strEqual(title, "hgm"))
@@ -8188,7 +8189,7 @@ sc_search_header (ClientData, Tcl_Interp * ti, scidBaseT* base, HFilter& filter,
             mBlack.resize(numNames, true);
             for (i=0; i < numNames; i++) {
                 const char * name = base->getNameBase()->GetName (NAME_PLAYER, i);
-                const PlayerInfo* pInfo = spellChk->getPlayerInfo(name);
+                const scidup::spelling::PlayerInfo* pInfo = spellChk->getPlayerInfo(name);
                 const char * title = (pInfo) ? pInfo->getTitle() : "";
                 if ((!bTitles[TITLE_GM]  &&  strEqual(title, "gm"))
                     || (!bTitles[TITLE_GM]  &&  strEqual(title, "hgm"))

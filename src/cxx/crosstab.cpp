@@ -186,7 +186,8 @@ Crosstable::Destroy ()
 //      Adds a player to the crosstable, if that player is not
 //      already listed.
 errorT
-Crosstable::AddPlayer (idNumberT id, const char * name, eloT elo, const SpellChecker* SpellCheck)
+Crosstable::AddPlayer (idNumberT id, const char * name, eloT elo,
+                       const scidup::spelling::SpellChecker* SpellCheck)
 {
     for (uint i = 0; i < PlayerCount; i++) {
         if (PlayerData[i]->id == id) {
@@ -225,7 +226,7 @@ Crosstable::AddPlayer (idNumberT id, const char * name, eloT elo, const SpellChe
     }
 
     if (SpellCheck != NULL ) {
-        const PlayerInfo* pInfo = SpellCheck->getPlayerInfo(name);
+        const scidup::spelling::PlayerInfo* pInfo = SpellCheck->getPlayerInfo(name);
         if (pInfo != NULL) {
             strCopy (pdata->title, pInfo->getTitle());
             strCopy (pdata->country, pInfo->getLastCountry());
