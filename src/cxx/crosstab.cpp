@@ -229,7 +229,7 @@ Crosstable::AddPlayer (idNumberT id, const char * name, eloT elo,
         const scidup::spelling::PlayerInfo* pInfo = SpellCheck->getPlayerInfo(name);
         if (pInfo != NULL) {
             strCopy (pdata->title, pInfo->getTitle());
-            strCopy (pdata->country, pInfo->getLastCountry());
+            strCopy (pdata->country, pInfo->getLastCountry().c_str());
             pdata->birthdate = pInfo->getBirthdate();
             if (strEqual (pdata->title, "w")) { strCopy (pdata->title, "w  "); }
         }

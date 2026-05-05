@@ -143,10 +143,7 @@ public:
 	: sp_(sp), validate_(v), nt_(NAME_INVALID), nameIdx_(-1) {
 	}
 
-	errorT load(const Parser& data, bool* keepBuffer) {
-		ASSERT(keepBuffer != 0);
-		*keepBuffer = false;
-
+	errorT load(const Parser& data) {
 		switch (data.type) {
 			case SPELL_SECTIONSTART:
 				nt_ = NameBase::NameTypeFromString(data.name);
@@ -163,10 +160,10 @@ public:
 			case SPELL_PREFIX:
 			case SPELL_INFIX:
 			case SPELL_SUFFIX:
-				return nameSection(data, keepBuffer);
+				return nameSection(data);
 			case SPELL_BIO:
 			case SPELL_ELO:
-				return playerInfo(data, keepBuffer);
+				return playerInfo(data);
 			case SPELL_EMPTY:
 				return OK;
 			case SPELL_OLDBIO:
@@ -180,18 +177,17 @@ public:
 	}
 
 private:
-	errorT nameSection(const Parser& data, bool* keepBuffer) {
+	errorT nameSection(const Parser& data) {
 		// Must be in a valid name section
 		if (!NameBase::IsValidNameType(nt_)) return ERROR_CorruptData;
 
 		switch (data.type) {
 			case SPELL_NEWNAME:
-				*keepBuffer = true;
 				ASSERT(sp_.names_[nt_].size() < (1ULL << 31));
 				nameIdx_ = static_cast<int32_t>(sp_.names_[nt_].size());
-				sp_.names_[nt_].push_back(data.name);
+				sp_.names_[nt_].push_back(sp_.storeString(data.name));
 				if (nt_ == NAME_PLAYER) {
-					sp_.pInfo_.push_back(data.extra);
+					sp_.pInfo_.push_back(sp_.storeString(data.extra));
 				}
 				/* FALLTHRU */
 			case SPELL_ALIAS:
@@ -217,18 +213,17 @@ private:
 		return ERROR_CorruptData;
 	}
 
-	errorT playerInfo(const Parser& data, bool* keepBuffer) {
+	errorT playerInfo(const Parser& data) {
 		// SPELL_BIO and SPELL_ELO are valid only for a PLAYER name
 		if (nt_ != NAME_PLAYER || nameIdx_ == -1) return ERROR_CorruptData;
 
 		if (data.type == SPELL_BIO) {
-			*keepBuffer = true;
-			sp_.pInfo_[nameIdx_].bio_.push_back(data.name);
+			sp_.pInfo_[nameIdx_].bio_.push_back(sp_.storeString(data.name));
 		} else {
 			ASSERT(data.type == SPELL_ELO);
 			// if necessary, add empty PlayerElo objects
 			sp_.pElo_.resize(nameIdx_ + 1);
-			sp_.pElo_[nameIdx_].AddEloData(data.name);
+			sp_.pElo_[nameIdx_].addEloData(data.name);
 		}
 
 		return OK;
@@ -250,7 +245,7 @@ private:
 errorT SpellChecker::read(const char* filename, const Progress& progress)
 {
 	ASSERT(filename != NULL);
-	ASSERT(staticStrings_ == NULL);
+	ASSERT(strings_.empty());
 
 	// Open the file and get the file size.
 	Filebuf file;
@@ -264,25 +259,20 @@ errorT SpellChecker::read(const char* filename, const Progress& progress)
 	SpellingValidate validate(filename, *this);
 
 	// Parse the file lines
-	staticStrings_ = (char*) malloc(fileSize + 1);
-	char* bEnd = staticStrings_ + fileSize + 1;
-	char* line = staticStrings_;
+	std::vector<char> lineBuffer(fileSize + 1);
 	size_t nRead;
 	uint report_i = 0;
 	std::streamsize report_done = 0;
 	SpellingLoader loader(*this, validate);
-	while ((nRead = file.getline(line, std::distance(line, bEnd))) != 0) {
+	while ((nRead = file.getline(lineBuffer.data(), lineBuffer.size())) != 0) {
 		report_done += nRead;
 		if ((++report_i % 10000) == 0) {
 			if (!progress.report(report_done, fileSize))
 				return ERROR_UserCancel;
 		}
 
-		bool keepBuffer;
-		errorT err = loader.load(Parser(line), &keepBuffer);
+		errorT err = loader.load(Parser(lineBuffer.data()));
 		if (err != OK) return err;
-
-		if (keepBuffer) line += nRead;
 	}
 	if (report_done != fileSize || file.sgetc() != EOF) return ERROR_FileRead;
 
@@ -291,25 +281,6 @@ errorT SpellChecker::read(const char* filename, const Progress& progress)
 		// if necessary, add empty PlayerElo objects
 		pElo_.resize(pInfo_.size());
 		validate.checkEloData();
-	}
-
-	// Free unused memory
-	const auto new_size = std::distance(staticStrings_, line);
-	char* shrink = (char*)realloc(staticStrings_, new_size ? new_size : 1);
-	if (shrink) {
-		const auto offset = shrink - staticStrings_;
-		staticStrings_ = shrink;
-		if (offset) { // realloc() moved the memory: update the pointers.
-			for (nameT i = 0; i < NUM_NAME_TYPES; i++) {
-				for (auto& e : names_[i])
-					e += offset;
-			}
-			for (auto& e : pInfo_) {
-				e.comment_ += offset;
-				for (auto& bio : e.bio_)
-					bio += offset;
-			}
-		}
 	}
 
 	// Sort the index
@@ -347,7 +318,7 @@ errorT SpellChecker::read(const char* filename, const Progress& progress)
 // The (external) algorithm to map ratings to actual periods must be able to cope with
 // the holes that - as a consequence - will appear in the rating graph constructed here!
 //
-void PlayerElo::AddEloData(const char * str)
+void PlayerElo::addEloData(const char * str)
 {
     while (1) {
         // Get the year in which the rating figures to follow were published
@@ -398,7 +369,7 @@ PlayerInfo::getTitle() const
     };
     const char ** titlePtr = titles;
 
-    const char* comment = GetComment();
+    const char* comment = getComment();
     if (*comment == 0) { return ""; }
 
     while (*titlePtr != NULL) {
@@ -414,13 +385,10 @@ PlayerInfo::getTitle() const
 //    is the second field, after the title), then return the
 //    last three letters in the country field, or the empty string
 //    if the country field is less than 3 characters long.
-const char *
+std::string
 PlayerInfo::getLastCountry() const
 {
-    static char country[4];
-    country[0] = 0;
-
-    const char* start = GetComment();
+    const char* start = getComment();
     if (*start == 0) { return ""; }
 
     // Skip over the title field:
@@ -432,10 +400,9 @@ PlayerInfo::getLastCountry() const
     while (*end != ' '  &&  *end != 0) { end++; length++; }
     // Return the final three characters of the country field:
     if (length >= 3) {
-        for (int i=0; i < 3; i++) { country[i] = start[length-3 + i]; }
-        country[3] = 0;
+        return std::string(start + length - 3, 3);
     }
-    return country;
+    return "";
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -446,7 +413,7 @@ PlayerInfo::getLastCountry() const
 eloT
 PlayerInfo::getPeakRating() const
 {
-    const char* s = GetComment();
+    const char* s = getComment();
     if (*s == 0) { return 0; }
 
     while (*s != '['  &&  *s != 0) { s++; }
@@ -463,7 +430,7 @@ PlayerInfo::getPeakRating() const
 dateT
 PlayerInfo::getBirthdate() const
 {
-    const char* s = GetComment();
+    const char* s = getComment();
     if (*s == 0) { return ZERO_DATE; }
 
     // Find the end-bracket character after the rating:
@@ -483,7 +450,7 @@ PlayerInfo::getBirthdate() const
 dateT
 PlayerInfo::getDeathdate() const
 {
-    const char* s = GetComment();
+    const char* s = getComment();
     if (*s == 0) { return ZERO_DATE; }
 
     // Find the end-bracket character after the rating:

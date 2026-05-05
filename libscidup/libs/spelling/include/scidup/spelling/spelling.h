@@ -21,6 +21,8 @@
 
 #include "scidup/database/namebase.h"
 #include "scidup/database/date.h"
+#include <deque>
+#include <memory>
 #include <string>
 #include <vector>
 #include <utility>
@@ -145,7 +147,7 @@ class PlayerElo {
 	std::vector< std::pair<uint16_t, eloT> > elo_;
 
 public:
-	void AddEloData(const char* str);
+	void addEloData(const char* str);
 
 	eloT getElo (dateT date) const {
 		uint year = date_GetYear (date);
@@ -241,11 +243,11 @@ class PlayerInfo {
 public:
 	PlayerInfo(const char* s) : comment_(s) {}
 	const char* getTitle() const;
-	const char* getLastCountry() const;
+	std::string getLastCountry() const;
 	dateT getBirthdate() const;
 	dateT getDeathdate() const;
 	eloT getPeakRating() const;
-	const char* GetComment() const {
+	const char* getComment() const {
 		return (comment_ != 0) ? comment_ : "";
 	}
 };
@@ -275,33 +277,27 @@ class SpellChecker {
 	std::vector<const char*> names_[NUM_NAME_TYPES];
 	std::vector<PlayerInfo> pInfo_;
 	std::vector<PlayerElo>  pElo_;
-	char* staticStrings_;
+	std::deque<std::string> strings_;
 
 	friend class SpellingLoader;
 
 public:
-	~SpellChecker() {
-		free(staticStrings_);
-	}
-
 	/**
-	 * Create() - Create a new SpellChecker object
+	 * create() - Create a new SpellChecker object
 	 *
 	 * Create a new SpellChecker reading from @e filename.
-	 * It's the caller's responsibility to free the object with "delete".
 	 * Return:
-	 * - OK and a pointer to the new object
-	 * - on error the ERROR_*CODE* and NULL
+	 * - OK and a pointer to the new object.
+	 * - on error the ERROR_*CODE* and nullptr.
 	 */
-	static std::pair<errorT, SpellChecker*> Create(const char* filename,
-	                                               const Progress& progress) {
-		SpellChecker* res = new SpellChecker;
+	static std::pair<errorT, std::unique_ptr<SpellChecker>> create(
+	    const char* filename, const Progress& progress) {
+		auto res = std::unique_ptr<SpellChecker>(new SpellChecker);
 		errorT err = res->read(filename, progress);
 		if (err != OK) {
-			delete res;
-			res = NULL;
+			res.reset();
 		}
-		return std::make_pair(err, res);
+		return std::make_pair(err, std::move(res));
 	}
 
 	/**
@@ -377,11 +373,17 @@ public:
 	}
 
 private:
-	SpellChecker() : staticStrings_(NULL) {}
-	SpellChecker(const SpellChecker&);
-	SpellChecker& operator=(const SpellChecker&);
+	SpellChecker() = default;
+	SpellChecker(const SpellChecker&) = delete;
+	SpellChecker& operator=(const SpellChecker&) = delete;
 
 	errorT read(const char* filename, const Progress& progress);
+
+	const char* storeString(const char* s) {
+		if (s == nullptr) return nullptr;
+		strings_.push_back(s);
+		return strings_.back().c_str();
+	}
 
 	std::string normalizeAndTransform(const nameT& nt, const char* s) const { 
 		std::string res;

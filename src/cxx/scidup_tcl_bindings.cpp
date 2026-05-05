@@ -81,13 +81,13 @@ const int MAX_BASES = 9;
 
 static Game * scratchGame = NULL;      // "scratch" game for searches, etc.
 static std::unique_ptr<scidup::eco::Book> ecoBook; // eco classification book.
-static scidup::spelling::SpellChecker* spellChk;         // Name correction.
+static std::unique_ptr<scidup::spelling::SpellChecker> spellChk; // Name correction.
 static OpTable * reports[2] = {NULL, NULL};
 
 void scid_Exit(void*) {
 	DBasePool::closeAll();
 	if (scratchGame != NULL) delete scratchGame;
-	if (spellChk != NULL) delete spellChk;
+	spellChk.reset();
 	for (size_t i = 0, n = sizeof(reports) / sizeof(reports[0]); i < n; i++) {
 		if (reports[i] != NULL) delete reports[i];
 	}
@@ -2360,7 +2360,7 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     // Find all games that should be listed in the crosstable:
-    const scidup::spelling::SpellChecker* spell = spellChk;
+    const scidup::spelling::SpellChecker* spell = spellChk.get();
     bool tableFullMessage = false;
     for (uint i=0, n = db->numGames(); i < n; i++) {
         const IndexEntry* ie = db->getIndexEntry(i);
@@ -5812,14 +5812,14 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (tWidth > wbtWidth) { wbtWidth = tWidth; }
     const char * fmt = \
      "%s  %-*s %3u%c%02u%%   +%s%3u%s  =%s%3u%s  -%s%3u%s  %4u%c%c /%s%4u%s";
-    scidup::spelling::SpellChecker* spChecker = spellChk;
+    scidup::spelling::SpellChecker* spChecker = spellChk.get();
 
     AppendResult (ti, startBold, playerName, endBold, newline, NULL);
 
     // Show title, country, etc if listed in player spellcheck file:
     if (spChecker != NULL) {
         const scidup::spelling::PlayerInfo* pInfo = spChecker->getPlayerInfo(playerName);
-        if (pInfo) { AppendResult (ti, "  ", pInfo->GetComment(), newline, NULL); }
+        if (pInfo) { AppendResult (ti, "  ", pInfo->getComment(), newline, NULL); }
     }
     std::snprintf(temp, sizeof(temp), "  %s%u%s %s (%s: %u)",
              htextOutput ? "<red><run sc_name info -faA {}; ::windows::stats::Refresh>" : "",
@@ -6485,13 +6485,12 @@ sc_name_read (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (argc > 2) {
         const char * filename = argv[2];
         Progress progress = UI_CreateProgress(ti);
-        std::pair<errorT, scidup::spelling::SpellChecker*> newSpell =
-            scidup::spelling::SpellChecker::Create(filename, progress);
+        std::pair<errorT, std::unique_ptr<scidup::spelling::SpellChecker>> newSpell =
+            scidup::spelling::SpellChecker::create(filename, progress);
         if (newSpell.first != OK) {
             return UI_Result(ti, newSpell.first, "Error reading name spellcheck file.");
         }
-        if (spellChk != NULL) { delete spellChk; }
-        spellChk = newSpell.second;
+        spellChk = std::move(newSpell.second);
         progress.report(1, 1);
     }
 
