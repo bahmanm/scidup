@@ -80,7 +80,7 @@ const int MAX_BASES = 9;
 
 
 static Game * scratchGame = NULL;      // "scratch" game for searches, etc.
-static std::unique_ptr<PBook> ecoBook; // eco classification pbook.
+static std::unique_ptr<scidup::eco::Book> ecoBook; // eco classification book.
 static SpellChecker* spellChk;         // Name correction.
 static OpTable * reports[2] = {NULL, NULL};
 
@@ -1226,10 +1226,10 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         ecoT ecoCode = ECO_None;
         for (;;) {
             auto pos = g->GetCurrentPos();
-            if (pos->TotalMaterial() < ecoBook->FewestPieces())
+            if (pos->TotalMaterial() < ecoBook->fewestPieces())
                 break;
 
-            const auto eco = ecoBook->findECO(pos);
+            const auto eco = ecoBook->findEco(*pos);
             if (eco != ECO_None) {
                 ecoCode = eco;
             }
@@ -1286,7 +1286,7 @@ sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     game.MoveToEnd();
     ecoT ecoCode = ECO_None;
     do {
-        ecoCode = ecoBook->findECO(game.GetCurrentPos());
+        ecoCode = ecoBook->findEco(*game.GetCurrentPos());
     } while (ecoCode == ECO_None && game.MoveBackup() == OK);
 
     auto ply = game.GetCurrentPly();
@@ -1312,7 +1312,7 @@ sc_eco_read (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     if (argc < 3) { return TCL_OK; }
     ecoBook = nullptr;
-    auto book = PBook::ReadEcoFile(argv[2]);
+    auto book = scidup::eco::Book::load(argv[2]);
     if (book.first != OK) {
         if (book.first == ERROR_FileOpen) {
             AppendResult (ti, "Unable to open the ECO file:\n",
@@ -1323,8 +1323,39 @@ sc_eco_read (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         }
         return book.first;
     }
-    ecoBook = std::move(book.second);
-    return UI_Result(ti, OK, ecoBook->Size());
+    ecoBook = std::make_unique<scidup::eco::Book>(std::move(book.second));
+    return UI_Result(ti, OK, ecoBook->size());
+}
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// formatEcoSummary:
+//    Formats structured ECO book lines using the legacy text shape consumed by
+//    sc_eco_summary's translation and hypertext conversion.
+std::string
+formatEcoSummary(const scidup::eco::Book& book, std::string_view prefix)
+{
+    auto res = std::string();
+    auto prevCode = std::string_view();
+    for (const auto& line : book.linesWithPrefix(prefix)) {
+        if (prefix.size() < 3) {
+            const auto common = std::mismatch(line.code.begin(), line.code.end(),
+                                              prevCode.begin(), prevCode.end());
+            const size_t nChars = std::distance(line.code.begin(), common.first);
+            if (nChars > prefix.size()) {
+                continue;
+            }
+
+            prevCode = line.code;
+        }
+
+        res.append(line.code);
+        res.append(" [");
+        res.append(line.name);
+        res.append("]  ");
+        res.append(line.moves);
+        res.push_back('\n');
+    }
+    return res;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1343,7 +1374,7 @@ sc_eco_summary (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     DString * dstr = new DString;
     DString * temp = new DString;
     bool inMoveList = false;
-    translateECO(ti, ecoBook->EcoSummary(argv[2]).c_str(), dstr);
+    translateECO(ti, formatEcoSummary(*ecoBook, argv[2]).c_str(), dstr);
     if (color) {
         DString * oldstr = dstr;
         dstr = new DString;
@@ -2699,7 +2730,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         } else if (strIsPrefix(argv[arg], "ECO")) {
             std::string str;
             if (ecoBook) {
-                auto ecoStr = ecoBook->findECOstr(g.GetCurrentPos());
+                auto ecoStr = ecoBook->findEcoString(*g.GetCurrentPos());
                 if (!ecoStr.empty())
                     str.append(ecoStr);
             }
@@ -2996,7 +3027,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Now check ECO book for the current position:
     if (ecoBook) {
-        auto ecoStr = ecoBook->findECOstr(g.GetCurrentPos());
+        auto ecoStr = ecoBook->findEcoString(*g.GetCurrentPos());
         if (!ecoStr.empty()) {
             std::string ecoComment(ecoStr);
             ecoT eco = eco_FromString(ecoComment.c_str());
@@ -3300,7 +3331,7 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     Game* g = &editor.game();
     if (ecoBook) {
         while (g->MoveForward() == OK) {}
-        while (ecoBook->findECOstr(g->GetCurrentPos()).empty()) {
+        while (ecoBook->findEcoString(*g->GetCurrentPos()).empty()) {
             if (g->MoveBackup() != OK) break;
         }
     }
@@ -4964,7 +4995,7 @@ sc_pos_bestSquare (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         if (ecoBook != NULL) {
             for (uint i=0; i < mlist.Size(); i++) {
                 pos->DoSimpleMove(*mlist.Get(i));
-                ecoT eco = ecoBook->findECO(pos);
+                ecoT eco = ecoBook->findEco(*pos);
                 pos->UndoSimpleMove (*mlist.Get(i));
                 if (eco >= bestEco) {
                     secondBestEco = bestEco;
@@ -7162,7 +7193,7 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 searchPos.makeMove(move.getFrom(), move.getTo(), promo, sm);
             }
             searchPos.DoSimpleMove(sm);
-            eco = ecoBook->findECO(&searchPos);
+            eco = ecoBook->findEco(searchPos);
             searchPos.UndoSimpleMove(sm);
         }
         return eco;

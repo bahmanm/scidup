@@ -19,7 +19,9 @@
 #include "scidup/database/game.h"
 #include "scidup/database/indexentry.h"
 #include <string>
-class PBook;
+namespace scidup::eco {
+class Book;
+}
 
 const uint OPTABLE_COLUMNS = 8;
 const uint OPTABLE_MIN_ROWS = 5;
@@ -175,12 +177,12 @@ class OpTable
     void PrintNotes (DString * dstr, uint format);
 
   public:
-    OpTable (const char * type, Game * g, PBook * ecoBook) {
+    OpTable (const char * type, Game * g, scidup::eco::Book * ecoBook) {
         Init (type, g, ecoBook);
     }
     OpTable (const char * type, Game * g) { Init (type, g, NULL); }
     ~OpTable() { Clear();  delete[] Type; }
-    void Init (const char * type, Game * g, PBook * ecoBook);
+    void Init (const char * type, Game * g, scidup::eco::Book * ecoBook);
     void Clear ();
     void ClearNotes ();
     void SetFormat (const char * str);
