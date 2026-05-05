@@ -30,7 +30,7 @@
 #include "engine.h"
 #include "scidup/database/game.h"
 #include "optable.h"
-#include "pbook.h"
+#include "scidup/eco/book.h"
 #include "scidup/database/pgnparse.h"
 #include "polyglot.h"
 #include "scidup/database/position.h"
