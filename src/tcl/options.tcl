@@ -554,8 +554,9 @@ set ::utils::sound::announceNew 0
 set ::utils::sound::announceForward 0
 set ::utils::sound::announceBack 0
 
-# Spell-checking file: default is "spelling.ssp".
-set spellCheckFile [file join $scidShareDir "spelling.ssp"]
+# Spell-checking file: default is "spelling/default.ssp".
+set defaultSpellCheckFile [file join $scidShareDir "spelling" "default.ssp"]
+set spellCheckFile $defaultSpellCheckFile
 
 # book configuration
 set ::book::lastBook "" ; # book name without extension (.bin)

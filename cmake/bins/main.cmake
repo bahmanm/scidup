@@ -66,9 +66,4 @@ target_include_directories(
     PRIVATE "${SCIDUP_GENERATED_INCLUDE_DIR}" )
 target_link_libraries(
     scidup_main
-    PRIVATE ScidUp::Database ScidUp::Eco ScidUp::Libs::Polyglot Threads::Threads ScidUp::Libs::Tcl )
-
-option( SPELLCHKVALIDATE "Verify the integrity of spelling files" OFF )
-if( SPELLCHKVALIDATE )
-    target_compile_definitions( scidup_main PRIVATE SPELLCHKVALIDATE )
-endif()
+    PRIVATE ScidUp::Database ScidUp::Eco ScidUp::Spelling ScidUp::Libs::Polyglot Threads::Threads ScidUp::Libs::Tcl )

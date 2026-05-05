@@ -77,18 +77,20 @@ actually changes all occurrences of it.
 
 <h3><a name="Spellcheck">Spellchecking names</a></h3>
 <p>
-Scid comes with a <b><i><font color="#990000">spellcheck</font></i></b> file named <b>spelling.ssp</b>,
-for correction of player, event, site and round names.
-Scid will try to load the spellcheck file whenever it starts up; if it
+ScidUp comes with a <b><i><font color="#990000">spellcheck</font></i></b> file named <b>spelling/default.ssp</b>,
+for correction of ICCF player names.
+Other Scid-compatible <b>.ssp</b> files can also provide corrections for player,
+event, site and round names.
+ScidUp will try to load the spellcheck file whenever it starts up; if it
 does not load, you can load it from the <b><font color="#007000">[Options]</font></b> menu.
 </p>
 <p>
 Once the spellcheck file is loaded, you can use it on a
-a Scid database using the spellcheck commands in the
+a ScidUp database using the spellcheck commands in the
 <b><font color="#007000">[File: Maintenance]</font></b> menu, or from the maintenance window.
 </p>
 <p>
-When you spellcheck a database, Scid produces a list of corrections that you
+When you spellcheck a database, ScidUp produces a list of corrections that you
 can edit before actually making any corrections, so you can remove any
 corrections you do not want to make.
 </p>
@@ -107,23 +109,23 @@ used to enhance the <a href="PInfo.html">player information</a> window and the
 you will see FIDE master title
 (<b>gm</b> = International Grandmaster, <b>im</b> = International Master, etc)
 and country information for any player that is
-listed in the spellcheck file. Over 6500 strong players of the past and
-present are listed in the <b>spelling.ssp</b> file that comes with Scid.
+listed in the spellcheck file. More than 5000 ICCF players are listed in the
+<b>spelling/default.ssp</b> file that comes with ScidUp.
 </p>
 
 <h3><a name="Ratings">Adding Elo ratings to games</a></h3>
 <p>
-The "Add Elo ratings..." button in the Maintenance window causes Scid
+The "Add Elo ratings..." button in the Maintenance window causes ScidUp
 to search the current database for games where a player does not have
 a rating, but the spellcheck file has an Elo rating listed for that
-player at the date of the game. Scid will add all such ratings
+player at the date of the game. ScidUp will add all such ratings
 automatically. This is very useful for a database of master-level games
 which has few ratings.
 </p>
 <p>
-The spellcheck file "spelling.ssp" that comes with Scid does not contain
-the Elo rating information needed for this function, but a larger version
-of it called "ratings.ssp" is available from the <a href="Author.html">Scid website</a>.
+The spellcheck file <b>spelling/default.ssp</b> that comes with ScidUp does not
+contain the date-indexed Elo rating information needed for this function, but
+compatible rating files can be loaded from the Options menu.
 </p>
 
 <h3><a name="Cleaner">The Cleaner</a></h3>
@@ -149,4 +151,3 @@ of games in the database), just set it to a very high number such as
 
 </body>
 </html>
-
