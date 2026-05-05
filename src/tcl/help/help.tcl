@@ -2546,8 +2546,10 @@ set helpText(Maintenance) {<h1>Database maintenance</h1>
   
   <h3><name Spellcheck>Spellchecking names</name></h3>
   <p>
-  ScidUp comes with a <term>spellcheck</term> file named <b>spelling.ssp</b>,
-  for correction of player, event, site and round names.
+  ScidUp comes with a <term>spellcheck</term> file named
+  <b>spelling/default.ssp</b>, for correction of ICCF player names.
+  Other Scid-compatible <b>.ssp</b> files can also provide corrections for
+  player, event, site and round names.
   ScidUp will try to load the spellcheck file whenever it starts up; if it
   does not load, you can load it from the <menu>Options</menu> menu.
   </p>
@@ -2576,8 +2578,8 @@ set helpText(Maintenance) {<h1>Database maintenance</h1>
   you will see FIDE master title
   (<b>gm</b> = International Grandmaster, <b>im</b> = International Master, etc)
   and country information for any player that is
-  listed in the spellcheck file. Over 6500 strong players of the past and
-  present are listed in the <b>spelling.ssp</b> file that comes with ScidUp.
+  listed in the spellcheck file. More than 5000 ICCF players are listed in the
+  <b>spelling/default.ssp</b> file that comes with ScidUp.
   </p>
   
   <h3><name Ratings>Adding Elo ratings to games</name></h3>
@@ -2590,10 +2592,9 @@ set helpText(Maintenance) {<h1>Database maintenance</h1>
   which has few ratings.
   </p>
   <p>
-  The spellcheck file "spelling.ssp" that comes with ScidUp does not contain
-  the Elo rating information needed for this function, but a larger version
-  of it called "ratings.ssp" is available from the <url
-  http://scid.sourceforge.net/>ScidUp website</url>.
+  The spellcheck file <b>spelling/default.ssp</b> that comes with ScidUp does
+  not contain the date-indexed Elo rating information needed for this function,
+  but compatible rating files can be loaded from the <menu>Options</menu> menu.
   </p>
   
   <h3><name Cleaner>The Cleaner</name></h3>

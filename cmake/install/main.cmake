@@ -22,6 +22,9 @@ install(
     DIRECTORY "${CMAKE_SOURCE_DIR}/resources/scripts"
     DESTINATION "${SCIDUP_DATA_INSTALL_DIR}" )
 install(
+    DIRECTORY "${CMAKE_SOURCE_DIR}/resources/spelling"
+    DESTINATION "${SCIDUP_DATA_INSTALL_DIR}" )
+install(
     DIRECTORY "${CMAKE_SOURCE_DIR}/resources/sounds"
     DESTINATION "${SCIDUP_DATA_INSTALL_DIR}" )
 install(
