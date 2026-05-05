@@ -378,7 +378,7 @@ set helpText(Hints) {<h1>ScidUp Hints</h1>
   <p>
   The ECO code is displayed on the bottom line of the game
   information box, below the chessboard in the <a MainWindow>main window</a>,
-  if you have the ECO classification file (<b>scid.eco</b>) loaded. <br>
+  if you have the ECO classification file (<b>default.eco</b>) loaded. <br>
   The <a ECO>ECO codes</a> help page explains how to load the ECO classification
   file and save options so it will be loaded every time you start ScidUp.
   </p>
@@ -4048,14 +4048,14 @@ set helpText(ECO) {<h1>ECO openings classification</h1>
   
   <h3>Loading the ScidUp ECO file</h3>
   <p>
-  The ECO file that comes with ScidUp is called <b>scid.eco</b>,
+  The ECO file that comes with ScidUp is called <b>default.eco</b>,
   and ScidUp tries to load this when it starts up.
   If ScidUp cannot find it, you will need to do the following to enable ECO
   classification:
   <ul>
   <li>(a) In ScidUp, use the menu command
   <menu>Options: Load ECO file</menu>
-  and select the file <b>scid.eco</b>. </li>
+  and select the file <b>default.eco</b>. </li>
   <li>(b) Save options (from the <menu>Options</menu> menu). </li>
   </ul>
   After you do this, the ECO file will be loaded every time you start ScidUp.

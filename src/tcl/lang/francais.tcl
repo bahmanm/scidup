@@ -2519,7 +2519,7 @@ set helpText(F,Hints) {
   <p>
   Le code ECO est affiché sur la ligne inférieure de la zone d'information
   sous l'échiquier dans la <a MainWindow>fenêtre principale</a>,
-  si vous avez le fichier de classification ECO (<b>scid.eco</b>) chargé. <br>
+  si vous avez le fichier de classification ECO (<b>default.eco</b>) chargé. <br>
   La page d'aide <a ECO>codes ECO</a> explique comment charger la classification
   ECO. Enregistrez les options pour qu'il soit chargé à chaque fois que
   vous démarrez Scid.
@@ -6613,13 +6613,13 @@ set helpText(F,ECO) {
   
   <h3>Chargement du fichier Scid ECO</h3>
   <p>
-  Le fichier ECO fourni avec Scid s'appelle <b>scid.eco</b>, et Scid essaie de le charger
+  Le fichier ECO fourni avec Scid s'appelle <b>default.eco</b>, et Scid essaie de le charger
   au démarrage. Si Scid ne le trouve pas, vous devrez faire ce qui suit pour activer la
   classification ECO :
   <ul>
   <li>(a) Dans Scid, utilisez le menu
   <menu>Options</menu><menu>Charger le fichier ECO...</menu> et sélectionnez
-  le fichier <b>scid.eco</b>.</li>
+  le fichier <b>default.eco</b>.</li>
   <li>(b) Sauvegardez le chemin et le nom du fichier ECO choisi avec le menu <menu>Options</menu><menu>Enregistrer les options</menu>.</li>
   </ul>
   Après cela, ce fichier ECO sera chargé à chaque fois que vous lancerez Scid.

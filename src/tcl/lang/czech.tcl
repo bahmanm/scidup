@@ -2105,7 +2105,7 @@ Následující tah lze skrýt tak, ¾e v informaèní zónì partie stisknìte
 
 <h4>Jak mohu vidìt ECO kód zahájení pro aktuální pozici?</h4>
 <p>
-Jestli¾e byl nahrán klasifikaèní soubor ECO (<b>scid.eco</b>), ECO kód je
+Jestli¾e byl nahrán klasifikaèní soubor ECO (<b>default.eco</b>), ECO kód je
 zobrazen na posledním øádku informaèní zóny, pod ¹achovnicí v
 <a MainWindow>hlavním oknì</a>. <br>
 Stránka nápovìdy <a ECO>ECO kódu</a> vysvìtluje, jak nahrát
@@ -5096,14 +5096,14 @@ souboru, který jste natáhli.
 
 <h3>Nata¾ení ECO souboru Scidu</h3>
 <p>
-ECO soubor distribuovaný spoleènì se Scidem se jmenuje <b>scid.eco</b> a Scid se
+ECO soubor distribuovaný spoleènì se Scidem se jmenuje <b>default.eco</b> a Scid se
 ho pokou¹í pøi svém startu natáhnout.
 Jestli¾e ho Scid nemù¾e najít, bude potøeba, aby byla mo¾ná ECO klasifikace,
 udìlat následující:
 <ul>
 <li>(a) Ve Scidu, pou¾ijte pøíkaz menu
         <menu>Volby: Natáhnout ECO
-        soubor...</menu> a vyberte soubor <b>scid.eco</b>. </li>
+        soubor...</menu> a vyberte soubor <b>default.eco</b>. </li>
 <li>(b) Ulo¾te volby (z menu <menu>Volby</menu>). </li>
 </ul>
 Poté, co to provedete, ECO soubor bude nata¾en pøi ka¾dém spu¹tìní Scidu.

@@ -1473,12 +1473,12 @@ set ecoFile_fullname [file nativename $ecoFile]
 if {$loadAtStart(eco)} {
   ::splash::add "Trying to load the ECO openings file..."
   if {[catch { sc_eco read $ecoFile_fullname } result]} {
-    # Could not load, so try "scid.eco" in the current directory:
-    if {[catch {sc_eco read "scid.eco"} result]} {
+    # Could not load, so try "default.eco" in the current directory:
+    if {[catch {sc_eco read "default.eco"} result]} {
       # Neither attempt worked, so do not use ECO classification
       ::splash::add "    Unable to open the ECO file: $ecoFile"
     } else {
-      ::splash::add "    ECO file \"./scid.eco\" loaded: $result positions."
+      ::splash::add "    ECO file \"./default.eco\" loaded: $result positions."
     }
   } else {
     ::splash::add "    ECO file \"[file tail $ecoFile_fullname]\"  loaded: $result positions."

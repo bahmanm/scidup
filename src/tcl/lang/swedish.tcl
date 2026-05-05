@@ -2449,7 +2449,7 @@ Du kan dölja nästa drag genom att högerklicka partiinformationen och välja  <b>D
 <h4>Var finner jag ECO-koden för öppningen på brädet?</h4>
 <p>
 ECO-koden visas på sista raden i partiinformationen nedanför brädet i  <a MainWindow>huvudfönstret</a>,
-om du har laddat ECO-klassificeringsfilen (<b>scid.eco</b>). <br>
+om du har laddat ECO-klassificeringsfilen (<b>default.eco</b>). <br>
 Hjälpsidan för <a ECO>ECO-koder</a> förklarar hur man laddar ECO-klassificeringsfilen och ställer in programmet så att
 den laddas varje gång man startar Scid.
 </p>
@@ -4954,13 +4954,13 @@ enligt den ECO-fil som du har öppnat.
 
 <h3>Öppna Scids ECO-fil</h3>
 <p>
-ECO-filen som kommer med Scid heter scid.eco och Scid försöker att öppna den när det 
+ECO-filen som kommer med Scid heter default.eco och Scid försöker att öppna den när det 
 startar. Om Scid inte kan hitta den behöver du göra följande för att använda 
 ECO-klassificeringen: 
 </p>
 
 <p>
-(a) I Scid använd menykommandot <b>[Alternativ: Ladda ECO-fil]</b> och välj filen <b>scid.eco</b>. 
+(a) I Scid använd menykommandot <b>[Alternativ: Ladda ECO-fil]</b> och välj filen <b>default.eco</b>. 
 (b) Spara alternativ (i  <b>[Alternativ]</b> menyn). 
 Efter att du har gjort deta kommer ECO-filen att laddas varje gång du startar Scid. 
 </p>

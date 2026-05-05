@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 #
 # eco2pgn
-# This file converts the Scid openings classification file (scid.eco)
+# This file converts the Scid openings classification file (default.eco)
 # and converts it into a PGN file. The main advantage of having it as
 # a PGN file is the ability to explore it with the Tree window in Scid.
 #
-# Usage: eco2pgn scid.eco > scideco.pgn
+# Usage: eco2pgn default.eco > scideco.pgn
 #
 # Contributed by John Wiegley, 2001.08.13
 #
