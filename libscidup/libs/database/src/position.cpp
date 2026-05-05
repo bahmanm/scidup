@@ -2237,7 +2237,7 @@ void Position::MakeLongStr(char* str) const {
 //    can be used as a regular null-terminated string), the value 1
 //    is added to the color, castling and en passant fields.
 void
-Position::PrintCompactStr (char * cboard)
+Position::PrintCompactStr (char * cboard) const
 {
     for (uint i=0; i < 32; i++) {
         uint i2 = i << 1;

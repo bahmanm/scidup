@@ -18,12 +18,11 @@
  *
  */
 
-#ifndef SCID_PBOOK_H
-#define SCID_PBOOK_H
+#ifndef SCIDUP_ECO_BOOK_H
+#define SCIDUP_ECO_BOOK_H
 
 #include "scidup/database/common.h"
-#include "scidup/database/misc.h"
-#include <algorithm>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -31,64 +30,68 @@
 #include <vector>
 class Position;
 
+namespace scidup::eco {
+
 /**
- * A PBook is a collection of chess positions, each with the corresponding ECO
+ * A Book is a collection of chess positions, each with the corresponding ECO
  * code, a mnemonic name, and the list of moves to reach the position.
  */
-class PBook {
-	struct bookDataT {
+class Book {
+public:
+	struct Line {
+		std::string_view code;
+		std::string_view name;
+		std::string_view moves;
+	};
+
+private:
+	struct BookData {
 		std::unique_ptr<char[]> compactStr;
 		std::unique_ptr<char[]> comment;
 
-		bookDataT(char* compact, char* comm)
+		BookData(char* compact, char* comm)
 		    : compactStr(compact), comment(comm) {}
 	};
-	std::unordered_multimap<unsigned, bookDataT> pos_;
+
+	std::unordered_multimap<unsigned, BookData> pos_;
 	std::vector<const char*> comments_;
-	unsigned LineCount = 0;
-	unsigned LeastMaterial = 32; // The smallest amount of material in any
+	unsigned lineCount_ = 0;
+	unsigned leastMaterial_ = 32; // The smallest amount of material in any
 	                             // position in the book. In the range 0..32.
+
 public:
 	/**
-	 * Read a file with a list of ECO codes and creates a PBook object.
+	 * Read a file with a list of ECO codes and creates a Book object.
 	 * The file is composed of lines like this:
 	 * C50a "Italian Game"  1.e4 e5 2.Nf3 Nc6 3.Bc4 *
-	 * @param FileName: the name of the file to be read.
+	 * @param path: the path of the file to be read.
 	 * @returns
-	 * - on success, a @e std::pair containing OK and the pointer to the newly
-	 *   created object.
-	 * - on failure, a @e std::pair containing an error code and nullptr.
+	 * - on success, a @e std::pair containing OK and the newly created object.
+	 * - on failure, a @e std::pair containing an error code and an empty object.
 	 */
-	static std::pair<errorT, std::unique_ptr<PBook> >
-	ReadEcoFile(const char* FileName);
+	static std::pair<errorT, Book> load(const std::filesystem::path& path);
 
 	/**
 	 * Retrieve an ECO string containing the ECO code and the mnemonic name.
-	 * @param pos: the position to search for.
+	 * @param position: the position to search for.
 	 * @returns an empty string_view if the position is not found
 	 */
-	std::string_view findECOstr(Position* pos) const;
+	std::string_view findEcoString(const Position& position) const;
 
 	/**
 	 * Retrieve the ECO code of a position.
-	 * @param pos: the position to search for.
+	 * @param position: the position to search for.
 	 * @returns the corresponding ECO code or ECO_None if not found.
 	 */
-	ecoT findECO(Position* pos) const {
-		auto it = findECOstr(pos);
-		if (it.empty())
-			return ECO_None;
+	ecoT findEco(const Position& position) const;
 
-		char buf[8] = {0};
-		it.copy(buf, 6);
-		return eco_FromString(buf);
-	}
+	std::vector<Line> linesWithPrefix(std::string_view ecoPrefix) const;
 
-	std::string EcoSummary(std::string_view ecoPrefix) const;
-
-	unsigned GetLineNumber() const { return LineCount; }
-	unsigned FewestPieces() const { return LeastMaterial; }
-	size_t Size() const { return pos_.size(); }
+	unsigned lineCount() const { return lineCount_; }
+	unsigned fewestPieces() const { return leastMaterial_; }
+	size_t size() const { return pos_.size(); }
 };
 
-#endif // SCID_PBOOK_H
+} // namespace scidup::eco
+
+#endif // SCIDUP_ECO_BOOK_H

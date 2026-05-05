@@ -12,3 +12,4 @@ if( PROJECT_IS_TOP_LEVEL )
 endif()
 
 add_subdirectory( libs/database )
+add_subdirectory( libs/eco )

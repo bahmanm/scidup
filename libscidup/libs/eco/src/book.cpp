@@ -18,10 +18,11 @@
  *
  */
 
-#include "pbook.h"
+#include "scidup/eco/book.h"
 #include "scidup/database/common.h"
 #include "scidup/database/misc.h"
 #include "scidup/database/position.h"
+#include <algorithm>
 #include <fstream>
 
 namespace {
@@ -75,13 +76,15 @@ errorT ReadLine(Position& pos, const char* s) {
 
 } // namespace
 
-std::string_view PBook::findECOstr(Position* pos) const {
-	auto [it, end] = pos_.equal_range(pos->HashValue());
+namespace scidup::eco {
+
+std::string_view Book::findEcoString(const Position& position) const {
+	auto [it, end] = pos_.equal_range(position.HashValue());
 	if (it == end)
 		return {};
 
 	char cboard[36];
-	pos->PrintCompactStr(cboard);
+	position.PrintCompactStr(cboard);
 	it = std::find_if(it, end, [&](const auto& data) {
 		return std::equal(cboard, cboard + 36, data.second.compactStr.get());
 	});
@@ -92,44 +95,51 @@ std::string_view PBook::findECOstr(Position* pos) const {
 	return res.substr(0, res.find('\n'));
 }
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// PBook::EcoSummary():
-//    Produce a summary from the PBook for the specified ECO code prefix.
-std::string PBook::EcoSummary(const std::string_view prefix) const {
-	auto res = std::string();
-	auto prevEco = std::string_view();
+ecoT Book::findEco(const Position& position) const {
+	auto it = findEcoString(position);
+	if (it.empty())
+		return ECO_None;
+
+	char buf[8] = {0};
+	it.copy(buf, 6);
+	return eco_FromString(buf);
+}
+
+std::vector<Book::Line> Book::linesWithPrefix(const std::string_view prefix) const {
+	auto res = std::vector<Line>();
 	for (const char* comment : comments_) {
 		const auto eco = epd_findOpcode(comment, "eco");
 		if (eco.empty() || eco.substr(0, prefix.size()) != prefix)
 			continue;
 
-		if (prefix.size() < 3) {
-			const auto common = std::mismatch(eco.begin(), eco.end(),
-			                                  prevEco.begin(), prevEco.end());
-			const size_t nChars = std::distance(eco.begin(), common.first);
-			if (nChars > prefix.size())
-				continue;
-
-			prevEco = eco;
+		const auto ecoLine = eco.substr(0, eco.find('\n'));
+		const auto codeEnd = ecoLine.find(' ');
+		const auto nameStart = ecoLine.find('[');
+		const auto nameEnd = ecoLine.rfind(']');
+		auto name = std::string_view();
+		if (nameStart != std::string_view::npos &&
+		    nameEnd != std::string_view::npos && nameStart < nameEnd) {
+			name = ecoLine.substr(nameStart + 1, nameEnd - nameStart - 1);
 		}
 
-		res.append(eco.substr(0, eco.find('\n')));
-		res.append("  ");
 		const auto moves = epd_findOpcode(comment, "moves");
-		res.append(moves.substr(0, moves.find('\n')));
-		res.push_back('\n');
+		res.push_back(Line{
+		    ecoLine.substr(0, codeEnd),
+		    name,
+		    moves.substr(0, moves.find('\n')),
+		});
 	}
 	return res;
 }
 
-std::pair<errorT, std::unique_ptr<PBook> >
-PBook::ReadEcoFile(const char* FileName) {
+std::pair<errorT, Book>
+Book::load(const std::filesystem::path& path) {
     std::filebuf fp;
-    if (!fp.open(FileName, std::ios::in | std::ios::binary))
-        return std::make_pair(ERROR_FileOpen, nullptr);
+    if (!fp.open(path, std::ios::in | std::ios::binary))
+        return std::make_pair(ERROR_FileOpen, Book{});
 
-    std::unique_ptr<PBook> pb(new PBook);
-    pb->LineCount = 1;
+    Book book;
+    book.lineCount_ = 1;
     Position std_start;
     std_start.StdStart();
     std::string text;
@@ -147,14 +157,14 @@ PBook::ReadEcoFile(const char* FileName) {
         while (true) {
             ch = fp.sbumpc();
             if (ch == EOF) { done = true; break; }
-            if (ch == '\n') { pb->LineCount++; }
+            if (ch == '\n') { book.lineCount_++; }
             if (ch >= 'A'  &&  ch <= 'E') { break; }
             if (ch == '#') {
                 while (ch != '\n'  &&  ch != EOF) {
                     ch = fp.sbumpc();
                 }
                 if (ch == EOF) { done = true; }
-                pb->LineCount++;
+                book.lineCount_++;
             }
         }
         if (done) { break; }
@@ -204,7 +214,7 @@ PBook::ReadEcoFile(const char* FileName) {
             if (ch == EOF) { goto corrupt; }
             if (ch == '\n') {
                 ch = ' ';
-                pb->LineCount++;
+                book.lineCount_++;
             }
             if (ch != ' '  ||  prev != ' ') {
                 moves.push_back((char) ch);
@@ -220,17 +230,19 @@ PBook::ReadEcoFile(const char* FileName) {
 
         char* cboard = new char[36];
         pos.PrintCompactStr(cboard);
-        auto it = pb->pos_.emplace(
-            pos.HashValue(), bookDataT{cboard, strDuplicate(text.c_str())});
-        pb->comments_.push_back(it->second.comment.get());
-        pb->LeastMaterial = std::min(pb->LeastMaterial, pos.TotalMaterial());
+        auto it = book.pos_.emplace(
+            pos.HashValue(), BookData{cboard, strDuplicate(text.c_str())});
+        book.comments_.push_back(it->second.comment.get());
+        book.leastMaterial_ = std::min(book.leastMaterial_, pos.TotalMaterial());
     }
-    return std::pair<errorT, std::unique_ptr<PBook> >(OK, std::move(pb));
+    return std::pair<errorT, Book>(OK, std::move(book));
 
 corrupt:
-    return std::make_pair(ERROR_Corrupt, nullptr);
+    return std::make_pair(ERROR_Corrupt, Book{});
 }
 
+} // namespace scidup::eco
+
 //////////////////////////////////////////////////////////////////////
-//  EOF: pbook.cpp
+//  EOF: book.cpp
 //////////////////////////////////////////////////////////////////////

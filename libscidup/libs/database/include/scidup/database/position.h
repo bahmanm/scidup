@@ -168,7 +168,7 @@ public:
     // decode moves:
     const squareT* GetList(colorT c) const { return List[c]; }
     uint        GetCount (colorT c) const { return Count[c]; }
-    uint        TotalMaterial ()      { return Count[WHITE] + Count[BLACK]; }
+    uint        TotalMaterial () const { return Count[WHITE] + Count[BLACK]; }
     uint        NumNonPawns (colorT c) { 
         return Count[c] - Material[piece_Make(c,PAWN)];
     }
@@ -215,8 +215,8 @@ public:
     bool validCastlingFlag(colorT color, bool king_side) const;
 
     // Hashing
-    inline uint HashValue (void) { return Hash; }
-    inline uint PawnHashValue (void) { return PawnHash; }
+    inline uint HashValue (void) const { return Hash; }
+    inline uint PawnHashValue (void) const { return PawnHash; }
     uint        GetHPSig ();
 
     // Move generation and execution
@@ -275,7 +275,7 @@ public:
     errorT      ReadFromLongStr (const char * str);
     errorT      ReadFromFEN (const char * s);
     errorT      ReadFromFENorUCI (std::string_view str);
-    void        PrintCompactStr (char * cboard);
+    void        PrintCompactStr (char * cboard) const;
     void        PrintFEN(char* str, size_t len) const;
     void        DumpLatexBoard (DString * dstr, bool flip);
     void        DumpLatexBoard (DString * dstr) {

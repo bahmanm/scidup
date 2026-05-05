@@ -15,7 +15,7 @@
 #include "optable.h"
 #include "crosstab.h"
 #include "scidup/database/dstring.h"
-#include "pbook.h"
+#include "scidup/eco/book.h"
 #include <algorithm>
 #include <cstdio>
 
@@ -465,7 +465,7 @@ OpLine::PrintSummary (DString * dstr, uint format, bool fullDate, bool nmoves)
 
 
 void
-OpTable::Init (const char * type, Game * g, PBook * ebook)
+OpTable::Init (const char * type, Game * g, scidup::eco::Book * ebook)
 {
     Type = strDuplicate (type);
     TargetRows = OPTABLE_DEFAULT_ROWS;
@@ -501,7 +501,7 @@ OpTable::Init (const char * type, Game * g, PBook * ebook)
             continue;
         }
         if (ebook != NULL && ECOstr_.empty()) {
-            auto eco = ebook->findECOstr(g->GetCurrentPos());
+            auto eco = ebook->findEcoString(*g->GetCurrentPos());
             if (!eco.empty())
                 ECOstr_.append(eco);
         }
