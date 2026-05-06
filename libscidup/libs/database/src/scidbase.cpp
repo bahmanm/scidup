@@ -69,8 +69,8 @@ std::string_view codecName(ICodecDatabase::Codec codec) {
 } // namespace
 
 std::pair<ICodecDatabase*, errorT>
-ICodecDatabase::open(Codec codec, fileModeT fMode, const char* filename,
-                     const Progress& progress, Index* idx, NameBase* nb) {
+openCodec(ICodecDatabase::Codec codec, fileModeT fMode, const char* filename,
+          const Progress& progress, Index* idx, NameBase* nb) {
 	auto createCodec = [](auto codec) -> ICodecDatabase* {
 		switch (codec) {
 		case ICodecDatabase::MEMORY:
@@ -131,8 +131,7 @@ errorT scidBaseT::openHelper(std::string_view dbType, fileModeT fMode,
 	if (parseErr != OK)
 		return parseErr;
 
-	auto [db, err] = ICodecDatabase::open(dbtype, fMode, filename, progress,
-	                                      idx, nb_);
+	auto [db, err] = openCodec(dbtype, fMode, filename, progress, idx, nb_);
 	if (db) {
 		storage_->codec.reset(db);
 		inUse = true;

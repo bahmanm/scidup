@@ -178,7 +178,7 @@ void makeDatabase(scid::database::ICodecDatabase::Codec dbtype, const char* test
 	{
 		scid::database::Index idx;
 		scid::database::NameBase nb;
-		auto err = scid::database::ICodecDatabase::open(dbtype, fMode, filename, scid::database::Progress(),
+		auto err = scid::database::openCodec(dbtype, fMode, filename, scid::database::Progress(),
 		                                &idx, &nb);
 		auto codec = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
 		ASSERT_NE(nullptr, codec);
@@ -195,7 +195,7 @@ void makeDatabase(scid::database::ICodecDatabase::Codec dbtype, const char* test
 	if (supports("FMODE" + std::to_string(scid::database::FMODE_ReadOnly))) {
 		scid::database::Index idx;
 		scid::database::NameBase nb;
-		auto err = scid::database::ICodecDatabase::open(dbtype, scid::database::FMODE_ReadOnly, filename,
+		auto err = scid::database::openCodec(dbtype, scid::database::FMODE_ReadOnly, filename,
 		                                scid::database::Progress(), &idx, &nb);
 		auto codec = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
 		ASSERT_NE(nullptr, codec);
@@ -229,7 +229,7 @@ TEST_P(Test_Codec, fileModeT) {
 	for (auto& fmode : fmodes) {
 		scid::database::Index idx;
 		scid::database::NameBase nb;
-		auto err = scid::database::ICodecDatabase::open(dbtype, fmode, filename, scid::database::Progress(),
+		auto err = scid::database::openCodec(dbtype, fmode, filename, scid::database::Progress(),
 		                                &idx, &nb);
 		auto codec = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
 
@@ -257,7 +257,7 @@ TEST_P(Test_Codec, create_emptyfilename) {
 
 	scid::database::Index idx;
 	scid::database::NameBase nb;
-	auto err = scid::database::ICodecDatabase::open(dbtype, scid::database::FMODE_Create, "", scid::database::Progress(), &idx,
+	auto err = scid::database::openCodec(dbtype, scid::database::FMODE_Create, "", scid::database::Progress(), &idx,
 	                                &nb);
 	auto codec = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
 
@@ -297,7 +297,7 @@ TEST_P(Test_Codec, rename) {
 	{
 		scid::database::Index idx1, idx2;
 		scid::database::NameBase nb1, nb2;
-		auto err = scid::database::ICodecDatabase::open(dbtype, scid::database::FMODE_Create, filename,
+		auto err = scid::database::openCodec(dbtype, scid::database::FMODE_Create, filename,
 		                                scid::database::Progress(), &idx1, &nb1);
 		auto codec1 = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
 		EXPECT_EQ(scid::database::OK, codec1->flush());
@@ -305,7 +305,7 @@ TEST_P(Test_Codec, rename) {
 		ASSERT_EQ(scid::database::OK, err.second);
 
 		std::string renamed_name = std::string(filename) + "__renamed__";
-		err = scid::database::ICodecDatabase::open(dbtype, scid::database::FMODE_Create, renamed_name.c_str(),
+		err = scid::database::openCodec(dbtype, scid::database::FMODE_Create, renamed_name.c_str(),
 		                           scid::database::Progress(), &idx2, &nb2);
 		auto codec2 = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
 		EXPECT_EQ(scid::database::OK, codec2->flush());
@@ -329,7 +329,7 @@ TEST_P(Test_Codec, rename) {
 	if (supports("FMODE" + std::to_string(scid::database::FMODE_ReadOnly))) {
 		scid::database::Index idx_reopen;
 		scid::database::NameBase nb_reopen;
-		auto err = scid::database::ICodecDatabase::open(dbtype, scid::database::FMODE_ReadOnly, filename,
+		auto err = scid::database::openCodec(dbtype, scid::database::FMODE_ReadOnly, filename,
 		                                scid::database::Progress(), &idx_reopen, &nb_reopen);
 		auto codec3 = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
 		ASSERT_NE(nullptr, codec3);

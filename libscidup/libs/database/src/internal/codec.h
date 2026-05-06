@@ -45,22 +45,10 @@ public:
 	virtual ~ICodecDatabase(){};
 
 	enum Codec { MEMORY, PGN, SCID4, SCID5 };
-	/**
-	 * Creates a new object and calls the virtual function dyn_open().
-	 * @param codec:    the type of the object to be created.
-	 * @param fMode:    a valid file mode.
-	 * @param filename: the full path of the database to be opened.
-	 * @param progress: a Progress object used for GUI communications.
-	 * @param idx:      valid pointer to the Index object for this database.
-	 * @param nb:       valid pointer to the NameBase object for this database.
-	 * @returns
-	 * - on success: a valid pointer to the new object and OK.
-	 * - on error:   nullptr and the error code.
-	 */
-	static std::pair<ICodecDatabase*, errorT> open(Codec codec, fileModeT fMode,
-	                                               const char* filename,
-	                                               const Progress& progress,
-	                                               Index* idx, NameBase* nb);
+
+	friend std::pair<ICodecDatabase*, errorT>
+	openCodec(Codec codec, fileModeT fMode, const char* filename,
+	          const Progress& progress, Index* idx, NameBase* nb);
 
 	/**
 	 * Returns the Codec type.
@@ -167,6 +155,16 @@ private:
 	                        NameBase* nb) = 0;
 };
 
+/**
+ * Creates a new codec and calls its dyn_open().
+ * @returns a valid codec and OK/error warning on usable open, otherwise
+ *          nullptr and the error code.
+ */
+std::pair<ICodecDatabase*, errorT> openCodec(ICodecDatabase::Codec codec,
+                                             fileModeT fMode,
+                                             const char* filename,
+                                             const Progress& progress,
+                                             Index* idx, NameBase* nb);
 
 } // namespace scid::database
 #endif
