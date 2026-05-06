@@ -29,6 +29,8 @@
 
 #include "ui.h"
 
+using namespace scid::database;
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // sc_info_priority:
 //   This gets or sets the priority class of a process.

@@ -20,58 +20,57 @@
 #include "scidup/database/indexentry.h"
 #include <string>
 
-using namespace scid::database;
 namespace scidup::eco {
 class Book;
 }
 
-const uint OPTABLE_COLUMNS = 8;
-const uint OPTABLE_MIN_ROWS = 5;
-const uint OPTABLE_MAX_ROWS = 20;
-const uint OPTABLE_DEFAULT_ROWS = 10;
-const uint OPTABLE_MAX_EXTRA_MOVES = 10;
-const uint OPLINE_MOVES = (OPTABLE_COLUMNS + OPTABLE_MAX_EXTRA_MOVES) * 2;
-const uint OPTABLE_MAX_LINES = 2000;
-const uint OPTABLE_MAX_TABLE_LINES = 5000;//500;
-const uint OPTABLE_MAX_STARTLINE = 100;
+const scid::database::uint OPTABLE_COLUMNS = 8;
+const scid::database::uint OPTABLE_MIN_ROWS = 5;
+const scid::database::uint OPTABLE_MAX_ROWS = 20;
+const scid::database::uint OPTABLE_DEFAULT_ROWS = 10;
+const scid::database::uint OPTABLE_MAX_EXTRA_MOVES = 10;
+const scid::database::uint OPLINE_MOVES = (OPTABLE_COLUMNS + OPTABLE_MAX_EXTRA_MOVES) * 2;
+const scid::database::uint OPTABLE_MAX_LINES = 2000;
+const scid::database::uint OPTABLE_MAX_TABLE_LINES = 5000;//500;
+const scid::database::uint OPTABLE_MAX_STARTLINE = 100;
 
-const uint OPTABLE_Text  = 0;
-const uint OPTABLE_HTML  = 1;
-const uint OPTABLE_LaTeX = 2;
-const uint OPTABLE_CText = 3;    // Color hypertext.
-const uint OPTABLE_Compact = 4;  // For more compact moves in table.
+const scid::database::uint OPTABLE_Text  = 0;
+const scid::database::uint OPTABLE_HTML  = 1;
+const scid::database::uint OPTABLE_LaTeX = 2;
+const scid::database::uint OPTABLE_CText = 3;    // Color hypertext.
+const scid::database::uint OPTABLE_Compact = 4;  // For more compact moves in table.
 
 // Positional themes
-const uint NUM_POSTHEMES = 10;
-const uint POSTHEME_CastSame  = 0;
-const uint POSTHEME_CastOpp   = 1;
-const uint POSTHEME_QueenSwap = 2;
-const uint POSTHEME_OneBPair  = 3;
-const uint POSTHEME_Kstorm    = 4;
-const uint POSTHEME_WIQP      = 5;
-const uint POSTHEME_BIQP      = 6;
-const uint POSTHEME_WAdvPawn  = 7;
-const uint POSTHEME_BAdvPawn  = 8;
-const uint POSTHEME_OpenFyle  = 9;
-const uint POSTHEME_THRESHOLD = 4;  // Theme must occur this many times.
+const scid::database::uint NUM_POSTHEMES = 10;
+const scid::database::uint POSTHEME_CastSame  = 0;
+const scid::database::uint POSTHEME_CastOpp   = 1;
+const scid::database::uint POSTHEME_QueenSwap = 2;
+const scid::database::uint POSTHEME_OneBPair  = 3;
+const scid::database::uint POSTHEME_Kstorm    = 4;
+const scid::database::uint POSTHEME_WIQP      = 5;
+const scid::database::uint POSTHEME_BIQP      = 6;
+const scid::database::uint POSTHEME_WAdvPawn  = 7;
+const scid::database::uint POSTHEME_BAdvPawn  = 8;
+const scid::database::uint POSTHEME_OpenFyle  = 9;
+const scid::database::uint POSTHEME_THRESHOLD = 4;  // Theme must occur this many times.
 
-const uint NUM_EGTHEMES = 8;
-const uint EGTHEME_P = 0;
-const uint EGTHEME_M = 1;
-const uint EGTHEME_R = 2;
-const uint EGTHEME_RM = 3;
-const uint EGTHEME_Q = 4;
-const uint EGTHEME_QM = 5;
-const uint EGTHEME_QR = 6;
-const uint EGTHEME_QRM = 7;
+const scid::database::uint NUM_EGTHEMES = 8;
+const scid::database::uint EGTHEME_P = 0;
+const scid::database::uint EGTHEME_M = 1;
+const scid::database::uint EGTHEME_R = 2;
+const scid::database::uint EGTHEME_RM = 3;
+const scid::database::uint EGTHEME_Q = 4;
+const scid::database::uint EGTHEME_QM = 5;
+const scid::database::uint EGTHEME_QR = 6;
+const scid::database::uint EGTHEME_QRM = 7;
 
-const uint OPTABLE_Line = 0;
-const uint OPTABLE_All = 1;
+const scid::database::uint OPTABLE_Line = 0;
+const scid::database::uint OPTABLE_All = 1;
 
 
 struct moveOrderT {
-    uint id;       // Move Order id number
-    uint count;    // Number of times this order has occurred
+    scid::database::uint id;       // Move Order id number
+    scid::database::uint count;    // Number of times this order has occurred
     char * moves;  // String containing the moves in SAN notation
 };
 
@@ -82,170 +81,170 @@ class OpLine
     char *      White;
     char *      Black;
     char *      Site;
-    gamenumT    GameNumber;
-    idNumberT   WhiteID;
-    idNumberT   BlackID;
-    eloT        WhiteElo;   // Actual White rating (no estimate)
-    eloT        BlackElo;   // Actual Black rating
-    eloT        AvgElo;     // Average Elo (using actual or estimates)
-    dateT       Date;
-    resultT     Result;
-    uint        Length;
-    uint        NumMoves;
+    scid::database::gamenumT    GameNumber;
+    scid::database::idNumberT   WhiteID;
+    scid::database::idNumberT   BlackID;
+    scid::database::eloT        WhiteElo;   // Actual White rating (no estimate)
+    scid::database::eloT        BlackElo;   // Actual Black rating
+    scid::database::eloT        AvgElo;     // Average Elo (using actual or estimates)
+    scid::database::dateT       Date;
+    scid::database::resultT     Result;
+    scid::database::uint        Length;
+    scid::database::uint        NumMoves;
     bool        ShortGame;     // True if all game ends early enough that
                                // this line contains all its moves.
-    ecoT        EcoCode;
-    uint        MoveOrderID;
-    sanStringT  Move [OPLINE_MOVES];
-    uint        NoteMoveNum;  // If a note, at what move does it start?
-    uint        NoteNumber;   // If a note, this stores its footnote number.
+    scid::database::ecoT        EcoCode;
+    scid::database::uint        MoveOrderID;
+    scid::database::sanStringT  Move [OPLINE_MOVES];
+    scid::database::uint        NoteMoveNum;  // If a note, at what move does it start?
+    scid::database::uint        NoteNumber;   // If a note, this stores its footnote number.
     OpLine *    Next;         // Linked list used for sorting and footnotes.
     bool        Selected;     // For selecting lines by some criteria.
-    uint        StartPly;
+    scid::database::uint        StartPly;
 
-    uint        Theme [NUM_POSTHEMES];
-    uint        EgTheme;
+    scid::database::uint        Theme [NUM_POSTHEMES];
+    scid::database::uint        EgTheme;
 
     void Init (void);
-    void Init (Game * g, const IndexEntry * ie, gamenumT gameNum,
-               uint maxExtraMoves, uint maxThemeMoveNumber);
+    void Init (scid::database::Game * g, const scid::database::IndexEntry * ie, scid::database::gamenumT gameNum,
+               scid::database::uint maxExtraMoves, scid::database::uint maxThemeMoveNumber);
     void Destroy (void);
 
   public:
     OpLine () { Init(); }
-    OpLine (Game * g, const IndexEntry * ie, gamenumT gnum, uint max, uint tm) {
+    OpLine (scid::database::Game * g, const scid::database::IndexEntry * ie, scid::database::gamenumT gnum, scid::database::uint max, scid::database::uint tm) {
         Init (g, ie, gnum, max, tm);
     }
     ~OpLine() { Destroy(); }
-    void SetPositionalThemes (Position * pos);
+    void SetPositionalThemes (scid::database::Position * pos);
     void Insert (OpLine * subline);
-    void SetMoveOrderID (uint id) { MoveOrderID = id; }
-    uint CommonLength (OpLine * line);
-    static void PrintMove (DString * dstr, const char * move, uint format);
-    void PrintNote (DString * dstr, uint movenum, uint start, uint format);
-    void PrintSummary (DString * dstr, uint format, bool fullDate, bool nmoves);
+    void SetMoveOrderID (scid::database::uint id) { MoveOrderID = id; }
+    scid::database::uint CommonLength (OpLine * line);
+    static void PrintMove (scid::database::DString * dstr, const char * move, scid::database::uint format);
+    void PrintNote (scid::database::DString * dstr, scid::database::uint movenum, scid::database::uint start, scid::database::uint format);
+    void PrintSummary (scid::database::DString * dstr, scid::database::uint format, bool fullDate, bool nmoves);
 
-    const char * GetMove (uint depth) { return Move[depth]; }
+    const char * GetMove (scid::database::uint depth) { return Move[depth]; }
 };
 
 
 class OpTable
 {
   private:
-    uint        NumRows;
-    uint        TargetRows;
-    uint        NumLines;
-    uint        FilterCount;
-    uint        NumTableLines;
-    uint        MaxTableLines;
-    uint        MaxNoteLength;
-    uint        MaxThemeMoveNumber;
-    uint        NumNotes;
-    uint        Format;
+    scid::database::uint        NumRows;
+    scid::database::uint        TargetRows;
+    scid::database::uint        NumLines;
+    scid::database::uint        FilterCount;
+    scid::database::uint        NumTableLines;
+    scid::database::uint        MaxTableLines;
+    scid::database::uint        MaxNoteLength;
+    scid::database::uint        MaxThemeMoveNumber;
+    scid::database::uint        NumNotes;
+    scid::database::uint        Format;
     char *      Type;   // "opening" or "player" report
     bool        WTM;    // whether White is to move in the start position.
-    sanStringT  StartLine [OPTABLE_MAX_STARTLINE];
-    uint        StartLength;
+    scid::database::sanStringT  StartLine [OPTABLE_MAX_STARTLINE];
+    scid::database::uint        StartLength;
     OpLine *    Line [OPTABLE_MAX_LINES];
-    uint        Results [NUM_RESULT_TYPES];
-    uint        TheoryResults [NUM_RESULT_TYPES];
-    uint        TheoryCount;
+    scid::database::uint        Results [scid::database::NUM_RESULT_TYPES];
+    scid::database::uint        TheoryResults [scid::database::NUM_RESULT_TYPES];
+    scid::database::uint        TheoryCount;
     std::string ECOstr_;
-    sanStringT  ExcludeMove;
+    scid::database::sanStringT  ExcludeMove;
     char        DecimalChar;
 
     // Statistics on material of final positions:
-    uint        EndgameCount [2][NUM_EGTHEMES];
+    scid::database::uint        EndgameCount [2][NUM_EGTHEMES];
 
     // Statistics on move orders to reach the start line:
-    uint        NumMoveOrders;
+    scid::database::uint        NumMoveOrders;
     moveOrderT  MoveOrder [OPTABLE_MAX_LINES];
 
     // Statistics on themes:
-    uint        ThemeCount [NUM_POSTHEMES];
+    scid::database::uint        ThemeCount [NUM_POSTHEMES];
 
     // Arrays for making rows out of the lines:
     OpLine *    Row [OPTABLE_MAX_TABLE_LINES];
-    uint        NLines [OPTABLE_MAX_TABLE_LINES];
-    uint        RowScore [OPTABLE_MAX_TABLE_LINES];
+    scid::database::uint        NLines [OPTABLE_MAX_TABLE_LINES];
+    scid::database::uint        RowScore [OPTABLE_MAX_TABLE_LINES];
 
     void SelectTableLines (void);
-    void SortTableLines (OpLine ** lines, uint nlines, uint depth);
-    bool IsRowMergable (uint rownum);
-    void MergeRow (uint rownum);
-    bool HasNotes (OpLine * line, uint movenum);
-    uint NoteCount (uint note);
-    uint NoteScore (uint note);
-    void PrintNotes (DString * dstr, uint format);
+    void SortTableLines (OpLine ** lines, scid::database::uint nlines, scid::database::uint depth);
+    bool IsRowMergable (scid::database::uint rownum);
+    void MergeRow (scid::database::uint rownum);
+    bool HasNotes (OpLine * line, scid::database::uint movenum);
+    scid::database::uint NoteCount (scid::database::uint note);
+    scid::database::uint NoteScore (scid::database::uint note);
+    void PrintNotes (scid::database::DString * dstr, scid::database::uint format);
 
   public:
-    OpTable (const char * type, Game * g, scidup::eco::Book * ecoBook) {
+    OpTable (const char * type, scid::database::Game * g, scidup::eco::Book * ecoBook) {
         Init (type, g, ecoBook);
     }
-    OpTable (const char * type, Game * g) { Init (type, g, NULL); }
+    OpTable (const char * type, scid::database::Game * g) { Init (type, g, NULL); }
     ~OpTable() { Clear();  delete[] Type; }
-    void Init (const char * type, Game * g, scidup::eco::Book * ecoBook);
+    void Init (const char * type, scid::database::Game * g, scidup::eco::Book * ecoBook);
     void Clear ();
     void ClearNotes ();
     void SetFormat (const char * str);
     void SetDecimalChar (char c) { DecimalChar = c; }
 
-    uint GetTotalCount() { return FilterCount; }
-    uint GetTheoryCount() { return TheoryCount; }
+    scid::database::uint GetTotalCount() { return FilterCount; }
+    scid::database::uint GetTheoryCount() { return TheoryCount; }
 
     void   SetExcludeMove (const char * s) {
-        strCopy (ExcludeMove, s);
-        strStrip (ExcludeMove, '-');
-        strStrip (ExcludeMove, '=');
+        scid::database::strCopy (ExcludeMove, s);
+        scid::database::strStrip (ExcludeMove, '-');
+        scid::database::strStrip (ExcludeMove, '=');
     }
     const char* GetEco() const { return ECOstr_.c_str(); }
-    void   SetNumRows (uint nrows) { TargetRows = nrows; }
+    void   SetNumRows (scid::database::uint nrows) { TargetRows = nrows; }
     void   GuessNumRows (void);
-    void   SetMaxTableLines (uint nlines) {
+    void   SetMaxTableLines (scid::database::uint nlines) {
         if (nlines <= OPTABLE_MAX_TABLE_LINES) {
             MaxTableLines = nlines;
         }
     }
-    uint   GetMaxTableLines (void) { return MaxTableLines; }
-    void   SetMaxExtraMoves (uint nmoves) {
+    scid::database::uint   GetMaxTableLines (void) { return MaxTableLines; }
+    void   SetMaxExtraMoves (scid::database::uint nmoves) {
         MaxNoteLength = (OPTABLE_COLUMNS + nmoves) * 2;
     }
-    uint   GetMaxExtraMoves (void) {
+    scid::database::uint   GetMaxExtraMoves (void) {
         return (MaxNoteLength / 2) - OPTABLE_COLUMNS;
     }
-    uint   GetNumLines (void) { return NumLines; }
-    void   SetMaxThemeMoveNumber (uint x) { MaxThemeMoveNumber = x; }
+    scid::database::uint   GetNumLines (void) { return NumLines; }
+    void   SetMaxThemeMoveNumber (scid::database::uint x) { MaxThemeMoveNumber = x; }
     bool   Add (OpLine * line);
-    uint   PercentScore (void);
-    uint   TheoryPercent (void);
-    uint   TheoryScore (void);
-    uint   PercentFreq (resultT result);
-    uint   AvgLength (resultT result);
-    uint   AvgElo (colorT color, uint *count, uint *oppScore, uint *oppPerf);
-    void   BestGames (DString * dstr, uint count, const char * rtype);
-    void   TopPlayers (DString * dstr, colorT c, uint count);
-    void   TopEcoCodes (DString * dstr, uint count);
-    void   PrintStemLine (DString * dstr, uint format, bool exclude);
-    void   PrintStemLine (DString * dstr) { PrintStemLine (dstr, Format, false); }
+    scid::database::uint   PercentScore (void);
+    scid::database::uint   TheoryPercent (void);
+    scid::database::uint   TheoryScore (void);
+    scid::database::uint   PercentFreq (scid::database::resultT result);
+    scid::database::uint   AvgLength (scid::database::resultT result);
+    scid::database::uint   AvgElo (scid::database::colorT color, scid::database::uint *count, scid::database::uint *oppScore, scid::database::uint *oppPerf);
+    void   BestGames (scid::database::DString * dstr, scid::database::uint count, const char * rtype);
+    void   TopPlayers (scid::database::DString * dstr, scid::database::colorT c, scid::database::uint count);
+    void   TopEcoCodes (scid::database::DString * dstr, scid::database::uint count);
+    void   PrintStemLine (scid::database::DString * dstr, scid::database::uint format, bool exclude);
+    void   PrintStemLine (scid::database::DString * dstr) { PrintStemLine (dstr, Format, false); }
     void   MakeRows (void);
 #ifdef WINCE
     void   DumpLines (/*FILE **/Tcl_Channel fp);
 #else
     void   DumpLines (FILE * fp);
 #endif
-    void   PrintTable (DString * dstr, const char *title, const char *comment);
-    void   PrintLaTeX (DString * dstr,const char *title, const char *comment);
-    void   PrintHTML (DString * str, const char *title, const char *comment);
-    void   PrintText (DString * str, const char *title, const char *comment,
+    void   PrintTable (scid::database::DString * dstr, const char *title, const char *comment);
+    void   PrintLaTeX (scid::database::DString * dstr,const char *title, const char *comment);
+    void   PrintHTML (scid::database::DString * str, const char *title, const char *comment);
+    void   PrintText (scid::database::DString * str, const char *title, const char *comment,
                       bool htext);
-    static uint FormatFromStr (const char * str);
-    uint   AddMoveOrder (Game * g);
-    void   PopularMoveOrders (DString * dstr, uint count);
-    void   ThemeReport (DString * dstr, uint argc, const char ** argv);
-    void   AddEndMaterial (matSigT ms, bool inFilter);
-    void   EndMaterialReport (DString * dstr, const char * repGames,
+    static scid::database::uint FormatFromStr (const char * str);
+    scid::database::uint   AddMoveOrder (scid::database::Game * g);
+    void   PopularMoveOrders (scid::database::DString * dstr, scid::database::uint count);
+    void   ThemeReport (scid::database::DString * dstr, scid::database::uint argc, const char ** argv);
+    void   AddEndMaterial (scid::database::matSigT ms, bool inFilter);
+    void   EndMaterialReport (scid::database::DString * dstr, const char * repGames,
                               const char * allGames);
-    uint * SelectGames (char type, uint number);
+    scid::database::uint * SelectGames (char type, scid::database::uint number);
 };
 
 #endif // SCID_OPTABLE_H

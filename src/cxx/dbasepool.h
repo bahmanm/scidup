@@ -25,8 +25,6 @@ namespace scid::database {
 struct scidBaseT;
 }
 
-using scid::database::scidBaseT;
-
 namespace DBasePool {
 
 
@@ -74,7 +72,7 @@ int find(const char* filename);
  * - a pointer to the scidBaseT object corresponding to @e baseHandle.
  * - 0 (nullptr) if @e baseHandle is invalid.
  */
-scidBaseT* getBase(int baseHandle);
+scid::database::scidBaseT* getBase(int baseHandle);
 
 
 /**
@@ -96,7 +94,7 @@ int getClipBase();
  * - a pointer to an available scidBaseT object.
  * - 0 (nullptr) if there are no free slots.
  */
-scidBaseT* getFreeSlot();
+scid::database::scidBaseT* getFreeSlot();
 
 
 /**
@@ -120,7 +118,7 @@ std::vector<int> getHandles();
  * - the handle of the database corresponding to @e filename.
  * - the handle of the new "current" database.
  */
-int switchCurrent(scidBaseT* dbase = 0);
+int switchCurrent(scid::database::scidBaseT* dbase = 0);
 
 
 } // End of namespace DBasePool
