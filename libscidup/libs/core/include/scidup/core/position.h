@@ -6,6 +6,7 @@
 
 #include "scidup/core/error.h"
 #include "scidup/core/movelist.h"
+#include "scidup/core/notation.h"
 
 #include <cassert>
 #include <cstddef>
@@ -25,16 +26,6 @@ class SquareList;
 
 const byte  WQ_CASTLE = 1,    WK_CASTLE = 2,
             BQ_CASTLE = 4,    BK_CASTLE = 8;
-
-// SANFlag: since checking if a move is check (to add the "+" to its
-//      SAN string) takes time, and checking for mate takes even
-//      longer, we specify whether we want this done with a flag.
-typedef byte      sanFlagT;
-const sanFlagT    SAN_NO_CHECKTEST   = 0,
-                  SAN_CHECKTEST      = 1,
-                  SAN_MATETEST       = 2;
-
-
 
 // Flags that Position::GenerateMoves() recognises:
 //
