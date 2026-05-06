@@ -19,9 +19,9 @@
 #pragma once
 
 #include "scidup/database/bytebuf.h"
+#include "scidup/core/move_predicates.h"
 #include "scidup/database/common.h"
 #include "scidup/database/fullmove.h"
-#include "scidup/database/movegen.h"
 #include "scidup/database/position.h"
 #include <algorithm>
 #include <cstdlib>
@@ -310,7 +310,7 @@ public:
 		auto isOccupied = [this](auto sq) { return board_[sq] != EMPTY_SQ_; };
 		const auto enemyKingSq = getKingSquare(color_Flip(lastCol));
 		bool direct_check = (lastPt != KING) &&
-		                    movegen::attack(lastTo, enemyKingSq, lastCol,
+		                    move_predicates::attack(lastTo, enemyKingSq, lastCol,
 		                                    lastPt, isOccupied);
 		if (direct_check || // Look for a discovered check
 		    find_attacker_slider(enemyKingSq, lastCol) >= 0) {
@@ -349,10 +349,10 @@ private:
 					return true;
 				return board_[square] != EMPTY_SQ_;
 			};
-			if (!movegen::pseudo(sq, lastTo, lastCol, lastPt, isOccupied))
+			if (!move_predicates::pseudo(sq, lastTo, lastCol, lastPt, isOccupied))
 				continue; // Skip: illegal move
 
-			const auto pin = movegen::opens_ray(sq, lastTo, kingSq, isOccupied);
+			const auto pin = move_predicates::opens_ray(sq, lastTo, kingSq, isOccupied);
 			if (pin.first != INVALID_PIECE) {
 				uint8_t idx = board_[pin.second];
 				if (idx != EMPTY_SQ_ && idx < mt_.count(enemyCol) &&
@@ -389,7 +389,7 @@ private:
 				return board_[square] != EMPTY_SQ_;
 			};
 			const squareT sq = getSquare(color, idx);
-			if (movegen::attack_slider(sq, destSq, pt, isOccupied)) {
+			if (move_predicates::attack_slider(sq, destSq, pt, isOccupied)) {
 				return idx;
 			}
 		}

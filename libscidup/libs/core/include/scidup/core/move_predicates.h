@@ -1,27 +1,12 @@
-/*
- * Copyright (C) 2011-2021  Fulvio Benini
- *
- * This file is part of Scid (Shane's Chess Information Database).
- *
- * Scid is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation.
- *
- * Scid is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Scid.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 /** @file
- * Implements functions for the validation of chess moves.
+ * Move validation predicates.
  */
 
 #pragma once
 
+#include "scidup/core/board.h"
+
+#include <cassert>
 #include <utility>
 
 // These functions use the following move classification:
@@ -43,7 +28,7 @@
 
 namespace scid::database {
 
-namespace movegen {
+namespace move_predicates {
 
 constexpr int NSQUARES = 8;
 constexpr int kWPHomeRank = 1;
@@ -63,7 +48,7 @@ inline bool valid_knight(squareT sqFrom, squareT sqTo) {
 }
 
 inline int valid_slider(squareT sqFrom, squareT sqTo, pieceT pieceType) {
-	ASSERT(pieceType == QUEEN || pieceType == ROOK || pieceType == BISHOP);
+	assert(pieceType == QUEEN || pieceType == ROOK || pieceType == BISHOP);
 
 	int distRank = (sqTo / NSQUARES) - (sqFrom / NSQUARES);
 	int distFyle = (sqTo % NSQUARES) - (sqFrom % NSQUARES);
@@ -197,7 +182,7 @@ bool pseudo(squareT sqFrom, squareT sqTo, colorT pieceCol, pieceT pieceType,
 template <typename TFunc>
 inline std::pair<pieceT, squareT> opens_ray(squareT sqFrom, squareT sqTo,
                                             squareT sqRay, TFunc isOccupied) {
-	ASSERT(sqRay != sqFrom);
+	assert(sqRay != sqFrom);
 
 	int fyleFrom = sqFrom % NSQUARES;
 	int distFyle = (sqRay % NSQUARES) - fyleFrom;
@@ -261,10 +246,10 @@ inline std::pair<pieceT, squareT> opens_ray(squareT sqFrom, squareT sqTo,
 /// @param sqBlock:      the square that may block the ray.
 /// @returns true if a piece on @e sqBlock would block the ray.
 inline bool blocks_ray(squareT sqFrom, squareT sqTo, squareT sqBlock) {
-	return !movegen::attack_slider(sqFrom, sqTo, QUEEN,
+	return !move_predicates::attack_slider(sqFrom, sqTo, QUEEN,
 	                               [&](auto sq) { return sq == sqBlock; });
 }
 
-} // end of namespace movegen
+} // namespace move_predicates
 
 } // namespace scid::database

@@ -39,7 +39,6 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/indexentry.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/matsig.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/misc.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/movegen.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/movelist.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/movetree.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/namebase.h"

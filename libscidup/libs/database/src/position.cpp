@@ -14,13 +14,13 @@
 
 #include "scidup/database/position.h"
 #include "scidup/core/attacks.h"
+#include "scidup/core/move_predicates.h"
 #include "scidup/core/square_collections.h"
 #include "scidup/core/square_moves.h"
 #include "scidup/database/common.h"
 #include "scidup/database/dstring.h"
 #include "scidup/database/hash.h"
 #include "scidup/database/misc.h"
-#include "scidup/database/movegen.h"
 #include <algorithm>
 #include <array>
 #include <cstdio>
@@ -266,7 +266,7 @@ bool Position::under_attack(squareT target_sq, squareT captured_sq,
 
 		const auto piece_type = piece_Type(GetPiece(piece_sq));
 		if (piece_type == KNIGHT) {
-			if (movegen::valid_knight(piece_sq, target_sq))
+			if (move_predicates::valid_knight(piece_sq, target_sq))
 				return true; // Knight check
 
 		} else if (piece_type == PAWN) {
@@ -274,13 +274,13 @@ bool Position::under_attack(squareT target_sq, squareT captured_sq,
 				return true; // Pawn check
 
 		} else {
-			if (movegen::attack_slider(piece_sq, target_sq, piece_type,
+			if (move_predicates::attack_slider(piece_sq, target_sq, piece_type,
 			                           not_empty))
 				return true; // Slider check
 		}
 	}
 	assert(GetCount(enemy) >= 1);
-	return movegen::valid_king(enemy_pieces[0], target_sq);
+	return move_predicates::valid_king(enemy_pieces[0], target_sq);
 }
 
 bool Position::under_attack(squareT target_sq) const {
@@ -923,7 +923,7 @@ Position::GenerateMoves (MoveList* mlist, pieceT pieceType,
 // (NULL_SQUARE if the piece is captured) would leave the king in check.
 // It can also be used to check if the last move created a discovered check.
 static bool xray_check(Position const& pos, squareT from, squareT to) {
-	const auto [atk_piece, atk_sq] = movegen::opens_ray(
+	const auto [atk_piece, atk_sq] = move_predicates::opens_ray(
 	    from, to, pos.GetKingSquare(),
 	    [&](auto sq) { return pos.GetPiece(sq) != EMPTY; });
 
@@ -960,7 +960,7 @@ static squareT pseudo_legal(Position const& pos, squareT from, squareT to,
 	const auto toMove = pos.GetToMove();
 	const auto captured = pos.GetPiece(to);
 	const auto pt = piece_Type(pos.GetPiece(from));
-	if (!movegen::pseudo(from, to, toMove, pt,
+	if (!move_predicates::pseudo(from, to, toMove, pt,
 	                     [&](auto sq) { return pos.GetPiece(sq) != EMPTY; }))
 		return NULL_SQUARE; // Invalid move
 
@@ -1327,7 +1327,7 @@ Position::IsKingInCheck (simpleMoveT const& sm)
         }
     }
 
-    if (movegen::attack(sm.to, GetKingSquare(), color_Flip(ToMove), p,
+    if (move_predicates::attack(sm.to, GetKingSquare(), color_Flip(ToMove), p,
                         [&](auto sq) { return GetPiece(sq) != EMPTY; }))
         return true;
 
@@ -2040,7 +2040,7 @@ errorT Position::ReadMoveKing(simpleMoveT* sm, const char* str,
 	const auto from = GetKingSquare(ToMove);
 	const auto to = square_Make(toFyle, toRank);
 	const auto captured = GetPiece(to);
-	if (!movegen::valid_king(from, to) || piece_Color(captured) == ToMove ||
+	if (!move_predicates::valid_king(from, to) || piece_Color(captured) == ToMove ||
 	    piece_Type(captured) == KING)
 		return ERROR_InvalidMove;
 
