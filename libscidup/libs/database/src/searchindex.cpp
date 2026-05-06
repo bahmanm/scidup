@@ -211,12 +211,12 @@ public:
 	}
 };
 
-class SearchRangeEco : public SearchRange<ecoT> {
+class SearchRangeEco : public SearchRange<scidup::eco::Code> {
 public:
 	SearchRangeEco(const scidBaseT* base,
 	               const char* range,
-	               ecoT (IndexEntry::* f) () const)
-	: SearchRange<ecoT>(base, f) {
+	               scidup::eco::Code (IndexEntry::* f) () const)
+	: SearchRange<scidup::eco::Code>(base, f) {
 		// Extract two whitespace-separated ECO codes:
 		const char* v = strFirstWord(range);
 		min_ = scidup::eco::fromString(v);
@@ -225,7 +225,7 @@ public:
 		if (min_ > max_) std::swap(min_, max_);
 		// Set eco maximum to be the largest subcode, for example,
 		// "B07" -> "B07z4" to make sure subcodes are included in the range:
-		max_ = scidup::eco::lastSubCode(static_cast<ecoT>(max_));
+		max_ = scidup::eco::lastSubCode(static_cast<scidup::eco::Code>(max_));
 	}
 };
 

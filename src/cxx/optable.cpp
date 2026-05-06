@@ -1827,9 +1827,9 @@ OpTable::TopEcoCodes (scid::database::DString * dstr, scid::database::uint count
     for (scid::database::uint i=0; i < NumLines; i++) {
         int ecoClass = -1;
         int ecoSubCode = -1;
-        scid::database::ecoT ecoCode = Line[i]->EcoCode;
-        if (ecoCode != scid::database::ECO_None) {
-            scid::database::ecoStringT ecoStr;
+        scidup::eco::Code ecoCode = Line[i]->EcoCode;
+        if (ecoCode != scidup::eco::ECO_None) {
+            scidup::eco::String ecoStr;
             scidup::eco::toBasicString(ecoCode, ecoStr);
             if (ecoStr[0] != 0) {
                 ecoClass = ((ecoStr[0] - 'A') * 10) + (ecoStr[1] - '0');

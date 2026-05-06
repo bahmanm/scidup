@@ -19,6 +19,7 @@
 #include "scidup/database/common.h"
 #include "scidup/database/game.h"
 #include "scidup/database/indexentry.h"
+#include "scidup/eco/code.h"
 #include <string>
 
 namespace scidup::eco {
@@ -94,7 +95,7 @@ class OpLine
     scid::database::uint        NumMoves;
     bool        ShortGame;     // True if all game ends early enough that
                                // this line contains all its moves.
-    scid::database::ecoT        EcoCode;
+    scidup::eco::Code           EcoCode;
     scid::database::uint        MoveOrderID;
     scid::database::sanStringT  Move [OPLINE_MOVES];
     scid::database::uint        NoteMoveNum;  // If a note, at what move does it start?

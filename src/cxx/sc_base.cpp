@@ -20,6 +20,7 @@
 #include "dbasepool.h"
 #include "scidup/database/misc.h"
 #include "scidup/database/scidbase.h"
+#include "scidup/eco/code.h"
 #include "scidup_app_editor.h"
 #include "scidup_app_tournaments.h"
 #include "scidup_app_tree.h"
@@ -418,7 +419,7 @@ UI_res_t sc_base_gameslist(scid::database::scidBaseT* dbase, UI_handle_t ti, int
 		char flags[16];
 		ie->GetFlagStr (flags, "WBMENPTKQ!?U123456");
 		ginfo.push_back(flags);
-		scid::database::ecoStringT ecoStr;
+		scidup::eco::String ecoStr;
 		scidup::eco::toExtendedString(ie->GetEcoCode(), ecoStr);
 		ginfo.push_back(ecoStr);
 		std::string endMaterial = scid::database::matsig_makeString(ie->GetFinalMatSig());

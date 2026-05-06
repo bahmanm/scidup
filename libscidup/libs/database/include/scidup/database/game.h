@@ -19,6 +19,7 @@
 #include "scidup/core/game_result.h"
 #include "scidup/database/common.h"
 #include "scidup/core/date.h"
+#include "scidup/eco/code.h"
 #include "scidup/database/indexentry.h"
 #include "scidup/database/matsig.h"
 #include "scidup/database/namebase.h"
@@ -191,7 +192,7 @@ class Game {
     std::string RoundStr;
     dateT       Date;
     dateT       EventDate;
-    ecoT        EcoCode;
+    scidup::eco::Code EcoCode;
     eloT        WhiteElo;
     eloT        BlackElo;
     byte        WhiteRatingType;
@@ -461,7 +462,7 @@ public:
     void     SetBlackRatingType (byte b) { BlackRatingType = b > 7 ? 0 : b; }
     int setRating(colorT col, const char* ratingType, size_t ratingTypeLen,
                   std::pair<const char*, const char*> rating);
-    void     SetEco (ecoT eco)       { EcoCode = eco; }
+    void     SetEco (scidup::eco::Code eco) { EcoCode = eco; }
     const char* GetEventStr () const { return EventStr.c_str(); }
     const char* GetSiteStr ()  const { return SiteStr.c_str();  }
     const char* GetWhiteStr () const { return WhiteStr.c_str(); }
@@ -475,7 +476,7 @@ public:
     eloT     GetBlackElo ()    const { return BlackElo; }
     byte     GetWhiteRatingType () const { return WhiteRatingType; }
     byte     GetBlackRatingType () const { return BlackRatingType; }
-    ecoT     GetEco ()         const { return EcoCode; }
+    scidup::eco::Code GetEco() const { return EcoCode; }
     eloT     GetAverageElo ();
 
     // PGN conversion
@@ -546,7 +547,7 @@ template <typename TFunc> void Game::viewTagPairs(TFunc visitor) const {
 		rType.append(ratingTypeNames[GetBlackRatingType()]);
 		visitor(rType.c_str(), std::to_string(elo).c_str());
 	}
-	if (GetEco() != ECO_None) {
+	if (GetEco() != scidup::eco::ECO_None) {
 		scidup::eco::toExtendedString(GetEco(), strBuf);
 		visitor("ECO", strBuf);
 	}

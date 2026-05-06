@@ -18,7 +18,6 @@
 
 #include "scidup/core/board.h"
 #include "scidup/core/error.h"
-#include "scidup/eco/code.h"
 #include <assert.h>
 #include <cstddef>
 #define ASSERT(f) assert(f)
@@ -50,10 +49,6 @@ enum fileModeT {
 
 typedef uint            gamenumT;
 typedef ushort          eloT;
-using ecoT = scidup::eco::Code;
-using ecoStringT = scidup::eco::String;   /* "A00j1" */
-
-inline constexpr ecoT ECO_None = scidup::eco::ECO_None;
 
 // Rating types:
 

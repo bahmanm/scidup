@@ -838,8 +838,8 @@ checkDuplicate (scid::database::scidBaseT * base,
         if (ie1->GetResult() != ie2->GetResult()) { return false; }
     }
     if (cr->sameEcoCode) {
-        scid::database::ecoStringT a;
-        scid::database::ecoStringT b;
+        scidup::eco::String a;
+        scidup::eco::String b;
         scidup::eco::toBasicString(ie1->GetEcoCode(), a);
         scidup::eco::toBasicString(ie2->GetEcoCode(), b);
         if (a[0] != b[0]  ||  a[1] != b[1]  ||  a[2] != b[2]) { return false; }
@@ -1296,7 +1296,7 @@ sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (returnPly)
         return UI_Result(ti, scid::database::OK, ply);
 
-    scid::database::ecoStringT extEco;
+    scidup::eco::String extEco;
     scidup::eco::toExtendedString(ecoCode, extEco);
     return UI_Result(ti, scid::database::OK, extEco);
 }
@@ -2775,9 +2775,9 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     AppendResult (ti, temp, NULL);
 
     if (g.GetEco() != 0) {
-        scid::database::ecoStringT fullEcoStr;
+        scidup::eco::String fullEcoStr;
         scidup::eco::toExtendedString(g.GetEco(), fullEcoStr);
-        scid::database::ecoStringT basicEcoStr;
+        scidup::eco::String basicEcoStr;
         scid::database::strCopy (basicEcoStr, fullEcoStr);
         if (scid::database::strLength(basicEcoStr) >= 4) { basicEcoStr[3] = 0; }
         AppendResult (ti, "   <blue><run ::windows::eco::Refresh ",
@@ -3028,8 +3028,8 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         auto ecoStr = ecoBook->findEcoString(*g.GetCurrentPos());
         if (!ecoStr.empty()) {
             std::string ecoComment(ecoStr);
-            scid::database::ecoT eco = scidup::eco::fromString(ecoComment.c_str());
-            scid::database::ecoStringT estr;
+            scidup::eco::Code eco = scidup::eco::fromString(ecoComment.c_str());
+            scidup::eco::String estr;
             scidup::eco::toExtendedString(eco, estr);
             scid::database::uint len = scid::database::strLength (estr);
             if (len >= 4) { estr[3] = 0; }
@@ -3679,9 +3679,9 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
         if (dateStr[7] == '.'  &&  dateStr[8] == '?') { dateStr[7] = 0; }
         dstr.Append (dateStr, "  ");
         dstr.Append (scid::database::RESULT_LONGSTR[g->GetResult()]);
-        scid::database::ecoT eco = g->GetEco();
+        scidup::eco::Code eco = g->GetEco();
         if (eco != 0) {
-            scid::database::ecoStringT ecoStr;
+            scidup::eco::String ecoStr;
             scidup::eco::toExtendedString(eco, ecoStr);
             dstr.Append ("  ", ecoStr);
         }
@@ -3870,7 +3870,7 @@ sc_game_tags_get (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     case T_ECO:
         {
-            scid::database::ecoStringT ecoStr;
+            scidup::eco::String ecoStr;
             scidup::eco::toExtendedString(g->GetEco(), ecoStr);
             AppendResult (ti, ecoStr, NULL);
             break;
@@ -5705,10 +5705,10 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     for (scid::database::uint i=0, n = db->numGames(); i < n; i++) {
         const scid::database::IndexEntry* ie = db->getIndexEntry(i);
-        scid::database::ecoT ecoCode = ie->GetEcoCode();
+        scidup::eco::Code ecoCode = ie->GetEcoCode();
         int ecoClass = -1;
-        if (ecoCode != scid::database::ECO_None) {
-            scid::database::ecoStringT ecoStr;
+        if (ecoCode != scidup::eco::ECO_None) {
+            scidup::eco::String ecoStr;
             scidup::eco::toBasicString(ecoCode, ecoStr);
             if (ecoStr[0] != 0) {
                 ecoClass = ((ecoStr[0] - 'A') * 10) + (ecoStr[1] - '0');
@@ -7287,8 +7287,8 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         unsigned count = 0;
         for (auto const& node : tree) {
             calc_san(node.move);
-            scid::database::ecoT eco = calc_eco(node.move);
-            scid::database::ecoStringT ecoStr;
+            scidup::eco::Code eco = calc_eco(node.move);
+            scidup::eco::String ecoStr;
             scidup::eco::toExtendedString(eco, ecoStr);
             auto freq = long(1000ll * node.freq[0] / totals.freq[0]);
             std::snprintf(temp, sizeof(temp), "\n%2u: %-6s %-5s %7u:%3ld%c%1ld%%",

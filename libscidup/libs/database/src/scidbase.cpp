@@ -589,7 +589,7 @@ scidBaseT::Stats::Stats(const scidBaseT* dbase) {
 		}
 
 		resultT result = ie->GetResult();
-		ecoT eco = ie->GetEcoCode();
+		scidup::eco::Code eco = ie->GetEcoCode();
 		if (eco == 0) {
 			ecoEmpty_.count++;
 			ecoEmpty_.results[result]++;
@@ -619,7 +619,7 @@ scidBaseT::Stats::getEcoStats(const char* ecoStr) const {
 	if (*ecoStr == 0)
 		return &ecoValid_;
 
-	ecoT eco = scidup::eco::fromString(ecoStr);
+	scidup::eco::Code eco = scidup::eco::fromString(ecoStr);
 	if (eco == 0)
 		return 0;
 	eco = scidup::eco::reduce(eco);
