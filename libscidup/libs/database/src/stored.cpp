@@ -16,7 +16,7 @@
 * along with Scid.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "scidup/database/stored.h"
+#include "stored.h"
 #include <algorithm>
 #include <cassert>
 

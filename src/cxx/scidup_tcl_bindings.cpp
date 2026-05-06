@@ -39,7 +39,6 @@
 #include "scidup_app_tree.h"
 #include "scidup/database/searchpos.h"
 #include <scidup/spelling/spelling.h>
-#include "scidup/database/stored.h"
 #include "timer.h"
 #include "scidup/database/tree.h"
 #include "dbasepool.h"

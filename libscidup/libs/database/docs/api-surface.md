@@ -52,7 +52,6 @@ Use these headers when working with game lists, tags and names:
 - `date.h`: compact date representation and helpers
 - `tree.h`: opening-tree result statistics
 - `matsig.h`: material signatures
-- `stored.h`: stored-line helpers used by position search
 
 Most consumers should retrieve metadata through `scidBaseT` instead of owning
 `Index` or `NameBase` directly.

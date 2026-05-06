@@ -23,7 +23,7 @@
 #include "codec_scid5.h"
 #include "scidup/database/common.h"
 #include "sortcache.h"
-#include "scidup/database/stored.h"
+#include "stored.h"
 #include <algorithm>
 #include <filesystem>
 

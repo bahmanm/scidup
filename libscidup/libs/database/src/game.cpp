@@ -19,7 +19,7 @@
 #include "naglatex.h"
 #include "nagtext.h"
 #include "scidup/core/position.h"
-#include "scidup/database/stored.h"
+#include "stored.h"
 #include "textbuf.h"
 #include <algorithm>
 #include <cstdio>

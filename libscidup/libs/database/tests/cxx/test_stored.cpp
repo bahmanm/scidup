@@ -22,7 +22,7 @@
 
 #include "scidup/core/primitives.h"
 #include "scidup/core/position.h"
-#include "scidup/database/stored.h"
+#include "stored.h"
 #include <gtest/gtest.h>
 
 // 1.d4 Nf6 2.c4 e6 3.Nc3 Bb4 4.Qc2 O-O

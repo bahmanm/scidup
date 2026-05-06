@@ -14,6 +14,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/matsig.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/misc.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/scidbase.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/searchpos.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/searchindex.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/sortcache.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/stored.cpp"
@@ -42,7 +43,6 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/scidbase.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/searchpos.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/searchtournaments.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/stored.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/tree.h" )
 
 set(
@@ -55,6 +55,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/naglatex.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/nagtext.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/sortcache.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/stored.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/textbuf.h" )
 
 add_library(

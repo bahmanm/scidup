@@ -28,11 +28,12 @@
 #include "scidup/database/matsig.h"
 #include "scidup/core/position.h"
 #include "scidup/database/scidbase.h"
-#include "scidup/database/stored.h"
 #include <algorithm>
 #include <memory>
 
 namespace scid::database {
+
+class StoredLine;
 
 /// Search for an exact position (same material in the same squares).
 class SearchPos {
@@ -44,21 +45,11 @@ class SearchPos {
 	bool isStdStard_;
 
 public:
-	explicit SearchPos(Position const& pos) {
-		std::copy_n(pos.GetBoard(), 64, board_);
-		materialSig_ = matsig_Make(pos.GetMaterial());
-		hpSig_ = hpSig_make(board_);
-		toMove_ = pos.GetToMove();
-		isStdStard_ = pos.IsStdStart();
-
-		if ((board_[E1] == WK || board_[G1] == WK) &&
-		    (board_[E8] == BK || board_[G8] == BK)) {
-			storedLine_ = std::make_unique<StoredLine>(board_, toMove_);
-		}
-	}
+	explicit SearchPos(Position const& pos);
+	~SearchPos();
 
 	/// Disable the stored lines optimization
-	void disableOptStoredLine() { storedLine_ = nullptr; }
+	void disableOptStoredLine();
 
 	/// Disable the home pawn optimization
 	void disableOptHpSig() { hpSig_ = {0, 0}; }
@@ -68,49 +59,13 @@ public:
 	/// -2 : the game cannot reach the searched position
 	/// -1 : the game can reach the searched position
 	/// >=0: the game reach the searched position at the returned ply
-	int index_match(const IndexEntry& ie) const {
-		if (!ie.GetStartFlag()) {
-			if (storedLine_) {
-				int ply = storedLine_->match(ie.GetStoredLineCode());
-				if (ply != -1)
-					return ply;
-			}
-			if (!hpSig_match(hpSig_.first, hpSig_.second, ie.GetHomePawnData()))
-				return -2;
-		}
-		if (less_mat(materialSig_, ie.GetFinalMatSig(), ie.GetPromotionsFlag(),
-		             ie.GetUnderPromoFlag())) {
-			return -2;
-		}
-		return -1;
-	}
+	int index_match(const IndexEntry& ie) const;
 
 	/// Search the position in the main line of the specified game.
 	/// @returns a std::pair containg the ply where the position was reached and
 	///          the next move. Returns ply==0 if the position was not found.
 	/// TODO: filling the SAN info of the returned move may be unnecessary
-	std::pair<int, FullMove> match(scidBaseT const& base, gamenumT gnum) const {
-		const IndexEntry* ie = base.getIndexEntry(gnum);
-		int ply = index_match(*ie);
-		if (ply < -1)
-			return {};
-
-		if (ply >= 0) {
-			auto move = StoredLine::getMove(ie->GetStoredLineCode(), ply);
-			if (!move) // Matched at the end of the stored line
-				move = base.getGame(ie).getMove(ply);
-
-			return {ply + 1, move};
-		}
-
-		auto gameview = base.getGame(ie);
-		ply = (toMove_ == WHITE) ? gameview.search<WHITE>(board_)
-		                         : gameview.search<BLACK>(board_);
-		if (ply > 0)
-			return {ply, gameview.getMove(0)};
-
-		return {};
-	}
+	std::pair<int, FullMove> match(scidBaseT const& base, gamenumT gnum) const;
 
 	/// Reset @e filter to include only the games that reached the searched
 	/// position in their main line.
