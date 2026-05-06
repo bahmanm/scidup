@@ -35,6 +35,8 @@ namespace scid::database {
 
 class Progress;
 
+enum class CodecType { Memory, Pgn, Scid4, Scid5 };
+
 /**
  * This interface separates the logic of a database from its representation.
  * Ideally all the file I/O should be encapsulated in classes derived from this
@@ -44,21 +46,19 @@ class ICodecDatabase {
 public:
 	virtual ~ICodecDatabase(){};
 
-	enum Codec { MEMORY, PGN, SCID4, SCID5 };
-
 	friend std::pair<ICodecDatabase*, errorT>
-	openCodec(Codec codec, fileModeT fMode, const char* filename,
+	openCodec(CodecType codec, fileModeT fMode, const char* filename,
 	          const Progress& progress, Index* idx, NameBase* nb);
 
 	/**
-	 * Returns the Codec type.
+	 * Returns the codec type.
 	 */
-	virtual Codec getType() const = 0;
+	virtual CodecType getType() const = 0;
 
 	/**
 	 * Returns the full path of the files used by the database.
 	 * The order of the filenames must be consistent for objects of the same
-	 * Codec type.
+	 * codec type.
 	 */
 	virtual std::vector<std::string> getFilenames() const = 0;
 
@@ -160,7 +160,7 @@ private:
  * @returns a valid codec and OK/error warning on usable open, otherwise
  *          nullptr and the error code.
  */
-std::pair<ICodecDatabase*, errorT> openCodec(ICodecDatabase::Codec codec,
+std::pair<ICodecDatabase*, errorT> openCodec(CodecType codec,
                                              fileModeT fMode,
                                              const char* filename,
                                              const Progress& progress,

@@ -180,7 +180,7 @@ class CodecSCID5 final : public ICodecDatabase {
 	static constexpr unsigned NAME_INFO = 4;
 
 public: // ICodecDatabase interface
-	Codec getType() const final { return ICodecDatabase::SCID5; }
+	CodecType getType() const final { return CodecType::Scid5; }
 
 	// Returns the full path of the three files (index, namebase and gamefile)
 	// used by the database.

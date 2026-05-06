@@ -51,7 +51,7 @@ class CodecMemory : public ICodecDatabase {
 	};
 
 public: // ICodecDatabase interface
-	Codec getType() const override { return ICodecDatabase::MEMORY; }
+	CodecType getType() const override { return CodecType::Memory; }
 
 	std::vector<std::string> getFilenames() const override {
 		return std::vector<std::string>();

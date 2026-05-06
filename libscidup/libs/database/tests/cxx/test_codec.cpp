@@ -34,32 +34,32 @@ scid::database::fileModeT fmodes[] = {scid::database::FMODE_Create, scid::databa
                       scid::database::FMODE_Both};
 const char* filename = "codecbase";
 
-scid::database::ICodecDatabase::Codec codecs[] = {scid::database::ICodecDatabase::MEMORY, scid::database::ICodecDatabase::SCID4,
-                                  scid::database::ICodecDatabase::SCID5, scid::database::ICodecDatabase::PGN};
+scid::database::CodecType codecs[] = {scid::database::CodecType::Memory, scid::database::CodecType::Scid4,
+                                  scid::database::CodecType::Scid5, scid::database::CodecType::Pgn};
 
-std::vector<std::pair<scid::database::ICodecDatabase::Codec, std::string>> unsupportedVec = {
-    {scid::database::ICodecDatabase::MEMORY, "FMODE" + std::to_string(scid::database::FMODE_None)},
-    {scid::database::ICodecDatabase::MEMORY, "FMODE" + std::to_string(scid::database::FMODE_ReadOnly)},
-    {scid::database::ICodecDatabase::MEMORY, "FMODE" + std::to_string(scid::database::FMODE_WriteOnly)},
-    {scid::database::ICodecDatabase::MEMORY, "FMODE" + std::to_string(scid::database::FMODE_Both)},
+std::vector<std::pair<scid::database::CodecType, std::string>> unsupportedVec = {
+    {scid::database::CodecType::Memory, "FMODE" + std::to_string(scid::database::FMODE_None)},
+    {scid::database::CodecType::Memory, "FMODE" + std::to_string(scid::database::FMODE_ReadOnly)},
+    {scid::database::CodecType::Memory, "FMODE" + std::to_string(scid::database::FMODE_WriteOnly)},
+    {scid::database::CodecType::Memory, "FMODE" + std::to_string(scid::database::FMODE_Both)},
 
-    {scid::database::ICodecDatabase::SCID4, "FMODE" + std::to_string(scid::database::FMODE_None)},
-    {scid::database::ICodecDatabase::SCID4, "FMODE" + std::to_string(scid::database::FMODE_WriteOnly)},
-    {scid::database::ICodecDatabase::SCID4, "empty_filename"},
+    {scid::database::CodecType::Scid4, "FMODE" + std::to_string(scid::database::FMODE_None)},
+    {scid::database::CodecType::Scid4, "FMODE" + std::to_string(scid::database::FMODE_WriteOnly)},
+    {scid::database::CodecType::Scid4, "empty_filename"},
 
-    {scid::database::ICodecDatabase::SCID5, "FMODE" + std::to_string(scid::database::FMODE_None)},
-    {scid::database::ICodecDatabase::SCID5, "FMODE" + std::to_string(scid::database::FMODE_WriteOnly)},
-    {scid::database::ICodecDatabase::SCID5, "empty_filename"},
+    {scid::database::CodecType::Scid5, "FMODE" + std::to_string(scid::database::FMODE_None)},
+    {scid::database::CodecType::Scid5, "FMODE" + std::to_string(scid::database::FMODE_WriteOnly)},
+    {scid::database::CodecType::Scid5, "empty_filename"},
 
-    {scid::database::ICodecDatabase::PGN, "FMODE" + std::to_string(scid::database::FMODE_None)},
-    {scid::database::ICodecDatabase::PGN, "saveGame_game"},
-    {scid::database::ICodecDatabase::PGN, "empty_filename"}};
+    {scid::database::CodecType::Pgn, "FMODE" + std::to_string(scid::database::FMODE_None)},
+    {scid::database::CodecType::Pgn, "saveGame_game"},
+    {scid::database::CodecType::Pgn, "empty_filename"}};
 
 class Supports {
-	scid::database::ICodecDatabase::Codec dbtype_;
+	scid::database::CodecType dbtype_;
 
 public:
-	Supports(scid::database::ICodecDatabase::Codec dbtype) : dbtype_(dbtype) {}
+	Supports(scid::database::CodecType dbtype) : dbtype_(dbtype) {}
 
 	bool operator()(const std::string& feature) const {
 		auto it = std::find(unsupportedVec.begin(), unsupportedVec.end(),
@@ -158,7 +158,7 @@ private:
 GameGenerator<1000, 2000, 300> gameGenerator;
 
 template <typename Oper>
-void makeDatabase(scid::database::ICodecDatabase::Codec dbtype, const char* test, Oper op) {
+void makeDatabase(scid::database::CodecType dbtype, const char* test, Oper op) {
 	Supports supports(dbtype);
 	if (!supports(test))
 		return;
@@ -208,12 +208,12 @@ void makeDatabase(scid::database::ICodecDatabase::Codec dbtype, const char* test
 
 } // end of anonymous namespace
 
-class Test_Codec : public ::testing::TestWithParam<scid::database::ICodecDatabase::Codec> {};
+class Test_Codec : public ::testing::TestWithParam<scid::database::CodecType> {};
 
 // Try to get a scid::database::ICodecDatabase pointer for each supported file mode, then test
 // the consistency of getType() and getFilenames().
 TEST_P(Test_Codec, fileModeT) {
-	scid::database::ICodecDatabase::Codec dbtype = GetParam();
+	scid::database::CodecType dbtype = GetParam();
 	Supports supports(dbtype);
 
 	struct Cleanup {
@@ -248,7 +248,7 @@ TEST_P(Test_Codec, fileModeT) {
 }
 
 TEST_P(Test_Codec, create_emptyfilename) {
-	scid::database::ICodecDatabase::Codec dbtype = GetParam();
+	scid::database::CodecType dbtype = GetParam();
 	Supports supports(dbtype);
 
 	if (!supports("FMODE" + std::to_string(scid::database::FMODE_Create))) {
@@ -275,7 +275,7 @@ TEST_P(Test_Codec, create_emptyfilename) {
 // first. This test mimic the process perfomed to finalize the compaction of a
 // database.
 TEST_P(Test_Codec, rename) {
-	scid::database::ICodecDatabase::Codec dbtype = GetParam();
+	scid::database::CodecType dbtype = GetParam();
 	Supports supports(dbtype);
 
 	if (!supports("FMODE" + std::to_string(scid::database::FMODE_Create))) {

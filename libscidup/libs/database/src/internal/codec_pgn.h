@@ -44,7 +44,7 @@ class CodecPgn final : public CodecProxy<CodecPgn> {
 	PgnParseLog parseLog_;
 
 public:
-	Codec getType() const final { return ICodecDatabase::PGN; }
+	CodecType getType() const final { return CodecType::Pgn; }
 
 	std::vector<std::string> getFilenames() const final {
 		return std::vector<std::string>(1, filename_);

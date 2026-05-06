@@ -64,7 +64,7 @@ class CodecSCID4 : public ICodecDatabase {
 	};
 
 public: // ICodecDatabase interface
-	Codec getType() const final { return ICodecDatabase::SCID4; }
+	CodecType getType() const final { return CodecType::Scid4; }
 
 	/**
 	 * Returns the full path of the three files (index, namebase and gamefile)

@@ -35,31 +35,31 @@ struct scidBaseT::Storage {
 
 namespace {
 
-std::pair<ICodecDatabase::Codec, errorT> parseCodec(std::string_view dbType) {
+std::pair<CodecType, errorT> parseCodec(std::string_view dbType) {
 	if (dbType == "PGN") {
-		return {ICodecDatabase::PGN, OK};
+		return {CodecType::Pgn, OK};
 	}
 	if (dbType == "MEMORY") {
-		return {ICodecDatabase::MEMORY, OK};
+		return {CodecType::Memory, OK};
 	}
 	if (dbType == "SCID4") {
-		return {ICodecDatabase::SCID4, OK};
+		return {CodecType::Scid4, OK};
 	}
 	if (dbType == "SCID5") {
-		return {ICodecDatabase::SCID5, OK};
+		return {CodecType::Scid5, OK};
 	}
-	return {ICodecDatabase::SCID5, ERROR_BadArg};
+	return {CodecType::Scid5, ERROR_BadArg};
 }
 
-std::string_view codecName(ICodecDatabase::Codec codec) {
+std::string_view codecName(CodecType codec) {
 	switch (codec) {
-	case ICodecDatabase::MEMORY:
+	case CodecType::Memory:
 		return "MEMORY";
-	case ICodecDatabase::PGN:
+	case CodecType::Pgn:
 		return "PGN";
-	case ICodecDatabase::SCID4:
+	case CodecType::Scid4:
 		return "SCID4";
-	case ICodecDatabase::SCID5:
+	case CodecType::Scid5:
 		return "SCID5";
 	}
 	ASSERT(false);
@@ -69,17 +69,17 @@ std::string_view codecName(ICodecDatabase::Codec codec) {
 } // namespace
 
 std::pair<ICodecDatabase*, errorT>
-openCodec(ICodecDatabase::Codec codec, fileModeT fMode, const char* filename,
+openCodec(CodecType codec, fileModeT fMode, const char* filename,
           const Progress& progress, Index* idx, NameBase* nb) {
 	auto createCodec = [](auto codec) -> ICodecDatabase* {
 		switch (codec) {
-		case ICodecDatabase::MEMORY:
+		case CodecType::Memory:
 			return new CodecMemory();
-		case ICodecDatabase::SCID4:
+		case CodecType::Scid4:
 			return new CodecSCID4();
-		case ICodecDatabase::PGN:
+		case CodecType::Pgn:
 			return new CodecPgn();
-		case ICodecDatabase::SCID5:
+		case CodecType::Scid5:
 			return new CodecSCID5();
 		}
 		ASSERT(0);
@@ -341,7 +341,7 @@ errorT scidBaseT::importGames(std::string_view dbType,
 	auto [dbtype, parseErr] = parseCodec(dbType);
 	if (parseErr != OK)
 		return parseErr;
-	if (dbtype != ICodecDatabase::PGN)
+	if (dbtype != CodecType::Pgn)
 		return ERROR_BadArg;
 
 	if (auto errModify = beginTransaction())
@@ -714,7 +714,7 @@ errorT scidBaseT::compact(const Progress& progress) {
 		return ERROR_CodecUnsupFeat;
 
 	// 1) Create a new temporary database
-	ICodecDatabase::Codec dbtype = storage_->codec->getType();
+	CodecType dbtype = storage_->codec->getType();
 	scidBaseT tmp;
 	auto tmp_filename = std::filesystem::path(filenames[0]);
 	tmp_filename.replace_filename(tmp_filename.stem().u8string() +
@@ -741,7 +741,7 @@ errorT scidBaseT::compact(const Progress& progress) {
 		sort.emplace_back(order, i);
 	}
 	// Reorder only larger, not PGN, databases
-	if (sort.size() > 10000 && storage_->codec->getType() != ICodecDatabase::PGN)
+	if (sort.size() > 10000 && storage_->codec->getType() != CodecType::Pgn)
 		std::stable_sort(sort.begin(), sort.end());
 
 	// 3) Copy the Index Header
