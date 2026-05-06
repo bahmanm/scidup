@@ -36,7 +36,6 @@ Use these headers when working with chess games and positions:
   encoded game conversion
 - `gameview.h`: lightweight read-only cursor over encoded moves
 - `position.h`: board state, move generation and FEN/UCI position support
-- `movelist.h`: generated move lists
 - `movetree.h`: move-tree storage for editable games
 
 Use `Game` when you need mutation. Use `GameView` when you need fast read-only
@@ -101,6 +100,7 @@ in core headers:
   direction helpers
 - `scidup/core/fullmove.h`: compact move representation with SAN-related
   information
+- `scidup/core/movelist.h`: generated move records and fixed-capacity move lists
 - `scidup/core/move_predicates.h`: move validation predicates
 - `scidup/core/square_moves.h`: square movement lookup tables and helpers
 - `scidup/core/square_collections.h`: square list and set helpers
