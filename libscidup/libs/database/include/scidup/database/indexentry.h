@@ -22,7 +22,7 @@
 #define SCID_INDEXENTRY_H
 
 #include "scidup/database/common.h"
-#include "scidup/database/date.h"
+#include "scidup/core/date.h"
 #include "scidup/database/matsig.h"
 #include <cstring> //memcmp
 

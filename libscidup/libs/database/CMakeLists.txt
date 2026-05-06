@@ -26,7 +26,6 @@ set(
     SCIDUP_DATABASE_PUBLIC_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/bytebuf.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/common.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/date.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/gameview.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/hfilter.h"

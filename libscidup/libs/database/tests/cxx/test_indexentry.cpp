@@ -15,7 +15,7 @@
  */
 
 #include "codec_scid4.h"
-#include "scidup/database/date.h"
+#include "scidup/core/date.h"
 #include "scidup/database/indexentry.h"
 #include <algorithm>
 #include <gtest/gtest.h>

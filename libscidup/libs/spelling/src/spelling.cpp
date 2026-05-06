@@ -18,7 +18,7 @@
 */
 
 #include <scidup/spelling/spelling.h>
-#include "scidup/database/date.h"
+#include "scidup/core/date.h"
 #include "scidup/database/misc.h"
 
 #include <algorithm>

@@ -20,7 +20,7 @@
 #define SCIDUP_SPELLING_SPELLING_H
 
 #include "scidup/database/namebase.h"
-#include "scidup/database/date.h"
+#include "scidup/core/date.h"
 #include <deque>
 #include <memory>
 #include <string>

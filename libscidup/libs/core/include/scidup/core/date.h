@@ -17,6 +17,7 @@
 #define SCID_DATE_H
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <cstdlib>
 #include <stdint.h>
@@ -88,7 +89,7 @@ inline bool date_isPartial(dateT date) {
 inline void
 date_DecodeToString (dateT date, char * str)
 {
-    ASSERT(str != NULL);
+    assert(str != NULL);
     uint32_t year, month, day;
 
     year = date_GetYear (date);
@@ -129,7 +130,7 @@ inline dateT
 date_EncodeFromString (const char * str)
 {
     // Do checks on str's validity as a date string:
-    ASSERT(str != NULL);
+    assert(str != NULL);
 
     dateT date;
     uint32_t year, month, day;
@@ -214,4 +215,3 @@ inline dateT date_parsePGNTag(std::pair<const char*, const char*> str) {
 //////////////////////////////////////////////////////////////////////
 //  EOF: date.h
 //////////////////////////////////////////////////////////////////////
-

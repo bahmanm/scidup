@@ -17,7 +17,7 @@
 #define SCID_GAME_H
 
 #include "scidup/database/common.h"
-#include "scidup/database/date.h"
+#include "scidup/core/date.h"
 #include "scidup/database/indexentry.h"
 #include "scidup/database/matsig.h"
 #include "scidup/database/namebase.h"
