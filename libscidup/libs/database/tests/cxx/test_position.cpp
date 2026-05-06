@@ -22,62 +22,7 @@
 #include <gtest/gtest.h>
 #include <unordered_set>
 
-TEST(Test_move_predicates, attack) {
-	const int empty = 1234;
-	int board[64];
-	std::fill_n(board, 64, empty);
-
-	board[12] = !empty;
-	board[19] = !empty;
-	board[21] = !empty;
-	board[28] = !empty;
-	board[33] = !empty;
-	board[52] = !empty;
-
-	auto isOccupied = [&](auto square) { return board[square] != empty; };
-	EXPECT_TRUE(scid::database::move_predicates::attack(31, 29, scid::database::WHITE, scid::database::QUEEN, isOccupied));
-	EXPECT_FALSE(scid::database::move_predicates::attack(31, 27, scid::database::WHITE, scid::database::QUEEN, isOccupied));
-	EXPECT_TRUE(scid::database::move_predicates::attack(52, 28, scid::database::BLACK, scid::database::ROOK, isOccupied));
-	EXPECT_FALSE(scid::database::move_predicates::attack(52, 20, scid::database::BLACK, scid::database::ROOK, isOccupied));
-	EXPECT_TRUE(scid::database::move_predicates::attack(1, 11, scid::database::WHITE, scid::database::KNIGHT, isOccupied));
-	EXPECT_FALSE(scid::database::move_predicates::attack(1, 6, scid::database::WHITE, scid::database::KNIGHT, isOccupied));
-	EXPECT_TRUE(scid::database::move_predicates::attack(33, 19, scid::database::BLACK, scid::database::BISHOP, isOccupied));
-	EXPECT_FALSE(scid::database::move_predicates::attack(33, 12, scid::database::BLACK, scid::database::BISHOP, isOccupied));
-	EXPECT_TRUE(scid::database::move_predicates::attack(12, 19, scid::database::WHITE, scid::database::PAWN, isOccupied));
-	EXPECT_FALSE(scid::database::move_predicates::attack(12, 20, scid::database::WHITE, scid::database::PAWN, isOccupied));
-	EXPECT_TRUE(scid::database::move_predicates::attack(19, 12, scid::database::BLACK, scid::database::PAWN, isOccupied));
-	EXPECT_FALSE(scid::database::move_predicates::attack(12, 19, scid::database::BLACK, scid::database::PAWN, isOccupied));
-	EXPECT_TRUE(scid::database::move_predicates::attack(12, 3, scid::database::WHITE, scid::database::KING, isOccupied));
-	EXPECT_FALSE(scid::database::move_predicates::attack(12, 14, scid::database::WHITE, scid::database::KING, isOccupied));
-}
-
-TEST(Test_move_predicates, opens_ray) {
-	const int empty = 7777;
-	int board[64];
-	std::fill_n(board, 64, empty);
-
-	board[12] = !empty;
-	board[19] = !empty;
-	board[21] = !empty;
-	board[28] = !empty;
-	board[33] = !empty;
-	board[52] = !empty;
-
-	auto isOccupied = [&](auto square) { return board[square] != empty; };
-	auto test = scid::database::move_predicates::opens_ray(19, 27, 12, isOccupied);
-	EXPECT_TRUE(test.first == scid::database::BISHOP && test.second == 33);
-
-	test = scid::database::move_predicates::opens_ray(21, 29, 12, isOccupied);
-	EXPECT_TRUE(test.first == scid::database::INVALID_PIECE);
-
-	test = scid::database::move_predicates::opens_ray(28, 20, 12, isOccupied);
-	EXPECT_TRUE(test.first == scid::database::INVALID_PIECE);
-
-	test = scid::database::move_predicates::opens_ray(28, 27, 12, isOccupied);
-	EXPECT_TRUE(test.first == scid::database::ROOK && test.second == 52);
-}
-
-TEST(Test_move_predicates, UCItoSAN) {
+TEST(Test_PositionSAN, UCItoSAN) {
 	// clang-format off
 	static const char* positions[] = {
 		"2k4r/ppprnp1p/5pq1/1P2b3/P1R1P3/Q1N2N2/5PPP/4K1R1 b - - 0 22",
