@@ -14,12 +14,13 @@
 
 #include "scidup/database/position.h"
 #include "scidup/core/attacks.h"
+#include "scidup/core/square_collections.h"
+#include "scidup/core/square_moves.h"
 #include "scidup/database/common.h"
 #include "scidup/database/dstring.h"
 #include "scidup/database/hash.h"
 #include "scidup/database/misc.h"
 #include "scidup/database/movegen.h"
-#include "scidup/database/sqmove.h"
 #include <algorithm>
 #include <array>
 #include <cstdio>

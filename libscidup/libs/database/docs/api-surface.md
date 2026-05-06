@@ -39,7 +39,6 @@ Use these headers when working with chess games and positions:
 - `movelist.h`: generated move lists
 - `movetree.h`: move-tree storage for editable games
 - `fullmove.h`: compact move representation with SAN-related information
-- `sqmove.h`: square move helpers
 - `movegen.h`: move generation constants and helpers
 
 Use `Game` when you need mutation. Use `GameView` when you need fast read-only

@@ -8,7 +8,9 @@ set(
     SCIDUP_CORE_PUBLIC_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/attacks.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/board.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/primitives.h" )
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/primitives.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/square_collections.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/square_moves.h" )
 
 add_library(
     scidup_core

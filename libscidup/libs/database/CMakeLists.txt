@@ -50,7 +50,6 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/scidbase.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/searchpos.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/searchtournaments.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/sqmove.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/stored.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/tree.h" )
 
