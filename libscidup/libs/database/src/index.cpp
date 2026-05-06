@@ -1,5 +1,5 @@
 #include "scidup/database/index.h"
-#include "scidup/database/containers.h"
+#include "internal/containers.h"
 
 namespace scid::database {
 

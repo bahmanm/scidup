@@ -25,7 +25,7 @@
 #define CODEC_MEMORY_H
 
 #include "codec.h"
-#include "scidup/database/containers.h"
+#include "containers.h"
 #include "scidup/database/index.h"
 #include "scidup/database/namebase.h"
 

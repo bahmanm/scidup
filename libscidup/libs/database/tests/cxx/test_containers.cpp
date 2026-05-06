@@ -15,7 +15,7 @@
  */
 
 #include "scidup/database/bytebuf.h"
-#include "scidup/database/containers.h"
+#include "containers.h"
 #include <algorithm>
 #include <cmath>
 #include <cstring>

@@ -26,7 +26,6 @@ set(
     SCIDUP_DATABASE_PUBLIC_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/bytebuf.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/common.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/containers.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/date.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/gameview.h"
@@ -50,6 +49,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_proxy.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_scid4.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_scid5.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/containers.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/filebuf.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/movetree.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/naglatex.h"
