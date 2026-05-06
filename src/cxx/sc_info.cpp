@@ -21,7 +21,7 @@
 #define NOMINMAX
 #include <windows.h>
 #undef NOMINMAX
-#undef scid::database::ERROR
+#undef ERROR
 #else
 #include <sys/resource.h>
 #include <sys/time.h>
@@ -65,7 +65,7 @@ UI_res_t sc_info_priority(UI_extra_t, UI_handle_t ti, int argc,
 		SetPriorityClass(hProcess, idlePriority ? IDLE_PRIORITY_CLASS
 		                                        : NORMAL_PRIORITY_CLASS);
 
-	uint priorityClass = GetPriorityClass(hProcess);
+	DWORD priorityClass = GetPriorityClass(hProcess);
 	CloseHandle(hProcess);
 
 	return UI_Result(ti, scid::database::OK, priorityClass == NORMAL_PRIORITY_CLASS ? 0 : 15);

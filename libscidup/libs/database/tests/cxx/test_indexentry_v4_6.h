@@ -47,7 +47,7 @@ const scid::database::uint  OLD_INDEX_ENTRY_SIZE = 46;
 //    data file.  For fast searching, it also store some other important
 //    values: players, event, site, date, result, eco, gamelength.
 //
-//    It takes 48 bytes, assuming sizeof(scid::database::uint) == 4 and sizeof(ushort) == 2.
+//    It takes 48 bytes, assuming sizeof(scid::database::uint) == 4 and sizeof(scid::database::ushort) == 2.
 
 class IndexEntry
 {
@@ -218,7 +218,7 @@ public:
     scid::database::byte   GetWhiteRatingType () const { return u16_high_4 (WhiteElo); }
     scid::database::byte   GetBlackRatingType () const { return u16_high_4 (BlackElo); }
     scid::database::ecoT   GetEcoCode () const { return EcoCode; }
-    ushort GetNumHalfMoves () const { return NumHalfMoves; }
+    scid::database::ushort GetNumHalfMoves () const { return NumHalfMoves; }
     scid::database::byte   GetRating(const scid::database::NameBase* nb) const;
 
     void SetDate  (scid::database::dateT date)   {
@@ -239,7 +239,7 @@ public:
         Dates = u32_set_high_12 (Dates, codedDate);
     }
     void SetResult (scid::database::resultT res) {
-        VarCounts = (VarCounts & 0x0FFF) | (((ushort)res) << 12);
+        VarCounts = (VarCounts & 0x0FFF) | (((scid::database::ushort)res) << 12);
     }
     void SetWhiteElo (scid::database::eloT elo)  {
         WhiteElo = u16_set_low_12(WhiteElo, elo);
@@ -254,7 +254,7 @@ public:
         BlackElo = u16_set_high_4 (BlackElo, b);
     }
     void SetEcoCode (scid::database::ecoT eco)   { EcoCode = eco; }
-    void SetNumHalfMoves (ushort b)  { NumHalfMoves = b; }
+    void SetNumHalfMoves (scid::database::ushort b)  { NumHalfMoves = b; }
 
 
     bool GetFlag (uint32_t mask) const {
@@ -393,12 +393,12 @@ private:
         return x & 0x000FFFFF;
     }
 
-    static scid::database::byte u16_high_4( ushort x )
+    static scid::database::byte u16_high_4( scid::database::ushort x )
     {
         return (scid::database::byte)(x >> 12);
     }
 
-    static ushort u16_low_12( ushort x )
+    static scid::database::ushort u16_low_12( scid::database::ushort x )
     {
         return x & 0x0FFF;
     }
@@ -423,12 +423,12 @@ private:
         return (u & 0xFFF00000) | (x & 0x000FFFFF);
     }
 
-    static ushort u16_set_high_4( ushort u, scid::database::byte x )
+    static scid::database::ushort u16_set_high_4( scid::database::ushort u, scid::database::byte x )
     {
-        return u16_low_12(u) | ((ushort)x << 12);
+        return u16_low_12(u) | ((scid::database::ushort)x << 12);
     }
 
-    static ushort u16_set_low_12( ushort u, ushort x )
+    static scid::database::ushort u16_set_low_12( scid::database::ushort u, scid::database::ushort x )
     {
         return (u & 0xF000) | (x & 0x0FFF);
     }
