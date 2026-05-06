@@ -36,10 +36,10 @@ The library is organised around three layers:
    loads games, saves games, manages filters, lists games, transforms metadata,
    compacts storage and exposes statistics.
 
-2. Codec abstraction
-   `ICodecDatabase` separates database operations from the concrete storage
-   representation. It is the boundary used by the session facade to read and
-   write encoded game data, index entries and names.
+2. Internal codec abstraction
+   The session facade uses an internal codec boundary to read and write encoded
+   game data, index entries and names without exposing concrete storage details
+   as consumer-facing API.
 
 3. Concrete codecs
    The concrete codecs implement memory, PGN, SCID4 and SCID5 storage. These

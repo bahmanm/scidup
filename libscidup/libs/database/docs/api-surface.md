@@ -110,15 +110,14 @@ state, position hashing and shared status codes live in core headers:
 These headers are useful when extending the library, but they are not the best
 starting point for application code.
 
-# 7. Codec Boundary
+# 7. Storage Boundary
 
-`codec.h` defines `ICodecDatabase`, the abstraction between a database session
-and concrete storage. It exists so `scidBaseT` can work with memory, PGN, SCID4
-and SCID5 representations through one interface.
+The codec interface and concrete codec headers are internal implementation
+details. They exist so `scidBaseT` can work with memory, PGN, SCID4 and SCID5
+representations through one storage boundary.
 
-The concrete codec headers are deliberately under `src/internal` and should not
-be included by consumers. Open databases through `scidBaseT::open()` instead of
-constructing codec implementations directly.
+Open databases through `scidBaseT::open()` instead of constructing storage
+implementations directly.
 
 # 8. Current Stability Notes
 

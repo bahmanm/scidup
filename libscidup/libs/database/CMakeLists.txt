@@ -24,7 +24,6 @@ set(
 set(
     SCIDUP_DATABASE_PUBLIC_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/bytebuf.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/codec.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/common.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/containers.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/date.h"
@@ -45,6 +44,7 @@ set(
 
 set(
     SCIDUP_DATABASE_PRIVATE_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_memory.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_pgn.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_proxy.h"

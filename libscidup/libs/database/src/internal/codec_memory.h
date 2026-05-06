@@ -24,7 +24,7 @@
 #ifndef CODEC_MEMORY_H
 #define CODEC_MEMORY_H
 
-#include "scidup/database/codec.h"
+#include "codec.h"
 #include "scidup/database/index.h"
 #include "scidup/database/namebase.h"
 

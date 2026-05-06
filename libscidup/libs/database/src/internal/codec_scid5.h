@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "scidup/database/codec.h"
+#include "codec.h"
 #include "scidup/database/filebuf.h"
 #include "scidup/database/index.h"
 #include "scidup/database/namebase.h"

@@ -25,7 +25,7 @@
 #ifndef CODEC_SCID4_H
 #define CODEC_SCID4_H
 
-#include "scidup/database/codec.h"
+#include "codec.h"
 #include "scidup/database/filebuf.h"
 #include "scidup/database/index.h"
 #include "scidup/database/namebase.h"

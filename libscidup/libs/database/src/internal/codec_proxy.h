@@ -25,7 +25,7 @@
 #ifndef CODEC_PROXY_H
 #define CODEC_PROXY_H
 
-#include "scidup/database/codec.h"
+#include "codec.h"
 #include "codec_memory.h"
 #include "scidup/database/game.h"
 
