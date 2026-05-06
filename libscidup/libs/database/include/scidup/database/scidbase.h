@@ -39,10 +39,6 @@ namespace scid::database {
 class Progress;
 class SortCache;
 
-struct DatabaseStorageDeleter {
-	void operator()(void* storage) const;
-};
-
 const gamenumT INVALID_GAMEID = 0xffffffff;
 
 struct scidBaseT {
@@ -378,9 +374,11 @@ struct scidBaseT {
 	}
 
 private:
+	struct Storage;
+
 	bool inUse; // true if the database is open (in use).
 	Filter* dbFilter;
-	std::unique_ptr<void, DatabaseStorageDeleter> storage_;
+	std::unique_ptr<Storage> storage_;
 	Index* idx;
 	NameBase* nb_;
 	fileModeT fileMode_; // Read-only, write-only, or both.

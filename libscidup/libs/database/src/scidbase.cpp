@@ -29,15 +29,11 @@
 
 namespace scid::database {
 
-void DatabaseStorageDeleter::operator()(void* storage) const {
-	delete static_cast<ICodecDatabase*>(storage);
-}
+struct scidBaseT::Storage {
+	std::unique_ptr<ICodecDatabase> codec;
+};
 
 namespace {
-
-ICodecDatabase* codec(std::unique_ptr<void, DatabaseStorageDeleter> const& storage) {
-	return static_cast<ICodecDatabase*>(storage.get());
-}
 
 std::pair<ICodecDatabase::Codec, errorT> parseCodec(std::string_view dbType) {
 	if (dbType == "PGN") {
@@ -100,6 +96,7 @@ ICodecDatabase::open(Codec codec, fileModeT fMode, const char* filename,
 }
 
 scidBaseT::scidBaseT() {
+	storage_ = std::make_unique<Storage>();
 	idx = new Index;
 	nb_ = new NameBase;
 	inUse = false;
@@ -137,7 +134,7 @@ errorT scidBaseT::openHelper(std::string_view dbType, fileModeT fMode,
 	auto [db, err] = ICodecDatabase::open(dbtype, fMode, filename, progress,
 	                                      idx, nb_);
 	if (db) {
-		storage_.reset(db);
+		storage_->codec.reset(db);
 		inUse = true;
 		fileMode_ = (fMode == FMODE_Create) ? FMODE_Both : fMode;
 		err_open_ = err;
@@ -155,15 +152,15 @@ errorT scidBaseT::openHelper(std::string_view dbType, fileModeT fMode,
 }
 
 std::vector<std::pair<const char*, std::string>> scidBaseT::getExtraInfo() const {
-	return codec(storage_)->getExtraInfo();
+	return storage_->codec->getExtraInfo();
 }
 
 errorT scidBaseT::setExtraInfo(const char* tagname, const char* new_value) {
 	if (isReadOnly())
 		return ERROR_FileReadOnly;
 
-	const auto res = codec(storage_)->setExtraInfo(tagname, new_value);
-	return (res != OK) ? res : codec(storage_)->flush();
+	const auto res = storage_->codec->setExtraInfo(tagname, new_value);
+	return (res != OK) ? res : storage_->codec->flush();
 }
 
 void scidBaseT::Close() {
@@ -176,7 +173,7 @@ void scidBaseT::Close() {
 
 	idx->Close();
 	nb_->Clear();
-	storage_ = nullptr;
+	storage_->codec = nullptr;
 
 	clear();
 	fileMode_ = FMODE_None;
@@ -205,7 +202,7 @@ std::string scidBaseT::getFileName() const {
 	if (!inUse) {
 		return "<empty>";
 	}
-	const auto filenames = codec(storage_)->getFilenames();
+	const auto filenames = storage_->codec->getFilenames();
 	return filenames.empty() ? "<clipbase>" : filenames[0];
 }
 
@@ -224,7 +221,7 @@ errorT scidBaseT::beginTransaction() {
 
 errorT scidBaseT::endTransaction(gamenumT gNum) {
 	clear();
-	errorT res = codec(storage_)->flush();
+	errorT res = storage_->codec->flush();
 
 	auto n_games = numGames();
 	if (dbFilter->Size() != n_games) {
@@ -250,7 +247,7 @@ errorT scidBaseT::loadGame(gamenumT gNum, Game& dest) const {
 }
 
 GameView scidBaseT::getGame(const IndexEntry* ie) const {
-	auto data = codec(storage_)->getGameMoves(*ie);
+	auto data = storage_->codec->getGameMoves(*ie);
 	if (data) {
 		auto [errPos, fen] = data.decodeStartBoard();
 		if (errPos == OK) {
@@ -268,7 +265,7 @@ GameView scidBaseT::getGame(const IndexEntry* ie) const {
 }
 
 ByteBuffer scidBaseT::getGame(const IndexEntry& ie) const {
-	return codec(storage_)->getGameData(ie.GetOffset(), ie.GetLength());
+	return storage_->codec->getGameData(ie.GetOffset(), ie.GetLength());
 }
 
 errorT scidBaseT::saveGame(Game* game, gamenumT replacedGameId) {
@@ -284,8 +281,8 @@ errorT scidBaseT::saveGame(Game const& game, gamenumT replacedGameId) {
 	auto gamedata = ByteBuffer(buf.data(), buf.size());
 
 	errorT err = (replacedGameId < numGames())
-	                 ? codec(storage_)->saveGame(ie, tags, gamedata, replacedGameId)
-	                 : codec(storage_)->addGame(ie, tags, gamedata);
+	                 ? storage_->codec->saveGame(ie, tags, gamedata, replacedGameId)
+	                 : storage_->codec->addGame(ie, tags, gamedata);
 	errorT errClear = endTransaction(replacedGameId);
 	return (err != OK) ? err : errClear;
 }
@@ -319,24 +316,24 @@ errorT scidBaseT::importGames(const scidBaseT* srcBase, const HFilter& filter,
 
 errorT scidBaseT::importGameHelper(const scidBaseT* srcBase, gamenumT gNum) {
 	const auto ie = srcBase->getIndexEntry(gNum);
-	if (const auto data = codec(srcBase->storage_)
-	                          ->getGameData(ie->GetOffset(), ie->GetLength()))
-		return codec(storage_)->addGame(*ie, srcBase->tagRoster(*ie), data);
+	if (const auto data = srcBase->storage_->codec->getGameData(
+	        ie->GetOffset(), ie->GetLength()))
+		return storage_->codec->addGame(*ie, srcBase->tagRoster(*ie), data);
 
 	return ERROR_FileRead;
 }
 
 errorT scidBaseT::saveGameData(IndexEntry const& ie, TagRoster const& tags,
                                ByteBuffer const& data, gamenumT replaced) {
-	return codec(storage_)->saveGame(ie, tags, data, replaced);
+	return storage_->codec->saveGame(ie, tags, data, replaced);
 }
 
 errorT scidBaseT::saveIndexEntry(IndexEntry const& ie, gamenumT replaced) {
-	return codec(storage_)->saveIndexEntry(ie, replaced);
+	return storage_->codec->saveIndexEntry(ie, replaced);
 }
 
 std::pair<errorT, idNumberT> scidBaseT::addName(nameT nt, const char* name) {
-	return codec(storage_)->addName(nt, name);
+	return storage_->codec->addName(nt, name);
 }
 
 errorT scidBaseT::importGames(std::string_view dbType,
@@ -359,7 +356,7 @@ errorT scidBaseT::importGames(std::string_view dbType,
 		res = CodecPgn::parseGames(progress, pgn, [&](Game& game) {
 			buf.clear();
 			auto [ie, tags] = game.Encode(buf);
-			auto err = codec(storage_)->addGame(ie, tags, {buf.data(), buf.size()});
+			auto err = storage_->codec->addGame(ie, tags, {buf.data(), buf.size()});
 			if (err == ERROR_CodecChess960) {
 				++nChess960Errors;
 				err = OK;
@@ -404,7 +401,7 @@ errorT scidBaseT::setFlag(bool value, uint flag, uint gNum) {
 	// Preserve the duplicate list when just a single flag is changed.
 	auto keep_duplicates = extractDuplicates();
 
-	const auto res = codec(storage_)->saveIndexEntry(ie, gNum);
+	const auto res = storage_->codec->saveIndexEntry(ie, gNum);
 	const auto err = endTransaction(gNum);
 
 	setDuplicates(std::move(keep_duplicates));
@@ -713,12 +710,12 @@ errorT scidBaseT::getCompactStat(unsigned long long* n_deleted,
 }
 
 errorT scidBaseT::compact(const Progress& progress) {
-	std::vector<std::string> filenames = codec(storage_)->getFilenames();
+	std::vector<std::string> filenames = storage_->codec->getFilenames();
 	if (filenames.empty())
 		return ERROR_CodecUnsupFeat;
 
 	// 1) Create a new temporary database
-	ICodecDatabase::Codec dbtype = codec(storage_)->getType();
+	ICodecDatabase::Codec dbtype = storage_->codec->getType();
 	scidBaseT tmp;
 	auto tmp_filename = std::filesystem::path(filenames[0]);
 	tmp_filename.replace_filename(tmp_filename.stem().u8string() +
@@ -745,7 +742,7 @@ errorT scidBaseT::compact(const Progress& progress) {
 		sort.emplace_back(order, i);
 	}
 	// Reorder only larger, not PGN, databases
-	if (sort.size() > 10000 && codec(storage_)->getType() != ICodecDatabase::PGN)
+	if (sort.size() > 10000 && storage_->codec->getType() != ICodecDatabase::PGN)
 		std::stable_sort(sort.begin(), sort.end());
 
 	// 3) Copy the Index Header
@@ -766,7 +763,7 @@ errorT scidBaseT::compact(const Progress& progress) {
 			}
 			pair.second = std::to_string(autoloadNew);
 		}
-		err_Header = codec(tmp.storage_)->setExtraInfo(pair.first, pair.second.c_str());
+		err_Header = tmp.storage_->codec->setExtraInfo(pair.first, pair.second.c_str());
 	}
 
 	// 4) Copy the games
@@ -791,7 +788,7 @@ errorT scidBaseT::compact(const Progress& progress) {
 	}
 
 	// 5) Finalize the new database
-	std::vector<std::string> tmp_filenames = codec(tmp.storage_)->getFilenames();
+	std::vector<std::string> tmp_filenames = tmp.storage_->codec->getFilenames();
 	errorT err_NbWrite = tmp.endTransaction();
 	tmp.Close();
 	auto err_Close = (filenames.size() == tmp_filenames.size()) ? OK : ERROR;
