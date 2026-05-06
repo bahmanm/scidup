@@ -25,7 +25,7 @@ The current library surface includes:
 - lightweight game cursors through `GameView`
 - metadata through `IndexEntry` and `NameBase`
 - result sets through `HFilter`
-- query helpers for position, header, tree and tournament workflows
+- query helpers for position, header and tree workflows
 - codec-backed storage for memory, PGN, SCID4 and SCID5 databases
 
 Concrete codec classes are implementation details. Use the session facade

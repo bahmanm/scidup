@@ -61,7 +61,6 @@ Use these headers for result sets and searches:
 
 - `hfilter.h`: filter storage and filtered iteration
 - `searchpos.h`: position search over a database session
-- `searchtournaments.h`: grouping and filtering games into tournaments
 
 `HFilter` is a handle-like object over filter storage. Filters are owned either
 by the database session or by caller-owned filter storage. Be careful not to use

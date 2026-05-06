@@ -1,49 +1,29 @@
-/*
-* Copyright (C) 2015-2019 Fulvio Benini
+#ifndef SCIDUP_APP_TOURNAMENTS_H
+#define SCIDUP_APP_TOURNAMENTS_H
 
-* This file is part of Scid (Shane's Chess Information Database).
-*
-* Scid is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation.
-*
-* Scid is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with Scid. If not, see <http://www.gnu.org/licenses/>.
-*/
-
-#ifndef SEARCHTOURNAMENTS_H
-#define SEARCHTOURNAMENTS_H
-
-#include "scidup/database/common.h"
 #include "scidup/database/misc.h"
 #include "scidup/database/scidbase.h"
 #include <algorithm>
 #include <numeric>
 #include <vector>
 
-/**
- * class TourneyGame - Private class used by Tourney and SearchTournaments
- */
-namespace scid::database {
+namespace scidup::app::tournaments {
+
+namespace db = scid::database;
 
 struct TourneyGame {
-	idNumberT siteID_;
-	idNumberT eventID_;
-	dateT     eventDate_;
-	idNumberT whiteID_;
-	idNumberT blackID_;
-	eloT      wElo_;
-	eloT      bElo_;
-	dateT     date_;
-	gamenumT  gnum_;
-	resultT   result_;
+	db::idNumberT siteID_;
+	db::idNumberT eventID_;
+	db::dateT eventDate_;
+	db::idNumberT whiteID_;
+	db::idNumberT blackID_;
+	db::eloT wElo_;
+	db::eloT bElo_;
+	db::dateT date_;
+	db::gamenumT gnum_;
+	db::resultT result_;
 
-	TourneyGame(const IndexEntry* ie, gamenumT gnum) {
+	TourneyGame(const db::IndexEntry* ie, db::gamenumT gnum) {
 		siteID_ = ie->GetSite();
 		eventID_ = ie->GetEvent();
 		eventDate_ = ie->GetEventDate();
@@ -57,14 +37,6 @@ struct TourneyGame {
 	}
 };
 
-/**
- * class Tourney - Calculate information about a tournament
- *
- * This class takes a range of TourneyGame references and calculate some
- * basic information (number of Players, average elo, scores, etc.).
- * Invariants:
- *     the range of TourneyGame refs should not be empty
- */
 class Tourney {
 public:
 	template <typename Iter>
@@ -72,21 +44,21 @@ public:
 	    : begin_(begin), minDateGame_(begin) {
 		ASSERT(begin != end);
 
-		n_games_ = static_cast<gamenumT>(std::distance(begin, end));
+		n_games_ = static_cast<db::gamenumT>(std::distance(begin, end));
 
 		for (auto it = begin; it != end; it++) {
 			auto& white = add_player(it->whiteID_, it->wElo_);
-			white.score += RESULT_SCORE[it->result_];
+			white.score += db::RESULT_SCORE[it->result_];
 			auto& black = add_player(it->blackID_, it->bElo_);
-			black.score += RESULT_SCORE[RESULT_OPPOSITE[it->result_]];
+			black.score += db::RESULT_SCORE[db::RESULT_OPPOSITE[it->result_]];
 
 			if (it->date_ < minDateGame_->date_) minDateGame_ = it;
 		}
-		std::sort(players_.begin(), players_.end(), // SortScoreDesc
+		std::sort(players_.begin(), players_.end(),
 		          [](auto& a, auto& b) { return a.score > b.score; });
 
 		const auto eloSum = std::accumulate(players_.begin(), players_.end(),
-		                                    std::make_pair(0ull, gamenumT{0}),
+		                                    std::make_pair(0ull, db::gamenumT{0}),
 		                                    [](auto res, const auto& player) {
 			                                    if (player.elo != 0) {
 				                                    res.first += player.elo;
@@ -99,20 +71,20 @@ public:
 		              : static_cast<unsigned>(eloSum.first / eloSum.second);
 	}
 
-	idNumberT getEventId() const { return begin_->eventID_; }
-	idNumberT getSiteId() const { return begin_->siteID_; }
-	dateT getStartDate() const { return minDateGame_->date_; }
-	gamenumT getStartGameNum() const { return minDateGame_->gnum_; }
+	db::idNumberT getEventId() const { return begin_->eventID_; }
+	db::idNumberT getSiteId() const { return begin_->siteID_; }
+	db::dateT getStartDate() const { return minDateGame_->date_; }
+	db::gamenumT getStartGameNum() const { return minDateGame_->gnum_; }
 	unsigned getAvgElo() const { return avgElo_; }
-	gamenumT nGames() const { return n_games_; }
+	db::gamenumT nGames() const { return n_games_; }
 	unsigned nPlayers() const { return static_cast<unsigned>(players_.size()); }
 
 	struct Player {
-		idNumberT nameId;
+		db::idNumberT nameId;
 		uint16_t score;
-		eloT elo;
+		db::eloT elo;
 
-		bool operator==(idNumberT id) const { return nameId == id; }
+		bool operator==(db::idNumberT id) const { return nameId == id; }
 	};
 	const Player& getPlayer(size_t position) const {
 		ASSERT(position < players_.size());
@@ -123,10 +95,10 @@ private:
 	std::vector<TourneyGame>::const_iterator begin_;
 	std::vector<TourneyGame>::const_iterator minDateGame_;
 	std::vector<Player> players_;
-	gamenumT n_games_;
+	db::gamenumT n_games_;
 	unsigned avgElo_;
 
-	Player& add_player(idNumberT nameID, eloT elo) {
+	Player& add_player(db::idNumberT nameID, db::eloT elo) {
 		auto it = std::find(players_.begin(), players_.end(), nameID);
 		if (it != players_.end()) {
 			if (elo > it->elo)
@@ -138,40 +110,13 @@ private:
 	};
 };
 
-
-/**
- * class SearchTournamens - Search tournaments in a database
- *
- * This class group games in tournaments.
- * Games with the same EventId, SiteId and EventDate are considered
- * a tournament. A game with EventDate == 0 is also considered part of
- * a tournament if its date is greater than or equal to the EventDate
- * of the other games.
- * It's also possible to filter the results further by:
- *     - average elo
- *     - number of partecipants
- *     - number of games
- *     - name of a participant
- * Results can be sorted by
- *     - event name
- *     - event date
- *     - site name
- *     - number of partecipants
- *     - number of games
- *     - average elo
- *
- * Dependencies:
- * Indexes of NameBase are used for the names of the event, site and player
- * and they must be valid and unchanged throughout all the life of the
- * SearchTournament object.
- */
 class SearchTournaments {
-	const scidBaseT* dbase_;
+	const db::scidBaseT* dbase_;
 	std::vector<TourneyGame> games_;
 	std::vector<Tourney> tourney_;
 
 public:
-	SearchTournaments(const scidBaseT* dbase, const HFilter& filter)
+	SearchTournaments(const db::scidBaseT* dbase, const db::HFilter& filter)
 	    : dbase_(dbase) {
 		ASSERT(dbase != 0);
 		ASSERT(filter != 0);
@@ -187,8 +132,8 @@ public:
 				          return a.eventID_ < b.eventID_;
 			          if (a.siteID_ != b.siteID_)
 				          return a.siteID_ < b.siteID_;
-			          dateT d1 = a.eventDate_ != 0 ? a.eventDate_ : a.date_;
-			          dateT d2 = b.eventDate_ != 0 ? b.eventDate_ : b.date_;
+			          db::dateT d1 = a.eventDate_ != 0 ? a.eventDate_ : a.date_;
+			          db::dateT d2 = b.eventDate_ != 0 ? b.eventDate_ : b.date_;
 			          return d1 < d2;
 		          });
 
@@ -213,28 +158,28 @@ public:
 		}
 	}
 
-	typedef std::vector<Tourney>::const_iterator Iter;
+	using Iter = std::vector<Tourney>::const_iterator;
 	Iter begin() const { return tourney_.begin(); }
 	Iter end() const { return tourney_.end(); }
 
-	void filterByAvgElo(const StrRange& range) {
+	void filterByAvgElo(const db::StrRange& range) {
 		tourney_.erase(
 			std::remove_if(tourney_.begin(), tourney_.end(),
-				Filter<& Tourney::getAvgElo>(range)),
+				Filter<&Tourney::getAvgElo>(range)),
 			tourney_.end());
 	}
 
-	void filterByNPlayers(const StrRange& range) {
+	void filterByNPlayers(const db::StrRange& range) {
 		tourney_.erase(
 			std::remove_if(tourney_.begin(), tourney_.end(),
-				Filter<& Tourney::nPlayers>(range)),
+				Filter<&Tourney::nPlayers>(range)),
 			tourney_.end());
 	}
 
-	void filterByNGames(const StrRange& range) {
+	void filterByNGames(const db::StrRange& range) {
 		tourney_.erase(
 			std::remove_if(tourney_.begin(), tourney_.end(),
-				Filter<& Tourney::nGames>(range)),
+				Filter<&Tourney::nGames>(range)),
 			tourney_.end());
 	}
 
@@ -245,39 +190,37 @@ public:
 			tourney_.end());
 	}
 
-
 	bool sort(const char* criteria, size_t max);
 
 private:
-	template <uint (Tourney::* f)() const>
+	template <db::uint (Tourney::* f)() const>
 	class Filter {
-		const StrRange& range_;
+		const db::StrRange& range_;
 
 	public:
-		Filter(const StrRange& range) : range_(range) {}
+		Filter(const db::StrRange& range) : range_(range) {}
 
 		bool operator()(const Tourney& t) {
-			return ! range_.inRange((t.*f)());
+			return !range_.inRange((t.*f)());
 		}
 	};
 
 	class FilterByPlayer {
 		const char* name_;
-		const NameBase* nb_;
+		const db::NameBase* nb_;
 
 	public:
-		FilterByPlayer(const char* name, const NameBase* nb)
+		FilterByPlayer(const char* name, const db::NameBase* nb)
 		: name_(name), nb_(nb) {}
 
 		bool operator()(const Tourney& t) {
 			for (size_t i = 0, n = t.nPlayers(); i < n; i++) {
-				const char* name = nb_->GetName(NAME_PLAYER, t.getPlayer(i).nameId);
-				if (strAlphaContains(name, name_)) return false;
+				const char* name = nb_->GetName(db::NAME_PLAYER, t.getPlayer(i).nameId);
+				if (db::strAlphaContains(name, name_)) return false;
 			}
 			return true;
 		}
 	};
-
 
 	struct SortDate {
 		bool operator()(const Tourney& a, const Tourney& b) {
@@ -285,22 +228,22 @@ private:
 		}
 	};
 
-	template <uint (Tourney::* f)() const>
+	template <db::uint (Tourney::* f)() const>
 	struct SortDesc {
 		bool operator()(const Tourney& a, const Tourney& b) {
 			return (a.*f)() > (b.*f)();
 		}
 	};
 
-	template <nameT nt, idNumberT (Tourney::* f)() const>
+	template <db::nameT nt, db::idNumberT (Tourney::* f)() const>
 	class SortId {
-		const NameBase* nb_;
+		const db::NameBase* nb_;
 	public:
-		SortId(const NameBase* nb) : nb_(nb) {}
+		SortId(const db::NameBase* nb) : nb_(nb) {}
 		bool operator()(const Tourney& a, const Tourney& b) {
 			const char* nameA = nb_->GetName(nt, (a.*f)());
 			const char* nameB = nb_->GetName(nt, (b.*f)());
-			return strCaseCompare(nameA, nameB) < 0;
+			return db::strCaseCompare(nameA, nameB) < 0;
 		}
 	};
 };
@@ -316,26 +259,26 @@ inline bool SearchTournaments::sort(const char* criteria, size_t nOrdered) {
 		tourney_.begin() + nOrdered : tourney_.end();
 	std::vector<Tourney>::iterator end = tourney_.end();
 
-	switch (strUniqueMatch(criteria, criterions)) {
+	switch (db::strUniqueMatch(criteria, criterions)) {
 	case DATE:
 		std::partial_sort(begin, it, end, SortDate());
 		break;
 	case ELO:
-		std::partial_sort(begin, it, end, SortDesc<& Tourney::getAvgElo>());
+		std::partial_sort(begin, it, end, SortDesc<&Tourney::getAvgElo>());
 		break;
 	case EVENT:
 		std::partial_sort(begin, it, end,
-			SortId<NAME_EVENT, & Tourney::getEventId>(dbase_->getNameBase()));
+			SortId<db::NAME_EVENT, &Tourney::getEventId>(dbase_->getNameBase()));
 		break;
 	case GAMES:
-		std::partial_sort(begin, it, end, SortDesc<& Tourney::nGames>());
+		std::partial_sort(begin, it, end, SortDesc<&Tourney::nGames>());
 		break;
 	case PLAYERS:
-		std::partial_sort(begin, it, end, SortDesc<& Tourney::nPlayers>());
+		std::partial_sort(begin, it, end, SortDesc<&Tourney::nPlayers>());
 		break;
 	case SITE:
 		std::partial_sort(begin, it, end,
-			SortId<NAME_SITE, & Tourney::getSiteId>(dbase_->getNameBase()));
+			SortId<db::NAME_SITE, &Tourney::getSiteId>(dbase_->getNameBase()));
 		break;
 	default:
 		return false;
@@ -344,6 +287,6 @@ inline bool SearchTournaments::sort(const char* criteria, size_t nOrdered) {
 	return true;
 }
 
+} // namespace scidup::app::tournaments
 
-} // namespace scid::database
 #endif

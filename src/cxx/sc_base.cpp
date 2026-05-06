@@ -21,8 +21,8 @@
 #include "scidup/database/misc.h"
 #include "scidup/database/scidbase.h"
 #include "scidup_app_editor.h"
+#include "scidup_app_tournaments.h"
 #include "scidup_app_tree.h"
-#include "scidup/database/searchtournaments.h"
 #include "ui.h"
 #include <algorithm>
 #include <cstring>
@@ -818,7 +818,7 @@ UI_res_t sc_base_tournaments(const scid::database::scidBaseT* dbase, UI_handle_t
 	const scid::database::HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
 	if (filter == 0) return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-	scid::database::SearchTournaments search(dbase, filter);
+	scidup::app::tournaments::SearchTournaments search(dbase, filter);
 
 	const char* sortCriteria = 0;
 	long nResults = scid::database::strGetUnsigned(argv[4]);
@@ -858,8 +858,8 @@ UI_res_t sc_base_tournaments(const scid::database::scidBaseT* dbase, UI_handle_t
 			return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 	}
 
-	scid::database::SearchTournaments::Iter it = search.begin();
-	scid::database::SearchTournaments::Iter it_end = search.end();
+	scidup::app::tournaments::SearchTournaments::Iter it = search.begin();
+	scidup::app::tournaments::SearchTournaments::Iter it_end = search.end();
 	if (std::distance(it, it_end) > nResults) {
 		it_end = it + nResults;
 	}
@@ -886,13 +886,13 @@ UI_res_t sc_base_tournaments(const scid::database::scidBaseT* dbase, UI_handle_t
 		scid::database::eloT elo2nd = 0;
 		double score2nd = 0.0;
 		if (it->nPlayers() > 0) {
-			const scid::database::Tourney::Player& p = it->getPlayer(0);
+			const scidup::app::tournaments::Tourney::Player& p = it->getPlayer(0);
 			name1st = nb->GetName(scid::database::NAME_PLAYER, p.nameId);
 			elo1st = p.elo;
 			score1st = p.score / 2.0;
 		}
 		if (it->nPlayers() > 1) {
-			const scid::database::Tourney::Player& p = it->getPlayer(1);
+			const scidup::app::tournaments::Tourney::Player& p = it->getPlayer(1);
 			name2nd = nb->GetName(scid::database::NAME_PLAYER, p.nameId);
 			elo2nd = p.elo;
 			score2nd = p.score / 2.0;
