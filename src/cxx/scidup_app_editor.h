@@ -6,6 +6,7 @@
 // owns the current editing session, dirty state, undo/redo, and push/pop state.
 
 #include "scidup/database/scidbase.h"
+#include "scidup_app_undo_redo.h"
 #include <memory>
 #include <optional>
 #include <unordered_map>
@@ -16,7 +17,7 @@ struct State {
 	std::unique_ptr<scid::database::Game> game = std::make_unique<scid::database::Game>();
 	std::optional<scid::database::gamenumT> loadedGameId;
 	bool dirty = false;
-	scid::database::UndoRedo<scid::database::Game, 100> history;
+	scidup::app::UndoRedo<scid::database::Game, 100> history;
 	std::pair<scid::database::Game*, bool> deprecatedPushPop{nullptr, false};
 
 	~State() { delete deprecatedPushPop.first; }

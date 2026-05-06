@@ -20,7 +20,6 @@
 #define SCIDBASE_H
 
 #include "scidup/database/bytebuf.h"
-#include "scidup/database/containers.h"
 #include "scidup/database/game.h"
 #include "scidup/database/gameview.h"
 #include "scidup/database/hfilter.h"

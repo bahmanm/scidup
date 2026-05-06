@@ -115,67 +115,6 @@ TEST(Test_Containers, VectorChunked) {
 	EXPECT_EQ(0U, v.capacity());
 }
 
-TEST(Test_Containers, UndoRedo) {
-	scid::database::UndoRedo<RefCounted, 10> cont; // max 10 elements
-
-	RefCounted* cur = new RefCounted();
-
-	for (char i = 0; i < 10; ++i) {
-		cur->ch[0] = i;
-		cont.store(cur);
-		EXPECT_EQ(i + 2, nObjects);
-	}
-
-	// Test max n. of elements
-	EXPECT_EQ(11, nObjects);
-	EXPECT_EQ(10U, cont.undoSize());
-	cur->ch[0] = 10;
-	cont.store(cur);
-	cur->ch[0] = 11;
-	EXPECT_EQ(11, nObjects);
-	EXPECT_EQ(10U, cont.undoSize());
-
-	// Test undo
-	for (char i = 10; i > 0; --i) {
-		EXPECT_EQ(size_t(i), cont.undoSize());
-		cur = cont.undo(cur);
-		EXPECT_EQ(i, cur->ch[0]);
-		EXPECT_EQ(11, nObjects);
-	}
-
-	// Test empty undo queue
-	for (int i = 0; i < 5; ++i) {
-		cur = cont.undo(cur);
-		EXPECT_EQ(1, cur->ch[0]);
-		EXPECT_EQ(11, nObjects);
-		EXPECT_EQ(0U, cont.undoSize());
-		EXPECT_EQ(10U, cont.redoSize());
-	}
-
-	// Test redo
-	for (char i = 2; i < 6; ++i) {
-		cur = cont.redo(cur);
-		EXPECT_EQ(i, cur->ch[0]);
-		EXPECT_EQ(11, nObjects);
-	}
-
-	// Test that store() clears redo queue
-	cur->ch[0] = 'a';
-	cont.store(cur);
-	EXPECT_EQ(6, nObjects);
-	EXPECT_EQ(5U, cont.undoSize());
-	EXPECT_EQ(0U, cont.redoSize());
-
-	// Test memory release
-	cont.clear();
-	EXPECT_EQ(0U, cont.undoSize());
-	EXPECT_EQ(0U, cont.redoSize());
-	EXPECT_EQ(1, nObjects);
-	EXPECT_EQ('a', cur->ch[0]);
-
-	delete cur;
-}
-
 TEST(Test_Containers, ByteBuffer_GetTerminatedString) {
 	const char* test_data[] = {"abcd", "", "efg"};
 	auto v = [&] {
