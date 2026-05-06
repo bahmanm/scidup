@@ -171,7 +171,7 @@ TEST(Test_Game, viewTagPairs) {
 	expected_extra.emplace_back("BlackElo", "2650");
 	game.SetBlackElo(2650);
 	expected_extra.emplace_back("ECO", "A01");
-	game.SetEco(scid::database::eco_FromString("A01"));
+	game.SetEco(scidup::eco::fromString("A01"));
 	expected_extra.emplace_back("EventDate", "2018.06.01");
 	game.SetEventDate(scid::database::date_parsePGNTag("2018.06.01", 10));
 	expected_extra.emplace_back("UTCDate", "2018.06.10");

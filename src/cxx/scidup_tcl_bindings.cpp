@@ -840,8 +840,8 @@ checkDuplicate (scid::database::scidBaseT * base,
     if (cr->sameEcoCode) {
         scid::database::ecoStringT a;
         scid::database::ecoStringT b;
-        scid::database::eco_ToBasicString (ie1->GetEcoCode(), a);
-        scid::database::eco_ToBasicString (ie2->GetEcoCode(), b);
+        scidup::eco::toBasicString(ie1->GetEcoCode(), a);
+        scidup::eco::toBasicString(ie2->GetEcoCode(), b);
         if (a[0] != b[0]  ||  a[1] != b[1]  ||  a[2] != b[2]) { return false; }
     }
 
@@ -1240,7 +1240,7 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         }
 
         if (!extendedCodes) {
-            ecoCode = scid::database::eco_BasicCode(ecoCode);
+            ecoCode = scidup::eco::basicCode(ecoCode);
         }
 
         if (ie.GetEcoCode() != ecoCode) {
@@ -1297,7 +1297,7 @@ sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return UI_Result(ti, scid::database::OK, ply);
 
     scid::database::ecoStringT extEco;
-    scid::database::eco_ToExtendedString(ecoCode, extEco);
+    scidup::eco::toExtendedString(ecoCode, extEco);
     return UI_Result(ti, scid::database::OK, extEco);
 }
 
@@ -2776,7 +2776,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     if (g.GetEco() != 0) {
         scid::database::ecoStringT fullEcoStr;
-        scid::database::eco_ToExtendedString (g.GetEco(), fullEcoStr);
+        scidup::eco::toExtendedString(g.GetEco(), fullEcoStr);
         scid::database::ecoStringT basicEcoStr;
         scid::database::strCopy (basicEcoStr, fullEcoStr);
         if (scid::database::strLength(basicEcoStr) >= 4) { basicEcoStr[3] = 0; }
@@ -3028,9 +3028,9 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         auto ecoStr = ecoBook->findEcoString(*g.GetCurrentPos());
         if (!ecoStr.empty()) {
             std::string ecoComment(ecoStr);
-            scid::database::ecoT eco = scid::database::eco_FromString(ecoComment.c_str());
+            scid::database::ecoT eco = scidup::eco::fromString(ecoComment.c_str());
             scid::database::ecoStringT estr;
-            scid::database::eco_ToExtendedString (eco, estr);
+            scidup::eco::toExtendedString(eco, estr);
             scid::database::uint len = scid::database::strLength (estr);
             if (len >= 4) { estr[3] = 0; }
             scid::database::DString tempDStr;
@@ -3682,7 +3682,7 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
         scid::database::ecoT eco = g->GetEco();
         if (eco != 0) {
             scid::database::ecoStringT ecoStr;
-            scid::database::eco_ToExtendedString (eco, ecoStr);
+            scidup::eco::toExtendedString(eco, ecoStr);
             dstr.Append ("  ", ecoStr);
         }
         res.push_back(dstr.Data());
@@ -3871,7 +3871,7 @@ sc_game_tags_get (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     case T_ECO:
         {
             scid::database::ecoStringT ecoStr;
-            scid::database::eco_ToExtendedString (g->GetEco(), ecoStr);
+            scidup::eco::toExtendedString(g->GetEco(), ecoStr);
             AppendResult (ti, ecoStr, NULL);
             break;
         }
@@ -3970,7 +3970,7 @@ sc_game_tags_set (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             case T_BLACK_RTYPE:
                 game.SetBlackRatingType (strGetRatingType (value)); break;
             case T_ECO:
-                game.SetEco (scid::database::eco_FromString (value)); break;
+                game.SetEco(scidup::eco::fromString(value)); break;
             case T_EVENTDATE:
                 game.SetEventDate (scid::database::date_EncodeFromString(value));
                 break;
@@ -5709,7 +5709,7 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         int ecoClass = -1;
         if (ecoCode != scid::database::ECO_None) {
             scid::database::ecoStringT ecoStr;
-            scid::database::eco_ToBasicString (ecoCode, ecoStr);
+            scidup::eco::toBasicString(ecoCode, ecoStr);
             if (ecoStr[0] != 0) {
                 ecoClass = ((ecoStr[0] - 'A') * 10) + (ecoStr[1] - '0');
                 if (ecoClass < 0  ||  ecoClass >= 50) { ecoClass = -1; }
@@ -7289,7 +7289,7 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             calc_san(node.move);
             scid::database::ecoT eco = calc_eco(node.move);
             scid::database::ecoStringT ecoStr;
-            scid::database::eco_ToExtendedString(eco, ecoStr);
+            scidup::eco::toExtendedString(eco, ecoStr);
             auto freq = long(1000ll * node.freq[0] / totals.freq[0]);
             std::snprintf(temp, sizeof(temp), "\n%2u: %-6s %-5s %7u:%3ld%c%1ld%%",
                      ++count,

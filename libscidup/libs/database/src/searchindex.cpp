@@ -219,13 +219,13 @@ public:
 	: SearchRange<ecoT>(base, f) {
 		// Extract two whitespace-separated ECO codes:
 		const char* v = strFirstWord(range);
-		min_ = eco_FromString(v);
+		min_ = scidup::eco::fromString(v);
 		const char* next = strNextWord(v);
-		max_ = (*next == 0) ? min_ : eco_FromString(next);
+		max_ = (*next == 0) ? min_ : scidup::eco::fromString(next);
 		if (min_ > max_) std::swap(min_, max_);
 		// Set eco maximum to be the largest subcode, for example,
 		// "B07" -> "B07z4" to make sure subcodes are included in the range:
-		max_ = eco_LastSubCode(static_cast<ecoT>(max_));
+		max_ = scidup::eco::lastSubCode(static_cast<ecoT>(max_));
 	}
 };
 

@@ -106,29 +106,6 @@ inline filterOpT strGetFilterOp (const char * str)
     return FILTEROP_RESET;
 }
 
-// ECO string compatibility routines. New code should use scidup/eco/code.h.
-inline void eco_ToString (ecoT ecoCode, char * ecoStr, bool extensions = true) {
-    scidup::eco::toString(ecoCode, ecoStr, extensions);
-}
-inline void eco_ToBasicString (ecoT ecoCode, char * ecoStr) {
-    scidup::eco::toBasicString(ecoCode, ecoStr);
-}
-inline void eco_ToExtendedString (ecoT ecoCode, char * ecoStr) {
-    scidup::eco::toExtendedString(ecoCode, ecoStr);
-}
-inline ecoT eco_FromString (const char * ecoStr) {
-    return scidup::eco::fromString(ecoStr);
-}
-inline ecoT eco_LastSubCode (ecoT ecoCode) {
-    return scidup::eco::lastSubCode(ecoCode);
-}
-inline ecoT eco_BasicCode (ecoT ecoCode) {
-    return scidup::eco::basicCode(ecoCode);
-}
-inline ecoT eco_Reduce(ecoT ecoCode) {
-    return scidup::eco::reduce(ecoCode);
-}
-
 // String routines. Some are identical to ANSI standard functions, but
 //      I have included them:
 //      (a) to keep nice consistent naming conventions, e.g. strCopy.

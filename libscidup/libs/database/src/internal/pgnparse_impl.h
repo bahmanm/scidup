@@ -250,7 +250,7 @@ private:
 		case 3:
 			if (std::equal(tag, tag + 3, "ECO")) {
 				std::string tmp{value.first, value.second};
-				game.SetEco(eco_FromString(tmp.c_str()));
+				game.SetEco(scidup::eco::fromString(tmp.c_str()));
 				return true;
 			}
 			if (std::equal(tag, tag + 3, "FEN")) {

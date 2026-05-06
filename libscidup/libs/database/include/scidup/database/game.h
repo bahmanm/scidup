@@ -547,7 +547,7 @@ template <typename TFunc> void Game::viewTagPairs(TFunc visitor) const {
 		visitor(rType.c_str(), std::to_string(elo).c_str());
 	}
 	if (GetEco() != ECO_None) {
-		eco_ToExtendedString(GetEco(), strBuf);
+		scidup::eco::toExtendedString(GetEco(), strBuf);
 		visitor("ECO", strBuf);
 	}
 	if (GetEventDate() != ZERO_DATE) {

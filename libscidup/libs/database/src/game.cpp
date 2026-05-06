@@ -2335,7 +2335,7 @@ errorT Game::WritePGN(TextBuffer* tb) {
             tb->PrintString (IsHtmlFormat() ? " &nbsp; &nbsp; " : "  ");
             if (IsLatexFormat()) { tb->PrintString ("\\hfill "); }
             ecoStringT ecoStr;
-            eco_ToExtendedString (EcoCode, ecoStr);
+            scidup::eco::toExtendedString(EcoCode, ecoStr);
             tb->PrintString (ecoStr);
         }
         auto annotator = FindExtraTag("Annotator");
@@ -2402,7 +2402,7 @@ errorT Game::WritePGN(TextBuffer* tb) {
                 }
                 if (EcoCode != 0) {
                 ecoStringT ecoStr;
-                eco_ToExtendedString (EcoCode, ecoStr);
+                scidup::eco::toExtendedString(EcoCode, ecoStr);
                 std::snprintf(temp, sizeof(temp), "[ECO \"%s\"]%s", ecoStr, newline);
                 tb->PrintString (temp);
                 }

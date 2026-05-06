@@ -596,7 +596,7 @@ scidBaseT::Stats::Stats(const scidBaseT* dbase) {
 		} else {
 			ecoValid_.count++;
 			ecoValid_.results[result]++;
-			eco = eco_Reduce(eco);
+			eco = scidup::eco::reduce(eco);
 			ecoStats_[eco].count++;
 			ecoStats_[eco].results[result]++;
 			eco /= 27;
@@ -619,10 +619,10 @@ scidBaseT::Stats::getEcoStats(const char* ecoStr) const {
 	if (*ecoStr == 0)
 		return &ecoValid_;
 
-	ecoT eco = eco_FromString(ecoStr);
+	ecoT eco = scidup::eco::fromString(ecoStr);
 	if (eco == 0)
 		return 0;
-	eco = eco_Reduce(eco);
+	eco = scidup::eco::reduce(eco);
 
 	switch (strlen(ecoStr)) {
 	case 0:

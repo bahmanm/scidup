@@ -1830,7 +1830,7 @@ OpTable::TopEcoCodes (scid::database::DString * dstr, scid::database::uint count
         scid::database::ecoT ecoCode = Line[i]->EcoCode;
         if (ecoCode != scid::database::ECO_None) {
             scid::database::ecoStringT ecoStr;
-            scid::database::eco_ToBasicString (ecoCode, ecoStr);
+            scidup::eco::toBasicString(ecoCode, ecoStr);
             if (ecoStr[0] != 0) {
                 ecoClass = ((ecoStr[0] - 'A') * 10) + (ecoStr[1] - '0');
                 if (ecoClass < 0  ||  ecoClass >= 50) { ecoClass = -1; }
