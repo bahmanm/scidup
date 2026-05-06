@@ -93,10 +93,11 @@ but they should be treated as lower-level building blocks:
 - `dstring.h`: string helpers
 - `hash.h`: hashing helpers
 - `attacks.h`: attack tables
-- `board_def.h`: board constants and primitive chess types
 - `common.h`: shared primitive types and constants
 - `error.h`: `errorT` definitions
 - `misc.h`: assorted utility functions
+
+Board constants and primitive chess types live in `scidup/core/board_def.h`.
 
 These headers are useful when extending the library, but they are not the best
 starting point for application code.

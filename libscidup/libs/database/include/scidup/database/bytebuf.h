@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include "scidup/database/board_def.h"
+#include "scidup/core/board_def.h"
 #include "scidup/database/error.h"
 #include <algorithm>
 #include <cassert>

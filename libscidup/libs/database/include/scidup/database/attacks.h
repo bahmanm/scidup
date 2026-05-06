@@ -15,7 +15,7 @@
 #ifndef SCID_ATTACKS_H
 #define SCID_ATTACKS_H
 
-#include "scidup/database/board_def.h"
+#include "scidup/core/board_def.h"
 
 
 // NOTE: These arrays have been automatically generated. Don't change
@@ -194,4 +194,3 @@ kingAttacks[66][9] = {
 //////////////////////////////////////////////////////////////////////
 //   EOF:  attacks.h
 //////////////////////////////////////////////////////////////////////
-

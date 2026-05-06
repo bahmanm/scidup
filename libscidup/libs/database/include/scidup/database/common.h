@@ -16,7 +16,7 @@
 #ifndef SCID_COMMON_H
 #define SCID_COMMON_H
 
-#include "scidup/database/board_def.h"
+#include "scidup/core/board_def.h"
 #include "scidup/database/error.h"
 #include <assert.h>
 #include <cstddef>
@@ -424,4 +424,3 @@ square_Adjacent (squareT from, squareT to)
 //////////////////////////////////////////////////////////////////////
 //  EOF:  common.h
 //////////////////////////////////////////////////////////////////////
-
