@@ -1,18 +1,10 @@
-//////////////////////////////////////////////////////////////////////
-//
-//  FILE:       hash.h
-//              Pre-generated random hash values
-//
-//  Part of:    Scid (Shane's Chess Information Database)
-//  Version:    3.4
-//
-//  Notice:     Copyright (c) 2002 Shane Hudson.  All rights reserved.
-//
-//  Author:     Shane Hudson (sgh@users.sourceforge.net)
-//
-//////////////////////////////////////////////////////////////////////
+/** @file
+ * Pre-generated Zobrist hash values for chess positions.
+ */
 
 #pragma once
+
+#include "scidup/core/board.h"
 
 namespace scid::database {
 

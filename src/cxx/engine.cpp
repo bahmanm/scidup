@@ -471,7 +471,7 @@ Engine::Score (int alpha, int beta)
             scid::database::squareT sq = sqlist[i];
             scid::database::pieceT p = board[sq];
             scid::database::pieceT ptype = scid::database::piece_Type(p);
-            ASSERT (p != scid::database::EMPTY  &&  scid::database::piece_Color(p) == c);
+            assert(p != scid::database::EMPTY  &&  scid::database::piece_Color(p) == c);
             scid::database::squareT bonusSq = (c == scid::database::WHITE) ? scid::database::square_FlipRank(sq) : sq;
             scid::database::uint rank = scid::database::RANK_1 + scid::database::RANK_8 - scid::database::square_Rank(bonusSq);
 
@@ -551,7 +551,7 @@ Engine::Score (int alpha, int beta)
                     }
                 }
             } else /* (ptype == scid::database::QUEEN) */ {
-                ASSERT (ptype == scid::database::QUEEN);
+                assert(ptype == scid::database::QUEEN);
                 ascore += QueenSquare[bonusSq];
                 ascore += QueenKingDist[scid::database::square_Distance(sq, enemyKing)];
             }
@@ -958,7 +958,7 @@ Engine::PushRepeat (scid::database::Position * pos)
 inline void
 Engine::PopRepeat (void)
 {
-    ASSERT (RepStackSize > 0);
+    assert(RepStackSize > 0);
     RepStackSize--;
 }
 
@@ -1112,7 +1112,7 @@ inline bool tte_IsOnlyMove (transTableEntryT * tte)
 
 inline void tte_SetBestMove (transTableEntryT * tte, scid::database::ScoredMove * bestMove)
 {
-    ASSERT (bestMove->from <= scid::database::H8  &&  bestMove->to <= scid::database::H8);
+    assert(bestMove->from <= scid::database::H8  &&  bestMove->to <= scid::database::H8);
     scid::database::ushort bm = bestMove->from;
     bm <<= 6; bm |= bestMove->to;
     bm <<= 4; bm |= bestMove->promote;
@@ -1138,7 +1138,7 @@ Engine::StoreHash (int depth, scoreFlagT ttFlag, int score,
         return;
 
     if (TranTableSize == 0) { return; }
-    ASSERT (ttFlag <= SCORE_UPPER);
+    assert(ttFlag <= SCORE_UPPER);
 
     scid::database::uint hash = Pos.HashValue();
     scid::database::uint pawnhash = Pos.PawnHashValue();
@@ -1150,7 +1150,7 @@ Engine::StoreHash (int depth, scoreFlagT ttFlag, int score,
     // and use an empty hash table entry if possible:
 
     scid::database::uint ttSlot = (hash % TranTableSize) & 0xFFFFFFFEU;
-    ASSERT (ttSlot < TranTableSize - 1);
+    assert(ttSlot < TranTableSize - 1);
     transTableEntryT * ttEntry1 = &(TranTable[ttSlot]);
     transTableEntryT * ttEntry2 = &(TranTable[ttSlot + 1]);
     bool replacingSameEntry = false;
@@ -1215,9 +1215,9 @@ Engine::StoreHash (int depth, scoreFlagT ttFlag, int score,
     ttEntry->sequence = TranTableSequence;
     ttEntry->bestMove = 0;
     if (bestMove != NULL) {
-        ASSERT (bestMove->movingPiece != scid::database::EMPTY);
-        ASSERT (scid::database::piece_Color(bestMove->movingPiece) == stm);
-        ASSERT (bestMove->from <= scid::database::H8);
+        assert(bestMove->movingPiece != scid::database::EMPTY);
+        assert(scid::database::piece_Color(bestMove->movingPiece) == stm);
+        assert(bestMove->from <= scid::database::H8);
         tte_SetBestMove (ttEntry, bestMove);
     }
     ttEntry->enpassant = Pos.GetEPTarget();
@@ -1241,7 +1241,7 @@ Engine::ProbeHash (int depth, int * score, scid::database::ScoredMove * bestMove
 
     // Examine the corresponding pair of table entries:
     scid::database::uint ttSlot = (hash % TranTableSize) & 0xFFFFFFFEU;
-    ASSERT (ttSlot+1 < TranTableSize);
+    assert(ttSlot+1 < TranTableSize);
     transTableEntryT * ttEntry = &(TranTable[ttSlot]);
     if (ttEntry->hash != hash) { ttEntry++; }
     if (ttEntry->hash != hash) { return SCORE_NONE; }
@@ -1438,7 +1438,7 @@ Engine::Think (scid::database::MoveList * mlist)
 int
 Engine::SearchRoot (int depth, int alpha, int beta, scid::database::MoveList * mlist)
 {
-    ASSERT (depth >= 1);
+    assert(depth >= 1);
 
     // If no legal move list was specified, generate and search all moves:
     scid::database::MoveList tmpMoveList;
@@ -1772,11 +1772,11 @@ Engine::Search (int depth, int alpha, int beta, bool tryNullMove)
     // Store alpha in the transposition table as an upper bound on
     // the true score of this position, with no best move.
     if (alpha == oldAlpha) {
-        ASSERT (bestMoveIndex < 0);
+        assert(bestMoveIndex < 0);
         StoreHash (depth, SCORE_UPPER, alpha, NULL, isOnlyMove);
     } else {
         // Update the transposition table with the best move:
-        ASSERT (bestMoveIndex >= 0);
+        assert(bestMoveIndex >= 0);
         auto bestMove = mlist.Get(bestMoveIndex);
         IncHistoryValue (bestMove, depth * depth);
         // Should we also add this as a killer move? Possibly not,
@@ -1870,7 +1870,7 @@ Engine::SEE (scid::database::squareT from, scid::database::squareT target)
     const scid::database::pieceT * board = Pos.GetBoard();
     scid::database::SquareList attackers[2];
     scid::database::pieceT mover = scid::database::piece_Type(board[from]);
-    ASSERT (mover != scid::database::EMPTY);
+    assert(mover != scid::database::EMPTY);
     scid::database::colorT stm = scid::database::piece_Color_NotEmpty(board[from]);
 
 #define SEE_ADD(c,sq) attackers[(c)].Add(sq)
@@ -1958,7 +1958,7 @@ Engine::SEE (scid::database::squareT from, scid::database::squareT target)
         } else if (scid::database::square_LeftDiag(from) == scid::database::square_LeftDiag(target)) {
             upLeftCount--;
         } else {
-            ASSERT (scid::database::square_RightDiag(from) == scid::database::square_RightDiag(target));
+            assert(scid::database::square_RightDiag(from) == scid::database::square_RightDiag(target));
             upRightCount--;
         }
     }
@@ -2099,7 +2099,7 @@ Engine::SEE (scid::database::squareT from, scid::database::squareT target)
         // If the attacker is a slider, look for another slider behind it:
         if (scid::database::piece_IsSlider (attackPiece)) {
             scid::database::directionT dir = scid::database::sqDir[target][attackSquare];
-            ASSERT (dir != scid::database::NULL_DIR);
+            assert(dir != scid::database::NULL_DIR);
             scid::database::squareT dest = attackSquare;
             scid::database::squareT last = scid::database::square_Last (dest, dir);
             int delta = scid::database::direction_Delta (dir);

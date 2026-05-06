@@ -5,11 +5,17 @@ project(
     LANGUAGES CXX )
 
 set(
+    SCIDUP_CORE_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/position.cpp" )
+
+set(
     SCIDUP_CORE_PUBLIC_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/attacks.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/board.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/dstring.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/error.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/fullmove.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/hash.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/movelist.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/move_predicates.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/position.h"
@@ -19,23 +25,23 @@ set(
 
 add_library(
     scidup_core
-    INTERFACE )
+    ${SCIDUP_CORE_SOURCES} )
 add_library(
     ScidUp::Core
     ALIAS scidup_core )
 target_sources(
     scidup_core
-    INTERFACE
+    PUBLIC
         FILE_SET public_headers
         TYPE HEADERS
         BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include"
         FILES ${SCIDUP_CORE_PUBLIC_HEADERS} )
 target_compile_features(
     scidup_core
-    INTERFACE cxx_std_20 )
+    PUBLIC cxx_std_20 )
 target_include_directories(
     scidup_core
-    INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include" )
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 
 if( PROJECT_IS_TOP_LEVEL )
     include( CTest )

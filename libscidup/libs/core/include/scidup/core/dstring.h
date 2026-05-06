@@ -1,20 +1,12 @@
-//////////////////////////////////////////////////////////////////////
-//
-//  FILE:       dstring.h
-//              Dynamic String class
-//
-//  Part of:    Scid (Shane's Chess Information Database)
-//  Version:    2.2
-//
-//  Notice:     Copyright (c) 2000  Shane Hudson.  All rights reserved.
-//
-//  Author:     Shane Hudson (sgh@users.sourceforge.net)
-//
-//////////////////////////////////////////////////////////////////////
+/** @file
+ * Deprecated dynamic string helper.
+ */
 
-#ifndef SCID_DSTRING_H
-#define SCID_DSTRING_H
+#pragma once
 
+#include "scidup/core/primitives.h"
+
+#include <cstddef>
 #include <cstdio>
 #include <string>
 
@@ -127,4 +119,3 @@ public:
 
 
 } // namespace scid::database
-#endif // SCID_DSTRING_H

@@ -26,7 +26,7 @@
 
 
 #include "crosstab.h"
-#include "scidup/database/dstring.h"
+#include "scidup/core/dstring.h"
 #include "engine.h"
 #include "scidup/database/game.h"
 #include "optable.h"

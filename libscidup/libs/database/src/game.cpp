@@ -15,7 +15,7 @@
 #include "scidup/database/game.h"
 #include "scidup/database/bytebuf.h"
 #include "scidup/database/common.h"
-#include "scidup/database/dstring.h"
+#include "scidup/core/dstring.h"
 #include "naglatex.h"
 #include "nagtext.h"
 #include "scidup/core/position.h"

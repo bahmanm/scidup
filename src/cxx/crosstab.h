@@ -19,7 +19,7 @@
 
 #include "scidup/database/common.h"
 #include "scidup/database/date.h"
-#include "scidup/database/dstring.h"
+#include "scidup/core/dstring.h"
 #include <scidup/spelling/spelling.h>
 
 const scid::database::uint CROSSTABLE_MaxPlayers = 500;  // Max. number of players.

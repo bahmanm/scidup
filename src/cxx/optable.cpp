@@ -14,7 +14,7 @@
 
 #include "optable.h"
 #include "crosstab.h"
-#include "scidup/database/dstring.h"
+#include "scidup/core/dstring.h"
 #include "scidup/eco/book.h"
 #include <algorithm>
 #include <cstdio>

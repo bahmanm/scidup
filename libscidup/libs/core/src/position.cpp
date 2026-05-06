@@ -1,28 +1,15 @@
-//////////////////////////////////////////////////////////////////////
-//
-//  FILE:       position.cpp
-//              Position class methods
-//
-//  Part of:    Scid (Shane's Chess Information Database)
-//  Version:    3.5
-//
-//  Notice:     Copyright (c) 1999-2003 Shane Hudson.  All rights reserved.
-//
-//  Author:     Shane Hudson (sgh@users.sourceforge.net)
-//
-//////////////////////////////////////////////////////////////////////
-
 #include "scidup/core/position.h"
 #include "scidup/core/attacks.h"
+#include "scidup/core/dstring.h"
+#include "scidup/core/hash.h"
 #include "scidup/core/move_predicates.h"
 #include "scidup/core/square_collections.h"
 #include "scidup/core/square_moves.h"
-#include "scidup/database/common.h"
-#include "scidup/database/dstring.h"
-#include "scidup/database/hash.h"
-#include "scidup/database/misc.h"
+
 #include <algorithm>
 #include <array>
+#include <cassert>
+#include <cctype>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -72,7 +59,7 @@ Position::UnHash (pieceT p, squareT sq)
 inline void
 Position::AddToBoard (pieceT p, squareT sq)
 {
-    ASSERT (Board[sq] == EMPTY);
+    assert(Board[sq] == EMPTY);
     Board[sq] = p;
     NumOnRank[p][square_Rank(sq)]++;
     NumOnFyle[p][square_Fyle(sq)]++;
@@ -85,7 +72,7 @@ Position::AddToBoard (pieceT p, squareT sq)
 inline void
 Position::RemoveFromBoard (pieceT p, squareT sq)
 {
-    ASSERT (Board[sq] == p);
+    assert(Board[sq] == p);
     Board[sq] = EMPTY;
     NumOnRank[p][square_Rank(sq)]--;
     NumOnFyle[p][square_Fyle(sq)]--;
@@ -187,7 +174,7 @@ Position::CalcPinsDir (directionT dir, pieceT attacker)
 inline void
 Position::AddLegalMove (MoveList * mlist, squareT from, squareT to, pieceT promo)
 {
-    ASSERT (mlist != NULL);
+    assert(mlist != NULL);
     auto& sm = mlist->emplace_back();
     makeMove(from, to, promo, sm);
 }
@@ -371,7 +358,7 @@ Position::GenKingMoves (MoveList * mlist, genMovesT genType)
     pieceT king = piece_Make (ToMove, KING);
     bool genNonCaptures = (genType & GEN_NON_CAPS);
 
-    ASSERT (Board[kingSq] == king);
+    assert(Board[kingSq] == king);
 
     destPtr = kingAttacks[kingSq];
     while (*destPtr != NULL_SQUARE) {
@@ -413,8 +400,8 @@ Position::GenKingMoves (MoveList * mlist, genMovesT genType)
 inline void
 Position::AddPromotions (MoveList * mlist, squareT from, squareT dest)
 {
-    ASSERT (piece_Type (Board[from]) == PAWN);
-    ASSERT (square_Rank (dest) == RANK_1  ||  square_Rank (dest) == RANK_8);
+    assert(piece_Type (Board[from]) == PAWN);
+    assert(square_Rank (dest) == RANK_1  ||  square_Rank (dest) == RANK_8);
 
     AddLegalMove (mlist, from, dest, QUEEN);
     AddLegalMove (mlist, from, dest, ROOK);
@@ -432,15 +419,15 @@ Position::AddPromotions (MoveList * mlist, squareT from, squareT dest)
 inline bool
 Position::IsValidEnPassant (squareT from, squareT to)
 {
-    ASSERT (from <= H8  &&  to <= H8);
-    ASSERT (to == EPTarget);
+    assert(from <= H8  &&  to <= H8);
+    assert(to == EPTarget);
 
     // Check that this en passant capture is legal:
     pieceT ownPawn = piece_Make(ToMove, PAWN);
     pieceT enemyPawn = piece_Make (color_Flip(ToMove), PAWN);
     squareT enemyPawnSq = (ToMove == WHITE) ? to - 8 : to + 8;
-    ASSERT (Board[from] == ownPawn);
-    ASSERT (Board[enemyPawnSq] == enemyPawn);
+    assert(Board[from] == ownPawn);
+    assert(Board[enemyPawnSq] == enemyPawn);
     Board[from] = EMPTY;
 
     // PG
@@ -479,7 +466,7 @@ Position::GenPawnMoves (MoveList * mlist, squareT from,
     }
     squareT dest;
 
-    ASSERT (Board[from] == piece_Make (ToMove, PAWN));
+    assert(Board[from] == piece_Make (ToMove, PAWN));
 
     if (genNonCaptures
           &&  (dir == NULL_DIR  ||  dir == forward  ||  oppdir == forward)) {
@@ -720,7 +707,7 @@ bool Position::IsStdStart() const {
 errorT
 Position::AddPiece (pieceT p, squareT sq)
 {
-    ASSERT (p != EMPTY);
+    assert(p != EMPTY);
     colorT c = piece_Color(p);
     if ((c != WHITE && c != BLACK) || Count[c] > 15)
         return ERROR_PieceCount;
@@ -806,7 +793,7 @@ Position::GenPieceMoves (MoveList * mlist, squareT fromSq,
     colorT c = ToMove;
     pieceT p = Board[fromSq];
     pieceT ptype = piece_Type(p);
-    ASSERT (p != EMPTY  &&  ptype != KING  &&  ptype != PAWN);
+    assert(p != EMPTY  &&  ptype != KING  &&  ptype != PAWN);
 
     if (ptype == KNIGHT) {
         GenKnightMoves (mlist, c, fromSq, sqset, capturesOnly);
@@ -835,7 +822,7 @@ void
 Position::GenerateMoves (MoveList* mlist, pieceT pieceType,
                          genMovesT genType, bool maybeInCheck)
 {
-    ASSERT(mlist != NULL);
+    assert(mlist != NULL);
 
     bool genNonCaptures = (genType & GEN_NON_CAPS);
     bool capturesOnly = !genNonCaptures;
@@ -1046,11 +1033,11 @@ void
 Position::GenCheckEvasions (MoveList * mlist, pieceT mask, genMovesT genType,
                             SquareList * checkSquares)
 {
-    ASSERT(mlist != NULL);
+    assert(mlist != NULL);
     uint numChecks = checkSquares->Size();
     
     // Assert that king IS actually in check:    
-    ASSERT (numChecks > 0);
+    assert(numChecks > 0);
 
     bool genNonCaptures = (genType & GEN_NON_CAPS);
     bool capturesOnly = !genNonCaptures;
@@ -1342,7 +1329,7 @@ Position::IsKingInCheck (simpleMoveT const& sm)
 uint
 Position::Mobility (pieceT p, colorT color, squareT from)
 {
-    ASSERT (p == ROOK  ||  p == BISHOP);
+    assert(p == ROOK  ||  p == BISHOP);
     uint mobility = 0;
     directionT rookDirs[4] = { UP, DOWN, LEFT, RIGHT };
     directionT bishopDirs[4]
@@ -1494,7 +1481,7 @@ void Position::fillMove(simpleMoveT& sm) const {
 		// since if a pawn lands on EPTarget it must capture to get there.
 		sm.capturedSquare = WhiteToMove() ? to - 8 : to + 8;
 		sm.capturedPiece = GetPiece(sm.capturedSquare);
-		ASSERT(sm.capturedPiece == piece_Make(color_Flip(GetToMove()), PAWN));
+		assert(sm.capturedPiece == piece_Make(color_Flip(GetToMove()), PAWN));
 	}
 
 	if (sm.capturedPiece != EMPTY) {
@@ -1510,7 +1497,7 @@ void Position::fillMove(simpleMoveT& sm) const {
 void
 Position::DoSimpleMove (simpleMoveT * sm)
 {
-    ASSERT (sm != NULL);
+    assert(sm != NULL);
     // update move fields that (maybe) have not yet been set:
 	fillMove(*sm);
 	DoSimpleMove(*sm);
@@ -1560,16 +1547,16 @@ void Position::DoSimpleMove(simpleMoveT const& sm) {
 			addPiece(kingIdx, KING, kingTo);
 			addPiece(rookIdx, ROOK, rookto);
 
-			ASSERT(valid_sqlist(List[WHITE], Count[WHITE], Board));
-			ASSERT(valid_sqlist(List[BLACK], Count[BLACK], Board));
+			assert(valid_sqlist(List[WHITE], Count[WHITE], Board));
+			assert(valid_sqlist(List[BLACK], Count[BLACK], Board));
 			return;
 		}
 	}
 
     // handle captures:
     if (sm.capturedPiece != EMPTY) {
-        ASSERT(piece_Type(sm.capturedPiece) != KING);
-        ASSERT(piece_Color(sm.capturedPiece) == enemy);
+        assert(piece_Type(sm.capturedPiece) != KING);
+        assert(piece_Color(sm.capturedPiece) == enemy);
         // update opponents List of pieces
         Count[enemy]--;
         ListPos[List[enemy][Count[enemy]]] = sm.capturedNum;
@@ -1582,7 +1569,7 @@ void Position::DoSimpleMove(simpleMoveT const& sm) {
     // now make the move:
     RemoveFromBoard(movingPiece, from);
     if (promo != EMPTY) {
-        ASSERT(movingPiece == piece_Make(color, PAWN));
+        assert(movingPiece == piece_Make(color, PAWN));
         Material[movingPiece]--;
         Material[piece_Make(color, promo)]++;
         addPiece(pieceNum, promo, to);
@@ -1621,8 +1608,8 @@ void Position::DoSimpleMove(simpleMoveT const& sm) {
         HalfMoveClock = 0; // 50-move clock resets on pawn moves.
 	}
 
-	ASSERT(valid_sqlist(List[WHITE], Count[WHITE], Board));
-	ASSERT(valid_sqlist(List[BLACK], Count[BLACK], Board));
+	assert(valid_sqlist(List[WHITE], Count[WHITE], Board));
+	assert(valid_sqlist(List[BLACK], Count[BLACK], Board));
 }
 
 
@@ -1670,8 +1657,8 @@ void Position::UndoSimpleMove(simpleMoveT const& sm) {
 			addPiece(rookIdx, ROOK, rookto);
 			addPiece(kingIdx, KING, from);
 
-		    ASSERT(valid_sqlist(List[WHITE], Count[WHITE], Board));
-		    ASSERT(valid_sqlist(List[BLACK], Count[BLACK], Board));
+		    assert(valid_sqlist(List[WHITE], Count[WHITE], Board));
+		    assert(valid_sqlist(List[BLACK], Count[BLACK], Board));
 		    return;
 		}
 
@@ -1708,8 +1695,8 @@ void Position::UndoSimpleMove(simpleMoveT const& sm) {
         AddToBoard (sm.capturedPiece, sm.capturedSquare);
     }
 
-    ASSERT(valid_sqlist(List[WHITE], Count[WHITE], Board));
-    ASSERT(valid_sqlist(List[BLACK], Count[BLACK], Board));
+    assert(valid_sqlist(List[WHITE], Count[WHITE], Board));
+    assert(valid_sqlist(List[BLACK], Count[BLACK], Board));
 }
 
 
@@ -1725,7 +1712,7 @@ void Position::UndoSimpleMove(simpleMoveT const& sm) {
 uint
 Position::MaterialValue (colorT c)
 {
-    ASSERT (c == WHITE  ||  c == BLACK);
+    assert(c == WHITE  ||  c == BLACK);
     uint value = 0;
     if (c == WHITE) {
         value += 9 * PieceCount(WQ);
@@ -1753,8 +1740,8 @@ Position::MaterialValue (colorT c)
 void
 Position::MakeSANString (simpleMoveT * m, char * s, sanFlagT flag)
 {
-    ASSERT (m != NULL  &&  s != NULL);
-    ASSERT(m->from == List[ToMove][ListPos[m->from]]);
+    assert(m != NULL  &&  s != NULL);
+    assert(m->from == List[ToMove][ListPos[m->from]]);
     const squareT from = m->from;
     const squareT to   = m->to;
     char * c     = s;
@@ -1904,7 +1891,7 @@ errorT Position::MakeCoordMoves(const char* moves, size_t moveslen,
 //
 errorT Position::ReadCoordMove(simpleMoveT* m, const char* str, size_t slen,
                                bool reverse) {
-    ASSERT(m != NULL && str != NULL);
+    assert(m != NULL && str != NULL);
 
     auto promote = EMPTY;
     if (slen == 5) {
@@ -1949,7 +1936,7 @@ static size_t trimCheck(const char* str, size_t slen) {
 
 errorT Position::ReadMovePawn(simpleMoveT* sm, const char* str, size_t slen,
                               fyleT frFyle) {
-	ASSERT(sm != NULL && str != NULL && frFyle <= H_FYLE);
+	assert(sm != NULL && str != NULL && frFyle <= H_FYLE);
 
 	if (slen < 2)
 		return ERROR_InvalidMove;
@@ -2027,7 +2014,7 @@ errorT Position::ReadMovePawn(simpleMoveT* sm, const char* str, size_t slen,
 
 errorT Position::ReadMoveKing(simpleMoveT* sm, const char* str,
                               size_t slen) const {
-	ASSERT(sm != NULL && str != NULL);
+	assert(sm != NULL && str != NULL);
 
 	if (slen < 3 || slen > 6)
 		return ERROR_InvalidMove;
@@ -2063,8 +2050,8 @@ errorT Position::ReadMoveKing(simpleMoveT* sm, const char* str,
 //
 errorT Position::ReadMove(simpleMoveT* sm, const char* str, size_t slen,
                           pieceT piece) const {
-	ASSERT(sm != NULL && str != NULL);
-	ASSERT(piece == QUEEN || piece == ROOK || piece == BISHOP ||
+	assert(sm != NULL && str != NULL);
+	assert(piece == QUEEN || piece == ROOK || piece == BISHOP ||
 	       piece == KNIGHT);
 
 	if (slen < 3 || slen > 6)
@@ -2134,7 +2121,7 @@ errorT Position::ReadMoveCastle(simpleMoveT* sm, std::string_view str) const {
 // If the move is legal, it stores the result in @e sm.
 errorT Position::ParseMove(simpleMoveT* sm, const char* str,
                            const char* strEnd) {
-	ASSERT(str != NULL);
+	assert(str != NULL);
 
 	const auto length = trimCheck(str, std::distance(str, strEnd));
 	if (length < 2 || length > 9)
@@ -2205,8 +2192,8 @@ Position::ReadFromLongStr (const char * str)
     default:
         return ERROR_Corrupt;
     }
-    ASSERT(valid_sqlist(List[WHITE], Count[WHITE], Board));
-    ASSERT(valid_sqlist(List[BLACK], Count[BLACK], Board));
+    assert(valid_sqlist(List[WHITE], Count[WHITE], Board));
+    assert(valid_sqlist(List[BLACK], Count[BLACK], Board));
     return OK;
 }
 
@@ -2220,7 +2207,7 @@ Position::ReadFromLongStr (const char * str)
 //      "RNBQKBNRPPPPPPPP................................pppppppprbnqkbnr w"
 //
 void Position::MakeLongStr(char* str) const {
-	ASSERT(str != NULL);
+	assert(str != NULL);
 	char* s = str;
 	for (squareT sq = A1; sq <= H8; sq++) {
 		*s++ = PIECE_CHAR[Board[sq]];
@@ -2270,7 +2257,7 @@ Position::PrintCompactStr (char * cboard) const
 
 template <typename AddPiece>
 const char* FEN_parsePieces(const char* str, AddPiece add) {
-    ASSERT(str);
+    assert(str);
 
     for (int row = 7; row >= 0; --row) {
         for (int col = 0; col < 8;) {
@@ -2315,7 +2302,7 @@ const char* FEN_parsePieces(const char* str, AddPiece add) {
 /// counter to be invalid, so this routine can also read positions
 /// from EPD lines (which only share the first four fields with FEN).
 errorT Position::ReadFromFEN(const char* str) {
-    ASSERT (str != NULL);
+    assert(str != NULL);
 
     auto is_space = [](char ch) {
         return isspace(static_cast<unsigned char>(ch));
@@ -2476,8 +2463,8 @@ errorT Position::ReadFromFEN(const char* str) {
         }
     }
     if (ToMove == BLACK) { PlyCounter++; }
-    ASSERT(valid_sqlist(List[WHITE], Count[WHITE], Board));
-    ASSERT(valid_sqlist(List[BLACK], Count[BLACK], Board));
+    assert(valid_sqlist(List[WHITE], Count[WHITE], Board));
+    assert(valid_sqlist(List[BLACK], Count[BLACK], Board));
     return OK;
 }
 
@@ -2510,7 +2497,7 @@ errorT Position::ReadFromFENorUCI(std::string_view str) {
 }
 
 void Position::PrintFEN(char* str, size_t len) const {
-    ASSERT(str != NULL);
+    assert(str != NULL);
     if (len == 0) {
         return;
     }

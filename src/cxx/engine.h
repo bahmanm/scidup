@@ -22,10 +22,11 @@
 #ifndef SCID_ENGINE_H
 #define SCID_ENGINE_H
 
-#include <stdarg.h>
-
 #include "scidup/core/position.h"
 #include "timer.h"
+
+#include <cassert>
+#include <stdarg.h>
 
 const scid::database::uint ENGINE_MAX_PLY =           40;  // Maximum search ply.
 const int  ENGINE_MAX_HISTORY =   100000;  // Max accumulated history value.
@@ -378,7 +379,7 @@ Engine::IncHistoryValue (scid::database::ScoredMove * sm, int increment)
     if (sm->promote != scid::database::EMPTY  &&  sm->score >= 0) { return; }
     scid::database::pieceT p = sm->movingPiece;
     scid::database::squareT to = sm->to;
-    ASSERT (p <= scid::database::BP  &&  to <= scid::database::H8);
+    assert(p <= scid::database::BP  &&  to <= scid::database::H8);
     History[p][to] += increment;
     // Halve all history values if this one gets too large, to avoid
     // non-capture moves getting searched before captures:
@@ -392,7 +393,7 @@ Engine::GetHistoryValue (scid::database::ScoredMove * sm)
 {
     scid::database::pieceT p = sm->movingPiece;
     scid::database::squareT to = sm->to;
-    ASSERT (p <= scid::database::BP  &&  to <= scid::database::H8);
+    assert(p <= scid::database::BP  &&  to <= scid::database::H8);
     return History[p][to];
 }
 
