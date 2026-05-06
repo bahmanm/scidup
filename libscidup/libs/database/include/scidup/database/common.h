@@ -19,6 +19,7 @@
 #include "scidup/core/board.h"
 #include "scidup/core/error.h"
 #include "scidup/core/rating.h"
+#include "scidup/database/game_id.h"
 #include <assert.h>
 #include <cstddef>
 #define ASSERT(f) assert(f)
@@ -42,12 +43,6 @@ enum fileModeT {
     FMODE_Both,
     FMODE_Create
 };
-
-
-//  Game Information types
-
-typedef uint            gamenumT;
-
 
 
 } // namespace scid::database
