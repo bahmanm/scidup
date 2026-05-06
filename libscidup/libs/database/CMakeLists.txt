@@ -56,6 +56,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/nagtext.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/sortcache.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/stored.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/tree_cache.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/textbuf.h" )
 
 add_library(

@@ -12,7 +12,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "scidup/database/tree.h"
+#include "tree_cache.h"
 #include <cstring>
 
 

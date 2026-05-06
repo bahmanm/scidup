@@ -10,7 +10,9 @@ add_library(
     ${SCIDUP_TESTS_LIBS_CPPSUPPORT_SOURCES} )
 target_include_directories(
     scidup_tests_libs_cppsupport
-    PUBLIC "${CMAKE_SOURCE_DIR}/src/cxx" )
+    PUBLIC
+        "${CMAKE_SOURCE_DIR}/src/cxx"
+        "${CMAKE_SOURCE_DIR}/libscidup/libs/database/src/internal" )
 target_link_libraries(
     scidup_tests_libs_cppsupport
     PUBLIC ScidUp::Database Threads::Threads )

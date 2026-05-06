@@ -24,6 +24,7 @@
 #include "scidup/database/containers.h"
 #include "scidup/database/game.h"
 #include "scidup/database/gameview.h"
+#include "scidup/database/hfilter.h"
 #include "scidup/database/index.h"
 #include "scidup/database/namebase.h"
 #include "scidup/database/tree.h"

@@ -40,7 +40,6 @@
 #include "scidup/database/searchpos.h"
 #include <scidup/spelling/spelling.h>
 #include "timer.h"
-#include "scidup/database/tree.h"
 #include "dbasepool.h"
 #include "ui.h"
 #include "scidup_release.h"
