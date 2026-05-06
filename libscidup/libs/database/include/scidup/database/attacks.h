@@ -15,7 +15,7 @@
 #ifndef SCID_ATTACKS_H
 #define SCID_ATTACKS_H
 
-#include "scidup/core/board_def.h"
+#include "scidup/core/primitives.h"
 
 
 // NOTE: These arrays have been automatically generated. Don't change

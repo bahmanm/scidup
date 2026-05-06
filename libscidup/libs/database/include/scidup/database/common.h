@@ -16,7 +16,7 @@
 #ifndef SCID_COMMON_H
 #define SCID_COMMON_H
 
-#include "scidup/core/board_def.h"
+#include "scidup/core/primitives.h"
 #include "scidup/database/error.h"
 #include <assert.h>
 #include <cstddef>

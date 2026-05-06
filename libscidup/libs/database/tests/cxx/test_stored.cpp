@@ -20,7 +20,7 @@
  * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "scidup/core/board_def.h"
+#include "scidup/core/primitives.h"
 #include "scidup/database/position.h"
 #include "scidup/database/stored.h"
 #include <gtest/gtest.h>

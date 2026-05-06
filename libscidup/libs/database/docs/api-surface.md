@@ -97,7 +97,7 @@ but they should be treated as lower-level building blocks:
 - `error.h`: `errorT` definitions
 - `misc.h`: assorted utility functions
 
-Board constants and primitive chess types live in `scidup/core/board_def.h`.
+Board constants and primitive chess types live in `scidup/core/primitives.h`.
 
 These headers are useful when extending the library, but they are not the best
 starting point for application code.

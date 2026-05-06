@@ -6,7 +6,7 @@ project(
 
 set(
     SCIDUP_CORE_PUBLIC_HEADERS
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/board_def.h" )
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/primitives.h" )
 
 add_library(
     scidup_core
@@ -27,3 +27,44 @@ target_compile_features(
 target_include_directories(
     scidup_core
     INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include" )
+
+if( PROJECT_IS_TOP_LEVEL )
+    include( CTest )
+endif()
+
+if( BUILD_TESTING )
+    if( NOT TARGET gtest_main )
+        include( FetchContent )
+        set( INSTALL_GTEST OFF CACHE BOOL "Disable installation rules for googletest." FORCE )
+        set( BUILD_GMOCK OFF CACHE BOOL "Do not build GoogleMock; core tests use GoogleTest only." FORCE )
+        set( gtest_force_shared_crt ON CACHE BOOL "Always use msvcrt.dll" FORCE )
+
+        fetchcontent_declare(
+            googletest
+            URL https://github.com/google/googletest/archive/refs/tags/v1.17.0.tar.gz
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+            URL_HASH SHA256=65fab701d9829d38cb77c14acdc431d2108bfdbf8979e40eb8ae567edf10b27c )
+        fetchcontent_makeavailable( googletest )
+    endif()
+
+    file(
+        GLOB SCIDUP_CORE_TEST_SOURCES
+        CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/cxx/*.cpp" )
+    add_executable(
+        scidup_tests_core_cpp
+        ${SCIDUP_CORE_TEST_SOURCES} )
+    target_link_libraries(
+        scidup_tests_core_cpp
+        PRIVATE ScidUp::Core gtest_main )
+    add_executable(
+        ScidUp::Tests::Core::Cpp
+        ALIAS scidup_tests_core_cpp )
+
+    add_test(
+        NAME core_cpp_test
+        COMMAND $<TARGET_FILE:ScidUp::Tests::Core::Cpp> )
+    set_tests_properties(
+        core_cpp_test
+        PROPERTIES LABELS "cpp;core" )
+endif()
