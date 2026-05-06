@@ -95,8 +95,15 @@ but they should be treated as lower-level building blocks:
 - `error.h`: `errorT` definitions
 - `misc.h`: assorted utility functions
 
-Board constants, primitive chess types, and attack tables live in core headers:
-`scidup/core/primitives.h` and `scidup/core/attacks.h`.
+Board constants, primitive chess types, square helpers, and attack tables live
+in core headers:
+
+- `scidup/core/primitives.h`: scalar aliases and primitive chess encodings
+- `scidup/core/board.h`: board constants, piece helpers, square helpers and
+  direction helpers
+- `scidup/core/square_moves.h`: square movement lookup tables and helpers
+- `scidup/core/square_collections.h`: square list and set helpers
+- `scidup/core/attacks.h`: precomputed king and knight attack tables
 
 These headers are useful when extending the library, but they are not the best
 starting point for application code.
