@@ -19,7 +19,10 @@
 #ifndef FULLMOVE_H
 #define FULLMOVE_H
 
-#include "scidup/database/common.h"
+#include "scidup/core/board.h"
+
+#include <cassert>
+#include <cstdint>
 #include <string>
 
 namespace scid::database {
@@ -45,10 +48,10 @@ class FullMove {
 
 	// ** TODO: Use this flag to embed tags, variations, etc.. in a move stream
 	// bit     31: special flag
-	uint32_t m_;
+	std::uint32_t m_;
 
 public:
-	constexpr FullMove(uint32_t m = 0) : m_(m){};
+	constexpr FullMove(std::uint32_t m = 0) : m_(m){};
 
 	FullMove(colorT c, squareT kingSq, squareT rookSq)
 	    // Castle: encoding as king to rook allows the undoing of chess360 moves
@@ -126,7 +129,7 @@ public:
 	}
 
 	void setPromo(pieceT promo) {
-		ASSERT(promo == QUEEN || promo == ROOK || promo == BISHOP ||
+		assert(promo == QUEEN || promo == ROOK || promo == BISHOP ||
 		       promo == KNIGHT);
 		m_ |= ((promo - 2) << 12) | (1 << 14);
 	}

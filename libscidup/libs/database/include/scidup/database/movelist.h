@@ -17,7 +17,11 @@
 #ifndef SCID_MOVELIST_H
 #define SCID_MOVELIST_H
 
-#include "scidup/database/common.h"
+#include "scidup/core/board.h"
+
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
 
 //////////////////////////////////////////////////////////////////////
 //  MoveList:  Constants
@@ -89,7 +93,7 @@ struct simpleMoveT
 };
 
 struct ScoredMove : public simpleMoveT {
-	int32_t score; // used for alpha/beta ordering.
+	std::int32_t score; // used for alpha/beta ordering.
 
 	bool operator<(const ScoredMove& b) const {
 		// Highest score first
@@ -109,21 +113,21 @@ public:
 	uint Size() { return ListSize; }
 	void Clear() { ListSize = 0; }
 	ScoredMove& emplace_back() {
-		ASSERT(ListSize < MAX_LEGAL_MOVES);
+		assert(ListSize < MAX_LEGAL_MOVES);
 		ScoredMove& sm = Moves[ListSize++];
 		sm = ScoredMove();
 		return sm;
 	}
-	void resize(size_t count) {
-		ASSERT(count <= MAX_LEGAL_MOVES);
+	void resize(std::size_t count) {
+		assert(count <= MAX_LEGAL_MOVES);
 		ListSize = static_cast<uint>(count);
 	}
 	void push_back(const ScoredMove& sm) {
-		ASSERT(ListSize < MAX_LEGAL_MOVES);
+		assert(ListSize < MAX_LEGAL_MOVES);
 		Moves[ListSize++] = sm;
 	}
-	ScoredMove* Get(size_t index) {
-		ASSERT(index < ListSize);
+	ScoredMove* Get(std::size_t index) {
+		assert(index < ListSize);
 		return &(Moves[index]);
 	}
 };

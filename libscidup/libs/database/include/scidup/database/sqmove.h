@@ -15,7 +15,9 @@
 #ifndef SCID_SQMOVE_H
 #define SCID_SQMOVE_H
 
-#include "scidup/database/common.h"
+#include "scidup/core/board.h"
+
+#include <cassert>
 
 namespace scid::database {
 
@@ -37,7 +39,7 @@ public:
 	uint Size() { return ListSize; }
 
 	squareT Get(uint index) {
-		ASSERT(index < ListSize);
+		assert(index < ListSize);
 		return Squares[index];
 	}
 
@@ -51,7 +53,7 @@ public:
 	}
 
 	void Remove(uint index) {
-		ASSERT(index < ListSize);
+		assert(index < ListSize);
 		ListSize--;
 		if (index != ListSize) {
 			Squares[index] = Squares[ListSize];
@@ -64,12 +66,12 @@ class SquareSet {
 
 public:
 	void Add(squareT sq) {
-		ASSERT(sq < 64);
+		assert(sq < 64);
 		bits_ |= 1ull << sq;
 	}
 
 	bool Contains(squareT sq) {
-		ASSERT(sq < 64);
+		assert(sq < 64);
 		return (bits_ & (1ull << sq)) != 0;
 	}
 };
@@ -254,4 +256,3 @@ square_Last (squareT sq, directionT dir)
 //////////////////////////////////////////////////////////////////////
 //  EOF: sqmove.h
 //////////////////////////////////////////////////////////////////////
-

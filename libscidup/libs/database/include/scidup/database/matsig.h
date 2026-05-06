@@ -16,15 +16,19 @@
 #ifndef SCID_MATSIG_H
 #define SCID_MATSIG_H
 
-#include "scidup/database/common.h"
+#include "scidup/core/board.h"
+
 #include <algorithm>
+#include <cassert>
+#include <cstdint>
 #include <string>
+#include <utility>
 
 // Matsigs are 32-bit unsigned ints.  We only use 24 bits of this.
 
 namespace scid::database {
 
-typedef uint32_t matSigT;
+typedef std::uint32_t matSigT;
 
 // From most significant bits down to least, the matsig layout is:
 // Bits 22-33:  WQ    Bits 10-11:  BQ
@@ -272,8 +276,8 @@ static const uint hpSig_bitMask [16] = {
 inline uint
 hpSig_AddPawn (uint hpSig, colorT color, fyleT fyle)
 {
-    ASSERT (color == WHITE  ||  color == BLACK);
-    ASSERT (fyle <= H_FYLE);
+    assert(color == WHITE || color == BLACK);
+    assert(fyle <= H_FYLE);
 
     uint val = (uint) fyle;
     if (color == BLACK) val += 8;
@@ -283,8 +287,8 @@ hpSig_AddPawn (uint hpSig, colorT color, fyleT fyle)
 inline uint
 hpSig_ClearPawn (uint hpSig, colorT color, fyleT fyle)
 {
-    ASSERT (color == WHITE  ||  color == BLACK);
-    ASSERT (fyle <= H_FYLE);
+    assert(color == WHITE || color == BLACK);
+    assert(fyle <= H_FYLE);
 
     uint val = (uint) fyle;
     if (color == BLACK) val += 8;
@@ -297,7 +301,7 @@ hpSig_ClearPawn (uint hpSig, colorT color, fyleT fyle)
  * Used to speed up the searches of positions with the same pawn structure.
  * @returns a std::pair containing the bitmap and the number of moved pawns.
  */
-inline std::pair<uint16_t, uint16_t> hpSig_make(const pieceT* board) {
+inline std::pair<std::uint16_t, std::uint16_t> hpSig_make(const pieceT* board) {
 	int hpSig = 0;
 	int nMoved = 0;
 	const pieceT* b = board + A2;
@@ -321,7 +325,7 @@ inline std::pair<uint16_t, uint16_t> hpSig_make(const pieceT* board) {
 	if (*b != BP) { hpSig |= 0x0001; ++nMoved; }        /* h7 */
 	// clang-format on
 
-	return {static_cast<uint16_t>(hpSig), static_cast<uint16_t>(nMoved)};
+	return {static_cast<std::uint16_t>(hpSig), static_cast<std::uint16_t>(nMoved)};
 }
 
 inline bool hpSig_match(int hpSig, int nMoved, const byte* changeList) {
@@ -350,4 +354,3 @@ inline bool hpSig_match(int hpSig, int nMoved, const byte* changeList) {
 //////////////////////////////////////////////////////////////////////
 //  EOF: matsig.h
 //////////////////////////////////////////////////////////////////////
-
