@@ -35,6 +35,8 @@
 
 namespace scidup::spelling {
 
+using namespace scid::database;
+
 /**
  * class NameNormalizer - apply general corrections to a name
  *

@@ -18,6 +18,8 @@
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //### TextBuffer::Init(): Initialise the textbuffer.
+namespace scid::database {
+
 void
 TextBuffer::Init (void)
 {
@@ -240,3 +242,5 @@ TextBuffer::PrintInt (uint i, const char * str)
 ///////////////////////////////////////////////////////////////////////////
 //  EOF: textbuf.cpp
 ///////////////////////////////////////////////////////////////////////////
+
+} // namespace scid::database

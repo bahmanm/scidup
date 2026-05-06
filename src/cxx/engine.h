@@ -27,6 +27,8 @@
 #include "scidup/database/position.h"
 #include "timer.h"
 
+using namespace scid::database;
+
 const uint ENGINE_MAX_PLY =           40;  // Maximum search ply.
 const int  ENGINE_MAX_HISTORY =   100000;  // Max accumulated history value.
 const int  ENGINE_HASH_SCORE = 100000000;  // To order hash moves first.

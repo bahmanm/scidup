@@ -32,6 +32,8 @@
 //
 //    Improvement, March 2000: now case-insensitive for first letter,
 //    for example, a41 == A41.
+namespace scid::database {
+
 ecoT
 eco_FromString (const char * ecoStr)
 {
@@ -656,3 +658,5 @@ strUniqueExactMatch (const char * keyStr, const char ** strTable, bool exact)
 //  EOF: misc.cpp
 //////////////////////////////////////////////////////////////////////
 
+
+} // namespace scid::database

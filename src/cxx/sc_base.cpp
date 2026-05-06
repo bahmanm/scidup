@@ -31,6 +31,8 @@
 #include <string>
 #include <vector>
 
+using namespace scid::database;
+
 namespace {
 /*
 * This "sc_base" functions are used by the UI to access the databases.

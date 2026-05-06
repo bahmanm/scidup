@@ -10,6 +10,8 @@
 #include <optional>
 #include <unordered_map>
 
+using namespace scid::database;
+
 namespace scidup::app::editor {
 
 struct State {

@@ -23,6 +23,8 @@
 #include <string>
 #include <vector>
 
+using namespace scid::database;
+
 namespace v4_6_2 {
 	uint strTrimRight(char * target, const char * trimChars);
 }

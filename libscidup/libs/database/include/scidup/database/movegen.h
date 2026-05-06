@@ -41,6 +41,8 @@
 //   To validate this type of moves it is necessary to know the type and
 //   position of every piece.
 
+namespace scid::database {
+
 namespace movegen {
 
 constexpr int NSQUARES = 8;
@@ -264,3 +266,5 @@ inline bool blocks_ray(squareT sqFrom, squareT sqTo, squareT sqBlock) {
 }
 
 } // end of namespace movegen
+
+} // namespace scid::database

@@ -17,12 +17,16 @@
 #include "scidup/database/sqmove.h"
 #include <algorithm>
 
+using namespace scid::database;
+
 // The Engine class implements the Scid built-in chess engine.
 // See engine.h for details.
 
 // sqDir[][]: Array listing the direction between any two squares.
 //    For example, sqDir[A1][B2] == UP_RIGHT, and sqDir[A1][C2] == NULL_DIR.
+namespace scid::database {
 extern directionT sqDir[66][66];
+}
 
 
 // Evaluation constants:

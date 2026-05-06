@@ -32,6 +32,8 @@
  * is loaded: 1 means the start position, 2 means the position after
  * Whites first move, etc.
  */
+namespace scid::database {
+
 class Filter {
 	std::unique_ptr<byte[]> data_; // The actual filter data.
 	gamenumT size_;                // Number of values in filter.
@@ -303,4 +305,6 @@ public:
 	size_t size() const { return hfilter_.sizeInverted(); }
 };
 
+
+} // namespace scid::database
 #endif

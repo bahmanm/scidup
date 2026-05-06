@@ -22,6 +22,8 @@
 #include "scidup/database/misc.h"
 #ifndef CHECKUIDEP
 #include "ui_tcltk.h"
+
+using namespace scid::database;
 #else
 //Dummy functions useful to catch unwanted dependencies
 namespace UI_impl {

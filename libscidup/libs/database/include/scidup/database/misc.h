@@ -33,6 +33,8 @@
  * The integers represent the min and max value of a range.
  * If only one integer is provided it will represent both the min and max value.
  */
+namespace scid::database {
+
 class StrRange {
 protected:
 	long min_;
@@ -434,6 +436,8 @@ inline void strTrimRight(char* target) {
 	return strTrimRight(target, " \t\r\n", 4);
 }
 
+
+} // namespace scid::database
 #endif  // #ifdef SCID_MISC_H
 
 //////////////////////////////////////////////////////////////////////

@@ -22,6 +22,8 @@
 #include <gtest/gtest.h>
 #include <unordered_set>
 
+using namespace scid::database;
+
 TEST(Test_movegen, attack) {
 	const int empty = 1234;
 	int board[64];
@@ -35,20 +37,20 @@ TEST(Test_movegen, attack) {
 	board[52] = !empty;
 
 	auto isOccupied = [&](auto square) { return board[square] != empty; };
-	EXPECT_TRUE(movegen::attack(31, 29, WHITE, QUEEN, isOccupied));
-	EXPECT_FALSE(movegen::attack(31, 27, WHITE, QUEEN, isOccupied));
-	EXPECT_TRUE(movegen::attack(52, 28, BLACK, ROOK, isOccupied));
-	EXPECT_FALSE(movegen::attack(52, 20, BLACK, ROOK, isOccupied));
-	EXPECT_TRUE(movegen::attack(1, 11, WHITE, KNIGHT, isOccupied));
-	EXPECT_FALSE(movegen::attack(1, 6, WHITE, KNIGHT, isOccupied));
-	EXPECT_TRUE(movegen::attack(33, 19, BLACK, BISHOP, isOccupied));
-	EXPECT_FALSE(movegen::attack(33, 12, BLACK, BISHOP, isOccupied));
-	EXPECT_TRUE(movegen::attack(12, 19, WHITE, PAWN, isOccupied));
-	EXPECT_FALSE(movegen::attack(12, 20, WHITE, PAWN, isOccupied));
-	EXPECT_TRUE(movegen::attack(19, 12, BLACK, PAWN, isOccupied));
-	EXPECT_FALSE(movegen::attack(12, 19, BLACK, PAWN, isOccupied));
-	EXPECT_TRUE(movegen::attack(12, 3, WHITE, KING, isOccupied));
-	EXPECT_FALSE(movegen::attack(12, 14, WHITE, KING, isOccupied));
+	EXPECT_TRUE(scid::database::movegen::attack(31, 29, WHITE, QUEEN, isOccupied));
+	EXPECT_FALSE(scid::database::movegen::attack(31, 27, WHITE, QUEEN, isOccupied));
+	EXPECT_TRUE(scid::database::movegen::attack(52, 28, BLACK, ROOK, isOccupied));
+	EXPECT_FALSE(scid::database::movegen::attack(52, 20, BLACK, ROOK, isOccupied));
+	EXPECT_TRUE(scid::database::movegen::attack(1, 11, WHITE, KNIGHT, isOccupied));
+	EXPECT_FALSE(scid::database::movegen::attack(1, 6, WHITE, KNIGHT, isOccupied));
+	EXPECT_TRUE(scid::database::movegen::attack(33, 19, BLACK, BISHOP, isOccupied));
+	EXPECT_FALSE(scid::database::movegen::attack(33, 12, BLACK, BISHOP, isOccupied));
+	EXPECT_TRUE(scid::database::movegen::attack(12, 19, WHITE, PAWN, isOccupied));
+	EXPECT_FALSE(scid::database::movegen::attack(12, 20, WHITE, PAWN, isOccupied));
+	EXPECT_TRUE(scid::database::movegen::attack(19, 12, BLACK, PAWN, isOccupied));
+	EXPECT_FALSE(scid::database::movegen::attack(12, 19, BLACK, PAWN, isOccupied));
+	EXPECT_TRUE(scid::database::movegen::attack(12, 3, WHITE, KING, isOccupied));
+	EXPECT_FALSE(scid::database::movegen::attack(12, 14, WHITE, KING, isOccupied));
 }
 
 TEST(Test_movegen, opens_ray) {
@@ -64,16 +66,16 @@ TEST(Test_movegen, opens_ray) {
 	board[52] = !empty;
 
 	auto isOccupied = [&](auto square) { return board[square] != empty; };
-	auto test = movegen::opens_ray(19, 27, 12, isOccupied);
+	auto test = scid::database::movegen::opens_ray(19, 27, 12, isOccupied);
 	EXPECT_TRUE(test.first == BISHOP && test.second == 33);
 
-	test = movegen::opens_ray(21, 29, 12, isOccupied);
+	test = scid::database::movegen::opens_ray(21, 29, 12, isOccupied);
 	EXPECT_TRUE(test.first == INVALID_PIECE);
 
-	test = movegen::opens_ray(28, 20, 12, isOccupied);
+	test = scid::database::movegen::opens_ray(28, 20, 12, isOccupied);
 	EXPECT_TRUE(test.first == INVALID_PIECE);
 
-	test = movegen::opens_ray(28, 27, 12, isOccupied);
+	test = scid::database::movegen::opens_ray(28, 27, 12, isOccupied);
 	EXPECT_TRUE(test.first == ROOK && test.second == 52);
 }
 

@@ -26,6 +26,8 @@
 #include <cstring>
 
 // Piece letters translation
+namespace scid::database {
+
 int language = 0; // default to english
 //  0 = en, 
 //  1 = fr, 2 = es, 3 = de, 4 = it, 5 = ne, 6 = cz
@@ -3021,3 +3023,5 @@ errorT Game::Decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf)
 //////////////////////////////////////////////////////////////////////
 //  EOF:    game.cpp
 //////////////////////////////////////////////////////////////////////
+
+} // namespace scid::database

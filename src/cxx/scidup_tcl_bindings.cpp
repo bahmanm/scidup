@@ -56,6 +56,8 @@
 #include <type_traits>
 #include <unordered_map>
 
+using namespace scid::database;
+
 //TODO: delete
 #include "scidup_tcl_bindings.h"
 

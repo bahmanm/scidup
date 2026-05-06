@@ -17,6 +17,8 @@
 #ifndef SCID_ERROR_H
 #define SCID_ERROR_H
 
+namespace scid::database {
+
 typedef   unsigned short   errorT;
 
 const errorT
@@ -84,6 +86,8 @@ const errorT
 
 static_assert(OK == false);
 
+
+} // namespace scid::database
 #endif   // #ifdef SCID_ERROR_H
 
 ///////////////////////////////////////////////////////////////////////////

@@ -23,7 +23,10 @@
 #include <stdint.h>
 #include <vector>
 
+using namespace scid::database;
+
 namespace v4_6 {
+using namespace scid::database;
 #include "test_indexentry_v4_6.h"
 }
 

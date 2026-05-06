@@ -27,6 +27,8 @@
 #include <limits>
 #include <string_view>
 
+namespace scid::database {
+
 namespace {
 
 /**
@@ -751,3 +753,5 @@ errorT CodecSCID4::setExtraInfo(const char* tagname, const char* new_value) {
 	header_.dirty = true;
 	return OK;
 }
+
+} // namespace scid::database

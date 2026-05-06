@@ -22,6 +22,8 @@
 #include "scidup/database/common.h"
 #include <string>
 
+namespace scid::database {
+
 class FullMove {
 	// ** Lower 16 bits are compatible with Stockfish's Move **
 	// bits  0- 5: destination square (from 0 to 63)
@@ -142,4 +144,6 @@ public:
 	void setCheck() { m_ |= (1 << 30); }
 };
 
+
+} // namespace scid::database
 #endif

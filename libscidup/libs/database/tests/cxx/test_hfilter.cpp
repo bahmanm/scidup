@@ -24,6 +24,8 @@
 #include <memory>
 #include <vector>
 
+using namespace scid::database;
+
 namespace {
 
 const std::vector<byte> data1 = {1, 4, 255, 0, 0, 13};

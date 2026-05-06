@@ -28,18 +28,21 @@
 #include <string_view>
 #include <unordered_map>
 #include <vector>
+
+namespace scid::database {
 class Position;
+}
 
 namespace scidup::eco {
 
-using Code = ::ecoT;
-using Error = ::errorT;
-using Position = ::Position;
+using Code = scid::database::ecoT;
+using Error = scid::database::errorT;
+using Position = scid::database::Position;
 
-inline constexpr Code ECO_None = ::ECO_None;
-inline constexpr Error OK = ::OK;
-inline constexpr Error ERROR_FileOpen = ::ERROR_FileOpen;
-inline constexpr Error ERROR_Corrupt = ::ERROR_Corrupt;
+inline constexpr Code ECO_None = scid::database::ECO_None;
+inline constexpr Error OK = scid::database::OK;
+inline constexpr Error ERROR_FileOpen = scid::database::ERROR_FileOpen;
+inline constexpr Error ERROR_Corrupt = scid::database::ERROR_Corrupt;
 
 /**
  * A Book is a collection of chess positions, each with the corresponding ECO

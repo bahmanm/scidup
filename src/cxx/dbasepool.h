@@ -20,8 +20,12 @@
 #define DBASEPOOL_H
 
 #include <vector>
-struct scidBaseT;
 
+namespace scid::database {
+struct scidBaseT;
+}
+
+using scid::database::scidBaseT;
 
 namespace DBasePool {
 

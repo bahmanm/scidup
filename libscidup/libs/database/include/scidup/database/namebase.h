@@ -30,6 +30,8 @@
 #include <string_view>
 #include <vector>
 
+namespace scid::database {
+
 using nameT = unsigned;
 enum {
 	NAME_PLAYER,
@@ -356,4 +358,6 @@ struct TagRoster {
 	}
 };
 
+
+} // namespace scid::database
 #endif // SCID_NAMEBASE_H

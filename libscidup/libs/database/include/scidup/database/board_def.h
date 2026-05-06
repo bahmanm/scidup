@@ -22,6 +22,8 @@
 
 #pragma once
 
+namespace scid::database {
+
 typedef unsigned char pieceT;  // e.g ROOK or WK
 typedef unsigned char colorT;  // WHITE or BLACK
 typedef unsigned char squareT; // e.g. A3
@@ -143,3 +145,5 @@ constexpr squareT square_Relative(colorT c, squareT sq) {
 constexpr rankT rank_Relative(colorT c, rankT r) {
 	return static_cast<rankT>(r ^ (c * 7));
 }
+
+} // namespace scid::database

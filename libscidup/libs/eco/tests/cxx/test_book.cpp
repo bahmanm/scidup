@@ -9,6 +9,8 @@
 
 namespace {
 
+using namespace scid::database;
+
 std::filesystem::path testFilePath(std::string_view stem) {
 	auto path = std::filesystem::temp_directory_path();
 	path /= std::string(stem) + "_" + std::to_string(::testing::UnitTest::GetInstance()->random_seed()) + ".eco";

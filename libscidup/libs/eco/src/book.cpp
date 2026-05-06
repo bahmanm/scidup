@@ -27,6 +27,8 @@
 
 namespace {
 
+using namespace scid::database;
+
 std::string_view
 epd_findOpcode (const char * epdStr, const char * opcode)
 {

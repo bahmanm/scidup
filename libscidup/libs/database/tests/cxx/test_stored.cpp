@@ -25,6 +25,8 @@
 #include "scidup/database/stored.h"
 #include <gtest/gtest.h>
 
+using namespace scid::database;
+
 // 1.d4 Nf6 2.c4 e6 3.Nc3 Bb4 4.Qc2 O-O
 std::tuple<squareT, squareT, bool> line63[] = {
     {D2, D4, false}, {G8, F6, false}, {C2, C4, false}, {E7, E6, false},

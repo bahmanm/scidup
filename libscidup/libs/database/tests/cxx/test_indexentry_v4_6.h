@@ -26,6 +26,8 @@
 #include "scidup/database/matsig.h"
 #include "scidup/database/namebase.h"
 
+using namespace scid::database;
+
 // HPSIG_SIZE = size of HomePawnData array in an IndexEntry.
 // It is nine bytes: the first byte contains the number of valid entries
 // in the array, and the next 8 bytes contain up to 16 half-byte entries.

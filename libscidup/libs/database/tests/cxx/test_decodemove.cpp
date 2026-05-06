@@ -17,6 +17,8 @@
 #include "scidup/database/bytebuf.h"
 #include <gtest/gtest.h>
 
+using namespace scid::database;
+
 TEST(Test_decodeMove, pawn_white) {
 	const squareT from = C2;
 	std::tuple<unsigned char, int, pieceT> data[] = {

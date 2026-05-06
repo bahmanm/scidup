@@ -21,6 +21,8 @@
 #include <string>
 #include <vector>
 
+using namespace scid::database;
+
 namespace {
 
 class Test_DBasePool : public ::testing::Test {

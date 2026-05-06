@@ -19,6 +19,8 @@
 #include "scidup/database/game.h"
 #include "scidup/database/indexentry.h"
 #include <string>
+
+using namespace scid::database;
 namespace scidup::eco {
 class Book;
 }

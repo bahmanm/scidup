@@ -19,6 +19,8 @@
 #include "scidup/database/common.h"
 #include <stdio.h>
 
+namespace scid::database {
+
 class TextBuffer
 {
 private:
@@ -110,6 +112,8 @@ TextBuffer::AddChar (char ch)
     ByteCount++;
 }
 
+
+} // namespace scid::database
 #endif  // SCID_TEXTBUF_H
 
 ///////////////////////////////////////////////////////////////////////////

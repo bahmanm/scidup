@@ -22,6 +22,8 @@
 #include "ui.h"
 #include <algorithm>
 
+using namespace scid::database;
+
 namespace {
 /*
 * Filters are used to select games, usually when performing searches.

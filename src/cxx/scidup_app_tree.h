@@ -11,6 +11,8 @@
 #include <unordered_map>
 #include <utility>
 
+using namespace scid::database;
+
 namespace scidup::app::tree {
 
 struct State {

@@ -17,6 +17,8 @@
 
 #include "scidup/database/common.h"
 
+namespace scid::database {
+
 constexpr uint MAX_SQUARELIST = 65; // 64 squares plus null square
 
 class SquareList {
@@ -245,6 +247,8 @@ square_Last (squareT sq, directionT dir)
     return precomputed_sqLast[sq][dir];
 }
 
+
+} // namespace scid::database
 #endif
 
 //////////////////////////////////////////////////////////////////////

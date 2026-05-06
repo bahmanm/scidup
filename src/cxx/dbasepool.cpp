@@ -21,6 +21,8 @@
 #include "scidup_app_editor.h"
 #include "scidup_app_tree.h"
 
+using namespace scid::database;
+
 
 
 //Current database

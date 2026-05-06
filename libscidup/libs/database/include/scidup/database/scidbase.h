@@ -34,6 +34,8 @@
 #include <unordered_map>
 #include <vector>
 
+namespace scid::database {
+
 class SortCache;
 
 const gamenumT INVALID_GAMEID = 0xffffffff;
@@ -551,4 +553,6 @@ scidBaseT::transformNames(nameT nt, HFilter hfilter, const Progress& progress,
 	return res;
 }
 
+
+} // namespace scid::database
 #endif

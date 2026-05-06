@@ -150,6 +150,8 @@
 // The tag value can have at most 255 characters (range [0:255] ).
 
 // This class manages databases encoded in SCID format v5.
+namespace scid::database {
+
 class CodecSCID5 final : public ICodecDatabase {
 	Index* idx_ = nullptr;
 	NameBase* nb_ = nullptr;
@@ -624,3 +626,5 @@ private:
 		return n;
 	}
 };
+
+} // namespace scid::database

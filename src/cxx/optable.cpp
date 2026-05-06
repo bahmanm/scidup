@@ -19,6 +19,8 @@
 #include <algorithm>
 #include <cstdio>
 
+using namespace scid::database;
+
 uint
 endgameTheme (matSigT msig)
 {

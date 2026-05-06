@@ -26,6 +26,8 @@
 #include "scidup/database/matsig.h"
 #include <cstring> //memcmp
 
+namespace scid::database {
+
 using idNumberT = uint32_t; // Should be idNameT
 
 // HPSIG_SIZE = size of HomePawnData array in an IndexEntry.
@@ -433,4 +435,6 @@ IndexEntry::GetFlagStr(char* dest, const char* flags) const
     return count;
 }
 
+
+} // namespace scid::database
 #endif

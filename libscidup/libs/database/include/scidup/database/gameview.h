@@ -30,6 +30,8 @@
 #include <string>
 
 /// Store the number of pieces for each type and color.
+namespace scid::database {
+
 class MaterialCount {
 	int8_t n_[2][8] = {};
 
@@ -560,3 +562,5 @@ private:
 		return res;
 	}
 };
+
+} // namespace scid::database

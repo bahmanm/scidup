@@ -21,6 +21,8 @@
 // CompressedFilter methods
 
 
+namespace scid::database {
+
 static uint
 packBytemap (const byte * inBuffer, byte * outBuffer, uint inLength);
 
@@ -368,3 +370,5 @@ unpackBytemap (const byte * inBuffer, byte * outBuffer, uint inLength,
 //////////////////////////////////////////////////////////////////////
 //  EOF: filter.cpp
 //////////////////////////////////////////////////////////////////////
+
+} // namespace scid::database

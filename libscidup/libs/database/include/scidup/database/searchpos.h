@@ -35,6 +35,8 @@
 /// counterpart in @e b.
 /// @param promo: pawns' difference is considered when comparing queen.
 /// @param upromo: minor pieces' count is not compared.
+namespace scid::database {
+
 template <typename TMaterialCount>
 bool less_mat(const TMaterialCount& a, matSigT b, bool promo, bool upromo) {
 	int wp_diff = a.count(WHITE, PAWN) - static_cast<int>(MATSIG_Count_WP(b));
@@ -194,4 +196,6 @@ private:
 	}
 };
 
+
+} // namespace scid::database
 #endif

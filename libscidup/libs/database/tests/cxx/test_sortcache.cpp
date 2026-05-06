@@ -22,6 +22,8 @@
 #include <random>
 #include <stdint.h>
 
+using namespace scid::database;
+
 class Test_SortCache : public ::testing::Test {};
 
 TEST_F(Test_SortCache, select_sortedPosition) {

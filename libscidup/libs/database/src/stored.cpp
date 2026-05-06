@@ -35,6 +35,8 @@
 // because of its end material value or pawn configuration, all games with
 // that stored line code can be excluded and skipped without decoding.
 
+namespace scid::database {
+
 namespace {
 	
 class Board {
@@ -661,3 +663,5 @@ StoredLine::StoredLine(const pieceT* board, colorT toMove)
 	}
 }
 
+
+} // namespace scid::database

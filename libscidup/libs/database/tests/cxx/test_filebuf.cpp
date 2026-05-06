@@ -21,6 +21,8 @@
 #include <numeric>
 #include <random>
 
+using namespace scid::database;
+
 class Test_Filebuf : public ::testing::Test {};
 class Test_FilebufGetline : public ::testing::TestWithParam<size_t> {};
 

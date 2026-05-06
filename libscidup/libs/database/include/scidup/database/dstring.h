@@ -18,6 +18,8 @@
 #include <cstdio>
 #include <string>
 
+namespace scid::database {
+
 class DString { // DEPRECATED
 	std::string s_;
 
@@ -123,4 +125,6 @@ public:
 	}
 };
 
+
+} // namespace scid::database
 #endif // SCID_DSTRING_H

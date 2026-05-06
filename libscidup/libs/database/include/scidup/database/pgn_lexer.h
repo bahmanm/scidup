@@ -30,6 +30,8 @@
 #include <algorithm>
 #include <cassert>
 
+namespace scid::database {
+
 namespace pgn_impl {
 // "PGN character data is organized as tokens. A token is a contiguous
 // sequence of characters that represents a basic semantic unit. Tokens
@@ -457,4 +459,6 @@ template <typename TView> std::size_t trim(TView& str) {
 
 } // namespace pgn
 
+
+} // namespace scid::database
 #endif // PGN_LEXER_H

@@ -24,6 +24,8 @@
 #include <memory>
 #include <random>
 
+using namespace scid::database;
+
 namespace {
 
 const char* gameUTF8 = SCIDUP_TEST_RESOURCES_DIR "res_gameUTF8.pgn";
@@ -257,7 +259,7 @@ TEST(Test_Game, encodeFEN) {
 TEST(Test_Game, currentPosUCI_startpos) {
 	std::string_view pgn = "1.d4 (1.e4 e5 ( 1...c5)) (1.c4) 1...d5 2.c4";
 	Game game;
-	pgn::parse_game({pgn.data(), pgn.data() + pgn.size()}, PgnVisitor{game});
+	scid::database::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()}, PgnVisitor{game});
 
 	const std::pair<unsigned, const char*> expected[] = {
 	    {0, "position startpos moves"},
@@ -283,7 +285,7 @@ TEST(Test_Game, currentPosUCI_fen) {
 	    "[FEN 8/8/8/8/2p5/1k1p4/p4N2/2K5 w - - 0 198]\n"
 	    "198.Kd2 ( 198.Nxd3 a1=R+ 199.Kd2 cxd3 )198...a1=Q 199.Ke3 Qe1+ 0-1";
 	Game game;
-	pgn::parse_game({pgn.data(), pgn.data() + pgn.size()}, PgnVisitor{game});
+	scid::database::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()}, PgnVisitor{game});
 
 	const std::pair<unsigned, const char*> expected[] = {
 	    // clang-format off
@@ -342,7 +344,7 @@ namespace {
 auto make_invalid(unsigned char movecode, std::string_view pgn) {
 	std::vector<unsigned char> data;
 	Game g;
-	pgn::parse_game({pgn.data(), pgn.data() + pgn.size()}, PgnVisitor{g});
+	scid::database::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()}, PgnVisitor{g});
 	g.Encode(data);
 	auto comment_tag = std::find(data.begin(), data.end(), 12);
 	if (comment_tag != data.end())

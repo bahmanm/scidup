@@ -19,9 +19,10 @@
 
 #include "scidup/database/common.h"
 #include "scidup/database/date.h"
+#include "scidup/database/dstring.h"
 #include <scidup/spelling/spelling.h>
 
-class DString;
+using namespace scid::database;
 
 const uint CROSSTABLE_MaxPlayers = 500;  // Max. number of players.
 const uint CROSSTABLE_MaxRounds =   60;  // Max. number of Swiss event rounds.

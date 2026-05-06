@@ -31,6 +31,8 @@
 
 namespace {
 
+using namespace scid::database;
+
 enum InfoType {
 	SPELL_SECTIONSTART,
 	SPELL_NEWNAME, SPELL_ALIAS, SPELL_PREFIX, SPELL_INFIX, SPELL_SUFFIX,

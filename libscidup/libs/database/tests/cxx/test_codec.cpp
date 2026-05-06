@@ -28,6 +28,8 @@
 #include <random>
 #include <vector>
 
+using namespace scid::database;
+
 namespace {
 
 fileModeT fmodes[] = {FMODE_Create, FMODE_ReadOnly, FMODE_WriteOnly,

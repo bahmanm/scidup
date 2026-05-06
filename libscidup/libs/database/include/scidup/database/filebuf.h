@@ -32,6 +32,8 @@
  * - getline()
  * - read and write of unsigned integers with size of 32/24/16/8 bit.
  */
+namespace scid::database {
+
 class Filebuf : public std::filebuf {
 public:
 	/**
@@ -278,4 +280,6 @@ public:
 	}
 };
 
+
+} // namespace scid::database
 #endif // FILEBUF_H

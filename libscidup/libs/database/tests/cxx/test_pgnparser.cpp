@@ -24,6 +24,8 @@
 #include <random>
 #include <string>
 
+using namespace scid::database;
+
 namespace {
 
 const char* gameUTF8 = SCIDUP_TEST_RESOURCES_DIR "res_gameUTF8.pgn";
@@ -242,9 +244,9 @@ TEST(Test_PgnParser, is_PGNsymbol) {
 
 	for (int i = 0; i < 256; i++) {
 		EXPECT_EQ(chars[i],
-		          pgn_impl::is_PGNsymbol(static_cast<signed char>(i)));
+		          scid::database::pgn_impl::is_PGNsymbol(static_cast<signed char>(i)));
 		EXPECT_EQ(chars[i],
-		          pgn_impl::is_PGNsymbol(static_cast<unsigned char>(i)));
+		          scid::database::pgn_impl::is_PGNsymbol(static_cast<unsigned char>(i)));
 	}
 }
 
@@ -261,7 +263,7 @@ TEST(Test_PgnParser, pgn_trim) {
 	for (auto str : tests) {
 		auto str_view = std::make_pair(str, str + std::strlen(str));
 		size_t n_newlines = std::count(str_view.first, str_view.second, '\n');
-		EXPECT_EQ(n_newlines, pgn::trim(str_view));
+		EXPECT_EQ(n_newlines, scid::database::pgn::trim(str_view));
 		EXPECT_TRUE(std::equal(str_view.first, str_view.second, tests[0]));
 	}
 }

@@ -33,6 +33,8 @@
  * Every open database should have a native representation in memory: to satisfy
  * this requirement non-native codecs should be derived from this class.
  */
+namespace scid::database {
+
 class CodecMemory : public ICodecDatabase {
 	Index* idx_ = nullptr;
 	NameBase* nb_ = nullptr;
@@ -228,4 +230,6 @@ private:
 	}
 };
 
+
+} // namespace scid::database
 #endif

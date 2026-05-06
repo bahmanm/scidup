@@ -22,6 +22,8 @@
 #include <gtest/gtest.h>
 #include <vector>
 
+using namespace scid::database;
+
 namespace {
 
 int nObjects = 0;

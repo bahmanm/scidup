@@ -23,6 +23,8 @@
 #include <algorithm>
 #include <gtest/gtest.h>
 
+using namespace scid::database;
+
 template <typename TCont>
 std::string encodePgn(const TCont& game)
 {
@@ -266,14 +268,14 @@ class Test_Scidbase : public ::testing::Test {
 	}
 
 protected:
-	std::vector<gamepos::GamePos> test_GamePos;
+	std::vector<scid::database::gamepos::GamePos> test_GamePos;
 	std::string test_pgnLong;
 	const std::string test_pgnShort =
 		"1. d4 d5 2. c4 ( 2. Nf3 Nf6 ( 2... Bg4 ) 3. c3 ) ( 2. g3 Nf6 3. Bg2 ( 3. Nf3 ) )";
 
-	gamepos::GamePos makeGamePos(uint RAVdepth, uint RAVnum, const char* FEN, const char* SAN)
+	scid::database::gamepos::GamePos makeGamePos(uint RAVdepth, uint RAVnum, const char* FEN, const char* SAN)
 	{
-		gamepos::GamePos res;
+		scid::database::gamepos::GamePos res;
 		res.RAVdepth = RAVdepth;
 		res.RAVnum = RAVnum;
 		res.FEN = FEN;
@@ -287,9 +289,9 @@ auto collectPositions(const scidBaseT& dbase, gamenumT gnum) {
 	auto ie = dbase.getIndexEntry(gnum);
 	Game game;
 	if (ie_bounds && ie && dbase.getGame(*ie_bounds, game) == OK)
-		return gamepos::collectPositions(game);
+		return scid::database::gamepos::collectPositions(game);
 
-	return decltype(gamepos::collectPositions(game))();
+	return decltype(scid::database::gamepos::collectPositions(game))();
 }
 
 TEST_F(Test_Scidbase, getGamePos1) {

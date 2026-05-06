@@ -18,6 +18,8 @@
 #include "scidup/database/dstring.h"
 #include <cstdio>
 
+using namespace scid::database;
+
 // Expected differences in rating according to performance
 // from 50% to 100%:
 const uint perf_elodiff [51] = {
