@@ -30,7 +30,6 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/dstring.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/error.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/filebuf.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/fullmove.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/gameview.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/hash.h"

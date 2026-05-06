@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "scidup/database/fullmove.h"
+#include "scidup/core/fullmove.h"
 #include "scidup/database/hfilter.h"
 #include "scidup/database/position.h"
 #include <algorithm>

@@ -23,6 +23,7 @@
 #ifndef SEARCHPOS_H
 #define SEARCHPOS_H
 
+#include "scidup/core/fullmove.h"
 #include "scidup/database/common.h"
 #include "scidup/database/matsig.h"
 #include "scidup/database/position.h"
