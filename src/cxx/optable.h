@@ -18,6 +18,7 @@
 #include "scidup/core/game_result.h"
 #include "scidup/core/notation.h"
 #include "scidup/database/common.h"
+#include "scidup/database/game_id.h"
 #include "scidup/database/game.h"
 #include "scidup/database/indexentry.h"
 #include "scidup/eco/code.h"

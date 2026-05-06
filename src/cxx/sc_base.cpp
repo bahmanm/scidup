@@ -18,6 +18,7 @@
 
 #include "scidup/database/common.h"
 #include "dbasepool.h"
+#include "scidup/database/game_id.h"
 #include "scidup/database/misc.h"
 #include "scidup/database/scidbase.h"
 #include "scidup/eco/code.h"

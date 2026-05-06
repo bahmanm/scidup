@@ -29,6 +29,7 @@
 #include "scidup/core/dstring.h"
 #include "scidup/core/notation.h"
 #include "engine.h"
+#include "scidup/database/game_id.h"
 #include "scidup/database/game.h"
 #include "optable.h"
 #include "scidup/eco/book.h"

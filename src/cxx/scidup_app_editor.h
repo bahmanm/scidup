@@ -5,6 +5,7 @@
 // library boundary: the database loads and saves Game objects, while ScidUp
 // owns the current editing session, dirty state, undo/redo, and push/pop state.
 
+#include "scidup/database/game_id.h"
 #include "scidup/database/scidbase.h"
 #include "scidup_app_undo_redo.h"
 #include <memory>
