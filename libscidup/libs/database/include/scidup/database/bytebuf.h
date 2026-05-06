@@ -48,6 +48,9 @@
  */
 namespace scid::database {
 
+class Game;
+class GameView;
+
 inline constexpr size_t MAX_TAG_LEN = 240;
 inline constexpr std::string_view commonTags[] = {
     // 241, 242: Country
@@ -125,6 +128,9 @@ void encodeStartBoard(bool promoFlag, bool underpromoFlag, const char* FEN,
 class ByteBuffer {
 	const unsigned char* data_;
 	const unsigned char* const end_;
+
+	friend class Game;
+	friend class GameView;
 
 public:
 	ByteBuffer(const unsigned char* data, size_t length)
@@ -216,6 +222,7 @@ public:
 		return res;
 	}
 
+private:
 	/// Extract the next move.
 	/// @returns a std::pair containing OK and the move value.
 	///          Returns ERROR_EndOfMoveList when the end of the game is

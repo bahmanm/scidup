@@ -199,6 +199,8 @@ private:
     moveT* NewMove(markerT marker);
     void ClearMoves();
     errorT DecodeVariation(ByteBuffer& buf, std::vector<moveT*>& comment_marks);
+    static errorT decodeMove(ByteBuffer* buf, simpleMoveT* sm, byte val,
+                             const Position* pos);
     errorT WritePGN(TextBuffer* tb);
     std::string* find_std_tag(std::string_view tag) {
         if (tag.size() == 5) {

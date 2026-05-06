@@ -2587,8 +2587,8 @@ static byte encodePawn(squareT from, squareT to, pieceT promo) {
 //      moves (only Queen diagonal moves) are encoded in two bytes, so
 //      it may be necessary to read the next byte as well.
 //
-static errorT decodeMove(ByteBuffer* buf, simpleMoveT* sm, byte val,
-                         const Position* pos) {
+errorT Game::decodeMove(ByteBuffer* buf, simpleMoveT* sm, byte val,
+                        const Position* pos) {
 	const colorT toMove = pos->GetToMove();
 	const squareT from = pos->GetList(toMove)[val >> 4];
 	if (from > H8)
