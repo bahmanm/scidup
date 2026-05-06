@@ -34,7 +34,7 @@ target_include_directories(
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 target_link_libraries(
     scidup_eco
-    PUBLIC ScidUp::EcoCode ScidUp::Database )
+    PUBLIC ScidUp::Core ScidUp::EcoCode )
 
 if( PROJECT_IS_TOP_LEVEL )
     include( CTest )
