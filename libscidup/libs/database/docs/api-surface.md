@@ -53,7 +53,8 @@ Use these headers when working with game lists, tags and names:
 
 Most consumers should retrieve metadata through `scidBaseT` instead of owning
 `Index` or `NameBase` directly. Game and index metadata dates use the compact
-`scidup/core/date.h` value type.
+`scidup/core/date.h` value type, and game results use the compact
+`scidup/core/game_result.h` value type.
 
 # 4. Filters And Query Helpers
 
@@ -81,8 +82,7 @@ These headers are public today because current consumers and tests need them,
 but they should be treated as lower-level building blocks:
 
 - `bytebuf.h`: transient byte buffer views and encoded tag helpers
-- `common.h`: database file-format aliases, result constants and compatibility
-  assertions
+- `common.h`: database file-format aliases and compatibility assertions
 - `misc.h`: assorted utility functions
 
 Board constants, primitive chess types, square helpers, attack tables, position
@@ -95,6 +95,8 @@ state, position hashing and shared status codes live in core headers:
 - `scidup/core/error.h`: shared `errorT` definitions
 - `scidup/core/fullmove.h`: compact move representation with SAN-related
   information
+- `scidup/core/game_result.h`: game result value type, display strings and
+  scoring helpers
 - `scidup/core/hash.h`: Zobrist position hash helpers
 - `scidup/core/movelist.h`: generated move records and fixed-capacity move lists
 - `scidup/core/move_predicates.h`: move validation predicates
