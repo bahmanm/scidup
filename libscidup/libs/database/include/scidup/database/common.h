@@ -17,7 +17,7 @@
 #define SCID_COMMON_H
 
 #include "scidup/core/board.h"
-#include "scidup/database/error.h"
+#include "scidup/core/error.h"
 #include <assert.h>
 #include <cstddef>
 #define ASSERT(f) assert(f)

@@ -24,7 +24,7 @@
 
 #include <stdarg.h>
 
-#include "scidup/database/position.h"
+#include "scidup/core/position.h"
 #include "timer.h"
 
 const scid::database::uint ENGINE_MAX_PLY =           40;  // Maximum search ply.

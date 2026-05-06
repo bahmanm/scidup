@@ -18,7 +18,7 @@
 #include "scidup/database/dstring.h"
 #include "naglatex.h"
 #include "nagtext.h"
-#include "scidup/database/position.h"
+#include "scidup/core/position.h"
 #include "scidup/database/stored.h"
 #include "textbuf.h"
 #include <algorithm>

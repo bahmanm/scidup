@@ -1,6 +1,6 @@
 #include "scidup/eco/book.h"
 #include "scidup/database/misc.h"
-#include "scidup/database/position.h"
+#include "scidup/core/position.h"
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>

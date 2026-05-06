@@ -29,7 +29,7 @@
 #pragma once
 
 #include "scidup/core/primitives.h"
-#include "scidup/database/error.h"
+#include "scidup/core/error.h"
 #include <algorithm>
 #include <cassert>
 #include <cstring>

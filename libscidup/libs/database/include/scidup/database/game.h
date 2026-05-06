@@ -22,7 +22,7 @@
 #include "scidup/database/matsig.h"
 #include "scidup/database/movetree.h"
 #include "scidup/database/namebase.h"
-#include "scidup/database/position.h"
+#include "scidup/core/position.h"
 #include <forward_list>
 #include <memory>
 #include <string>

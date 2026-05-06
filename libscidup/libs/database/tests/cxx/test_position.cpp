@@ -16,7 +16,7 @@
 
 #include "scidup/database/gameview.h"
 #include "scidup/database/pgnparse.h"
-#include "scidup/database/position.h"
+#include "scidup/core/position.h"
 #include "scidup/database/searchpos.h"
 #include <cstring>
 #include <gtest/gtest.h>

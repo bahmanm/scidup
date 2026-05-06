@@ -12,7 +12,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "scidup/database/position.h"
+#include "scidup/core/position.h"
 #include "scidup/core/attacks.h"
 #include "scidup/core/move_predicates.h"
 #include "scidup/core/square_collections.h"

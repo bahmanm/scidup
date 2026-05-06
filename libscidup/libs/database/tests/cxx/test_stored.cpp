@@ -21,7 +21,7 @@
  */
 
 #include "scidup/core/primitives.h"
-#include "scidup/database/position.h"
+#include "scidup/core/position.h"
 #include "scidup/database/stored.h"
 #include <gtest/gtest.h>
 

@@ -21,7 +21,7 @@
 
 #include "scidup/core/fullmove.h"
 #include "scidup/database/hfilter.h"
-#include "scidup/database/position.h"
+#include "scidup/core/position.h"
 #include <algorithm>
 #include <vector>
 

@@ -33,7 +33,7 @@
 #include "scidup/eco/book.h"
 #include "scidup/database/pgnparse.h"
 #include "polyglot.h"
-#include "scidup/database/position.h"
+#include "scidup/core/position.h"
 #include "scidup/database/scidbase.h"
 #include "scidup_app_editor.h"
 #include "scidup_app_tree.h"

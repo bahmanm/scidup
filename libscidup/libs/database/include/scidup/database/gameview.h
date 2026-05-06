@@ -22,7 +22,7 @@
 #include "scidup/core/fullmove.h"
 #include "scidup/core/move_predicates.h"
 #include "scidup/database/common.h"
-#include "scidup/database/position.h"
+#include "scidup/core/position.h"
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>

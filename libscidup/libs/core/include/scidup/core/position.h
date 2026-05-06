@@ -1,24 +1,14 @@
-//////////////////////////////////////////////////////////////////////
-//
-//  FILE:       position.h
-//              Position class
-//
-//  Part of:    Scid (Shane's Chess Information Database)
-//  Version:    3.5
-//
-//  Notice:     Copyright (c) 1999-2003 Shane Hudson.  All rights reserved.
-//
-//  Author:     Shane Hudson (sgh@users.sourceforge.net)
-//
-//////////////////////////////////////////////////////////////////////
+/** @file
+ * Chess position state, move generation, and notation support.
+ */
 
+#pragma once
 
-#ifndef SCID_POSITION_H
-#define SCID_POSITION_H
-
-#include <cstddef>
+#include "scidup/core/error.h"
 #include "scidup/core/movelist.h"
-#include "scidup/database/common.h"
+
+#include <cassert>
+#include <cstddef>
 #include <stdio.h>
 #include <string>
 #include <string_view>
@@ -200,7 +190,7 @@ public:
     }
 
     pieceT GetPiece(squareT sq) const {
-        ASSERT(sq < 64);
+        assert(sq < 64);
         return Board[sq];
     }
 
@@ -308,8 +298,3 @@ private:
 
 
 } // namespace scid::database
-#endif  // SCID_POSITION_H
-
-//////////////////////////////////////////////////////////////////////
-//  EOF: position.h
-//////////////////////////////////////////////////////////////////////

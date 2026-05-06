@@ -1,21 +1,8 @@
-///////////////////////////////////////////////////////////////////////////
-//
-//  FILE:       error.h
-//              Error codes
-//
-//  Part of:    Scid (Shane's Chess Information Database)
-//  Version:    1.6
-//
-//  Notice:     Copyright (c) 1999  Shane Hudson. all rights reserved.
-//              Copyright (c) 2014  Benini Fulvio. all rights reserved.
-//
-//  Author:     Shane Hudson (sgh@users.sourceforge.net)
-//
-///////////////////////////////////////////////////////////////////////////
+/** @file
+ * Shared status and error codes.
+ */
 
-
-#ifndef SCID_ERROR_H
-#define SCID_ERROR_H
+#pragma once
 
 namespace scid::database {
 
@@ -88,9 +75,3 @@ static_assert(OK == false);
 
 
 } // namespace scid::database
-#endif   // #ifdef SCID_ERROR_H
-
-///////////////////////////////////////////////////////////////////////////
-//  EOF:    error.h
-///////////////////////////////////////////////////////////////////////////
-
