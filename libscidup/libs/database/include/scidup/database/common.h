@@ -18,7 +18,6 @@
 
 #include "scidup/core/board.h"
 #include "scidup/core/error.h"
-#include "scidup/core/notation.h"
 #include "scidup/core/rating.h"
 #include <assert.h>
 #include <cstddef>

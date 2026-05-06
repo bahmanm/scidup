@@ -16,6 +16,7 @@
 #include "scidup/database/bytebuf.h"
 #include "scidup/database/common.h"
 #include "scidup/core/dstring.h"
+#include "scidup/core/notation.h"
 #include "movetree.h"
 #include "naglatex.h"
 #include "nagtext.h"
