@@ -16,6 +16,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/dstring.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/error.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/fullmove.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/game_result.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/hash.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/movelist.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/move_predicates.h"

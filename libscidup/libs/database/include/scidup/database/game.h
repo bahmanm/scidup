@@ -16,6 +16,7 @@
 #ifndef SCID_GAME_H
 #define SCID_GAME_H
 
+#include "scidup/core/game_result.h"
 #include "scidup/database/common.h"
 #include "scidup/core/date.h"
 #include "scidup/database/indexentry.h"

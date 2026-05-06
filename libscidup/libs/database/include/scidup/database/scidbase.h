@@ -19,6 +19,7 @@
 #ifndef SCIDBASE_H
 #define SCIDBASE_H
 
+#include "scidup/core/game_result.h"
 #include "scidup/database/bytebuf.h"
 #include "scidup/database/game.h"
 #include "scidup/database/gameview.h"

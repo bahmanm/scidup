@@ -18,6 +18,7 @@
 #ifndef SCID_MISC_H
 #define SCID_MISC_H
 
+#include "scidup/core/game_result.h"
 #include "scidup/database/common.h"
 #include <algorithm>
 #include <string>
@@ -443,4 +444,3 @@ inline void strTrimRight(char* target) {
 //////////////////////////////////////////////////////////////////////
 //  EOF: misc.h
 //////////////////////////////////////////////////////////////////////
-

@@ -20,6 +20,7 @@
 #pragma once
 
 #include "scidup/core/fullmove.h"
+#include "scidup/core/game_result.h"
 #include "scidup/database/common.h"
 
 namespace scid::database {
