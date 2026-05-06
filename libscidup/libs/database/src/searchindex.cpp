@@ -251,16 +251,16 @@ public:
 	}
 };
 
-class SearchRangeElo : public SearchRange<eloT> {
+class SearchRangeElo : public SearchRange<ratingT> {
 protected:
-	eloT (IndexEntry::*fElo1_)() const;
-	eloT (IndexEntry::*fElo2_)() const;
+	ratingT (IndexEntry::*fElo1_)() const;
+	ratingT (IndexEntry::*fElo2_)() const;
 
 public:
 	SearchRangeElo(const scidBaseT* base, const char* range,
-	               eloT (IndexEntry::*f1)() const,
-	               eloT (IndexEntry::*f2)() const = 0)
-	    : SearchRange<eloT>(base, range, 0), fElo1_(f1), fElo2_(f2) {}
+	               ratingT (IndexEntry::*f1)() const,
+	               ratingT (IndexEntry::*f2)() const = 0)
+	    : SearchRange<ratingT>(base, range, 0), fElo1_(f1), fElo2_(f2) {}
 
 	bool operator()(gamenumT gnum) const {
 		long v1 = (base_->getIndexEntry(gnum)->*fElo1_)();
@@ -276,8 +276,8 @@ public:
 class SearchRangeEloDiff : public SearchRangeElo {
 public:
 	SearchRangeEloDiff(const scidBaseT* base, const char* range,
-	                   eloT (IndexEntry::*f1)() const,
-	                   eloT (IndexEntry::*f2)() const)
+	                   ratingT (IndexEntry::*f1)() const,
+	                   ratingT (IndexEntry::*f2)() const)
 	    : SearchRangeElo(base, range, f1, f2) {}
 
 	bool operator()(gamenumT gnum) const {

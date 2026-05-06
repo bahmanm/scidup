@@ -37,7 +37,7 @@ using idNumberT = uint32_t; // Should be idNameT
 // in the array, and the next 8 bytes contain up to 16 half-byte entries.
 const uint HPSIG_SIZE = 9;
 
-const eloT MAX_ELO = 4000; // Since we store Elo Ratings in 12 bits
+const ratingT MAX_ELO = 4000; // Since we store Elo Ratings in 12 bits
 
 const byte CUSTOM_FLAG_MASK[] = { 1, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5 };
 
@@ -92,11 +92,11 @@ public:
     uint64_t  GetOffset() const { return offset_; }
     uint32_t  GetLength() const { return gameDataSize_; }
     idNumberT GetWhite() const { return whiteID_; }
-    eloT      GetWhiteElo() const { return whiteElo_; }
-    byte      GetWhiteRatingType() const { return whiteEloType_; }
+    ratingT      GetWhiteElo() const { return whiteElo_; }
+    ratingTypeT GetWhiteRatingType() const { return whiteEloType_; }
     idNumberT GetBlack() const { return blackID_; }
-    eloT      GetBlackElo() const { return blackElo_; }
-    byte      GetBlackRatingType() const { return blackEloType_; }
+    ratingT      GetBlackElo() const { return blackElo_; }
+    ratingTypeT GetBlackRatingType() const { return blackEloType_; }
     idNumberT GetEvent() const { return eventID_; }
     idNumberT GetSite() const { return siteID_; }
     idNumberT GetRound() const { return roundID_; }
@@ -142,11 +142,11 @@ public:
         whiteID_ = id;
         ASSERT(GetWhite() == id);
     }
-    void SetWhiteElo(eloT elo) {
+    void SetWhiteElo(ratingT elo) {
         whiteElo_ = elo;
         ASSERT(GetWhiteElo() == elo);
     }
-    void SetWhiteRatingType(byte b) {
+    void SetWhiteRatingType(ratingTypeT b) {
         whiteEloType_ = b;
         ASSERT(GetWhiteRatingType() == b);
     }
@@ -154,11 +154,11 @@ public:
         blackID_ = id;
         ASSERT(GetBlack() == id);
     }
-    void SetBlackElo(eloT elo) {
+    void SetBlackElo(ratingT elo) {
         blackElo_ = elo;
         ASSERT(GetBlackElo() == elo);
     }
-    void SetBlackRatingType(byte b) {
+    void SetBlackRatingType(ratingTypeT b) {
         blackEloType_ = b;
         ASSERT(GetBlackRatingType() == b);
     }
@@ -305,8 +305,8 @@ private:
 
 
 inline byte IndexEntry::GetRating() const {
-    eloT welo = GetWhiteElo();
-    eloT belo = GetBlackElo();
+    ratingT welo = GetWhiteElo();
+    ratingT belo = GetBlackElo();
     auto rating = (welo != 0 && belo != 0) ? (welo + belo) / 140 : 0;
     static_assert(std::is_signed_v<decltype(rating)>);
 

@@ -2451,7 +2451,7 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
     AppendResult (ti, newlineStr, NULL);
 
-    scid::database::eloT avgElo = ctable->AvgRating();
+    scid::database::ratingT avgElo = ctable->AvgRating();
     if (avgElo > 0  &&  showRatings) {
         AppendResult (ti, translate (ti, "AverageRating", "Average Rating"),
                           ": ", NULL);
@@ -2746,7 +2746,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                       " (%s)", whCountry);
 
     AppendResult (ti, temp, NULL);
-    scid::database::eloT elo = g.GetWhiteElo();
+    scid::database::ratingT elo = g.GetWhiteElo();
     if (elo != 0) {
         std::snprintf(temp, sizeof(temp), " <red>%u</red>", elo);
         AppendResult (ti, temp, NULL);
@@ -3661,7 +3661,7 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
     // Return header summary if requested:
         scid::database::DString dstr;
         dstr.Append (g->GetWhiteStr());
-        scid::database::eloT elo = g->GetWhiteElo();
+        scid::database::ratingT elo = g->GetWhiteElo();
         if (elo > 0) { dstr.Append (" (", elo, ")"); }
         dstr.Append ("  --  ", g->GetBlackStr());
         elo = g->GetBlackElo();
@@ -4174,10 +4174,10 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     // Check if Elo ratings can be shared:
-    scid::database::eloT welo1 = ie1.GetWhiteElo();
-    scid::database::eloT belo1 = ie1.GetBlackElo();
-    scid::database::eloT welo2 = ie2.GetWhiteElo();
-    scid::database::eloT belo2 = ie2.GetBlackElo();
+    scid::database::ratingT welo1 = ie1.GetWhiteElo();
+    scid::database::ratingT belo1 = ie1.GetBlackElo();
+    scid::database::ratingT welo2 = ie2.GetWhiteElo();
+    scid::database::ratingT belo2 = ie2.GetBlackElo();
     if (welo1 == 0  &&  welo2 != 0) {
         // Copy White rating from game 2 to game 1:
         if (updateMode) {
@@ -5426,7 +5426,7 @@ sc_name_edit (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     const char * newName = argv[5];
     scid::database::dateT oldDate = scid::database::ZERO_DATE;
     scid::database::dateT newDate = scid::database::ZERO_DATE;
-    scid::database::eloT newRating = 0;
+    scid::database::ratingT newRating = 0;
     scid::database::byte newRatingType = 0;
     if (option == OPT_RATING) {
         newRating = scid::database::strGetUnsigned (argv[5]);
@@ -5552,7 +5552,7 @@ static UI_res_t sc_name_elo(UI_handle_t ti, const scidup::spelling::SpellChecker
 	if (auto vElo = sp.getPlayerElo(playerName)) {
 		for (scid::database::uint year = startYear; year < scid::database::YEAR_MAX; year++) {
 			for (scid::database::uint month = 1; month < 13; month++) {
-					if (scid::database::eloT elo = vElo->getElo((((year) << scid::database::YEAR_SHIFT) | ((month) << scid::database::MONTH_SHIFT) | (15)))) {
+					if (scid::database::ratingT elo = vElo->getElo((((year) << scid::database::YEAR_SHIFT) | ((month) << scid::database::MONTH_SHIFT) | (15)))) {
 						char temp[500];
 						std::snprintf(temp, sizeof(temp), "%4u.%02u", year,
 						              (month - 1) * 100 / 12);
@@ -6316,7 +6316,7 @@ sc_name_plist (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     for (scid::database::idNumberT id = 0; id < nPlayers; id++) {
         const char * name = nb->GetName (scid::database::NAME_PLAYER, id);
         scid::database::uint nGames = dbase->getNameFreq(scid::database::NAME_PLAYER, id);
-        scid::database::eloT elo = dbase->peakElo(id);
+        scid::database::ratingT elo = dbase->peakElo(id);
         if (nGames < minGames  ||  nGames > maxGames) { continue; }
         if (elo < minElo  ||  elo > maxElo) { continue; }
         if (! scid::database::strIsCasePrefix (namePrefix, name)) { continue; }
@@ -6426,10 +6426,10 @@ UI_res_t sc_name_ratings (UI_handle_t ti, scid::database::scidBaseT& dbase, cons
 
     auto entry_op = [&](scid::database::IndexEntry& ie) {
         scid::database::dateT date = ie.GetDate();
-        scid::database::eloT eloWhite = (!overwrite && ie.GetWhiteElo() != 0)
+        scid::database::ratingT eloWhite = (!overwrite && ie.GetWhiteElo() != 0)
                             ? 0
                             : getElo(ie.GetWhite(), date);
-        scid::database::eloT eloBlack = (!overwrite && ie.GetBlackElo() != 0)
+        scid::database::ratingT eloBlack = (!overwrite && ie.GetBlackElo() != 0)
                             ? 0
                             : getElo(ie.GetBlack(), date);
         unsigned nChanges = (eloWhite != 0) ? 1 : 0;

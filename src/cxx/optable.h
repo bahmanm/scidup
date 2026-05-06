@@ -86,9 +86,9 @@ class OpLine
     scid::database::gamenumT    GameNumber;
     scid::database::idNumberT   WhiteID;
     scid::database::idNumberT   BlackID;
-    scid::database::eloT        WhiteElo;   // Actual White rating (no estimate)
-    scid::database::eloT        BlackElo;   // Actual Black rating
-    scid::database::eloT        AvgElo;     // Average Elo (using actual or estimates)
+    scid::database::ratingT        WhiteElo;   // Actual White rating (no estimate)
+    scid::database::ratingT        BlackElo;   // Actual Black rating
+    scid::database::ratingT        AvgElo;     // Average Elo (using actual or estimates)
     scid::database::dateT       Date;
     scid::database::resultT     Result;
     scid::database::uint        Length;

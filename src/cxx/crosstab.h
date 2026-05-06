@@ -56,7 +56,7 @@ struct playerDataT
 {
     scid::database::idNumberT   id;
     char *      name;
-    scid::database::eloT        elo;
+    scid::database::ratingT        elo;
     scid::database::uint        score;   // Score, stored as 2 pts per win, 1 pt per draw.
     scid::database::uint        n_won;
     scid::database::uint        n_draw;
@@ -181,19 +181,19 @@ class Crosstable
     void   SetNumberedColumns (bool b) { APAColumnNums = b; }
 
     scid::database::uint   NumPlayers() { return PlayerCount; }
-    scid::database::errorT AddPlayer (scid::database::idNumberT id, const char * name, scid::database::eloT elo,
+    scid::database::errorT AddPlayer (scid::database::idNumberT id, const char * name, scid::database::ratingT elo,
                       const scidup::spelling::SpellChecker*);
     scid::database::errorT AddResult (scid::database::uint gameNumber, scid::database::idNumberT white, scid::database::idNumberT black,
                       scid::database::resultT result, scid::database::uint round, scid::database::dateT date);
 
     crosstableModeT BestMode (void);
-    scid::database::eloT   AvgRating();
+    scid::database::ratingT   AvgRating();
     void   PrintTable (scid::database::DString * dstr, crosstableModeT mode, scid::database::uint playerLimit, int currentGame);
 
     static scid::database::uint Performance (scid::database::uint oppAvg, scid::database::uint percentage);
-    static scid::database::uint FideCategory (scid::database::eloT rating);
-    static scid::database::eloT OpponentElo (scid::database::eloT player, scid::database::eloT opponent);
-    static int RatingChange (scid::database::eloT player, scid::database::uint oppAvg, scid::database::uint percentage, 
+    static scid::database::uint FideCategory (scid::database::ratingT rating);
+    static scid::database::ratingT OpponentElo (scid::database::ratingT player, scid::database::ratingT opponent);
+    static int RatingChange (scid::database::ratingT player, scid::database::uint oppAvg, scid::database::uint percentage,
                              scid::database::uint count);
 };
 

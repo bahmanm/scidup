@@ -538,7 +538,7 @@ scidBaseT::Stats::Stats(const scidBaseT* dbase) {
 	for (gamenumT gnum = 0, n = dbase->numGames(); gnum < n; gnum++) {
 		const IndexEntry* ie = dbase->getIndexEntry(gnum);
 		nResults[ie->GetResult()]++;
-		eloT elo = ie->GetWhiteElo();
+		ratingT elo = ie->GetWhiteElo();
 		if (elo > 0) {
 			nRatings++;
 			sumRatings += elo;

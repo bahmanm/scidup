@@ -678,10 +678,10 @@ OpTable::Add (OpLine * line)
     // The table is full, so if this line is to be added, it must
     // evict an existing line with a smaller average Elo rating.
 
-    scid::database::eloT evictElo = line->AvgElo;
+    scid::database::ratingT evictElo = line->AvgElo;
     int evictIndex = -1;
     for (scid::database::uint i=0; i < NumLines; i++) {
-        scid::database::eloT elo = Line[i]->AvgElo;
+        scid::database::ratingT elo = Line[i]->AvgElo;
         if (elo < evictElo) {
             evictElo = elo;
             evictIndex = i;
@@ -1574,8 +1574,8 @@ OpTable::BestGames (scid::database::DString * dstr, scid::database::uint count, 
 struct playerFreqT {
     const char * name;
     scid::database::uint frequency;
-    scid::database::eloT minElo;
-    scid::database::eloT maxElo;
+    scid::database::ratingT minElo;
+    scid::database::ratingT maxElo;
     scid::database::uint minYear;
     scid::database::uint maxYear;
     scid::database::uint score;
@@ -1620,8 +1620,8 @@ OpTable::TopPlayers (scid::database::DString * dstr, scid::database::colorT c, s
     // Fill in the player frequencies array:
     for (i=0; i < NumLines; i++) {
         scid::database::uint id = 0;
-        scid::database::eloT elo = 0;
-        scid::database::eloT oppElo = 0;
+        scid::database::ratingT elo = 0;
+        scid::database::ratingT oppElo = 0;
         const char * name = NULL;
         scid::database::uint score = 0;
         scid::database::uint year = scid::database::date_GetYear (Line[i]->Date);
@@ -1934,7 +1934,7 @@ OpTable::AvgElo (scid::database::colorT color, scid::database::uint * count, sci
     scid::database::uint sum = 0;
     scid::database::uint score = 0;
     for (scid::database::uint i=0; i < NumLines; i++) {
-        scid::database::eloT elo = (color == scid::database::WHITE ? Line[i]->WhiteElo : Line[i]->BlackElo);
+        scid::database::ratingT elo = (color == scid::database::WHITE ? Line[i]->WhiteElo : Line[i]->BlackElo);
         if (elo > 0) {
             n++;
             sum += elo;

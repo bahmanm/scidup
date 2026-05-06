@@ -88,12 +88,12 @@ private:
  * %Elo YEAR:ELO_1PERIOD,ELO_2PERIOD,ELO_3PERIOD,... YEAR:ELO_1PERIOD,...
  */
 class PlayerElo {
-	std::vector< std::pair<uint16_t, scid::database::eloT> > elo_;
+	std::vector< std::pair<uint16_t, scid::database::ratingT> > elo_;
 
 public:
 	void addEloData(const char* str);
 
-	scid::database::eloT getElo (scid::database::dateT date) const;
+	scid::database::ratingT getElo (scid::database::dateT date) const;
 
 #ifdef SCIDUP_SPELLING_VALIDATE
 	std::string isValid() const;
@@ -124,7 +124,7 @@ public:
 	std::string getLastCountry() const;
 	scid::database::dateT getBirthdate() const;
 	scid::database::dateT getDeathdate() const;
-	scid::database::eloT getPeakRating() const;
+	scid::database::ratingT getPeakRating() const;
 	const char* getComment() const;
 };
 

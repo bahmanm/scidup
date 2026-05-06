@@ -379,7 +379,7 @@ UI_res_t sc_base_gameslist(scid::database::scidBaseT* dbase, UI_handle_t ti, int
 		ginfo.push_back((ie->GetNumHalfMoves() + 1) / 2);
 		ginfo.push_back(tags.white);
 		std::string eloStr;
-		scid::database::eloT welo = ie->GetWhiteElo();
+		scid::database::ratingT welo = ie->GetWhiteElo();
 		if (welo != 0) {
 			eloStr = std::to_string(welo);
 		} else {
@@ -392,7 +392,7 @@ UI_res_t sc_base_gameslist(scid::database::scidBaseT* dbase, UI_handle_t ti, int
 		}
 		ginfo.push_back(eloStr);
 		ginfo.push_back(tags.black);
-		scid::database::eloT belo = ie->GetBlackElo();
+		scid::database::ratingT belo = ie->GetBlackElo();
 		if (belo != 0) {
 			eloStr = std::to_string(belo);
 		} else {
@@ -878,10 +878,10 @@ UI_res_t sc_base_tournaments(const scid::database::scidBaseT* dbase, UI_handle_t
 		tourney.push_back(it->getAvgElo());
 		tourney.push_back(it->getStartGameNum() + 1);
 		const char* name1st = "";
-		scid::database::eloT elo1st = 0;
+		scid::database::ratingT elo1st = 0;
 		double score1st = 0.0;
 		const char* name2nd = "";
-		scid::database::eloT elo2nd = 0;
+		scid::database::ratingT elo2nd = 0;
 		double score2nd = 0.0;
 		if (it->nPlayers() > 0) {
 			const scidup::app::tournaments::Tourney::Player& p = it->getPlayer(0);
@@ -928,8 +928,8 @@ UI_res_t sc_base_player_elo(const scid::database::scidBaseT& dbase, UI_handle_t 
 	if (dbase.getNameBase()->FindExactName(scid::database::NAME_PLAYER, argv[4], &id) != scid::database::OK)
 		return UI_Result(ti, scid::database::OK);
 
-	std::map<unsigned, scid::database::eloT> eloByMonth;
-	auto getPlayerElo = [](auto idx_entry, auto player_id) -> scid::database::eloT {
+	std::map<unsigned, scid::database::ratingT> eloByMonth;
+	auto getPlayerElo = [](auto idx_entry, auto player_id) -> scid::database::ratingT {
 		ASSERT(idx_entry);
 		if (idx_entry->GetWhite() == player_id)
 			return idx_entry->GetWhiteElo();

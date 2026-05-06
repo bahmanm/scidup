@@ -112,7 +112,7 @@ struct scidBaseT {
 	const NameBase* getNameBase() const { return nb_; }
 
 	/// Return the highest elo of the player (in the database's games)
-	eloT peakElo(idNumberT playerID) const {
+	ratingT peakElo(idNumberT playerID) const {
 		if (peakEloCache_.empty()) {
 			for (gamenumT gnum = 0, n = numGames(); gnum < n; gnum++) {
 				IndexEntry const& ie = *getIndexEntry(gnum);
@@ -389,7 +389,7 @@ private:
 	// For each game: idx of duplicate game + 1 (0 if there is no duplicate).
 	std::unique_ptr<gamenumT[]> duplicates_;
 	std::vector<std::pair<std::string, SortCache*>> sortCaches_;
-	mutable std::unordered_map<idNumberT, eloT> peakEloCache_;
+	mutable std::unordered_map<idNumberT, ratingT> peakEloCache_;
 	errorT err_open_ = OK;
 	uint64_t cacheInvalidationToken_ = 0;
 

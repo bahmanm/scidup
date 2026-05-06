@@ -18,8 +18,8 @@ struct TourneyGame {
 	db::dateT eventDate_;
 	db::idNumberT whiteID_;
 	db::idNumberT blackID_;
-	db::eloT wElo_;
-	db::eloT bElo_;
+	db::ratingT wElo_;
+	db::ratingT bElo_;
 	db::dateT date_;
 	db::gamenumT gnum_;
 	db::resultT result_;
@@ -83,7 +83,7 @@ public:
 	struct Player {
 		db::idNumberT nameId;
 		uint16_t score;
-		db::eloT elo;
+		db::ratingT elo;
 
 		bool operator==(db::idNumberT id) const { return nameId == id; }
 	};
@@ -99,7 +99,7 @@ private:
 	db::gamenumT n_games_;
 	unsigned avgElo_;
 
-	Player& add_player(db::idNumberT nameID, db::eloT elo) {
+	Player& add_player(db::idNumberT nameID, db::ratingT elo) {
 		auto it = std::find(players_.begin(), players_.end(), nameID);
 		if (it != players_.end()) {
 			if (elo > it->elo)

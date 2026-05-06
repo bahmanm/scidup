@@ -735,7 +735,7 @@ int Game::setRating(colorT col, const char* ratingType, size_t ratingTypeLen,
 		return std::equal(ratingType, ratingType + ratingTypeLen, rType,
 		                  rType + std::strlen(rType));
 	});
-	byte rType = static_cast<byte>(std::distance(begin, it));
+	auto rType = static_cast<ratingTypeT>(std::distance(begin, it));
 	if (rType >= ratingSz)
 		return -1;
 
@@ -746,10 +746,10 @@ int Game::setRating(colorT col, const char* ratingType, size_t ratingTypeLen,
 		res = 0;
 	}
 	if (col == WHITE) {
-		SetWhiteElo(static_cast<eloT>(elo));
+		SetWhiteElo(static_cast<ratingT>(elo));
 		SetWhiteRatingType(rType);
 	} else {
-		SetBlackElo(static_cast<eloT>(elo));
+		SetBlackElo(static_cast<ratingT>(elo));
 		SetBlackRatingType(rType);
 	}
 	return res;
@@ -2507,7 +2507,7 @@ void Game::LoadStandardTags(IndexEntry const& ie, TagRoster const& tags) {
         assignTagValue("Variant", "Chess960");
 }
 
-eloT
+ratingT
 Game::GetAverageElo () {
 	auto white = WhiteElo;
 	auto black = BlackElo;

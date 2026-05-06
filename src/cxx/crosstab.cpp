@@ -52,7 +52,7 @@ Crosstable::Performance (scid::database::uint oppAvg, scid::database::uint perce
 //    Calculates rating change, given current rating, average rating
 //    and score
 int 
-Crosstable::RatingChange (scid::database::eloT player, scid::database::uint oppAvg, scid::database::uint percentage, scid::database::uint games)
+Crosstable::RatingChange (scid::database::ratingT player, scid::database::uint oppAvg, scid::database::uint percentage, scid::database::uint games)
 {
    scid::database::uint diff = (player > oppAvg) ? player - oppAvg : oppAvg - player;
    int i;
@@ -75,7 +75,7 @@ Crosstable::RatingChange (scid::database::eloT player, scid::database::uint oppA
 //    Ratings under 2251 have no category.
 //    2251-2275 = Cat. 1, 2276-2300 = Cat. 2, etc in blocks of 25.
 scid::database::uint
-Crosstable::FideCategory (scid::database::eloT rating)
+Crosstable::FideCategory (scid::database::ratingT rating)
 {
     if (rating <= 2250) { return 0; }
     return 1 + ((rating - 2251) / 25);
@@ -84,10 +84,10 @@ Crosstable::FideCategory (scid::database::eloT rating)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Crosstable::OpponentElo():
 //      Strips ELO rating if difference is bigger than 350
-scid::database::eloT 
-Crosstable::OpponentElo (scid::database::eloT player, scid::database::eloT opponent)
+scid::database::ratingT
+Crosstable::OpponentElo (scid::database::ratingT player, scid::database::ratingT opponent)
 {
-   const scid::database::eloT Margin = 350;
+   const scid::database::ratingT Margin = 350;
    if (!player)
        return opponent;
    else if (player - opponent > Margin)
@@ -186,7 +186,7 @@ Crosstable::Destroy ()
 //      Adds a player to the crosstable, if that player is not
 //      already listed.
 scid::database::errorT
-Crosstable::AddPlayer (scid::database::idNumberT id, const char * name, scid::database::eloT elo,
+Crosstable::AddPlayer (scid::database::idNumberT id, const char * name, scid::database::ratingT elo,
                        const scidup::spelling::SpellChecker* SpellCheck)
 {
     for (scid::database::uint i = 0; i < PlayerCount; i++) {
@@ -428,7 +428,7 @@ Crosstable::BestMode (void)
 //      Returns the average Elo rating of all players in the
 //      tournament who have a rating. Players with no rating
 //      are ignored.
-scid::database::eloT
+scid::database::ratingT
 Crosstable::AvgRating ()
 {
     scid::database::uint count = 0;
@@ -437,7 +437,7 @@ Crosstable::AvgRating ()
         if (PlayerData[i]->elo > 0) { total += PlayerData[i]->elo; count++; }
     }
     if (count == 0) { return 0; }
-    return (scid::database::eloT) (total / count);
+    return (scid::database::ratingT) (total / count);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

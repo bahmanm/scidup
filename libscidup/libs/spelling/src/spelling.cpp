@@ -197,15 +197,15 @@ scid::database::errorT NameNormalizer::add(Cont& v, const char* s)
 	return scid::database::OK;
 }
 
-scid::database::eloT PlayerElo::getElo(scid::database::dateT date) const
+scid::database::ratingT PlayerElo::getElo(scid::database::dateT date) const
 {
 	scid::database::uint year = scid::database::date_GetYear(date);
 	auto itBegin = std::find_if(elo_.begin(), elo_.end(),
-	                            [&](const std::pair<uint16_t, scid::database::eloT>& e) {
+	                            [&](const std::pair<uint16_t, scid::database::ratingT>& e) {
 		                            return e.first == year;
 	                            });
 	auto itEnd = std::find_if(itBegin, elo_.end(),
-	                          [&](const std::pair<uint16_t, scid::database::eloT>& e) {
+	                          [&](const std::pair<uint16_t, scid::database::ratingT>& e) {
 		                          return e.first != year;
 	                          });
 
@@ -246,7 +246,7 @@ std::string PlayerElo::isValid() const
 
 	auto count = [this](scid::database::uint year) {
 		return std::count_if(this->elo_.begin(), this->elo_.end(),
-			[&](const std::pair<uint16_t, scid::database::eloT>& e) { return e.first == year; });
+			[&](const std::pair<uint16_t, scid::database::ratingT>& e) { return e.first == year; });
 	};
 
 	auto expected = [](scid::database::uint year) {
@@ -700,7 +700,7 @@ void PlayerElo::addEloData(const char * str)
 
         // Now read all the ratings for this year:
         //
-        scid::database::eloT elo = 0;
+        scid::database::ratingT elo = 0;
         while (1) {
             if (isdigit(static_cast<unsigned char>(*str))) {
                 elo = scid::database::strGetUnsigned (str);
@@ -778,7 +778,7 @@ PlayerInfo::getLastCountry() const
 //    Scan the player comment string for the peak rating
 //    field (which is contained in brackets), convert it
 //    to an unsigned integer, and return it.
-scid::database::eloT
+scid::database::ratingT
 PlayerInfo::getPeakRating() const
 {
     const char* s = getComment();

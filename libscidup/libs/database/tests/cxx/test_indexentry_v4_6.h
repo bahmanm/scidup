@@ -70,8 +70,8 @@ class IndexEntry
                                  // VarCounts also stores the result.
     scidup::eco::Code EcoCode;           // ECO code
     scid::database::dateT     Dates;             // Date and EventDate fields.
-    scid::database::eloT      WhiteElo;
-    scid::database::eloT      BlackElo;
+    scid::database::ratingT      WhiteElo;
+    scid::database::ratingT      BlackElo;
     scid::database::matSigT   FinalMatSig;       // material of the final position in the game,
                                  // and the StoredLineCode in the top 8 bits.
     uint16_t  NumHalfMoves;
@@ -211,14 +211,14 @@ public:
                (month << scid::database::MONTH_SHIFT) | day;
     }
     scid::database::resultT GetResult () const { return (VarCounts >> 12); }
-    scid::database::eloT GetWhiteElo () const { return u16_low_12(WhiteElo); }
-    scid::database::eloT GetBlackElo () const { return u16_low_12(BlackElo); }
-    scid::database::eloT GetElo(scid::database::colorT col) const {
+    scid::database::ratingT GetWhiteElo () const { return u16_low_12(WhiteElo); }
+    scid::database::ratingT GetBlackElo () const { return u16_low_12(BlackElo); }
+    scid::database::ratingT GetElo(scid::database::colorT col) const {
         if (col == scid::database::BLACK) return GetBlackElo();
         return GetWhiteElo();
     }
-    scid::database::byte   GetWhiteRatingType () const { return u16_high_4 (WhiteElo); }
-    scid::database::byte   GetBlackRatingType () const { return u16_high_4 (BlackElo); }
+    scid::database::ratingTypeT GetWhiteRatingType () const { return u16_high_4 (WhiteElo); }
+    scid::database::ratingTypeT GetBlackRatingType () const { return u16_high_4 (BlackElo); }
     scidup::eco::Code GetEcoCode() const { return EcoCode; }
     scid::database::ushort GetNumHalfMoves () const { return NumHalfMoves; }
     scid::database::byte   GetRating(const scid::database::NameBase* nb) const;
@@ -243,16 +243,16 @@ public:
     void SetResult (scid::database::resultT res) {
         VarCounts = (VarCounts & 0x0FFF) | (((scid::database::ushort)res) << 12);
     }
-    void SetWhiteElo (scid::database::eloT elo)  {
+    void SetWhiteElo (scid::database::ratingT elo)  {
         WhiteElo = u16_set_low_12(WhiteElo, elo);
     }
-    void SetBlackElo (scid::database::eloT elo)  {
+    void SetBlackElo (scid::database::ratingT elo)  {
         BlackElo = u16_set_low_12 (BlackElo, elo);
     }
-    void SetWhiteRatingType (scid::database::byte b) {
+    void SetWhiteRatingType (scid::database::ratingTypeT b) {
         WhiteElo = u16_set_high_4 (WhiteElo, b);
     }
-    void SetBlackRatingType (scid::database::byte b) {
+    void SetBlackRatingType (scid::database::ratingTypeT b) {
         BlackElo = u16_set_high_4 (BlackElo, b);
     }
     void SetEcoCode(scidup::eco::Code eco) { EcoCode = eco; }

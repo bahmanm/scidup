@@ -49,7 +49,6 @@ enum fileModeT {
 //  Game Information types
 
 typedef uint            gamenumT;
-using eloT = ratingT;
 
 
 

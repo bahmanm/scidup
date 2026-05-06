@@ -193,10 +193,10 @@ class Game {
     dateT       Date;
     dateT       EventDate;
     scidup::eco::Code EcoCode;
-    eloT        WhiteElo;
-    eloT        BlackElo;
-    byte        WhiteRatingType;
-    byte        BlackRatingType;
+    ratingT     WhiteElo;
+    ratingT     BlackElo;
+    ratingTypeT WhiteRatingType;
+    ratingTypeT BlackRatingType;
     resultT     Result;
     char        ScidFlags[22];
 
@@ -456,10 +456,10 @@ public:
     void     SetDate (dateT date)    { Date = date; }
     void     SetEventDate (dateT date)  { EventDate = date; }
     void     SetResult (resultT res) { Result = res; }
-    void     SetWhiteElo (eloT elo)  { WhiteElo = elo; }
-    void     SetBlackElo (eloT elo)  { BlackElo = elo; }
-    void     SetWhiteRatingType (byte b) { WhiteRatingType = b > 7 ? 0 : b; }
-    void     SetBlackRatingType (byte b) { BlackRatingType = b > 7 ? 0 : b; }
+    void     SetWhiteElo (ratingT elo)  { WhiteElo = elo; }
+    void     SetBlackElo (ratingT elo)  { BlackElo = elo; }
+    void     SetWhiteRatingType (ratingTypeT b) { WhiteRatingType = b > 7 ? 0 : b; }
+    void     SetBlackRatingType (ratingTypeT b) { BlackRatingType = b > 7 ? 0 : b; }
     int setRating(colorT col, const char* ratingType, size_t ratingTypeLen,
                   std::pair<const char*, const char*> rating);
     void     SetEco (scidup::eco::Code eco) { EcoCode = eco; }
@@ -472,12 +472,12 @@ public:
     dateT    GetEventDate ()   const { return EventDate; }
     resultT  GetResult ()      const { return Result; }
     std::string_view GetResultStr() const;
-    eloT     GetWhiteElo ()    const { return WhiteElo; }
-    eloT     GetBlackElo ()    const { return BlackElo; }
-    byte     GetWhiteRatingType () const { return WhiteRatingType; }
-    byte     GetBlackRatingType () const { return BlackRatingType; }
+    ratingT     GetWhiteElo ()    const { return WhiteElo; }
+    ratingT     GetBlackElo ()    const { return BlackElo; }
+    ratingTypeT GetWhiteRatingType () const { return WhiteRatingType; }
+    ratingTypeT GetBlackRatingType () const { return BlackRatingType; }
     scidup::eco::Code GetEco() const { return EcoCode; }
-    eloT     GetAverageElo ();
+    ratingT     GetAverageElo ();
 
     // PGN conversion
     void      WriteComment (TextBuffer * tb, const char * preStr,
