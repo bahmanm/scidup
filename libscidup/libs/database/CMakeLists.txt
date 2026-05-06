@@ -92,7 +92,7 @@ target_include_directories(
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/internal" )
 target_link_libraries(
     scidup_database
-    PUBLIC Threads::Threads )
+    PUBLIC ScidUp::Core Threads::Threads )
 
 if( PROJECT_IS_TOP_LEVEL )
     include( CTest )
