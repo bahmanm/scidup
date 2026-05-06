@@ -22,13 +22,27 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace scid::database {
 
-typedef unsigned char pieceT;  // e.g ROOK or WK
-typedef unsigned char colorT;  // WHITE or BLACK
-typedef unsigned char squareT; // e.g. A3
-typedef unsigned char rankT;   // Chess board rank
-typedef unsigned char fyleT;   // Chess board file
+//  General scalar types
+typedef unsigned char byte;      //  8 bit unsigned
+typedef std::uint16_t ushort;    // 16 bit unsigned
+typedef std::uint32_t uint;      // 32 bit unsigned
+typedef std::int32_t  sint;      // 32 bit signed
+
+typedef byte pieceT;        // e.g ROOK or WK
+typedef byte colorT;        // WHITE or BLACK
+typedef byte squareT;       // e.g. A3
+typedef byte rankT;         // Chess board rank
+typedef byte fyleT;         // Chess board file
+typedef byte directionT;    // e.g. UP_LEFT
+typedef byte leftDiagT;     // Up-left diagonals
+typedef byte rightDiagT;    // Up-right diagonals
+typedef byte castleDirT;    // LEFT or RIGHT
+
+const castleDirT QSIDE = 0, KSIDE = 1;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // PIECES COLORS

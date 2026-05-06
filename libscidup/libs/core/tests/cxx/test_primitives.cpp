@@ -6,6 +6,21 @@ namespace {
 
 using namespace scid::database;
 
+TEST(PrimitivesTest, DefinesScalarAndDirectionTypes) {
+	EXPECT_EQ(1U, sizeof(byte));
+	EXPECT_EQ(2U, sizeof(ushort));
+	EXPECT_EQ(4U, sizeof(uint));
+	EXPECT_EQ(4U, sizeof(sint));
+
+	EXPECT_EQ(1U, sizeof(directionT));
+	EXPECT_EQ(1U, sizeof(leftDiagT));
+	EXPECT_EQ(1U, sizeof(rightDiagT));
+	EXPECT_EQ(1U, sizeof(castleDirT));
+
+	EXPECT_EQ(0, QSIDE);
+	EXPECT_EQ(1, KSIDE);
+}
+
 TEST(PrimitivesTest, EncodesPieceColourAndType) {
 	EXPECT_EQ(WHITE, piece_Color(WK));
 	EXPECT_EQ(BLACK, piece_Color(BK));

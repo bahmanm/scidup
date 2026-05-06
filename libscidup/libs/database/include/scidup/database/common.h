@@ -20,7 +20,6 @@
 #include "scidup/database/error.h"
 #include <assert.h>
 #include <cstddef>
-#include <stdint.h>
 #define ASSERT(f) assert(f)
 
 
@@ -34,18 +33,6 @@ const versionT SCID_VERSION = 400;     // Current file format version = 4.0
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // TYPE DEFINITIONS
-
-//  General types
-typedef unsigned char byte;      //  8 bit unsigned
-typedef uint16_t ushort;         // 16 bit unsigned
-typedef uint32_t uint;           // 32 bit unsigned
-typedef int32_t  sint;           // 32 bit signed
-
-//  Chess Types
-typedef byte                    directionT;  // e.g. UP_LEFT
-typedef byte                    leftDiagT;   // Up-left diagonals
-typedef byte                    rightDiagT;  // Up-right diagonals
-typedef byte                    castleDirT;  // LEFT or RIGHT
 
 typedef char    sanStringT [ 10];   // SAN Move Notation
 
@@ -98,10 +85,6 @@ const char RESULT_LONGSTR [4][8] = { "*",  "1-0",  "0-1",  "1/2-1/2" };
 const resultT RESULT_OPPOSITE [4] = {
     RESULT_None, RESULT_Black, RESULT_White, RESULT_Draw
 };
-
-
-const castleDirT  QSIDE = 0,  KSIDE = 1;
-
 
 // Minor piece definitions, used for searching by material only:
 const pieceT  WM = 16, BM = 17;
