@@ -14,26 +14,6 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/eco/book.h" )
 
 add_library(
-    scidup_eco_code
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/code.cpp" )
-add_library(
-    ScidUp::EcoCode
-    ALIAS scidup_eco_code )
-target_sources(
-    scidup_eco_code
-    PUBLIC
-        FILE_SET public_headers
-        TYPE HEADERS
-        BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include"
-        FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/eco/code.h" )
-target_compile_features(
-    scidup_eco_code
-    PUBLIC cxx_std_20 )
-target_include_directories(
-    scidup_eco_code
-    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
-
-add_library(
     scidup_eco
     ${SCIDUP_ECO_SOURCES} )
 add_library(
