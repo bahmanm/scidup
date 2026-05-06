@@ -9,6 +9,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/attacks.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/board.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/fullmove.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/movelist.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/move_predicates.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/primitives.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/square_collections.h"

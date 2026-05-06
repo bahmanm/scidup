@@ -1,21 +1,7 @@
-//////////////////////////////////////////////////////////////////////
-//
-//  FILE:       movelist.h
-//              MoveList class
-//
-//  Part of:    Scid (Shane's Chess Information Database)
-//  Version:    3.4
-//
-//  Notice:     Copyright (c) 1999-2002 Shane Hudson.  All rights reserved.
-//              Copyright (c) 2016 Fulvio Benini.  All rights reserved.
-//
-//  Author:     Shane Hudson (sgh@users.sourceforge.net)
-//
-//////////////////////////////////////////////////////////////////////
-
-
-#ifndef SCID_MOVELIST_H
-#define SCID_MOVELIST_H
+/** @file
+ * Generated move records and fixed-capacity move lists.
+ */
+#pragma once
 
 #include "scidup/core/board.h"
 
@@ -134,4 +120,3 @@ public:
 
 
 } // namespace scid::database
-#endif // SCID_MOVELIST_H

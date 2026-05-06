@@ -25,7 +25,7 @@
 #define SCID_MOVETREE_H
 
 #include "scidup/database/common.h"
-#include "scidup/database/movelist.h"
+#include "scidup/core/movelist.h"
 #include <string>
 
 namespace scid::database {

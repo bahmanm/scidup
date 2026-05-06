@@ -17,8 +17,8 @@
 #define SCID_POSITION_H
 
 #include <cstddef>
+#include "scidup/core/movelist.h"
 #include "scidup/database/common.h"
-#include "scidup/database/movelist.h"
 #include <stdio.h>
 #include <string>
 #include <string_view>
