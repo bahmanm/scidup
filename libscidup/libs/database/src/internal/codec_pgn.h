@@ -27,7 +27,7 @@
 
 #include "codec_proxy.h"
 #include "pgnparse_impl.h"
-#include "scidup/database/filebuf.h"
+#include "filebuf.h"
 #include "scidup/database/pgn_encode.h"
 #include <algorithm>
 #include <cstring>

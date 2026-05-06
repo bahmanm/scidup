@@ -81,7 +81,6 @@ These headers are public today because current consumers and tests need them,
 but they should be treated as lower-level building blocks:
 
 - `bytebuf.h`: transient byte buffer views and encoded tag helpers
-- `filebuf.h`: file buffer helpers
 - `containers.h`: custom containers used by game and database storage
 - `common.h`: database file-format aliases, result constants and compatibility
   assertions

@@ -14,7 +14,7 @@
 * along with Scid. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "scidup/database/filebuf.h"
+#include "filebuf.h"
 #include <algorithm>
 #include <gtest/gtest.h>
 #include <memory>

@@ -19,15 +19,12 @@
 
 #include <scidup/spelling/spelling.h>
 #include "scidup/database/date.h"
-#include "scidup/database/filebuf.h"
 #include "scidup/database/misc.h"
 
 #include <algorithm>
 #include <cctype>
-#include <iterator>
-#ifdef SCIDUP_SPELLING_VALIDATE
 #include <fstream>
-#endif
+#include <iterator>
 
 namespace {
 
@@ -600,34 +597,52 @@ scid::database::errorT SpellChecker::read(const char* filename, const scid::data
 	ASSERT(filename != NULL);
 	ASSERT(strings_.empty());
 
-	// Open the file and get the file size.
-	scid::database::Filebuf file;
-	std::streamsize fileSize = -1;
-	if (file.open(filename, std::ios::in | std::ios::binary | std::ios::ate) != 0) {
-		fileSize = file.pubseekoff(0, std::ios::cur, std::ios::in);
-		file.pubseekoff(0, std::ios::beg, std::ios::in);
+	// Open the file and read it into memory; Parser mutates each line.
+	std::ifstream file(filename, std::ios::binary | std::ios::ate);
+	if (!file) return scid::database::ERROR_FileOpen;
+
+	const std::streamoff fileSize = file.tellg();
+	if (fileSize < 0) return scid::database::ERROR_FileOpen;
+	file.seekg(0, std::ios::beg);
+
+	std::vector<char> fileBuffer(static_cast<size_t>(fileSize));
+	if (!fileBuffer.empty() &&
+	    !file.read(fileBuffer.data(), static_cast<std::streamsize>(fileBuffer.size()))) {
+		return scid::database::ERROR_FileRead;
 	}
-	if (fileSize == -1) return scid::database::ERROR_FileOpen;
 
 	SpellingValidate validate(filename, *this);
 
-	// Parse the file lines
-	std::vector<char> lineBuffer(fileSize + 1);
-	size_t nRead;
+	// Parse the file lines.
+	std::vector<char> lineBuffer;
 	scid::database::uint report_i = 0;
 	std::streamsize report_done = 0;
 	SpellingLoader loader(*this, validate);
-	while ((nRead = file.getline(lineBuffer.data(), lineBuffer.size())) != 0) {
-		report_done += nRead;
+	for (size_t lineStart = 0; lineStart < fileBuffer.size();) {
+		auto lineEnd = std::find(fileBuffer.begin() + lineStart,
+		                         fileBuffer.end(), '\n');
+		const auto nextLine = lineEnd == fileBuffer.end()
+		                          ? fileBuffer.size()
+		                          : static_cast<size_t>(
+		                                std::distance(fileBuffer.begin(), lineEnd)) +
+		                                1;
+
+		lineBuffer.assign(fileBuffer.begin() + lineStart, lineEnd);
+		lineBuffer.push_back('\0');
+
+		report_done += static_cast<std::streamsize>(nextLine - lineStart);
 		if ((++report_i % 10000) == 0) {
-			if (!progress.report(report_done, fileSize))
+			if (!progress.report(static_cast<size_t>(report_done),
+			                     static_cast<size_t>(fileSize)))
 				return scid::database::ERROR_UserCancel;
 		}
 
 		scid::database::errorT err = loader.load(Parser(lineBuffer.data()));
 		if (err != scid::database::OK) return err;
+
+		lineStart = nextLine;
 	}
-	if (report_done != fileSize || file.sgetc() != EOF) return scid::database::ERROR_FileRead;
+	if (report_done != fileSize) return scid::database::ERROR_FileRead;
 
 	// Success:
 	if (pElo_.size() > 0) {
