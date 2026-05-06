@@ -185,12 +185,6 @@ char transPiecesChar(char c) {
   return ret;
 }
 
-const char * ratingTypeNames [8] = {
-    "Elo", "Rating", "Rapid", "ICCF", "USCF", "DWZ", "ECF",
-    // End of array marker:
-    NULL
-};
-
 typedef Game * GamePtr;
 
 

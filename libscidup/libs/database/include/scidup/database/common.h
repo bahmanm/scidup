@@ -18,6 +18,7 @@
 
 #include "scidup/core/board.h"
 #include "scidup/core/error.h"
+#include "scidup/core/rating.h"
 #include <assert.h>
 #include <cstddef>
 #define ASSERT(f) assert(f)
@@ -48,19 +49,7 @@ enum fileModeT {
 //  Game Information types
 
 typedef uint            gamenumT;
-typedef ushort          eloT;
-
-// Rating types:
-
-const byte RATING_Elo = 0;
-const byte RATING_Rating = 1;
-const byte RATING_Rapid = 2;
-const byte RATING_ICCF = 3;
-const byte RATING_USCF = 4;
-const byte RATING_DWZ = 5;
-const byte RATING_BCF = 6;
-
-extern const char * ratingTypeNames [8];   // Defined in game.cpp
+using eloT = ratingT;
 
 
 
