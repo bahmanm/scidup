@@ -74,11 +74,11 @@ TEST(Test_PgnParser, UTF8_char) {
 	auto pgnUTF8 = readFile(gameUTF8);
 	ASSERT_TRUE(pgnUTF8.size() > 0);
 
-	Game game;
-	PgnParseLog errors;
-	ASSERT_TRUE(pgnParseGame(pgnUTF8.data(), pgnUTF8.size(), game, errors));
+	scid::database::Game game;
+	scid::database::PgnParseLog errors;
+	ASSERT_TRUE(scid::database::pgnParseGame(pgnUTF8.data(), pgnUTF8.size(), game, errors));
 	EXPECT_TRUE(errors.log.empty());
-	game.SetPgnFormat(PGN_FORMAT_Plain);
+	game.SetPgnFormat(scid::database::PGN_FORMAT_Plain);
 	game.ResetPgnStyle(PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
 	                   PGN_STYLE_SCIDFLAGS);
 	auto pgn = game.WriteToPGN(75, true);
@@ -91,11 +91,11 @@ TEST(Test_PgnParser, Latin1_char) {
 	auto pgnLatin1 = readFile(gameLatin1);
 	ASSERT_TRUE(pgnLatin1.size() > 0);
 
-	Game game;
-	PgnParseLog errors;
-	ASSERT_TRUE(pgnParseGame(pgnLatin1.data(), pgnLatin1.size(), game, errors));
+	scid::database::Game game;
+	scid::database::PgnParseLog errors;
+	ASSERT_TRUE(scid::database::pgnParseGame(pgnLatin1.data(), pgnLatin1.size(), game, errors));
 	EXPECT_TRUE(errors.log.empty());
-	game.SetPgnFormat(PGN_FORMAT_Plain);
+	game.SetPgnFormat(scid::database::PGN_FORMAT_Plain);
 	game.ResetPgnStyle(PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
 	                   PGN_STYLE_SCIDFLAGS);
 	auto pgn = game.WriteToPGN(75, true);
@@ -148,14 +148,14 @@ TEST(Test_PgnParser, EPD) {
 	// clang-format on
 
 	char buf[128];
-	Game game;
-	game.SetPgnFormat(PGN_FORMAT_Plain);
+	scid::database::Game game;
+	game.SetPgnFormat(scid::database::PGN_FORMAT_Plain);
 	game.ResetPgnStyle(PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS);
 
 	auto len = std::strlen(pgn);
-	PgnParseLog parseLog;
+	scid::database::PgnParseLog parseLog;
 	game.Clear();
-	ASSERT_TRUE(pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
+	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                         game, parseLog));
 	EXPECT_TRUE(parseLog.log.empty());
 	game.GetCurrentPos()->PrintFEN(buf, sizeof(buf));
@@ -164,7 +164,7 @@ TEST(Test_PgnParser, EPD) {
 	EXPECT_STREQ("0 1;", game.GetMoveComment());
 
 	game.Clear();
-	ASSERT_TRUE(pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
+	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                         game, parseLog));
 	EXPECT_TRUE(parseLog.log.empty());
 	game.GetCurrentPos()->PrintFEN(buf, sizeof(buf));
@@ -174,7 +174,7 @@ TEST(Test_PgnParser, EPD) {
 	EXPECT_STREQ("", game.GetMoveComment());
 
 	game.Clear();
-	ASSERT_TRUE(pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
+	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                         game, parseLog));
 	EXPECT_TRUE(parseLog.log.empty());
 	game.GetCurrentPos()->PrintFEN(buf, sizeof(buf));
@@ -183,7 +183,7 @@ TEST(Test_PgnParser, EPD) {
 	             game.GetMoveComment());
 
 	game.Clear();
-	ASSERT_TRUE(pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
+	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                         game, parseLog));
 	EXPECT_TRUE(parseLog.log.empty());
 	game.GetCurrentPos()->PrintFEN(buf, sizeof(buf));
@@ -191,27 +191,27 @@ TEST(Test_PgnParser, EPD) {
 	EXPECT_STREQ("bm Bc7 Rf3+", game.GetMoveComment());
 
 	game.Clear();
-	ASSERT_FALSE(pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
+	ASSERT_FALSE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                          game, parseLog));
 	EXPECT_FALSE(parseLog.log.empty());
 	EXPECT_NE(game.GetMoveComment(), nullptr);
 
 	game.Clear();
 	std::string last_log = parseLog.log;
-	ASSERT_TRUE(pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
+	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                         game, parseLog));
 	EXPECT_TRUE(parseLog.log.size() > last_log.size());
 	EXPECT_STREQ(expected_game, game.WriteToPGN(1024, true).first);
 
 	game.Clear();
 	last_log = parseLog.log;
-	ASSERT_TRUE(pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
+	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                         game, parseLog));
 	EXPECT_STREQ(last_log.c_str(), parseLog.log.c_str());
 	EXPECT_STREQ("Partial game", game.GetEventStr());
 
 	game.Clear();
-	ASSERT_FALSE(pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
+	ASSERT_FALSE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                          game, parseLog));
 	ASSERT_EQ(parseLog.n_bytes, len);
 }
@@ -242,9 +242,9 @@ TEST(Test_PgnParser, is_PGNsymbol) {
 
 	for (int i = 0; i < 256; i++) {
 		EXPECT_EQ(chars[i],
-		          pgn_impl::is_PGNsymbol(static_cast<signed char>(i)));
+		          scid::database::pgn_impl::is_PGNsymbol(static_cast<signed char>(i)));
 		EXPECT_EQ(chars[i],
-		          pgn_impl::is_PGNsymbol(static_cast<unsigned char>(i)));
+		          scid::database::pgn_impl::is_PGNsymbol(static_cast<unsigned char>(i)));
 	}
 }
 
@@ -261,7 +261,7 @@ TEST(Test_PgnParser, pgn_trim) {
 	for (auto str : tests) {
 		auto str_view = std::make_pair(str, str + std::strlen(str));
 		size_t n_newlines = std::count(str_view.first, str_view.second, '\n');
-		EXPECT_EQ(n_newlines, pgn::trim(str_view));
+		EXPECT_EQ(n_newlines, scid::database::pgn::trim(str_view));
 		EXPECT_TRUE(std::equal(str_view.first, str_view.second, tests[0]));
 	}
 }
@@ -269,7 +269,8 @@ TEST(Test_PgnParser, pgn_trim) {
 TEST(Test_PgnParser, date_parsePGNTag) {
 	auto test = [](const char* str, const char* expected) {
 		char buf[16];
-		date_DecodeToString(date_parsePGNTag(str, std::strlen(str)), buf);
+		scid::database::date_DecodeToString(
+		    scid::database::date_parsePGNTag(str, std::strlen(str)), buf);
 		EXPECT_STREQ(buf, expected);
 	};
 
@@ -385,13 +386,13 @@ TEST(Test_PgnParser, TagPairs) {
 			src.push_back('\n');
 		}
 
-		PgnParseLog parseLog;
-		Game game;
-		game.SetPgnFormat(PGN_FORMAT_Plain);
+		scid::database::PgnParseLog parseLog;
+		scid::database::Game game;
+		game.SetPgnFormat(scid::database::PGN_FORMAT_Plain);
 		game.ResetPgnStyle(PGN_STYLE_TAGS | PGN_STYLE_VARS |
 		                   PGN_STYLE_COMMENTS);
 
-		ASSERT_TRUE(pgnParseGame(src.c_str(), src.size(), game, parseLog));
+		ASSERT_TRUE(scid::database::pgnParseGame(src.c_str(), src.size(), game, parseLog));
 		ASSERT_EQ(!parseLog.log.size(), !errors);
 		auto pgn = game.WriteToPGN(75, true);
 		src.assign(pgn.first, pgn.second);

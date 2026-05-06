@@ -31,6 +31,8 @@
 #include <string>
 #include <vector>
 
+namespace scid::database {
+
 class Progress;
 
 /**
@@ -165,4 +167,6 @@ private:
 	                        NameBase* nb) = 0;
 };
 
+
+} // namespace scid::database
 #endif

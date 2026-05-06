@@ -36,6 +36,8 @@
  * Errors are stored as <line number, error message> pairs; if the maximum
  * number of errors is reached tokens are ignored until the end of the Game.
  */
+namespace scid::database {
+
 class PgnVisitor {
 	Game& game;
 	std::vector<std::pair<size_t, std::string>> errors_;
@@ -402,4 +404,6 @@ inline bool pgnParseGame(const char* input, size_t inputLen, Game& game,
 	return true;
 }
 
+
+} // namespace scid::database
 #endif // idndef SCID_PGNPARSE_H

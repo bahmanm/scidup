@@ -30,36 +30,36 @@
 
 namespace {
 
-fileModeT fmodes[] = {FMODE_Create, FMODE_ReadOnly, FMODE_WriteOnly,
-                      FMODE_Both};
+scid::database::fileModeT fmodes[] = {scid::database::FMODE_Create, scid::database::FMODE_ReadOnly, scid::database::FMODE_WriteOnly,
+                      scid::database::FMODE_Both};
 const char* filename = "codecbase";
 
-ICodecDatabase::Codec codecs[] = {ICodecDatabase::MEMORY, ICodecDatabase::SCID4,
-                                  ICodecDatabase::SCID5, ICodecDatabase::PGN};
+scid::database::ICodecDatabase::Codec codecs[] = {scid::database::ICodecDatabase::MEMORY, scid::database::ICodecDatabase::SCID4,
+                                  scid::database::ICodecDatabase::SCID5, scid::database::ICodecDatabase::PGN};
 
-std::vector<std::pair<ICodecDatabase::Codec, std::string>> unsupportedVec = {
-    {ICodecDatabase::MEMORY, "FMODE" + std::to_string(FMODE_None)},
-    {ICodecDatabase::MEMORY, "FMODE" + std::to_string(FMODE_ReadOnly)},
-    {ICodecDatabase::MEMORY, "FMODE" + std::to_string(FMODE_WriteOnly)},
-    {ICodecDatabase::MEMORY, "FMODE" + std::to_string(FMODE_Both)},
+std::vector<std::pair<scid::database::ICodecDatabase::Codec, std::string>> unsupportedVec = {
+    {scid::database::ICodecDatabase::MEMORY, "FMODE" + std::to_string(scid::database::FMODE_None)},
+    {scid::database::ICodecDatabase::MEMORY, "FMODE" + std::to_string(scid::database::FMODE_ReadOnly)},
+    {scid::database::ICodecDatabase::MEMORY, "FMODE" + std::to_string(scid::database::FMODE_WriteOnly)},
+    {scid::database::ICodecDatabase::MEMORY, "FMODE" + std::to_string(scid::database::FMODE_Both)},
 
-    {ICodecDatabase::SCID4, "FMODE" + std::to_string(FMODE_None)},
-    {ICodecDatabase::SCID4, "FMODE" + std::to_string(FMODE_WriteOnly)},
-    {ICodecDatabase::SCID4, "empty_filename"},
+    {scid::database::ICodecDatabase::SCID4, "FMODE" + std::to_string(scid::database::FMODE_None)},
+    {scid::database::ICodecDatabase::SCID4, "FMODE" + std::to_string(scid::database::FMODE_WriteOnly)},
+    {scid::database::ICodecDatabase::SCID4, "empty_filename"},
 
-    {ICodecDatabase::SCID5, "FMODE" + std::to_string(FMODE_None)},
-    {ICodecDatabase::SCID5, "FMODE" + std::to_string(FMODE_WriteOnly)},
-    {ICodecDatabase::SCID5, "empty_filename"},
+    {scid::database::ICodecDatabase::SCID5, "FMODE" + std::to_string(scid::database::FMODE_None)},
+    {scid::database::ICodecDatabase::SCID5, "FMODE" + std::to_string(scid::database::FMODE_WriteOnly)},
+    {scid::database::ICodecDatabase::SCID5, "empty_filename"},
 
-    {ICodecDatabase::PGN, "FMODE" + std::to_string(FMODE_None)},
-    {ICodecDatabase::PGN, "saveGame_game"},
-    {ICodecDatabase::PGN, "empty_filename"}};
+    {scid::database::ICodecDatabase::PGN, "FMODE" + std::to_string(scid::database::FMODE_None)},
+    {scid::database::ICodecDatabase::PGN, "saveGame_game"},
+    {scid::database::ICodecDatabase::PGN, "empty_filename"}};
 
 class Supports {
-	ICodecDatabase::Codec dbtype_;
+	scid::database::ICodecDatabase::Codec dbtype_;
 
 public:
-	Supports(ICodecDatabase::Codec dbtype) : dbtype_(dbtype) {}
+	Supports(scid::database::ICodecDatabase::Codec dbtype) : dbtype_(dbtype) {}
 
 	bool operator()(const std::string& feature) const {
 		auto it = std::find(unsupportedVec.begin(), unsupportedVec.end(),
@@ -69,9 +69,9 @@ public:
 };
 
 template <int nGames, int maxMoves, int maxCommentLen> class GameGenerator {
-	typedef std::vector<std::unique_ptr<Game>> Vec;
+	typedef std::vector<std::unique_ptr<scid::database::Game>> Vec;
 	Vec v_;
-	std::vector<std::vector<byte>> encoded_;
+	std::vector<std::vector<scid::database::byte>> encoded_;
 	std::mt19937 mt_;
 
 public:
@@ -85,14 +85,14 @@ public:
 		return v_;
 	}
 
-	const std::vector<std::vector<byte>>& getNative() {
+	const std::vector<std::vector<scid::database::byte>>& getNative() {
 		if (encoded_.empty())
 			get();
 
 		return encoded_;
 	}
 
-	void cmp(ICodecDatabase* codec, const Index& idx) {
+	void cmp(scid::database::ICodecDatabase* codec, const scid::database::Index& idx) {
 		auto encoded = getNative();
 		ASSERT_EQ(encoded.size(), size_t(idx.GetNumGames()));
 		int g = 0;
@@ -114,12 +114,12 @@ private:
 		}
 	}
 
-	std::unique_ptr<Game> genGame() {
-		auto res = std::unique_ptr<Game>(new Game);
+	std::unique_ptr<scid::database::Game> genGame() {
+		auto res = std::unique_ptr<scid::database::Game>(new scid::database::Game);
 		res->GetCurrentPos()->StdStart();
-		MoveList mlist;
+		scid::database::MoveList mlist;
 		for (auto i = rand(0, maxMoves); i > 0; --i) {
-			res->GetCurrentPos()->GenerateMoves(&mlist, EMPTY, GEN_ALL_MOVES,
+			res->GetCurrentPos()->GenerateMoves(&mlist, scid::database::EMPTY, scid::database::GEN_ALL_MOVES,
 			                                    true);
 			if (mlist.Size() == 0)
 				break;
@@ -158,12 +158,12 @@ private:
 GameGenerator<1000, 2000, 300> gameGenerator;
 
 template <typename Oper>
-void makeDatabase(ICodecDatabase::Codec dbtype, const char* test, Oper op) {
+void makeDatabase(scid::database::ICodecDatabase::Codec dbtype, const char* test, Oper op) {
 	Supports supports(dbtype);
 	if (!supports(test))
 		return;
 
-	fileModeT fMode = FMODE_Create;
+	scid::database::fileModeT fMode = scid::database::FMODE_Create;
 
 	struct Cleanup {
 		std::vector<std::string> filenames;
@@ -176,30 +176,30 @@ void makeDatabase(ICodecDatabase::Codec dbtype, const char* test, Oper op) {
 	} cleanup;
 
 	{
-		Index idx;
-		NameBase nb;
-		auto err = ICodecDatabase::open(dbtype, fMode, filename, Progress(),
+		scid::database::Index idx;
+		scid::database::NameBase nb;
+		auto err = scid::database::ICodecDatabase::open(dbtype, fMode, filename, scid::database::Progress(),
 		                                &idx, &nb);
-		auto codec = std::unique_ptr<ICodecDatabase>(err.first);
+		auto codec = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
 		ASSERT_NE(nullptr, codec);
 		cleanup.filenames = codec->getFilenames();
-		ASSERT_EQ(OK, err.second);
+		ASSERT_EQ(scid::database::OK, err.second);
 
 		op(codec.get(), idx, nb);
 
 		ASSERT_EQ(gameGenerator.get().size(), size_t(idx.GetNumGames()));
-		ASSERT_EQ(OK, codec->flush());
+		ASSERT_EQ(scid::database::OK, codec->flush());
 		gameGenerator.cmp(codec.get(), idx);
 	}
 
-	if (supports("FMODE" + std::to_string(FMODE_ReadOnly))) {
-		Index idx;
-		NameBase nb;
-		auto err = ICodecDatabase::open(dbtype, FMODE_ReadOnly, filename,
-		                                Progress(), &idx, &nb);
-		auto codec = std::unique_ptr<ICodecDatabase>(err.first);
+	if (supports("FMODE" + std::to_string(scid::database::FMODE_ReadOnly))) {
+		scid::database::Index idx;
+		scid::database::NameBase nb;
+		auto err = scid::database::ICodecDatabase::open(dbtype, scid::database::FMODE_ReadOnly, filename,
+		                                scid::database::Progress(), &idx, &nb);
+		auto codec = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
 		ASSERT_NE(nullptr, codec);
-		ASSERT_EQ(OK, err.second);
+		ASSERT_EQ(scid::database::OK, err.second);
 		ASSERT_EQ(gameGenerator.get().size(), size_t(idx.GetNumGames()));
 
 		gameGenerator.cmp(codec.get(), idx);
@@ -208,12 +208,12 @@ void makeDatabase(ICodecDatabase::Codec dbtype, const char* test, Oper op) {
 
 } // end of anonymous namespace
 
-class Test_Codec : public ::testing::TestWithParam<ICodecDatabase::Codec> {};
+class Test_Codec : public ::testing::TestWithParam<scid::database::ICodecDatabase::Codec> {};
 
-// Try to get a ICodecDatabase pointer for each supported file mode, then test
+// Try to get a scid::database::ICodecDatabase pointer for each supported file mode, then test
 // the consistency of getType() and getFilenames().
 TEST_P(Test_Codec, fileModeT) {
-	ICodecDatabase::Codec dbtype = GetParam();
+	scid::database::ICodecDatabase::Codec dbtype = GetParam();
 	Supports supports(dbtype);
 
 	struct Cleanup {
@@ -227,11 +227,11 @@ TEST_P(Test_Codec, fileModeT) {
 	} cleanup;
 
 	for (auto& fmode : fmodes) {
-		Index idx;
-		NameBase nb;
-		auto err = ICodecDatabase::open(dbtype, fmode, filename, Progress(),
+		scid::database::Index idx;
+		scid::database::NameBase nb;
+		auto err = scid::database::ICodecDatabase::open(dbtype, fmode, filename, scid::database::Progress(),
 		                                &idx, &nb);
-		auto codec = std::unique_ptr<ICodecDatabase>(err.first);
+		auto codec = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
 
 		if (supports("FMODE" + std::to_string(fmode))) {
 			ASSERT_NE(nullptr, codec);
@@ -248,18 +248,18 @@ TEST_P(Test_Codec, fileModeT) {
 }
 
 TEST_P(Test_Codec, create_emptyfilename) {
-	ICodecDatabase::Codec dbtype = GetParam();
+	scid::database::ICodecDatabase::Codec dbtype = GetParam();
 	Supports supports(dbtype);
 
-	if (!supports("FMODE" + std::to_string(FMODE_Create))) {
+	if (!supports("FMODE" + std::to_string(scid::database::FMODE_Create))) {
 		return;
 	}
 
-	Index idx;
-	NameBase nb;
-	auto err = ICodecDatabase::open(dbtype, FMODE_Create, "", Progress(), &idx,
+	scid::database::Index idx;
+	scid::database::NameBase nb;
+	auto err = scid::database::ICodecDatabase::open(dbtype, scid::database::FMODE_Create, "", scid::database::Progress(), &idx,
 	                                &nb);
-	auto codec = std::unique_ptr<ICodecDatabase>(err.first);
+	auto codec = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
 
 	if (!supports("empty_filename")) {
 		EXPECT_EQ(nullptr, codec);
@@ -275,10 +275,10 @@ TEST_P(Test_Codec, create_emptyfilename) {
 // first. This test mimic the process perfomed to finalize the compaction of a
 // database.
 TEST_P(Test_Codec, rename) {
-	ICodecDatabase::Codec dbtype = GetParam();
+	scid::database::ICodecDatabase::Codec dbtype = GetParam();
 	Supports supports(dbtype);
 
-	if (!supports("FMODE" + std::to_string(FMODE_Create))) {
+	if (!supports("FMODE" + std::to_string(scid::database::FMODE_Create))) {
 		return;
 	}
 	struct Cleanup {
@@ -295,22 +295,22 @@ TEST_P(Test_Codec, rename) {
 	} cleanup;
 
 	{
-		Index idx1, idx2;
-		NameBase nb1, nb2;
-		auto err = ICodecDatabase::open(dbtype, FMODE_Create, filename,
-		                                Progress(), &idx1, &nb1);
-		auto codec1 = std::unique_ptr<ICodecDatabase>(err.first);
-		EXPECT_EQ(OK, codec1->flush());
+		scid::database::Index idx1, idx2;
+		scid::database::NameBase nb1, nb2;
+		auto err = scid::database::ICodecDatabase::open(dbtype, scid::database::FMODE_Create, filename,
+		                                scid::database::Progress(), &idx1, &nb1);
+		auto codec1 = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
+		EXPECT_EQ(scid::database::OK, codec1->flush());
 		ASSERT_NE(nullptr, codec1);
-		ASSERT_EQ(OK, err.second);
+		ASSERT_EQ(scid::database::OK, err.second);
 
 		std::string renamed_name = std::string(filename) + "__renamed__";
-		err = ICodecDatabase::open(dbtype, FMODE_Create, renamed_name.c_str(),
-		                           Progress(), &idx2, &nb2);
-		auto codec2 = std::unique_ptr<ICodecDatabase>(err.first);
-		EXPECT_EQ(OK, codec2->flush());
+		err = scid::database::ICodecDatabase::open(dbtype, scid::database::FMODE_Create, renamed_name.c_str(),
+		                           scid::database::Progress(), &idx2, &nb2);
+		auto codec2 = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
+		EXPECT_EQ(scid::database::OK, codec2->flush());
 		ASSERT_NE(nullptr, codec2);
-		ASSERT_EQ(OK, err.second);
+		ASSERT_EQ(scid::database::OK, err.second);
 
 		cleanup.filenames1 = codec1->getFilenames();
 		cleanup.filenames2 = codec2->getFilenames();
@@ -326,14 +326,14 @@ TEST_P(Test_Codec, rename) {
 		EXPECT_EQ(0, std::rename(s2, s1));
 	}
 
-	if (supports("FMODE" + std::to_string(FMODE_ReadOnly))) {
-		Index idx_reopen;
-		NameBase nb_reopen;
-		auto err = ICodecDatabase::open(dbtype, FMODE_ReadOnly, filename,
-		                                Progress(), &idx_reopen, &nb_reopen);
-		auto codec3 = std::unique_ptr<ICodecDatabase>(err.first);
+	if (supports("FMODE" + std::to_string(scid::database::FMODE_ReadOnly))) {
+		scid::database::Index idx_reopen;
+		scid::database::NameBase nb_reopen;
+		auto err = scid::database::ICodecDatabase::open(dbtype, scid::database::FMODE_ReadOnly, filename,
+		                                scid::database::Progress(), &idx_reopen, &nb_reopen);
+		auto codec3 = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
 		ASSERT_NE(nullptr, codec3);
-		ASSERT_EQ(OK, err.second);
+		ASSERT_EQ(scid::database::OK, err.second);
 
 		auto filenames3 = codec3->getFilenames();
 		EXPECT_TRUE(cleanup.filenames1 == filenames3);

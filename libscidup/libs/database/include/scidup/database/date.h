@@ -33,6 +33,8 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //  CONSTANTS and MACROS:
 
+namespace scid::database {
+
 typedef uint32_t    dateT;
 
 const dateT ZERO_DATE = 0;
@@ -205,6 +207,8 @@ inline dateT date_parsePGNTag(std::pair<const char*, const char*> str) {
 	return date_parsePGNTag(str.first, std::distance(str.first, str.second));
 }
 
+
+} // namespace scid::database
 #endif   // #ifndef SCID_DATE_H
 
 //////////////////////////////////////////////////////////////////////

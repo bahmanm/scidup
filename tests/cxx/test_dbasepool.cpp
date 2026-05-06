@@ -46,13 +46,13 @@ protected:
 		return (tempDir_ / name).string();
 	}
 
-	scidBaseT* openScid4(const std::string& filename) {
+	scid::database::scidBaseT* openScid4(const std::string& filename) {
 		auto* slot = DBasePool::getFreeSlot();
 		EXPECT_NE(nullptr, slot);
 		if (slot == nullptr)
 			return nullptr;
 
-		EXPECT_EQ(OK, slot->open("SCID4", FMODE_Create, filename.c_str()));
+		EXPECT_EQ(scid::database::OK, slot->open("SCID4", scid::database::FMODE_Create, filename.c_str()));
 		return slot;
 	}
 
@@ -121,7 +121,7 @@ TEST_F(Test_DBasePool, closed_slot_is_reused) {
 	EXPECT_EQ(first, reused);
 
 	auto thirdPath = dbPath("third_db");
-	ASSERT_EQ(OK, reused->open("SCID4", FMODE_Create, thirdPath.c_str()));
+	ASSERT_EQ(scid::database::OK, reused->open("SCID4", scid::database::FMODE_Create, thirdPath.c_str()));
 	EXPECT_EQ(1, DBasePool::find(reused->getFileName().c_str()));
 	EXPECT_EQ(2, DBasePool::find(second->getFileName().c_str()));
 }

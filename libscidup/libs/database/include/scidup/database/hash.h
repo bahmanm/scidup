@@ -14,6 +14,8 @@
 
 #pragma once
 
+namespace scid::database {
+
 class HashVal {
     unsigned hashVal_[16][64] = {};
 public:
@@ -200,3 +202,5 @@ constexpr inline unsigned stdStartHash = [] {
     HASH (h,BK,E8);  HASH (h,BB,F8);  HASH (h,BN,G8);  HASH (h,BR,H8);
     return h;
 }();
+
+} // namespace scid::database

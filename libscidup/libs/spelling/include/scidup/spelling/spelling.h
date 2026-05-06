@@ -72,12 +72,12 @@ public:
 	 * %Suffix "wrong suffix" "correct suffix"
 	 * Return: OK if successful
 	 */
-	errorT addPrefix(const char* s);
-	errorT addInfix (const char* s);
-	errorT addSuffix(const char* s);
+	scid::database::errorT addPrefix(const char* s);
+	scid::database::errorT addInfix (const char* s);
+	scid::database::errorT addSuffix(const char* s);
 
 private:
-	errorT add(Cont& v, const char* s);
+	scid::database::errorT add(Cont& v, const char* s);
 };
 
 
@@ -88,12 +88,12 @@ private:
  * %Elo YEAR:ELO_1PERIOD,ELO_2PERIOD,ELO_3PERIOD,... YEAR:ELO_1PERIOD,...
  */
 class PlayerElo {
-	std::vector< std::pair<uint16_t, eloT> > elo_;
+	std::vector< std::pair<uint16_t, scid::database::eloT> > elo_;
 
 public:
 	void addEloData(const char* str);
 
-	eloT getElo (dateT date) const;
+	scid::database::eloT getElo (scid::database::dateT date) const;
 
 #ifdef SCIDUP_SPELLING_VALIDATE
 	std::string isValid() const;
@@ -122,9 +122,9 @@ public:
 	PlayerInfo(const char* s) : comment_(s) {}
 	const char* getTitle() const;
 	std::string getLastCountry() const;
-	dateT getBirthdate() const;
-	dateT getDeathdate() const;
-	eloT getPeakRating() const;
+	scid::database::dateT getBirthdate() const;
+	scid::database::dateT getDeathdate() const;
+	scid::database::eloT getPeakRating() const;
 	const char* getComment() const;
 };
 
@@ -147,10 +147,10 @@ class SpellChecker {
 	};
 	typedef std::vector<Idx>::const_iterator IdxIt;
 
-	NameNormalizer general_[NUM_NAME_TYPES];
-	std::string excludeChars_[NUM_NAME_TYPES];
-	std::vector<Idx> idx_[NUM_NAME_TYPES];
-	std::vector<const char*> names_[NUM_NAME_TYPES];
+	NameNormalizer general_[scid::database::NUM_NAME_TYPES];
+	std::string excludeChars_[scid::database::NUM_NAME_TYPES];
+	std::vector<Idx> idx_[scid::database::NUM_NAME_TYPES];
+	std::vector<const char*> names_[scid::database::NUM_NAME_TYPES];
 	std::vector<PlayerInfo> pInfo_;
 	std::vector<PlayerElo>  pElo_;
 	std::deque<std::string> strings_;
@@ -166,8 +166,8 @@ public:
 	 * - OK and a pointer to the new object.
 	 * - on error the ERROR_*CODE* and nullptr.
 	 */
-	static std::pair<errorT, std::unique_ptr<SpellChecker>> create(
-	    const char* filename, const Progress& progress);
+	static std::pair<scid::database::errorT, std::unique_ptr<SpellChecker>> create(
+	    const char* filename, const scid::database::Progress& progress);
 
 	/**
 	 * find() - search for correct names
@@ -181,9 +181,9 @@ public:
 	 * contain only the corresponding correct name, otherwise will contain all
 	 * the correct names that have @name as a prefix.
 	 */
-	std::vector<const char*> find(const nameT& nt, const char* name, uint nMaxRes = 10) const;
+	std::vector<const char*> find(const scid::database::nameT& nt, const char* name, scid::database::uint nMaxRes = 10) const;
 
-	const NameNormalizer& getGeneralCorrections(const nameT& nt) const;
+	const NameNormalizer& getGeneralCorrections(const scid::database::nameT& nt) const;
 
 	/**
 	* SpellChecker::getPlayerInfo() - get extra info about a player
@@ -204,20 +204,20 @@ public:
 
 	bool hasEloData() const;
 
-	size_t numCorrectNames(const nameT& nt) const;
+	size_t numCorrectNames(const scid::database::nameT& nt) const;
 
 private:
 	SpellChecker() = default;
 	SpellChecker(const SpellChecker&) = delete;
 	SpellChecker& operator=(const SpellChecker&) = delete;
 
-	errorT read(const char* filename, const Progress& progress);
+	scid::database::errorT read(const char* filename, const scid::database::Progress& progress);
 
 	const char* storeString(const char* s);
 
-	std::string normalizeAndTransform(const nameT& nt, const char* s) const;
+	std::string normalizeAndTransform(const scid::database::nameT& nt, const char* s) const;
 
-	std::pair<IdxIt, IdxIt> idxFind(const nameT& nt, const char* prefix) const;
+	std::pair<IdxIt, IdxIt> idxFind(const scid::database::nameT& nt, const char* prefix) const;
 
 	std::pair<IdxIt, IdxIt> idxFindPlayer(const char* prefix) const;
 

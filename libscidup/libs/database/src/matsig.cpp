@@ -23,6 +23,8 @@
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // matsig_makeString(): Make a string representation of a matsig.
+namespace scid::database {
+
 std::string
 matsig_makeString (matSigT m)
 {
@@ -199,3 +201,5 @@ hpSig_Final (const byte * changeList)
 //  EOF: matsig.cpp
 //////////////////////////////////////////////////////////////////////
 
+
+} // namespace scid::database

@@ -23,6 +23,8 @@
 #include <string>
 #include <string_view>
 
+namespace scid::database {
+
 class DString;
 class SquareSet;
 class SquareList;
@@ -304,6 +306,8 @@ private:
     }
 };
 
+
+} // namespace scid::database
 #endif  // SCID_POSITION_H
 
 //////////////////////////////////////////////////////////////////////

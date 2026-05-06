@@ -13,16 +13,16 @@
 namespace scidup::app::editor {
 
 struct State {
-	std::unique_ptr<Game> game = std::make_unique<Game>();
-	std::optional<gamenumT> loadedGameId;
+	std::unique_ptr<scid::database::Game> game = std::make_unique<scid::database::Game>();
+	std::optional<scid::database::gamenumT> loadedGameId;
 	bool dirty = false;
-	UndoRedo<Game, 100> history;
-	std::pair<Game*, bool> deprecatedPushPop{nullptr, false};
+	scid::database::UndoRedo<scid::database::Game, 100> history;
+	std::pair<scid::database::Game*, bool> deprecatedPushPop{nullptr, false};
 
 	~State() { delete deprecatedPushPop.first; }
 
 	void reset() {
-		game = std::make_unique<Game>();
+		game = std::make_unique<scid::database::Game>();
 		loadedGameId.reset();
 		dirty = false;
 		history.clear();
@@ -33,11 +33,11 @@ struct State {
 
 namespace detail {
 inline auto& states() {
-	static std::unordered_map<scidBaseT*, std::unique_ptr<State>> perBaseStates;
+	static std::unordered_map<scid::database::scidBaseT*, std::unique_ptr<State>> perBaseStates;
 	return perBaseStates;
 }
 
-inline State& stateFor(scidBaseT& base) {
+inline State& stateFor(scid::database::scidBaseT& base) {
 	auto& allStates = states();
 	auto& slot = allStates[&base];
 	if (!slot)
@@ -46,28 +46,28 @@ inline State& stateFor(scidBaseT& base) {
 }
 } // namespace detail
 
-inline void reset(scidBaseT& base) { detail::stateFor(base).reset(); }
+inline void reset(scid::database::scidBaseT& base) { detail::stateFor(base).reset(); }
 
-inline void release(scidBaseT& base) { detail::states().erase(&base); }
+inline void release(scid::database::scidBaseT& base) { detail::states().erase(&base); }
 
 class GameSession {
 public:
-	explicit GameSession(scidBaseT& base) : base_(&base) {}
+	explicit GameSession(scid::database::scidBaseT& base) : base_(&base) {}
 
-	Game& game() const { return *state().game; }
+	scid::database::Game& game() const { return *state().game; }
 
-	std::optional<gamenumT> loadedGameId() const { return state().loadedGameId; }
+	std::optional<scid::database::gamenumT> loadedGameId() const { return state().loadedGameId; }
 
-	const IndexEntry* loadedIndexEntry() const {
+	const scid::database::IndexEntry* loadedIndexEntry() const {
 		const auto gameId = loadedGameId();
 		return gameId ? base_->getIndexEntry(*gameId) : nullptr;
 	}
 
-	void setLoadedGameId(std::optional<gamenumT> gameId) const {
+	void setLoadedGameId(std::optional<scid::database::gamenumT> gameId) const {
 		state().loadedGameId = gameId;
 	}
 
-	bool matchesLoadedGame(gamenumT gameId) const {
+	bool matchesLoadedGame(scid::database::gamenumT gameId) const {
 		const auto loaded = loadedGameId();
 		return loaded && *loaded == gameId;
 	}
@@ -90,7 +90,7 @@ public:
 
 	void resetToNewGame() const { state().reset(); }
 
-	void replace(Game* game, std::optional<gamenumT> gameId, bool dirty) const {
+	void replace(scid::database::Game* game, std::optional<scid::database::gamenumT> gameId, bool dirty) const {
 		auto& s = state();
 		s.game.reset(game);
 		s.loadedGameId = gameId;
@@ -100,11 +100,11 @@ public:
 		s.deprecatedPushPop = {nullptr, false};
 	}
 
-	errorT load(gamenumT gameId) const {
+	scid::database::errorT load(scid::database::gamenumT gameId) const {
 		auto& s = state();
 		s.history.clear();
 		const auto err = base_->loadGame(gameId, *s.game);
-		if (err != OK)
+		if (err != scid::database::OK)
 			return err;
 
 		if (base_->defaultFilterGet(gameId) > 0) {
@@ -114,28 +114,28 @@ public:
 		}
 		s.loadedGameId = gameId;
 		s.dirty = false;
-		return OK;
+		return scid::database::OK;
 	}
 
-	errorT undoAll() const {
+	scid::database::errorT undoAll() const {
 		auto& s = state();
 		s.dirty = false;
 		s.history.clear();
 		if (!s.loadedGameId) {
 			s.game->Clear();
-			return OK;
+			return scid::database::OK;
 		}
 
 		const auto err = base_->loadGame(*s.loadedGameId, *s.game);
-		if (err != OK)
+		if (err != scid::database::OK)
 			return err;
 		s.game->MoveToStart();
-		return OK;
+		return scid::database::OK;
 	}
 
 	void push(bool copy) const {
 		auto& s = state();
-		Game* next = copy ? s.game->clone() : new Game;
+		scid::database::Game* next = copy ? s.game->clone() : new scid::database::Game;
 		if (s.deprecatedPushPop.first) {
 			delete s.deprecatedPushPop.first;
 		}
@@ -156,10 +156,10 @@ public:
 
 private:
 	State& state() const { return detail::stateFor(*base_); }
-	scidBaseT* base_;
+	scid::database::scidBaseT* base_;
 };
 
-inline GameSession gameSession(scidBaseT& base) { return GameSession(base); }
+inline GameSession gameSession(scid::database::scidBaseT& base) { return GameSession(base); }
 
 } // namespace scidup::app::editor
 

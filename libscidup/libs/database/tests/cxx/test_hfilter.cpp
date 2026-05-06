@@ -26,13 +26,13 @@
 
 namespace {
 
-const std::vector<byte> data1 = {1, 4, 255, 0, 0, 13};
-const std::vector<byte> data2 = {43, 87, 0, 1, 0, 0};
-const std::vector<byte> dataEmpty = {0, 0, 0, 0, 0, 0};
-const std::vector<byte> dataFull = {1, 1, 1, 1, 1, 1};
-const std::vector<byte> noGames;
+const std::vector<scid::database::byte> data1 = {1, 4, 255, 0, 0, 13};
+const std::vector<scid::database::byte> data2 = {43, 87, 0, 1, 0, 0};
+const std::vector<scid::database::byte> dataEmpty = {0, 0, 0, 0, 0, 0};
+const std::vector<scid::database::byte> dataFull = {1, 1, 1, 1, 1, 1};
+const std::vector<scid::database::byte> noGames;
 
-using testParam = std::pair<const std::vector<byte>*, const std::vector<byte>*>;
+using testParam = std::pair<const std::vector<scid::database::byte>*, const std::vector<scid::database::byte>*>;
 testParam test_cases[] = { // clang-format off
     {&data1, nullptr},     {&data1, &data2},     {&data1, &dataEmpty}, {&data1, &dataFull},
     {&data2, nullptr},     {&data2, &data1},     {&data2, &dataEmpty}, {&data2, &dataFull},
@@ -44,13 +44,13 @@ testParam test_cases[] = { // clang-format off
 } // namespace
 
 TEST(Test_Filter, Resize) {
-	Filter filter(10);
+	scid::database::Filter filter(10);
 	ASSERT_EQ(10, filter.Count());
 	ASSERT_EQ(10, filter.Size());
 	ASSERT_EQ(nullptr, filter.data());
 
-	auto test_resize = [&](gamenumT size, gamenumT expectCount,
-	                       gamenumT expectSize) {
+	auto test_resize = [&](scid::database::gamenumT size, scid::database::gamenumT expectCount,
+	                       scid::database::gamenumT expectSize) {
 		filter.Resize(size);
 		ASSERT_EQ(expectCount, filter.Count());
 		ASSERT_EQ(expectSize, filter.Size());
@@ -81,25 +81,25 @@ TEST(Test_Filter, Resize) {
 }
 
 TEST(Test_Filter, Filter) {
-	Filter filter(10);
+	scid::database::Filter filter(10);
 
-	for (byte val : {1, 0, 10, 1, 10}) {
+	for (scid::database::byte val : {1, 0, 10, 1, 10}) {
 		filter.Fill(val);
 		ASSERT_EQ(10, filter.Size());
-		byte expect = (val == 0) ? 0 : 10;
+		scid::database::byte expect = (val == 0) ? 0 : 10;
 		ASSERT_EQ(expect, filter.Count());
 	}
 }
 
 class Test_HFilter : public ::testing::TestWithParam<testParam> {
 protected:
-	const std::vector<byte>* main_;
-	const std::vector<byte>* mask_;
+	const std::vector<scid::database::byte>* main_;
+	const std::vector<scid::database::byte>* mask_;
 	size_t mainSz_;
 	size_t maskSz_;
 	size_t numGames_;
-	std::map<gamenumT, uint8_t> equivMap_;
-	std::set<gamenumT> equivInv_;
+	std::map<scid::database::gamenumT, uint8_t> equivMap_;
+	std::set<scid::database::gamenumT> equivInv_;
 
 	virtual void SetUp() {
 		auto param = GetParam();
@@ -114,37 +114,37 @@ protected:
 			maskSz_ = numGames_ - std::count(mask_->begin(), mask_->end(), 0);
 
 		auto mask = (mask_ != nullptr) ? mask_ : main_;
-		gamenumT i = 0;
+		scid::database::gamenumT i = 0;
 		std::transform(main_->begin(), main_->end(), mask->begin(),
 		               std::inserter(equivMap_, equivMap_.end()),
 		               [&i](auto& main, auto& mask) {
 			               auto key = i++;
 			               uint8_t val = (main == 0) ? 0 : mask;
 			               if (val-- == 0)
-				               key = std::numeric_limits<gamenumT>::max();
+				               key = std::numeric_limits<scid::database::gamenumT>::max();
 			               return std::make_pair(key, val);
 		               });
-		equivMap_.erase(std::numeric_limits<gamenumT>::max());
+		equivMap_.erase(std::numeric_limits<scid::database::gamenumT>::max());
 
-		for (gamenumT gnum = 0; gnum < numGames_; gnum++) {
+		for (scid::database::gamenumT gnum = 0; gnum < numGames_; gnum++) {
 			if (equivMap_.end() == equivMap_.find(gnum))
 				equivInv_.insert(gnum);
 		}
 	}
 
-	template <typename T> std::unique_ptr<Filter> makeFilter(const T* data) {
-		std::unique_ptr<Filter> res = nullptr;
+	template <typename T> std::unique_ptr<scid::database::Filter> makeFilter(const T* data) {
+		std::unique_ptr<scid::database::Filter> res = nullptr;
 		if (data != nullptr) {
-			auto n = static_cast<gamenumT>(data->size());
-			res = std::make_unique<Filter>(n);
-			for (gamenumT i = 0; i < n; ++i) {
+			auto n = static_cast<scid::database::gamenumT>(data->size());
+			res = std::make_unique<scid::database::Filter>(n);
+			for (scid::database::gamenumT i = 0; i < n; ++i) {
 				res->Set(i, data->operator[](i));
 			}
 		}
 		return res;
 	}
 
-	template <typename T> bool equal(const T& map, const HFilter& filter) {
+	template <typename T> bool equal(const T& map, const scid::database::HFilter& filter) {
 		return std::equal(map.begin(), map.end(), filter->begin(),
 		                  filter->end(), [&](auto& a, auto& b) {
 			                  auto value = filter->get(b) - 1;
@@ -156,19 +156,19 @@ protected:
 TEST_P(Test_HFilter, hfilter_constFunc) {
 	auto f1 = makeFilter(main_);
 	auto f2 = makeFilter(mask_);
-	HFilter filter(f1.get(), f2.get());
+	scid::database::HFilter filter(f1.get(), f2.get());
 	ASSERT_TRUE(filter != 0);
 	ASSERT_FALSE(filter == 0);
 
 	EXPECT_EQ(equivMap_.size(), filter->size());
 	EXPECT_EQ(equivInv_.size(), filter->sizeInverted());
-	EXPECT_EQ(equivInv_.size(), HFilterInverted(filter).size());
+	EXPECT_EQ(equivInv_.size(), scid::database::HFilterInverted(filter).size());
 	EXPECT_TRUE(equal(equivMap_, filter));
 
-	// Test HFilter::get()
-	for (gamenumT gnum = 0; gnum < numGames_; gnum++) {
+	// Test scid::database::HFilter::get()
+	for (scid::database::gamenumT gnum = 0; gnum < numGames_; gnum++) {
 		auto val = filter->get(gnum);
-		ASSERT_EQ(static_cast<const HFilter&>(filter)->get(gnum), val);
+		ASSERT_EQ(static_cast<const scid::database::HFilter&>(filter)->get(gnum), val);
 		if (val == 0) {
 			EXPECT_EQ(equivMap_.end(), equivMap_.find(gnum));
 			EXPECT_NE(equivInv_.end(), equivInv_.find(gnum));
@@ -180,9 +180,9 @@ TEST_P(Test_HFilter, hfilter_constFunc) {
 		}
 	}
 
-	// Test HFilter::begin() and HFilter::end()
-	HFilter::const_iterator it = filter->begin();
-	for (gamenumT gnum = 0; gnum < numGames_; gnum++) {
+	// Test scid::database::HFilter::begin() and scid::database::HFilter::end()
+	scid::database::HFilter::const_iterator it = filter->begin();
+	for (scid::database::gamenumT gnum = 0; gnum < numGames_; gnum++) {
 		if (filter->get(gnum) == 0)
 			continue;
 
@@ -192,9 +192,9 @@ TEST_P(Test_HFilter, hfilter_constFunc) {
 	}
 	EXPECT_FALSE(it != filter->end());
 
-	// Test HFilter::beginInverted() and HFilter::endInverted()
-	HFilter::const_iterator itInv = filter->beginInverted();
-	for (gamenumT gnum = 0; gnum < numGames_; gnum++) {
+	// Test scid::database::HFilter::beginInverted() and scid::database::HFilter::endInverted()
+	scid::database::HFilter::const_iterator itInv = filter->beginInverted();
+	for (scid::database::gamenumT gnum = 0; gnum < numGames_; gnum++) {
 		if (filter->get(gnum) != 0)
 			continue;
 
@@ -214,7 +214,7 @@ TEST_P(Test_HFilter, hfilter_constFunc) {
 	EXPECT_FALSE(itMap != equivMap_.end());
 
 	auto itMapInv = equivInv_.begin();
-	for (auto& gnum : HFilterInverted(filter)) {
+	for (auto& gnum : scid::database::HFilterInverted(filter)) {
 		EXPECT_EQ(*itMapInv, gnum);
 		EXPECT_EQ(0, filter->get(gnum));
 		++itMapInv;
@@ -222,14 +222,14 @@ TEST_P(Test_HFilter, hfilter_constFunc) {
 	EXPECT_FALSE(itMapInv != equivInv_.end());
 
 	// Test STL algorithms
-	std::vector<gamenumT> included;
+	std::vector<scid::database::gamenumT> included;
 	std::copy(filter->begin(), filter->end(), std::back_inserter(included));
-	std::vector<gamenumT> excluded;
-	HFilterInverted inverted(filter);
+	std::vector<scid::database::gamenumT> excluded;
+	scid::database::HFilterInverted inverted(filter);
 	std::copy(inverted.begin(), inverted.end(), std::back_inserter(excluded));
 	auto itIn = included.begin();
 	auto itOut = excluded.begin();
-	for (gamenumT gnum = 0; gnum < numGames_; gnum++) {
+	for (scid::database::gamenumT gnum = 0; gnum < numGames_; gnum++) {
 		if (equivMap_.find(gnum) != equivMap_.end())
 			EXPECT_EQ(gnum, *itIn++);
 		else
@@ -240,10 +240,10 @@ TEST_P(Test_HFilter, hfilter_constFunc) {
 }
 
 TEST_P(Test_HFilter, hfilter_nonconstFunc) {
-	{ // Test HFilter::clear()
+	{ // Test scid::database::HFilter::clear()
 		auto f1 = makeFilter(main_);
 		auto f2 = makeFilter(mask_);
-		HFilter filter(f1.get(), f2.get());
+		scid::database::HFilter filter(f1.get(), f2.get());
 		ASSERT_TRUE(filter != 0);
 		ASSERT_FALSE(filter == 0);
 
@@ -253,19 +253,19 @@ TEST_P(Test_HFilter, hfilter_nonconstFunc) {
 			// filter is empty and should not enter into this loop
 			EXPECT_NE(gnum, gnum);
 		}
-		for (gamenumT gnum = 0; gnum < numGames_; gnum++) {
+		for (scid::database::gamenumT gnum = 0; gnum < numGames_; gnum++) {
 			EXPECT_EQ(0, filter->get(gnum));
 		}
 	}
-	{ // Test HFilter::erase()
+	{ // Test scid::database::HFilter::erase()
 		auto f1 = makeFilter(main_);
 		auto f2 = makeFilter(mask_);
-		HFilter filter(f1.get(), f2.get());
+		scid::database::HFilter filter(f1.get(), f2.get());
 		ASSERT_TRUE(filter != 0);
 		ASSERT_FALSE(filter == 0);
 
 		auto mapCopy = equivMap_;
-		for (gamenumT gnum = 0; gnum < numGames_; gnum++) {
+		for (scid::database::gamenumT gnum = 0; gnum < numGames_; gnum++) {
 			filter->erase(gnum);
 			mapCopy.erase(gnum);
 			EXPECT_EQ(0, filter->get(gnum));
@@ -273,15 +273,15 @@ TEST_P(Test_HFilter, hfilter_nonconstFunc) {
 			EXPECT_TRUE(equal(mapCopy, filter));
 		}
 	}
-	{ // Test HFilter::includeAll()
+	{ // Test scid::database::HFilter::includeAll()
 		auto f1 = makeFilter(main_);
 		auto f2 = makeFilter(mask_);
-		HFilter filter(f1.get(), f2.get());
+		scid::database::HFilter filter(f1.get(), f2.get());
 		ASSERT_TRUE(filter != 0);
 		ASSERT_FALSE(filter == 0);
 
 		filter->includeAll();
-		for (gamenumT gnum = 0; gnum < numGames_; gnum++) {
+		for (scid::database::gamenumT gnum = 0; gnum < numGames_; gnum++) {
 			auto expected = (mask_ == nullptr) ? 1 : (*mask_)[gnum];
 			EXPECT_EQ(expected, filter->get(gnum));
 		}
@@ -290,15 +290,15 @@ TEST_P(Test_HFilter, hfilter_nonconstFunc) {
 		else
 			EXPECT_EQ(maskSz_, filter->size());
 	}
-	{ // Test HFilter::insert_or_assign(gnum, 0)
+	{ // Test scid::database::HFilter::insert_or_assign(gnum, 0)
 		auto f1 = makeFilter(main_);
 		auto f2 = makeFilter(mask_);
-		HFilter filter(f1.get(), f2.get());
+		scid::database::HFilter filter(f1.get(), f2.get());
 		ASSERT_TRUE(filter != 0);
 		ASSERT_FALSE(filter == 0);
 
 		auto mapCopy = equivMap_;
-		for (gamenumT gnum = 0; gnum < numGames_; gnum++) {
+		for (scid::database::gamenumT gnum = 0; gnum < numGames_; gnum++) {
 			filter->insert_or_assign(gnum, 0);
 			uint8_t expected = (mask_ == nullptr) ? 1 : (*mask_)[gnum];
 			if (expected == 0)
@@ -310,14 +310,14 @@ TEST_P(Test_HFilter, hfilter_nonconstFunc) {
 			EXPECT_TRUE(equal(mapCopy, filter));
 		}
 	}
-	{ // Test HFilter::insert_or_assign()
+	{ // Test scid::database::HFilter::insert_or_assign()
 		auto tmp = makeFilter(&dataEmpty);
 		auto f2 = makeFilter(mask_);
-		HFilter filter(tmp.get(), f2.get());
+		scid::database::HFilter filter(tmp.get(), f2.get());
 		ASSERT_TRUE(filter != 0);
 		ASSERT_FALSE(filter == 0);
 
-		for (gamenumT gnum = 0; gnum < numGames_; gnum++) {
+		for (scid::database::gamenumT gnum = 0; gnum < numGames_; gnum++) {
 			uint8_t value = (*main_)[gnum];
 			if (value == 0)
 				filter->erase(gnum);
@@ -327,13 +327,13 @@ TEST_P(Test_HFilter, hfilter_nonconstFunc) {
 		EXPECT_EQ(equivMap_.size(), filter.size());
 		EXPECT_TRUE(equal(equivMap_, filter));
 	}
-	{ // Test HFilter::insert_or_assign() with mask == nullptr
+	{ // Test scid::database::HFilter::insert_or_assign() with mask == nullptr
 		auto tmp = makeFilter(&dataEmpty);
-		HFilter filter(tmp.get());
+		scid::database::HFilter filter(tmp.get());
 		ASSERT_TRUE(filter != 0);
 		ASSERT_FALSE(filter == 0);
 
-		for (gamenumT gnum = 0; gnum < numGames_; gnum++) {
+		for (scid::database::gamenumT gnum = 0; gnum < numGames_; gnum++) {
 			uint8_t value = (*main_)[gnum];
 			if (mask_ != nullptr && value != 0)
 				value = (*mask_)[gnum];
@@ -345,15 +345,15 @@ TEST_P(Test_HFilter, hfilter_nonconstFunc) {
 		EXPECT_EQ(equivMap_.size(), filter.size());
 		EXPECT_TRUE(equal(equivMap_, filter));
 	}
-	{ // Test HFilter::set(gnum, 0)
+	{ // Test scid::database::HFilter::set(gnum, 0)
 		auto f1 = makeFilter(main_);
 		auto f2 = makeFilter(mask_);
-		HFilter filter(f1.get(), f2.get());
+		scid::database::HFilter filter(f1.get(), f2.get());
 		ASSERT_TRUE(filter != 0);
 		ASSERT_FALSE(filter == 0);
 
 		auto mapCopy = equivMap_;
-		for (gamenumT gnum = 0; gnum < numGames_; gnum++) {
+		for (scid::database::gamenumT gnum = 0; gnum < numGames_; gnum++) {
 			filter->set(gnum, 0);
 			mapCopy.erase(gnum);
 			EXPECT_EQ(mapCopy.size(), filter->size());
@@ -361,15 +361,15 @@ TEST_P(Test_HFilter, hfilter_nonconstFunc) {
 			EXPECT_EQ(0, filter->get(gnum));
 		}
 	}
-	{ // Test HFilter::set(gnum, 1)
+	{ // Test scid::database::HFilter::set(gnum, 1)
 		auto f1 = makeFilter(main_);
 		auto f2 = makeFilter(mask_);
-		HFilter filter(f1.get(), f2.get());
+		scid::database::HFilter filter(f1.get(), f2.get());
 		ASSERT_TRUE(filter != 0);
 		ASSERT_FALSE(filter == 0);
 
 		auto mapCopy = equivMap_;
-		for (gamenumT gnum = 0; gnum < numGames_; gnum++) {
+		for (scid::database::gamenumT gnum = 0; gnum < numGames_; gnum++) {
 			uint8_t value = 1;
 			filter->set(gnum, value);
 			uint8_t expected = (mask_ == nullptr) ? value : (*mask_)[gnum];

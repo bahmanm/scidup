@@ -28,9 +28,21 @@
 #include <string_view>
 #include <unordered_map>
 #include <vector>
+
+namespace scid::database {
 class Position;
+}
 
 namespace scidup::eco {
+
+using Code = scid::database::ecoT;
+using Error = scid::database::errorT;
+using Position = scid::database::Position;
+
+inline constexpr Code ECO_None = scid::database::ECO_None;
+inline constexpr Error OK = scid::database::OK;
+inline constexpr Error ERROR_FileOpen = scid::database::ERROR_FileOpen;
+inline constexpr Error ERROR_Corrupt = scid::database::ERROR_Corrupt;
 
 /**
  * A Book is a collection of chess positions, each with the corresponding ECO
@@ -66,10 +78,10 @@ public:
 	 * C50a "Italian Game"  1.e4 e5 2.Nf3 Nc6 3.Bc4 *
 	 * @param path: the path of the file to be read.
 	 * @returns
-	 * - on success, a @e std::pair containing OK and the newly created object.
+	 * - on success, a @e std::pair containing scidup::eco::OK and the newly created object.
 	 * - on failure, a @e std::pair containing an error code and an empty object.
 	 */
-	static std::pair<errorT, Book> load(const std::filesystem::path& path);
+	static std::pair<Error, Book> load(const std::filesystem::path& path);
 
 	/**
 	 * Retrieve an ECO string containing the ECO code and the mnemonic name.
@@ -81,9 +93,9 @@ public:
 	/**
 	 * Retrieve the ECO code of a position.
 	 * @param position: the position to search for.
-	 * @returns the corresponding ECO code or ECO_None if not found.
+	 * @returns the corresponding ECO code or scidup::eco::ECO_None if not found.
 	 */
-	ecoT findEco(const Position& position) const;
+	Code findEco(const Position& position) const;
 
 	std::vector<Line> linesWithPrefix(std::string_view ecoPrefix) const;
 

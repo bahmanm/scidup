@@ -20,7 +20,7 @@
 
 // Expected differences in rating according to performance
 // from 50% to 100%:
-const uint perf_elodiff [51] = {
+const scid::database::uint perf_elodiff [51] = {
     /* 50 - 59 */   0,   7,  14,  21,  29,  36,  43,  50,  57,  65,
     /* 60 - 69 */  72,  80,  87,  95, 102, 110, 117, 125, 133, 141,
     /* 70 - 79 */ 149, 158, 166, 175, 184, 193, 202, 211, 220, 230,
@@ -33,11 +33,11 @@ const uint perf_elodiff [51] = {
 // Crosstable::Performance():
 //    Given an average of opponents ratings and a percentage score,
 //    returns the performance rating.
-uint
-Crosstable::Performance (uint oppAvg, uint percentage)
+scid::database::uint
+Crosstable::Performance (scid::database::uint oppAvg, scid::database::uint percentage)
 {
     if (percentage > 100) { percentage = 100; }
-    uint performance = oppAvg;
+    scid::database::uint performance = oppAvg;
     if (percentage < 50) {
         performance -= perf_elodiff [50 - percentage];
     } else {
@@ -52,14 +52,14 @@ Crosstable::Performance (uint oppAvg, uint percentage)
 //    Calculates rating change, given current rating, average rating
 //    and score
 int 
-Crosstable::RatingChange (eloT player, uint oppAvg, uint percentage, uint games)
+Crosstable::RatingChange (scid::database::eloT player, scid::database::uint oppAvg, scid::database::uint percentage, scid::database::uint games)
 {
-   uint diff = (player > oppAvg) ? player - oppAvg : oppAvg - player;
+   scid::database::uint diff = (player > oppAvg) ? player - oppAvg : oppAvg - player;
    int i;
    for (i=0; i<50 ; i++)
        if (diff <= perf_elodiff[i])
            break;
-   uint expected = i;
+   scid::database::uint expected = i;
    if (player > oppAvg) 
        expected += 50;
    else 
@@ -74,8 +74,8 @@ Crosstable::RatingChange (eloT player, uint oppAvg, uint percentage, uint games)
 //    returns the FIDE Category of the tournament.
 //    Ratings under 2251 have no category.
 //    2251-2275 = Cat. 1, 2276-2300 = Cat. 2, etc in blocks of 25.
-uint
-Crosstable::FideCategory (eloT rating)
+scid::database::uint
+Crosstable::FideCategory (scid::database::eloT rating)
 {
     if (rating <= 2250) { return 0; }
     return 1 + ((rating - 2251) / 25);
@@ -84,10 +84,10 @@ Crosstable::FideCategory (eloT rating)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Crosstable::OpponentElo():
 //      Strips ELO rating if difference is bigger than 350
-eloT 
-Crosstable::OpponentElo (eloT player, eloT opponent)
+scid::database::eloT 
+Crosstable::OpponentElo (scid::database::eloT player, scid::database::eloT opponent)
 {
-   const eloT Margin = 350;
+   const scid::database::eloT Margin = 350;
    if (!player)
        return opponent;
    else if (player - opponent > Margin)
@@ -114,7 +114,7 @@ comparePlayerData (playerDataT * p1, playerDataT * p2, crosstableSortT option)
         break;
 
     case CROSSTABLE_SortName:
-        result = strCompare(p1->name, p2->name);
+        result = scid::database::strCompare(p1->name, p2->name);
         break;
 
     case CROSSTABLE_SortElo:
@@ -122,7 +122,7 @@ comparePlayerData (playerDataT * p1, playerDataT * p2, crosstableSortT option)
         break;
 
     case CROSSTABLE_SortCountry:
-        result = strCompare(p1->country, p2->country);
+        result = scid::database::strCompare(p1->country, p2->country);
         break;
     }
     return result;
@@ -132,15 +132,15 @@ comparePlayerData (playerDataT * p1, playerDataT * p2, crosstableSortT option)
 void
 Crosstable::Init ()
 {
-    for (uint pcount=0; pcount < CROSSTABLE_MaxPlayers; pcount++) {
+    for (scid::database::uint pcount=0; pcount < CROSSTABLE_MaxPlayers; pcount++) {
         PlayerData[pcount] = NULL;
     }
     GameCount = 0;
     PlayerCount = 0;
     MaxClashes = 0;
     MaxRound = 0;
-    FirstDate = ZERO_DATE;
-    for (resultT r = 0; r < NUM_RESULT_TYPES; r++) { ResultCount[r] = 0; }
+    FirstDate = scid::database::ZERO_DATE;
+    for (scid::database::resultT r = 0; r < scid::database::NUM_RESULT_TYPES; r++) { ResultCount[r] = 0; }
     ShowTitles = ShowElos = ShowFlags = ShowCountries = ShowTallies = SwissColors = ShowAges = true;
     ShowTiebreaks = false;
     SortOption = CROSSTABLE_SortScore;
@@ -152,7 +152,7 @@ Crosstable::Init ()
 void
 Crosstable::Destroy ()
 {
-    for (uint player=0; player < PlayerCount; player++) {
+    for (scid::database::uint player=0; player < PlayerCount; player++) {
         playerDataT * pdata = PlayerData[player];
         ASSERT (pdata != NULL);
 #ifdef WINCE
@@ -160,7 +160,7 @@ Crosstable::Destroy ()
 #else
         delete[] pdata->name;
 #endif
-        for (uint opp = 0; opp < PlayerCount; opp++) {
+        for (scid::database::uint opp = 0; opp < PlayerCount; opp++) {
             clashT * clash = pdata->firstClash[opp];
             while (clash != NULL) {
                 clashT * temp = clash->next;
@@ -185,24 +185,24 @@ Crosstable::Destroy ()
 // Crosstable::AddPlayer()
 //      Adds a player to the crosstable, if that player is not
 //      already listed.
-errorT
-Crosstable::AddPlayer (idNumberT id, const char * name, eloT elo,
+scid::database::errorT
+Crosstable::AddPlayer (scid::database::idNumberT id, const char * name, scid::database::eloT elo,
                        const scidup::spelling::SpellChecker* SpellCheck)
 {
-    for (uint i = 0; i < PlayerCount; i++) {
+    for (scid::database::uint i = 0; i < PlayerCount; i++) {
         if (PlayerData[i]->id == id) {
             // The player already exists in the crosstable, but
             // check the elo rating and keep the largest value:
             if (elo > PlayerData[i]->elo) { PlayerData[i]->elo = elo; }
-            return OK;
+            return scid::database::OK;
         }
     }
-    if (PlayerCount == CROSSTABLE_MaxPlayers) { return ERROR_Full; }
+    if (PlayerCount == CROSSTABLE_MaxPlayers) { return scid::database::ERROR_Full; }
     playerDataT * pdata = new playerDataT;
 
     PlayerData[PlayerCount] = pdata;
     pdata->id = id;
-    pdata->name = strDuplicate (name);
+    pdata->name = scid::database::strDuplicate (name);
     pdata->elo = elo;
     pdata->score = 0;
     pdata->n_won = 0;
@@ -215,43 +215,43 @@ Crosstable::AddPlayer (idNumberT id, const char * name, eloT elo,
     pdata->oppEloScore = 0;
     pdata->title[0] = 0;
     pdata->country[0] = 0;
-    pdata->birthdate = ZERO_DATE;
+    pdata->birthdate = scid::database::ZERO_DATE;
     pdata->ageInYears = 0;
-    for (uint opp = 0; opp < CROSSTABLE_MaxPlayers; opp++) {
+    for (scid::database::uint opp = 0; opp < CROSSTABLE_MaxPlayers; opp++) {
         pdata->firstClash[opp] = pdata->lastClash[opp] = NULL;
         pdata->clashCount[opp] = 0;
     }
-    for (uint round = 1; round < CROSSTABLE_MaxRounds; round++) {
+    for (scid::database::uint round = 1; round < CROSSTABLE_MaxRounds; round++) {
         pdata->roundClash[round] = NULL;
     }
 
     if (SpellCheck != NULL ) {
         const scidup::spelling::PlayerInfo* pInfo = SpellCheck->getPlayerInfo(name);
         if (pInfo != NULL) {
-            strCopy (pdata->title, pInfo->getTitle());
-            strCopy (pdata->country, pInfo->getLastCountry().c_str());
+            scid::database::strCopy (pdata->title, pInfo->getTitle());
+            scid::database::strCopy (pdata->country, pInfo->getLastCountry().c_str());
             pdata->birthdate = pInfo->getBirthdate();
-            if (strEqual (pdata->title, "w")) { strCopy (pdata->title, "w  "); }
+            if (scid::database::strEqual (pdata->title, "w")) { scid::database::strCopy (pdata->title, "w  "); }
         }
     }
     PlayerCount++;
-    return OK;
+    return scid::database::OK;
 }
 
 
-uint max(int a, int b) {return a<b ? b : a;}
+scid::database::uint max(int a, int b) {return a<b ? b : a;}
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Crosstable::AddResult()
 //      Adds a game result to the crosstable.
-errorT
-Crosstable::AddResult (uint gameNumber, idNumberT white, idNumberT black,
-                       resultT result, uint round, dateT date)
+scid::database::errorT
+Crosstable::AddResult (scid::database::uint gameNumber, scid::database::idNumberT white, scid::database::idNumberT black,
+                       scid::database::resultT result, scid::database::uint round, scid::database::dateT date)
 {
     // Find the two players in the player data:
     int whiteIdx = -1;
     int blackIdx = -1;
-    uint i;
+    scid::database::uint i;
     for (i=0; i < PlayerCount; i++) {
         if (PlayerData[i]->id == white) { whiteIdx = i; break; }
     }
@@ -260,10 +260,10 @@ Crosstable::AddResult (uint gameNumber, idNumberT white, idNumberT black,
     }
 
     // Both players must exist in the crosstable:
-    if (whiteIdx < 0  ||  blackIdx < 0) { return ERROR_NotFound; }
+    if (whiteIdx < 0  ||  blackIdx < 0) { return scid::database::ERROR_NotFound; }
 
     // The two players must actually be different:
-    if (whiteIdx == blackIdx) { return ERROR_Corrupt; }
+    if (whiteIdx == blackIdx) { return scid::database::ERROR_Corrupt; }
 
     playerDataT * pwhite = PlayerData[whiteIdx];
     playerDataT * pblack = PlayerData[blackIdx];
@@ -290,13 +290,13 @@ Crosstable::AddResult (uint gameNumber, idNumberT white, idNumberT black,
     pblack->lastClash[whiteIdx] = blackClash;
 
     whiteClash->result = result;
-    blackClash->result = RESULT_OPPOSITE[result];
+    blackClash->result = scid::database::RESULT_OPPOSITE[result];
     whiteClash->gameNum = gameNumber;
     blackClash->gameNum = gameNumber;
     whiteClash->opponent = blackIdx;
     blackClash->opponent = whiteIdx;
-    whiteClash->color = WHITE;
-    blackClash->color = BLACK;
+    whiteClash->color = scid::database::WHITE;
+    blackClash->color = scid::database::BLACK;
     whiteClash->round = round;
     blackClash->round = round;
     if (round > 0  &&  round < CROSSTABLE_MaxRounds) {
@@ -322,13 +322,13 @@ Crosstable::AddResult (uint gameNumber, idNumberT white, idNumberT black,
         pblack->oppEloTotal += OpponentElo(pblack->elo, pwhite->elo);
     }
 
-    if (FirstDate == ZERO_DATE) { FirstDate = date; }
-    if (date != ZERO_DATE  &&  date < FirstDate) {
+    if (FirstDate == scid::database::ZERO_DATE) { FirstDate = date; }
+    if (date != scid::database::ZERO_DATE  &&  date < FirstDate) {
         FirstDate = date;
     }
 
     switch (result) {
-    case RESULT_White:
+    case scid::database::RESULT_White:
         pwhite->n_won++;
         pblack->n_loss++;
         pwhite->score += (ThreeWin ? 6 : 2);
@@ -336,7 +336,7 @@ Crosstable::AddResult (uint gameNumber, idNumberT white, idNumberT black,
             pwhite->oppEloScore += 2;
         }
         break;
-    case RESULT_Black:
+    case scid::database::RESULT_Black:
         pwhite->n_loss++;
         pblack->n_won++;
         pblack->score += (ThreeWin ? 6 : 2);
@@ -344,7 +344,7 @@ Crosstable::AddResult (uint gameNumber, idNumberT white, idNumberT black,
             pblack->oppEloScore += 2;
         }
         break;
-    case RESULT_Draw:
+    case scid::database::RESULT_Draw:
         pwhite->n_draw++;
         pblack->n_draw++;
         pwhite->score += (ThreeWin ? 2 : 1);
@@ -361,7 +361,7 @@ Crosstable::AddResult (uint gameNumber, idNumberT white, idNumberT black,
     }
     ResultCount[result]++;
     GameCount++;
-    return OK;
+    return scid::database::OK;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -370,27 +370,27 @@ Crosstable::AddResult (uint gameNumber, idNumberT white, idNumberT black,
 void
 Crosstable::Tiebreaks (crosstableModeT mode)
 {
-    uint player;
+    scid::database::uint player;
     for (player = 0; player < PlayerCount; player++) {
         playerDataT * pd = PlayerData[player];
         pd->tiebreak = 0;
-        uint tb = 0;
+        scid::database::uint tb = 0;
         // Tiebreaks are meaningless for Knockout tables:
         if (mode == CROSSTABLE_Knockout) { continue; }
 
-        for (uint opp = 0; opp < PlayerCount; opp++) {
+        for (scid::database::uint opp = 0; opp < PlayerCount; opp++) {
             if (opp == player) { continue; }
             clashT * clash = pd->firstClash[opp];
             while (clash != NULL) {
-                uint oppScore = PlayerData[opp]->score;
+                scid::database::uint oppScore = PlayerData[opp]->score;
                 if (mode == CROSSTABLE_Swiss) {
                     // For Swiss, just do sum of opponent scores:
                     tb += PlayerData[opp]->score;
                 } else {
                     // AllPlayAll mode: do Sonneborn-Berger:
-                    if (clash->result == RESULT_White) {
+                    if (clash->result == scid::database::RESULT_White) {
                         tb += oppScore + oppScore;
-                    } else if (clash->result == RESULT_Draw) {
+                    } else if (clash->result == scid::database::RESULT_Draw) {
                         tb += oppScore;
                     }
                 }
@@ -417,7 +417,7 @@ Crosstable::BestMode (void)
     if ((GameCount / PlayerCount) < 5) { return CROSSTABLE_Swiss; }
     // If less than half the number of games in a complete all-play-all
     // tournament, use Swiss:
-    uint completeAllPlayAll = (PlayerCount * (PlayerCount - 1)) / 2;
+    scid::database::uint completeAllPlayAll = (PlayerCount * (PlayerCount - 1)) / 2;
     if (GameCount < completeAllPlayAll / 2) { return CROSSTABLE_Swiss; }
     // Otherwise, use all-play-all:
     return CROSSTABLE_AllPlayAll;
@@ -428,25 +428,25 @@ Crosstable::BestMode (void)
 //      Returns the average Elo rating of all players in the
 //      tournament who have a rating. Players with no rating
 //      are ignored.
-eloT
+scid::database::eloT
 Crosstable::AvgRating ()
 {
-    uint count = 0;
-    uint total = 0;
-    for (uint i=0; i < PlayerCount; i++) {
+    scid::database::uint count = 0;
+    scid::database::uint total = 0;
+    for (scid::database::uint i=0; i < PlayerCount; i++) {
         if (PlayerData[i]->elo > 0) { total += PlayerData[i]->elo; count++; }
     }
     if (count == 0) { return 0; }
-    return (eloT) (total / count);
+    return (scid::database::eloT) (total / count);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Crosstable::PrintTable()
-//      Prints the crosstable to a self-extending DString.
+//      Prints the crosstable to a self-extending scid::database::DString.
 //      The format can be plain text or hypertext with player and game tags,
 //      depending on the value of the OutputFormat member variable.
 void
-Crosstable::PrintTable (DString * dstr, crosstableModeT mode, uint playerLimit, int currentGame)
+Crosstable::PrintTable (scid::database::DString * dstr, crosstableModeT mode, scid::database::uint playerLimit, int currentGame)
 {
     CurrentGame = currentGame;
     if (playerLimit == 0  ||  playerLimit > PlayerCount) {
@@ -458,17 +458,17 @@ Crosstable::PrintTable (DString * dstr, crosstableModeT mode, uint playerLimit, 
 
     // Sort the players by score, name or rating:
     Tiebreaks (mode);
-    uint player;
+    scid::database::uint player;
     for (player=0; player < PlayerCount; player++) {
         SortedIndex[player] = player;
         InvertedIndex[player] = player;
     }
-    for (uint first=0; first < PlayerCount-1; first++) {
-        for (uint second = first+1; second < PlayerCount; second++) {
+    for (scid::database::uint first=0; first < PlayerCount-1; first++) {
+        for (scid::database::uint second = first+1; second < PlayerCount; second++) {
             if (comparePlayerData (PlayerData[SortedIndex[first]],
                                    PlayerData[SortedIndex[second]],
                                    SortOption) > 0) {
-                uint temp = SortedIndex[first];
+                scid::database::uint temp = SortedIndex[first];
                 SortedIndex[first] = SortedIndex[second];
                 SortedIndex[second] = temp;
             }
@@ -484,7 +484,7 @@ Crosstable::PrintTable (DString * dstr, crosstableModeT mode, uint playerLimit, 
     // Determine the longest player name:
     LongestNameLen = 0;
     for (player = 0; player < PlayerCount; player++) {
-        uint len = strLength (PlayerData[player]->name);
+        scid::database::uint len = scid::database::strLength (PlayerData[player]->name);
         if (len > LongestNameLen) { LongestNameLen = len; }
     }
 
@@ -501,11 +501,11 @@ Crosstable::PrintTable (DString * dstr, crosstableModeT mode, uint playerLimit, 
         if (pd->elo > 0) { PrintRatings = true; }
         if (pd->title[0] != 0) { PrintTitles = true; }
         if (pd->country[0] != 0) { PrintCountries = true; PrintFlags = true; }
-        if (pd->birthdate != ZERO_DATE) {
+        if (pd->birthdate != scid::database::ZERO_DATE) {
             PrintAges = true;
-            int age = (int) date_GetYear(FirstDate);
-            age -= (int) date_GetYear (pd->birthdate);
-            if (date_GetMonth(pd->birthdate) > date_GetMonth(FirstDate)) {
+            int age = (int) scid::database::date_GetYear(FirstDate);
+            age -= (int) scid::database::date_GetYear (pd->birthdate);
+            if (scid::database::date_GetMonth(pd->birthdate) > scid::database::date_GetMonth(FirstDate)) {
                 age--;
             }
             pd->ageInYears = age;
@@ -611,18 +611,18 @@ Crosstable::PrintTable (DString * dstr, crosstableModeT mode, uint playerLimit, 
     char stemp [100];
     if (GameCount > 1) {
         std::snprintf(stemp, sizeof(stemp), "%u game%s: %s%u %s%u %s%u",
-                 GameCount, strPlural (GameCount),
+                 GameCount, scid::database::strPlural (GameCount),
                  OutputFormat == CROSSTABLE_LaTeX ? "{\\tt +}" : "+",
-                 ResultCount[RESULT_White],
+                 ResultCount[scid::database::RESULT_White],
                  OutputFormat == CROSSTABLE_LaTeX ? "{\\tt =}" : "=",
-                 ResultCount[RESULT_Draw],
+                 ResultCount[scid::database::RESULT_Draw],
                  OutputFormat == CROSSTABLE_LaTeX ? "{\\tt -}" : "-",
-                 ResultCount[RESULT_Black]);
+                 ResultCount[scid::database::RESULT_Black]);
         dstr->Append (stemp);
-        if (ResultCount[RESULT_None] > 0) {
+        if (ResultCount[scid::database::RESULT_None] > 0) {
             std::snprintf(stemp, sizeof(stemp), " %s%u", 
                      OutputFormat == CROSSTABLE_LaTeX ? "{\\tt *}" : "*",
-                     ResultCount[RESULT_None]);
+                     ResultCount[scid::database::RESULT_None]);
             dstr->Append (stemp);
         }
         dstr->Append (NewLine);
@@ -631,7 +631,7 @@ Crosstable::PrintTable (DString * dstr, crosstableModeT mode, uint playerLimit, 
 }
 
 void
-Crosstable::PrintDashesLine (DString * dstr)
+Crosstable::PrintDashesLine (scid::database::DString * dstr)
 {
     // Print line of dashes, if not in HTML or LaTeX:
     if (OutputFormat == CROSSTABLE_LaTeX) {
@@ -641,14 +641,14 @@ Crosstable::PrintDashesLine (DString * dstr)
     if (OutputFormat == CROSSTABLE_Html) {
         return;
     }
-    for (uint i=0; i < LineWidth; i++) {
+    for (scid::database::uint i=0; i < LineWidth; i++) {
         dstr->AddChar ('-');
     }
     dstr->Append (NewLine);
 }
 
 void
-Crosstable::PrintPlayer (DString * dstr, playerDataT * pdata)
+Crosstable::PrintPlayer (scid::database::DString * dstr, playerDataT * pdata)
 {
     char stemp[1000];
     if (OutputFormat == CROSSTABLE_Hypertext) {
@@ -675,7 +675,7 @@ Crosstable::PrintPlayer (DString * dstr, playerDataT * pdata)
     //   as firefox doesn't make a grid box for blanks S.A.
 
     if (PrintTitles) {
-        if (OutputFormat == CROSSTABLE_Html && !strCompare(pdata->title,"")) {
+        if (OutputFormat == CROSSTABLE_Html && !scid::database::strCompare(pdata->title,"")) {
             std::snprintf(stemp, sizeof(stemp), " -  ");
         } else {
             std::snprintf(stemp, sizeof(stemp), "%3s ", pdata->title);
@@ -687,7 +687,7 @@ Crosstable::PrintPlayer (DString * dstr, playerDataT * pdata)
             if (OutputFormat == CROSSTABLE_Html) {
                 std::snprintf(stemp, sizeof(stemp), " -  ");
             } else {
-                strCopy (stemp, "    ");
+                scid::database::strCopy (stemp, "    ");
             }
         } else {
             std::snprintf(stemp, sizeof(stemp), "%3d ", pdata->ageInYears);
@@ -695,7 +695,7 @@ Crosstable::PrintPlayer (DString * dstr, playerDataT * pdata)
         dstr->Append (StartCol, stemp, EndCol);
     }
     if (PrintCountries) {
-        if (OutputFormat == CROSSTABLE_Html && !strCompare(pdata->country,"")) {
+        if (OutputFormat == CROSSTABLE_Html && !scid::database::strCompare(pdata->country,"")) {
             std::snprintf(stemp, sizeof(stemp), " -  ");
         } else {
             std::snprintf(stemp, sizeof(stemp), "%-3s ", pdata->country);
@@ -710,7 +710,7 @@ Crosstable::PrintPlayer (DString * dstr, playerDataT * pdata)
 }
 
 void
-Crosstable::PrintPerformance (DString * dstr, playerDataT * pdata)
+Crosstable::PrintPerformance (scid::database::DString * dstr, playerDataT * pdata)
 {
     if (!PrintRatings) { return; }
     if (!pdata->oppEloCount) { return; }
@@ -734,10 +734,10 @@ Crosstable::PrintPerformance (DString * dstr, playerDataT * pdata)
 
 // Calculate and format the percentage performance of the player 8 Points from 10 Games = 80%
 void
-Crosstable::PrintScorePercentage (DString * dstr, playerDataT * pdata)
+Crosstable::PrintScorePercentage (scid::database::DString * dstr, playerDataT * pdata)
 {
     char stemp [20];
-    uint per_score;
+    scid::database::uint per_score;
 
     per_score = ( pdata->gameCount > 0) ? pdata->score * 500 / pdata->gameCount : 0;
     std::snprintf(stemp, sizeof(stemp), "%3d%c%1d%%", per_score / 10 , DecimalPointChar, per_score % 10);
@@ -745,10 +745,10 @@ Crosstable::PrintScorePercentage (DString * dstr, playerDataT * pdata)
 }
 
 void
-Crosstable::PrintAllPlayAll (DString * dstr, uint playerLimit)
+Crosstable::PrintAllPlayAll (scid::database::DString * dstr, scid::database::uint playerLimit)
 {
     char stemp [1000];
-    uint player;
+    scid::database::uint player;
 
     dstr->Append (StartTable);
     if (OutputFormat == CROSSTABLE_LaTeX) {
@@ -759,7 +759,7 @@ Crosstable::PrintAllPlayAll (DString * dstr, uint playerLimit)
         if (PrintCountries) { dstr->Append ("l"); }
         dstr->Append ("r@{ / }r");
         if (PrintTiebreaks) { dstr->Append ("r"); }
-        for (uint i=0; i < playerLimit; i++) {
+        for (scid::database::uint i=0; i < playerLimit; i++) {
             dstr->Append ("c");
             if (i < playerLimit-1) { dstr->Append ("@{ }"); }
         }
@@ -772,7 +772,7 @@ Crosstable::PrintAllPlayAll (DString * dstr, uint playerLimit)
     } else if (OutputFormat == CROSSTABLE_LaTeX) {
         dstr->Append ("  & \\bf Player & ");
     } else {
-        strPad (stemp, "", LongestNameLen + 2 + PlayerNumWidth, ' ');
+        scid::database::strPad (stemp, "", LongestNameLen + 2 + PlayerNumWidth, ' ');
         dstr->Append (stemp);
     }
     if (PrintRatings) {
@@ -806,11 +806,11 @@ Crosstable::PrintAllPlayAll (DString * dstr, uint playerLimit)
     }
 
     for (player = 0; player < playerLimit; player++) {
-        strPad (stemp, PlayerData[SortedIndex[player]]->name, MaxClashes, ' ');
+        scid::database::strPad (stemp, PlayerData[SortedIndex[player]]->name, MaxClashes, ' ');
         if (APAColumnNums && MaxClashes > 0) {
             // Print numbers instead of names over columns:
-            strPad (stemp, "", MaxClashes, ' ');
-            uint pnum = player + 1;
+            scid::database::strPad (stemp, "", MaxClashes, ' ');
+            scid::database::uint pnum = player + 1;
             stemp[MaxClashes-1] = (pnum % 10) + '0';
             if (MaxClashes >= 2  &&  pnum >= 10) {
                 stemp[MaxClashes-2] = ((pnum / 10) % 10) + '0';
@@ -822,7 +822,7 @@ Crosstable::PrintAllPlayAll (DString * dstr, uint playerLimit)
         if (playerLimit == 2) {
             // Make two-player crosstable look better:
             player = 1;
-            strPad (stemp,
+            scid::database::strPad (stemp,
                     "12345678901234567890123456789012345678901234567890",
                     MaxClashes, ' ');
         }
@@ -849,9 +849,9 @@ Crosstable::PrintAllPlayAll (DString * dstr, uint playerLimit)
     PrintDashesLine (dstr);
 
     // Print the rows of players and results:
-    uint previousScore = 0;
+    scid::database::uint previousScore = 0;
     for (player = 0; player < playerLimit; player++) {
-        uint index = SortedIndex[player];
+        scid::database::uint index = SortedIndex[player];
         playerDataT * pdata = PlayerData[index];
 
         // Print a blank line if we are at a new score group:
@@ -891,25 +891,25 @@ Crosstable::PrintAllPlayAll (DString * dstr, uint playerLimit)
             dstr->Append (StartRightCol, stemp, EndRightCol);
         }
 
-        for (uint oppCount = 0; oppCount < playerLimit; oppCount++) {
+        for (scid::database::uint oppCount = 0; oppCount < playerLimit; oppCount++) {
             if (playerLimit == 2  &&  oppCount == player) { continue; }
-            uint opp = SortedIndex[oppCount];
+            scid::database::uint opp = SortedIndex[oppCount];
             dstr->AddChar (' ');
             dstr->Append (StartRightCol);
             clashT * clash = pdata->firstClash[opp];
 
-            for (uint count = 0; count < MaxClashes; count++) {
+            for (scid::database::uint count = 0; count < MaxClashes; count++) {
                 if (clash != NULL) {
                     if (OutputFormat == CROSSTABLE_Hypertext) {
                         if (CurrentGame == clash->gameNum)
                             std::snprintf(stemp, sizeof(stemp), "<green><g_%u>%c</g></green>",
-                                    clash->gameNum, RESULT_CHAR[clash->result]);
+                                    clash->gameNum, scid::database::RESULT_CHAR[clash->result]);
                         else
                             std::snprintf(stemp, sizeof(stemp), "<blue><g_%u>%c</g></blue>",
-                                    clash->gameNum, RESULT_CHAR[clash->result]);
+                                    clash->gameNum, scid::database::RESULT_CHAR[clash->result]);
                         dstr->Append (stemp);
                     } else {
-                        dstr->AddChar (RESULT_CHAR[clash->result]);
+                        dstr->AddChar (scid::database::RESULT_CHAR[clash->result]);
                     }
                     clash = clash->next;
                 } else {
@@ -936,22 +936,22 @@ Crosstable::PrintAllPlayAll (DString * dstr, uint playerLimit)
 }
 
 void
-Crosstable::PrintSwiss (DString * dstr, uint playerLimit)
+Crosstable::PrintSwiss (scid::database::DString * dstr, scid::database::uint playerLimit)
 {
     char stemp [1000];
-    uint player;
+    scid::database::uint player;
 
-    const char * resultStr [NUM_RESULT_TYPES];
+    const char * resultStr [scid::database::NUM_RESULT_TYPES];
     if (OutputFormat == CROSSTABLE_LaTeX) {
-        resultStr[RESULT_White] = "{\\tt +}";
-        resultStr[RESULT_Draw]  = "{\\tt =}";
-        resultStr[RESULT_Black] = "{\\tt -}";
-        resultStr[RESULT_None] = "{\\tt *}";
+        resultStr[scid::database::RESULT_White] = "{\\tt +}";
+        resultStr[scid::database::RESULT_Draw]  = "{\\tt =}";
+        resultStr[scid::database::RESULT_Black] = "{\\tt -}";
+        resultStr[scid::database::RESULT_None] = "{\\tt *}";
     } else {
-        resultStr[RESULT_White] = "+";
-        resultStr[RESULT_Draw]  = "=";
-        resultStr[RESULT_Black] = "-";
-        resultStr[RESULT_None] = "*";
+        resultStr[scid::database::RESULT_White] = "+";
+        resultStr[scid::database::RESULT_Draw]  = "=";
+        resultStr[scid::database::RESULT_Black] = "-";
+        resultStr[scid::database::RESULT_None] = "*";
     }
 
     dstr->Append (StartTable);
@@ -963,7 +963,7 @@ Crosstable::PrintSwiss (DString * dstr, uint playerLimit)
         if (PrintCountries) { dstr->Append ("l"); }
         dstr->Append ("r@{ / }r");
         if (PrintTiebreaks) { dstr->Append ("r"); }
-        for (uint i=0; i < MaxRound; i++) {
+        for (scid::database::uint i=0; i < MaxRound; i++) {
             dstr->Append ("r");
             if (i < MaxRound-1) { dstr->Append ("@{ }"); }
         }
@@ -976,7 +976,7 @@ Crosstable::PrintSwiss (DString * dstr, uint playerLimit)
     } else if (OutputFormat == CROSSTABLE_LaTeX) {
         dstr->Append ("  & \\bf Player & ");
     } else {
-        strPad (stemp, "", LongestNameLen + 2 + PlayerNumWidth, ' ');
+        scid::database::strPad (stemp, "", LongestNameLen + 2 + PlayerNumWidth, ' ');
         dstr->Append (stemp);
     }
     if (PrintRatings) {
@@ -1008,7 +1008,7 @@ Crosstable::PrintSwiss (DString * dstr, uint playerLimit)
         dstr->Append (StartBoldCol, "(Tie)", EndBoldCol);
     }
 
-    for (uint round = 1; round <= MaxRound; round++) {
+    for (scid::database::uint round = 1; round <= MaxRound; round++) {
         if (OutputFormat == CROSSTABLE_LaTeX) {
             dstr->Append (" \\multicolumn{1}{c}{\\bf ", round, "} & ");
         } else {
@@ -1034,9 +1034,9 @@ Crosstable::PrintSwiss (DString * dstr, uint playerLimit)
     PrintDashesLine (dstr);
 
     // Print the rows of players and results:
-    uint previousScore = 0;
+    scid::database::uint previousScore = 0;
     for (player = 0; player < playerLimit; player++) {
-        uint index = SortedIndex[player];
+        scid::database::uint index = SortedIndex[player];
         playerDataT * pdata = PlayerData[index];
 
         // Print a blank line if we are at a new score group:
@@ -1076,7 +1076,7 @@ Crosstable::PrintSwiss (DString * dstr, uint playerLimit)
             dstr->Append (StartRightCol, stemp, EndRightCol);
         }
 
-        for (uint round = 1; round <= MaxRound; round++) {
+        for (scid::database::uint round = 1; round <= MaxRound; round++) {
             clashT * clash = pdata->roundClash[round];
             dstr->AddChar (' ');
             dstr->Append (StartRightCol);
@@ -1095,7 +1095,7 @@ Crosstable::PrintSwiss (DString * dstr, uint playerLimit)
                     if (SwissColors) {
                     std::snprintf(stemp, sizeof(stemp), "%*d%c%s", PlayerNumWidth,
                              InvertedIndex[clash->opponent] + 1,
-                             clash->color == WHITE ? 'w' : 'b',
+                             clash->color == scid::database::WHITE ? 'w' : 'b',
                              resultStr[clash->result]);
                 } else {
                     std::snprintf(stemp, sizeof(stemp), "%*d%s", PlayerNumWidth,
@@ -1131,12 +1131,12 @@ Crosstable::PrintSwiss (DString * dstr, uint playerLimit)
 
 
 void
-Crosstable::PrintKnockout (DString * dstr, uint playerLimit)
+Crosstable::PrintKnockout (scid::database::DString * dstr, scid::database::uint playerLimit)
 {
     char stemp [1000];
-    uint player;
+    scid::database::uint player;
 
-    for (uint round = 1; round <= MaxRound; round++) {
+    for (scid::database::uint round = 1; round <= MaxRound; round++) {
         if (OutputFormat == CROSSTABLE_LaTeX) {
             dstr->Append ("\n\n", round, ":\n\n");
         } else {
@@ -1161,20 +1161,20 @@ Crosstable::PrintKnockout (DString * dstr, uint playerLimit)
             PlayerData[player]->printed = false;
         }
         for (player = 0; player < playerLimit; player++) {
-            uint index = SortedIndex[player];
+            scid::database::uint index = SortedIndex[player];
             playerDataT * pdata = PlayerData[index];
             clashT * clash = pdata->roundClash[round];
             if (clash == NULL) { continue; }
             if (pdata->printed) { continue; }
-            uint opponent = clash->opponent;
+            scid::database::uint opponent = clash->opponent;
             // if black first, skip this game till white is first
             if (pdata->firstClash[opponent]->color == 1) { continue; }
-            uint score = 0;
-            uint nGames = 0;
+            scid::database::uint score = 0;
+            scid::database::uint nGames = 0;
             clash = pdata->firstClash[opponent];
             while (clash != 0) {
                 if (clash->round == round) {
-                    score += RESULT_SCORE[clash->result];
+                    score += scid::database::RESULT_SCORE[clash->result];
                     nGames++;
                 }
                 clash = clash->next;
@@ -1187,7 +1187,7 @@ Crosstable::PrintKnockout (DString * dstr, uint playerLimit)
             dstr->Append (StartCol, "  ");
             if (OutputFormat == CROSSTABLE_LaTeX) { dstr->Append ("{\\tt "); }
             clash = pdata->firstClash[opponent];
-            for (uint count = 0; count < MaxClashes; count++) {
+            for (scid::database::uint count = 0; count < MaxClashes; count++) {
                 while (clash != NULL  &&  clash->round != round) {
                     clash = clash->next;
                 }
@@ -1196,14 +1196,14 @@ Crosstable::PrintKnockout (DString * dstr, uint playerLimit)
                             if (CurrentGame == clash->gameNum)
                                 std::snprintf(stemp, sizeof(stemp), "<green><g_%u>%c</g></green>",
                                          clash->gameNum,
-                                         RESULT_CHAR[clash->result]);
+                                         scid::database::RESULT_CHAR[clash->result]);
                             else
                                 std::snprintf(stemp, sizeof(stemp), "<blue><g_%u>%c</g></blue>",
                                          clash->gameNum,
-                                         RESULT_CHAR[clash->result]);
+                                         scid::database::RESULT_CHAR[clash->result]);
                             dstr->Append (stemp);
                         } else {
-                        dstr->AddChar (RESULT_CHAR[clash->result]);
+                        dstr->AddChar (scid::database::RESULT_CHAR[clash->result]);
                     }
                     clash = clash->next;
                 } else {

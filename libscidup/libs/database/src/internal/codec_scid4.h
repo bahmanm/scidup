@@ -34,6 +34,8 @@
 /**
  * This class manages databases encoded in SCID format v4.
  */
+namespace scid::database {
+
 class CodecSCID4 : public ICodecDatabase {
 	Index* idx_ = nullptr;
 	NameBase* nb_ = nullptr;
@@ -262,4 +264,6 @@ private:
 	errorT writeEntry(const IndexEntry& ie, gamenumT gnum);
 };
 
+
+} // namespace scid::database
 #endif

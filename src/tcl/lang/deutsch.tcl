@@ -2260,7 +2260,7 @@ ermitteln?</h4>
 <p>
 Der ECO-Schlüssel wird in der letzten Zeile des Informationsbereichs
 angezeigt, unterhalb des Schachbretts im <a MainWindow>Hauptfenster</a>,
-wenn Sie die ECO-Datei (<b>scid.eco</b>) geladen haben.<br>
+wenn Sie die ECO-Datei (<b>default.eco</b>) geladen haben.<br>
 Auf der <a ECO>ECO-Code</a> Hilfeseite wird erklärt, wie man die ECO-Datei
 lädt und die Optionen so einstellt, dass sie jedesmal beim Programmstart
 geladen wird.
@@ -4656,13 +4656,13 @@ enthält, und zwar entsprechend der von Ihnen geladenen ECO-Datei.
 
 <h3>Die ECO-Datei laden</h3>
 <p>
-Die zu Scid gehörende ECO-Datei heißt <b>scid.eco</b>, und Scid
+Die zu Scid gehörende ECO-Datei heißt <b>default.eco</b>, und Scid
 versucht sie beim Programmstart zu laden.
 Falls Scid sie nicht findet, müssen Sie folgendes tun, um die
 ECO-Klassifikation zu ermöglichen:
 <ul>
 <li>(a) Mit dem Menüpunkt <menu>Optionen: ECO-Datei laden</menu>
-        wählen Sie die Datei <b>scid.eco</b>. </li>
+        wählen Sie die Datei <b>default.eco</b>. </li>
 <li>(b) Speichern Sie die Optionen (im <menu>Optionen</menu>-Menü). </li>
 </ul>
 Nachdem Sie das getan haben, wird die ECO-Datei jedesmal geladen, wenn

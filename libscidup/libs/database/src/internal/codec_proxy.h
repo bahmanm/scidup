@@ -42,6 +42,8 @@
  * This class provides an interface that encapsulates the codecs, requiring only
  * the ability to exchange @e Game objects.
  */
+namespace scid::database {
+
 template <typename Derived> class CodecProxy : public CodecMemory {
 	Derived* getDerived() { return static_cast<Derived*>(this); }
 
@@ -256,4 +258,6 @@ public:
 	}
 };
 
+
+} // namespace scid::database
 #endif

@@ -37,6 +37,8 @@
 //    }
 //
 
+namespace scid::database {
+
   const squareT
 knightAttacks[66][9] = {
     { /* A1 */  C2, B3, NS, NS, NS, NS, NS, NS, NS },
@@ -185,6 +187,8 @@ kingAttacks[66][9] = {
     { /* NS */  NS, NS, NS, NS, NS, NS, NS, NS, NS }
 };
 
+
+} // namespace scid::database
 #endif  // #ifndef SCID_ATTACKS_H
 
 //////////////////////////////////////////////////////////////////////

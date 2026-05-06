@@ -15,9 +15,9 @@
 
 
 #include "tcl.h"
-
-class Progress;
-struct scidBaseT;
+#include "scidup/database/hfilter.h"
+#include "scidup/database/misc.h"
+#include "scidup/database/scidbase.h"
 
 
 // Macro TCL_ARGS expands to the argument-type list that any
@@ -87,10 +87,13 @@ int sc_var_enter      (TCL_ARGS);
 int sc_var_first      (TCL_ARGS);
 int sc_var_list       (TCL_ARGS);
 
-errorT search_index(const scidBaseT* base, HFilter& filter, int argc, const char ** argv, const Progress& progress);
-int sc_search_board   (Tcl_Interp* ti, const scidBaseT* dbase, HFilter filter, int argc, const char** argv);
+namespace scid::database {
+errorT search_index(const scidBaseT* base, HFilter& filter, int argc,
+                    const char** argv, const Progress& progress);
+}
+int sc_search_board   (Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid::database::HFilter filter, int argc, const char** argv);
 int sc_search_material (TCL_ARGS);
-int sc_search_header  (ClientData cd, Tcl_Interp * ti, scidBaseT* base, HFilter& filter, int argc, const char ** argv);
+int sc_search_header  (ClientData cd, Tcl_Interp * ti, scid::database::scidBaseT* base, scid::database::HFilter& filter, int argc, const char ** argv);
 int sc_search_rep_add (TCL_ARGS);
 int sc_search_rep_go  (TCL_ARGS);
 

@@ -25,6 +25,8 @@
 #include <algorithm>
 #include <vector>
 
+namespace scid::database {
+
 struct TreeNode {
 	unsigned long long eloWhiteSum = 0;   // Sum of white Elos.
 	unsigned long long eloBlackSum = 0;   // Sum of bLack Elos.
@@ -193,3 +195,5 @@ public:
 		return true;
 	}
 };
+
+} // namespace scid::database

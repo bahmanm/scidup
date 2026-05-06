@@ -151,7 +151,7 @@ proc InitDirs {} {
   #Default values, can be overwritten by file option
   set scidBooksDir [file nativename [file join $scidShareDir "books"]]
   set scidBasesDir [file nativename [file join $scidShareDir "bases"]]
-  set ecoFile [file nativename [file join $scidShareDir "scid.eco"]]
+  set ecoFile [file nativename [file join $scidShareDir "default.eco"]]
 
   set ::scidEnginesDir [file normalize [file join $::scidExeDir "../engines"]]
   if {! [file isdirectory $::scidEnginesDir]} {

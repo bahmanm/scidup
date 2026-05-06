@@ -16,6 +16,8 @@
 // 7-bit rewritten 
 // following http://www.exeterchessclub.org.uk/nags.html
 
+namespace scid::database {
+
 const char * evalNagsRegular [] = 
 { 
    "",                //         0 null annotation
@@ -249,3 +251,5 @@ const char * evalNagsRegular [] =
 //-------------------- UTF-8 Edition --------------------
 // to follow
 
+
+} // namespace scid::database

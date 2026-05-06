@@ -28,6 +28,8 @@
 #include <string>
 #include <string_view>
 #include <vector>
+namespace scid::database {
+
 class ByteBuffer;
 class TextBuffer;
 
@@ -634,6 +636,8 @@ inline std::vector<GamePos> collectPositions(Game& game) {
 
 } // namespace gamepos
 
+
+} // namespace scid::database
 #endif  // #ifndef SCID_GAME_H
 
 //////////////////////////////////////////////////////////////////////

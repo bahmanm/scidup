@@ -26,6 +26,8 @@
 #include <string>
 #include <vector>
 
+namespace scid::database {
+
 namespace {
 bool valid_sqlist(pieceT* begin, size_t n, pieceT* board) {
 	auto unique_sq = std::vector<pieceT>(begin, begin + n);
@@ -2726,3 +2728,5 @@ Position::Compare (Position * p)
     if (p1 > p2) { return 1; }
     return (ToMove - p->GetToMove());
 }
+
+} // namespace scid::database

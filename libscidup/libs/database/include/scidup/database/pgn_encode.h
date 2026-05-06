@@ -30,6 +30,8 @@
 #include <string>
 #include <string_view>
 
+namespace scid::database {
+
 namespace pgn {
 
 // We want to split the PGN text in lines to make it more readable, but we do
@@ -273,3 +275,5 @@ void encode(TGame const& game, TCont& dest) {
 }
 
 } // namespace pgn
+
+} // namespace scid::database

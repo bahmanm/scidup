@@ -24,7 +24,7 @@
 #include <vector>
 
 namespace v4_6_2 {
-	uint strTrimRight(char * target, const char * trimChars);
+	scid::database::uint strTrimRight(char * target, const char * trimChars);
 }
 
 
@@ -51,7 +51,7 @@ protected:
 		char* input1;
 		char* input2;
 		const char* expected;
-		uint nTrimmed;
+		scid::database::uint nTrimmed;
 	};
 	std::vector<Data> data_ = {
 		{ ""    , nullptr, nullptr, ""   , 0 } ,
@@ -94,26 +94,26 @@ protected:
 
 TEST_F(Test_StrLib, strTrimRight_correctness) {
 	for (auto& e : data_) {
-		strTrimRight(e.input1);
+		scid::database::strTrimRight(e.input1);
 		EXPECT_STREQ(e.expected, e.input1);
 	}
 }
 
 TEST_F(Test_StrLib, strTrimRight_consistency) {
 	for (auto& e : data_) {
-		strTrimRight(e.input1);
+		scid::database::strTrimRight(e.input1);
 		::v4_6_2::strTrimRight(e.input2, " \t\r\n");
 		EXPECT_STREQ(e.input2, e.input1);
 	}
 }
 
 namespace v4_6_2 {
-	uint strTrimRight(char * target, const char * trimChars) {
-		uint trimCount = 0;
+	scid::database::uint strTrimRight(char * target, const char * trimChars) {
+		scid::database::uint trimCount = 0;
 		char * s = target;
 		char * lastNonTrim = NULL;
 		while (*s) {
-			if (strContainsChar(trimChars, *s)) {
+			if (scid::database::strContainsChar(trimChars, *s)) {
 				trimCount++;
 			}
 			else {
@@ -145,7 +145,7 @@ TEST_F(Test_StrLib, strCaseCompare) {
 	for (size_t i = 0, n = v.size(); i < n; i++) {
 		for (size_t j = 0; j < n; j++) {
 			int a = v[i].compare(v[j]);
-			int b = strCaseCompare(strings_[i].c_str(), strings_[j].c_str());
+			int b = scid::database::strCaseCompare(strings_[i].c_str(), strings_[j].c_str());
 			EXPECT_EQ(a < 0, b < 0);
 			EXPECT_EQ(a > 0, b > 0);
 			EXPECT_EQ(a == 0, b == 0);
@@ -156,9 +156,9 @@ TEST_F(Test_StrLib, strCaseCompare) {
 TEST_F(Test_StrLib, strStartHash) {
 	for (const auto& s1 : strings_) {
 		for (const auto& s2 : strings_) {
-			auto hash1 = strStartHash(s1.c_str());
-			auto hash2 = strStartHash(s2.c_str());
-			int cmp = strCaseCompare(s1.c_str(), s2.c_str());
+			auto hash1 = scid::database::strStartHash(s1.c_str());
+			auto hash2 = scid::database::strStartHash(s2.c_str());
+			int cmp = scid::database::strCaseCompare(s1.c_str(), s2.c_str());
 			if (hash1 < hash2) {
 				EXPECT_LT(cmp, 0);
 			} else if (hash1 > hash2) {
@@ -169,7 +169,7 @@ TEST_F(Test_StrLib, strStartHash) {
 					ASSERT_TRUE(s2.size() >= 4);
 					auto s1_tmp = s1.substr(0, 4);
 					auto s2_tmp = s2.substr(0, 4);
-					ASSERT_EQ(0, strCaseCompare(s1_tmp.c_str(), s2_tmp.c_str()));
+					ASSERT_EQ(0, scid::database::strCaseCompare(s1_tmp.c_str(), s2_tmp.c_str()));
 				}
 			}
 		}

@@ -33,8 +33,8 @@ typedef void* UI_handle_t;
 inline int Main (int argc, char* argv[], void (*exit) (void*)) {
 	return 0;
 }
-inline Progress CreateProgress(UI_handle_t) {
-	return Progress();
+inline scid::database::Progress CreateProgress(UI_handle_t) {
+	return scid::database::Progress();
 }
 class List {
 public:
@@ -42,11 +42,11 @@ public:
 	void clear() {}
 	template <typename T> void push_back(const T&) {}
 };
-inline UI_res_t Result(UI_handle_t, errorT) {
+inline UI_res_t Result(UI_handle_t, scid::database::errorT) {
 	return 0;
 }
 template <typename T>
-inline UI_res_t Result(UI_handle_t, errorT, const T&) {
+inline UI_res_t Result(UI_handle_t, scid::database::errorT, const T&) {
 	return 0;
 }
 
@@ -116,7 +116,7 @@ inline int UI_Main (int argc, char* argv[], void (*exit) (void*)) {
  * a Progress object that represent the server->UI async communication, or
  * an empty Progress() if the UI is not interested in the progress report.
  */
-inline Progress UI_CreateProgress(UI_handle_t ti) {
+inline scid::database::Progress UI_CreateProgress(UI_handle_t ti) {
 	return UI_impl::CreateProgress(ti);
 }
 
@@ -130,11 +130,11 @@ inline Progress UI_CreateProgress(UI_handle_t ti) {
  * UI_Result(ti, OK, "string value");
  * UI_Result(ti, OK, 5);
  */
-inline UI_res_t UI_Result(UI_handle_t ti, errorT res) {
+inline UI_res_t UI_Result(UI_handle_t ti, scid::database::errorT res) {
 	return UI_impl::Result(ti, res);
 }
 template <typename T>
-inline UI_res_t UI_Result(UI_handle_t ti, errorT res, const T& value) {
+inline UI_res_t UI_Result(UI_handle_t ti, scid::database::errorT res, const T& value) {
 	return UI_impl::Result(ti, res, value);
 }
 

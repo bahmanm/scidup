@@ -28,6 +28,8 @@
 #include "scidup/database/movelist.h"
 #include <string>
 
+namespace scid::database {
+
 enum markerT : byte { NO_MARKER = 0, START_MARKER = 1, END_MARKER = 2 };
 
 // MAX_NAGS is the maximum number of NAGs (annotation symbols) a single
@@ -206,4 +208,6 @@ struct moveT {
 	};
 };
 
+
+} // namespace scid::database
 #endif // SCID_MOVETREE_H

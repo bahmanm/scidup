@@ -27,6 +27,8 @@
 #include <algorithm>
 #include <filesystem>
 
+namespace scid::database {
+
 std::pair<ICodecDatabase*, errorT>
 ICodecDatabase::open(Codec codec, fileModeT fMode, const char* filename,
                      const Progress& progress, Index* idx, NameBase* nb) {
@@ -825,3 +827,5 @@ size_t scidBaseT::sortedPosition(const char* criteria, const HFilter& filter,
 
 	return sc->sortedPosition(gameId, filter);
 }
+
+} // namespace scid::database

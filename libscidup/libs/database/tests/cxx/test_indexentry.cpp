@@ -49,31 +49,31 @@ public:
 		return count;
 	}
 
-	byte ReadOneByte() { return *it_++; }
+	scid::database::byte ReadOneByte() { return *it_++; }
 	uint16_t ReadTwoBytes() { return static_cast<uint16_t>(read<2>()); }
 	uint32_t ReadThreeBytes() { return read<3>(); }
 	uint32_t ReadFourBytes() { return read<4>(); }
 
-	int WriteOneByte(byte value) {
+	int WriteOneByte(scid::database::byte value) {
 		*it_ = static_cast<char>(value);
 		++it_;
 		return 1;
 	}
 
 	int WriteTwoBytes(uint32_t value) {
-		return WriteOneByte(static_cast<byte>(value >> 8)) +
-		       WriteOneByte(static_cast<byte>(value));
+		return WriteOneByte(static_cast<scid::database::byte>(value >> 8)) +
+		       WriteOneByte(static_cast<scid::database::byte>(value));
 	}
 	int WriteThreeBytes(uint32_t value) {
-		return WriteOneByte(static_cast<byte>(value >> 16)) +
-		       WriteOneByte(static_cast<byte>(value >> 8)) +
-		       WriteOneByte(static_cast<byte>(value));
+		return WriteOneByte(static_cast<scid::database::byte>(value >> 16)) +
+		       WriteOneByte(static_cast<scid::database::byte>(value >> 8)) +
+		       WriteOneByte(static_cast<scid::database::byte>(value));
 	}
 	int WriteFourBytes(uint32_t value) {
-		return WriteOneByte(static_cast<byte>(value >> 24)) +
-		       WriteOneByte(static_cast<byte>(value >> 16)) +
-		       WriteOneByte(static_cast<byte>(value >> 8)) +
-		       WriteOneByte(static_cast<byte>(value));
+		return WriteOneByte(static_cast<scid::database::byte>(value >> 24)) +
+		       WriteOneByte(static_cast<scid::database::byte>(value >> 16)) +
+		       WriteOneByte(static_cast<scid::database::byte>(value >> 8)) +
+		       WriteOneByte(static_cast<scid::database::byte>(value));
 	}
 
 private:
@@ -92,7 +92,7 @@ private:
 } // namespace
 
 TEST(Test_IndexEntry, Flags_dedicatedGetSet) {
-	IndexEntry ie;
+	scid::database::IndexEntry ie;
 	std::mt19937 re(std::random_device{}());
 	std::uniform_int_distribution<> rnd{0, 1};
 	for (int i = 0; i < 100000; ++i) {
@@ -118,14 +118,14 @@ TEST(Test_IndexEntry, Flags_dedicatedGetSet) {
 }
 
 TEST(Test_IndexEntry, Flags) {
-	IndexEntry ie;
+	scid::database::IndexEntry ie;
 	ie.clearFlags();
 
 	uint32_t flags = 0;
 	std::mt19937 re(std::random_device{}());
 	for (int i = 0; i < 100000; ++i) {
 		auto rnd = std::uniform_int_distribution<uint32_t>{
-		    0, (1UL << IndexEntry::IDX_NUM_FLAGS) - 1}(re);
+		    0, (1UL << scid::database::IndexEntry::IDX_NUM_FLAGS) - 1}(re);
 		if (i & 0x01) {
 			ie.clearFlags();
 			flags = rnd; // Reset flags
@@ -134,7 +134,7 @@ TEST(Test_IndexEntry, Flags) {
 		}
 		ie.SetFlag(rnd, true);
 
-		for (int32_t j = 0; j <= IndexEntry::IDX_NUM_FLAGS; j++) {
+		for (int32_t j = 0; j <= scid::database::IndexEntry::IDX_NUM_FLAGS; j++) {
 			EXPECT_EQ((flags & (1 << j)) != 0, ie.GetFlag(1 << j));
 		}
 

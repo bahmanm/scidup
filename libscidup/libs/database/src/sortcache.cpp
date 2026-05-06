@@ -35,6 +35,8 @@
 /**
  * Blocks the current thread until the thread @e th_ finishes its execution.
  */
+namespace scid::database {
+
 void SortCache::th_join() {
 	if (th_ != nullptr) {
 		static_cast<std::thread*>(th_)->join();
@@ -621,3 +623,5 @@ uint32_t SortCache::calcHash(gamenumT gameId) {
 
 	return static_cast<uint32_t>(retValue);
 }
+
+} // namespace scid::database

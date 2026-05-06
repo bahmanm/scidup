@@ -56,32 +56,32 @@ namespace {
  * @fMode:       open the database read-only|read-write|create|in_memory
  * @codec:       the type of the database
  *
- * If @fMode == FMODE_Both, and the file cannot be opened for writing, this
+ * If @fMode == scid::database::FMODE_Both, and the file cannot be opened for writing, this
  * function will try to open the database read-only.
  */
-static UI_res_t doOpenBase(UI_handle_t ti, const char* codec, fileModeT fMode,
+static UI_res_t doOpenBase(UI_handle_t ti, const char* codec, scid::database::fileModeT fMode,
                            const char* filename) {
 	const auto tcl_strings_are_utf8 =
 	    std::filesystem::path((const char8_t*)filename).string();
 	filename = tcl_strings_are_utf8.c_str();
 
 	if (DBasePool::find(filename))
-		return UI_Result(ti, ERROR_FileInUse);
+		return UI_Result(ti, scid::database::ERROR_FileInUse);
 
 	auto dbase = DBasePool::getFreeSlot();
 	if (!dbase)
-		return UI_Result(ti, ERROR_Full);
+		return UI_Result(ti, scid::database::ERROR_Full);
 
-	Progress progress = UI_CreateProgress(ti);
-	errorT err = dbase->open(codec, fMode, filename, progress);
+	scid::database::Progress progress = UI_CreateProgress(ti);
+	scid::database::errorT err = dbase->open(codec, fMode, filename, progress);
 
-	if ((err == ERROR_FileOpen || err == ERROR_FileMode) &&
-	    fMode == FMODE_Both) {
-		err = dbase->open(codec, FMODE_ReadOnly, filename, progress);
+	if ((err == scid::database::ERROR_FileOpen || err == scid::database::ERROR_FileMode) &&
+	    fMode == scid::database::FMODE_Both) {
+		err = dbase->open(codec, scid::database::FMODE_ReadOnly, filename, progress);
 	}
 	progress.report(1, 1);
 
-	if (err != OK && err != ERROR_NameDataLoss)
+	if (err != scid::database::OK && err != scid::database::ERROR_NameDataLoss)
 		return UI_Result(ti, err);
 
 	scidup::app::editor::reset(*dbase);
@@ -94,14 +94,14 @@ static UI_res_t doOpenBase(UI_handle_t ti, const char* codec, fileModeT fMode,
 /**
  * sc_base_close() - close a database
  */
-UI_res_t sc_base_close(scidBaseT* dbase, UI_handle_t ti, int, const char**) {
+UI_res_t sc_base_close(scid::database::scidBaseT* dbase, UI_handle_t ti, int, const char**) {
 	if (dbase->getFileName() == "<clipbase>") {
-		return UI_Result(ti, ERROR_BadArg, "Cannot close clipbase.");
+		return UI_Result(ti, scid::database::ERROR_BadArg, "Cannot close clipbase.");
 	}
 	dbase->Close();
 	scidup::app::editor::reset(*dbase);
 	scidup::app::tree::reset(*dbase);
-	return UI_Result(ti, OK);
+	return UI_Result(ti, scid::database::OK);
 }
 
 
@@ -115,16 +115,16 @@ UI_res_t sc_base_close(scidBaseT* dbase, UI_handle_t ti, int, const char**) {
  * - makes search operations faster
  * - replace bad names with "???"
  */
-UI_res_t sc_base_compact(scidBaseT* dbase, UI_handle_t ti, int argc,
+UI_res_t sc_base_compact(scid::database::scidBaseT* dbase, UI_handle_t ti, int argc,
                          const char** argv) {
 	const char* usage = "Usage: sc_base compact baseId [stats]";
 
 	if (argc == 3) {
-		errorT res = dbase->compact(UI_CreateProgress(ti));
+		scid::database::errorT res = dbase->compact(UI_CreateProgress(ti));
 		return UI_Result(ti, res);
 	} else if (argc == 4 && std::strcmp("stats", argv[3]) == 0) {
 		unsigned long long n_deleted, n_unused, n_sparse, n_badNameId;
-		errorT res = dbase->getCompactStat(&n_deleted, &n_unused, &n_sparse,
+		scid::database::errorT res = dbase->getCompactStat(&n_deleted, &n_unused, &n_sparse,
 		                                   &n_badNameId);
 		UI_List val(4);
 		val.push_back(n_deleted);
@@ -134,39 +134,39 @@ UI_res_t sc_base_compact(scidBaseT* dbase, UI_handle_t ti, int argc,
 		return UI_Result(ti, res, val);
 	}
 
-	return UI_Result(ti, ERROR_BadArg, usage);
+	return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 }
 
 
 /**
  * sc_base_copygames() - copy games from a database to another
  */
-UI_res_t sc_base_copygames(scidBaseT* dbase, UI_handle_t ti, int argc, const char** argv)
+UI_res_t sc_base_copygames(scid::database::scidBaseT* dbase, UI_handle_t ti, int argc, const char** argv)
 {
 	const char* usage = "Usage: sc_base copygames baseId <gameNum|filterName> targetBaseId";
-	if (argc != 5) return UI_Result(ti, ERROR_BadArg, usage);
+	if (argc != 5) return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-	auto targetBase = DBasePool::getBase(strGetUnsigned(argv[4]));
+	auto targetBase = DBasePool::getBase(scid::database::strGetUnsigned(argv[4]));
 	if (targetBase == 0)
-		return UI_Result(ti, ERROR_BadArg, "sc_base copygames error: wrong targetBaseId");
+		return UI_Result(ti, scid::database::ERROR_BadArg, "sc_base copygames error: wrong targetBaseId");
 
-	errorT err = OK;
-	const HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
+	scid::database::errorT err = scid::database::OK;
+	const scid::database::HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
 	if (filter != 0) {
 		err = targetBase->importGames(dbase, filter, UI_CreateProgress(ti));
 	} else {
-		uint gNum = strGetUnsigned(argv[3]);
-		const IndexEntry* ie = (gNum > 0)
+		scid::database::uint gNum = scid::database::strGetUnsigned(argv[3]);
+		const scid::database::IndexEntry* ie = (gNum > 0)
 		                           ? dbase->getIndexEntry_bounds(gNum - 1)
 		                           : nullptr;
 		if (ie == nullptr)
 			return UI_Result(
-			    ti, ERROR_BadArg,
+			    ti, scid::database::ERROR_BadArg,
 			    "sc_base copygames error: wrong <gameNum|filterName>");
 
-		Game game;
+		scid::database::Game game;
 		err = dbase->getGame(*ie, game);
-		if (err == OK) {
+		if (err == scid::database::OK) {
 			err = targetBase->saveGame(&game);
 		}
 	}
@@ -188,19 +188,19 @@ UI_res_t sc_base_create(UI_handle_t ti, int argc, const char** argv) {
 	const char* usage = "Usage: sc_base create <MEMORY|SCID4|PGN> filename";
 
 	if (argc == 3) // Old interface defaults to SCID4
-		return doOpenBase(ti, "SCID4", FMODE_Create, argv[2]);
+		return doOpenBase(ti, "SCID4", scid::database::FMODE_Create, argv[2]);
 
 	if (argc == 4)
-		return doOpenBase(ti, argv[2], FMODE_Create, argv[3]);
+		return doOpenBase(ti, argv[2], scid::database::FMODE_Create, argv[3]);
 
-	return UI_Result(ti, ERROR_BadArg, usage);
+	return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 }
 
 
 /**
  * sc_base_extra() - get/set a database extra tag (i.e. "description" or "type")
  */
-UI_res_t sc_base_extra(scidBaseT* dbase, UI_handle_t ti, int argc, const char** argv)
+UI_res_t sc_base_extra(scid::database::scidBaseT* dbase, UI_handle_t ti, int argc, const char** argv)
 {
 	const char* usage = "Usage: sc_base extra baseId [tagname new_value]";
 
@@ -211,13 +211,13 @@ UI_res_t sc_base_extra(scidBaseT* dbase, UI_handle_t ti, int argc, const char** 
 			res.push_back(e.first);
 			res.push_back(e.second.c_str());
 		}
-		return UI_Result(ti, OK, res);
+		return UI_Result(ti, scid::database::OK, res);
 	}
 	if (argc == 5) {
 		return UI_Result(ti, dbase->setExtraInfo(argv[3], argv[4]));
 	}
 
-	return UI_Result(ti, ERROR_BadArg, usage);
+	return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 }
 
 
@@ -229,12 +229,12 @@ UI_res_t sc_base_extra(scidBaseT* dbase, UI_handle_t ti, int argc, const char** 
  *   the full path filename without the .si4 extension for native Scid databases
  *   <clipbase> for the clipbase
  */
-UI_res_t sc_base_filename(scidBaseT* dbase, UI_handle_t ti, int argc,
+UI_res_t sc_base_filename(scid::database::scidBaseT* dbase, UI_handle_t ti, int argc,
                           const char**) {
 	const char* usage = "Usage: sc_base filename baseId";
-	if (argc != 3) return UI_Result(ti, ERROR_BadArg, usage);
+	if (argc != 3) return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-	return UI_Result(ti, OK, dbase->getFileName());
+	return UI_Result(ti, scid::database::OK, dbase->getFileName());
 }
 
 
@@ -243,10 +243,10 @@ UI_res_t sc_base_filename(scidBaseT* dbase, UI_handle_t ti, int argc,
  *
  * Return: a boolean value if the requested operation is "get"
  */
-UI_res_t sc_base_gameflag(scidBaseT* dbase, UI_handle_t ti, int argc, const char** argv)
+UI_res_t sc_base_gameflag(scid::database::scidBaseT* dbase, UI_handle_t ti, int argc, const char** argv)
 {
 	const char* usage = "Usage: sc_base gameflag baseId <gameNum|filterName|all> <get|set|unset|invert> flagType";
-	if (argc != 6) return UI_Result(ti, ERROR_BadArg, usage);
+	if (argc != 6) return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
 	int cmd = 0;
 	if (std::strcmp("get", argv[4]) == 0)
@@ -257,9 +257,9 @@ UI_res_t sc_base_gameflag(scidBaseT* dbase, UI_handle_t ti, int argc, const char
 		cmd = 3;
 	else if (std::strcmp("invert", argv[4]) == 0)
 		cmd = 4;
-	uint flagType = IndexEntry::CharToFlagMask(argv[5][0]);
+	scid::database::uint flagType = scid::database::IndexEntry::CharToFlagMask(argv[5][0]);
 	if (flagType != 0 && cmd != 0) {
-		const HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
+		const scid::database::HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
 		if (filter != 0) {
 			switch (cmd) {
 			case 2: return UI_Result(ti, dbase->setFlags(true, flagType, filter));
@@ -267,11 +267,11 @@ UI_res_t sc_base_gameflag(scidBaseT* dbase, UI_handle_t ti, int argc, const char
 			case 4: return UI_Result(ti, dbase->invertFlags(flagType, filter));
 			}
 		} else {
-			gamenumT gNum = strGetUnsigned(argv[3]);
+			scid::database::gamenumT gNum = scid::database::strGetUnsigned(argv[3]);
 			if (gNum > 0 && gNum <= dbase->numGames()) {
 				gNum--;
 				switch (cmd) {
-				case 1: return UI_Result(ti, OK, dbase->getFlag(flagType, gNum));
+				case 1: return UI_Result(ti, scid::database::OK, dbase->getFlag(flagType, gNum));
 				case 2: return UI_Result(ti, dbase->setFlag(true, flagType, gNum));
 				case 3: return UI_Result(ti, dbase->setFlag(false, flagType, gNum));
 				case 4: return UI_Result(ti, dbase->invertFlag(flagType, gNum));
@@ -280,7 +280,7 @@ UI_res_t sc_base_gameflag(scidBaseT* dbase, UI_handle_t ti, int argc, const char
 		}
 	}
 
-	return UI_Result(ti, ERROR_BadArg, usage);
+	return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 }
 
 
@@ -297,31 +297,31 @@ UI_res_t sc_base_gameflag(scidBaseT* dbase, UI_handle_t ti, int argc, const char
  *
  * Return: the position (0 == first) of the first match or "none" if not found
  */
-UI_res_t sc_base_gamelocation(scidBaseT* dbase, UI_handle_t ti, int argc, const char** argv)
+UI_res_t sc_base_gamelocation(scid::database::scidBaseT* dbase, UI_handle_t ti, int argc, const char** argv)
 {
 	const char* usage = "Usage: sc_base gamelocation baseId filterName sortCrit <gnumber | 0 text start_pos forward_dir>";
-	if (argc < 6) return UI_Result(ti, ERROR_BadArg, usage);
+	if (argc < 6) return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-	const HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
-	if (filter == 0) return UI_Result(ti, ERROR_BadArg, usage);
+	const scid::database::HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
+	if (filter == 0) return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
 	const char* sort = argv[4];
-	gamenumT gnumber = strGetUnsigned(argv[5]);
-	size_t location = INVALID_GAMEID;
+	scid::database::gamenumT gnumber = scid::database::strGetUnsigned(argv[5]);
+	size_t location = scid::database::INVALID_GAMEID;
 	if (gnumber == 0) {
 		if (argc != 9)
-			return UI_Result(ti, ERROR_BadArg, usage);
+			return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 		const char* text = argv[6];
-		size_t start = strGetUnsigned(argv[7]);
-		auto contains = [&](gamenumT g) {
+		size_t start = scid::database::strGetUnsigned(argv[7]);
+		auto contains = [&](scid::database::gamenumT g) {
 			const auto tags = dbase->tagRoster(g);
-			return strAlphaContains(tags.white, text) ||
-			       strAlphaContains(tags.black, text) ||
-			       strAlphaContains(tags.event, text) ||
-			       strAlphaContains(tags.site, text);
+			return scid::database::strAlphaContains(tags.white, text) ||
+			       scid::database::strAlphaContains(tags.black, text) ||
+			       scid::database::strAlphaContains(tags.event, text) ||
+			       scid::database::strAlphaContains(tags.site, text);
 		};
-		if (strGetBoolean(argv[8])) {
-			std::vector<gamenumT> buf(
+		if (scid::database::strGetBoolean(argv[8])) {
+			std::vector<scid::database::gamenumT> buf(
 			    start >= filter->size() ? 1 : filter->size() - start);
 			buf.resize(
 			    dbase->listGames(sort, start, buf.size(), filter, buf.data()));
@@ -329,7 +329,7 @@ UI_res_t sc_base_gamelocation(scidBaseT* dbase, UI_handle_t ti, int argc, const 
 			if (it != buf.end())
 				location = start + std::distance(buf.begin(), it);
 		} else {
-			std::vector<gamenumT> buf(start ? start : 1);
+			std::vector<scid::database::gamenumT> buf(start ? start : 1);
 			buf.resize(dbase->listGames(sort, 0, start, filter, buf.data()));
 			auto it = std::find_if(buf.rbegin(), buf.rend(), contains);
 			if (it != buf.rend())
@@ -338,9 +338,9 @@ UI_res_t sc_base_gamelocation(scidBaseT* dbase, UI_handle_t ti, int argc, const 
 	} else {
 		location = dbase->sortedPosition(sort, filter, gnumber - 1);
 	}
-	if (location == INVALID_GAMEID)
-		return UI_Result(ti, OK, "none"); // Not found
-	return UI_Result(ti, OK, location);
+	if (location == scid::database::INVALID_GAMEID)
+		return UI_Result(ti, scid::database::OK, "none"); // Not found
+	return UI_Result(ti, scid::database::OK, location);
 }
 
 
@@ -348,37 +348,37 @@ UI_res_t sc_base_gamelocation(scidBaseT* dbase, UI_handle_t ti, int argc, const 
  * sc_base_gameslist() - returns the sorted list of games of a database
  * @start:    0 for the first game
  */
-UI_res_t sc_base_gameslist(scidBaseT* dbase, UI_handle_t ti, int argc, const char** argv)
+UI_res_t sc_base_gameslist(scid::database::scidBaseT* dbase, UI_handle_t ti, int argc, const char** argv)
 {
 	const char* usage = "Usage: sc_base gameslist baseId start count filterName sortCrit";
-	if (argc != 7) return UI_Result(ti, ERROR_BadArg, usage);
+	if (argc != 7) return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-	size_t start = strGetUnsigned(argv[3]);
-	size_t count = strGetUnsigned(argv[4]);
-	const HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[5]);
+	size_t start = scid::database::strGetUnsigned(argv[3]);
+	size_t count = scid::database::strGetUnsigned(argv[4]);
+	const scid::database::HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[5]);
 	if (filter == NULL)
-		return UI_Result(ti, ERROR_BadArg, usage);
-	gamenumT* idxList = new gamenumT[count];
+		return UI_Result(ti, scid::database::ERROR_BadArg, usage);
+	scid::database::gamenumT* idxList = new scid::database::gamenumT[count];
 	count = dbase->listGames(argv[6], start, count, filter, idxList);
 
 	UI_List res (count * 3);
 	UI_List ginfo(24);
-	for (uint i = 0; i < count; ++i) {
-		uint idx = idxList[i];
+	for (scid::database::uint i = 0; i < count; ++i) {
+		scid::database::uint idx = idxList[i];
 
 		ASSERT(filter->get(idx) != 0);
-		uint ply = filter->get(idx) -1;
+		scid::database::uint ply = filter->get(idx) -1;
 
-		const IndexEntry* ie = dbase->getIndexEntry(idx);
+		const scid::database::IndexEntry* ie = dbase->getIndexEntry(idx);
 		const auto tags = dbase->tagRoster(*ie);
 
 		ginfo.clear();
 		ginfo.push_back(idx +1);
-		ginfo.push_back(RESULT_STR[ie->GetResult()]);
+		ginfo.push_back(scid::database::RESULT_STR[ie->GetResult()]);
 		ginfo.push_back((ie->GetNumHalfMoves() + 1) / 2);
 		ginfo.push_back(tags.white);
 		std::string eloStr;
-		eloT welo = ie->GetWhiteElo();
+		scid::database::eloT welo = ie->GetWhiteElo();
 		if (welo != 0) {
 			eloStr = std::to_string(welo);
 		} else {
@@ -391,7 +391,7 @@ UI_res_t sc_base_gameslist(scidBaseT* dbase, UI_handle_t ti, int argc, const cha
 		}
 		ginfo.push_back(eloStr);
 		ginfo.push_back(tags.black);
-		eloT belo = ie->GetBlackElo();
+		scid::database::eloT belo = ie->GetBlackElo();
 		if (belo != 0) {
 			eloStr = std::to_string(belo);
 		} else {
@@ -404,7 +404,7 @@ UI_res_t sc_base_gameslist(scidBaseT* dbase, UI_handle_t ti, int argc, const cha
 		}
 		ginfo.push_back(eloStr);
 		char buf_date[16];
-		date_DecodeToString(ie->GetDate(), buf_date);
+		scid::database::date_DecodeToString(ie->GetDate(), buf_date);
 		ginfo.push_back(buf_date);
 		ginfo.push_back(tags.event);
 		ginfo.push_back(tags.round);
@@ -418,16 +418,16 @@ UI_res_t sc_base_gameslist(scidBaseT* dbase, UI_handle_t ti, int argc, const cha
 		char flags[16];
 		ie->GetFlagStr (flags, "WBMENPTKQ!?U123456");
 		ginfo.push_back(flags);
-		ecoStringT ecoStr;
-		eco_ToExtendedString (ie->GetEcoCode(), ecoStr);
+		scid::database::ecoStringT ecoStr;
+		scid::database::eco_ToExtendedString (ie->GetEcoCode(), ecoStr);
 		ginfo.push_back(ecoStr);
-		std::string endMaterial = matsig_makeString(ie->GetFinalMatSig());
+		std::string endMaterial = scid::database::matsig_makeString(ie->GetFinalMatSig());
 		ginfo.push_back(endMaterial);
 		char startpos[2] = {0};
 		startpos[0] = (ie->GetStartFlag()) ? 'S' : ' ';
 		ginfo.push_back(startpos);
 		char buf_eventdate[16];
-		date_DecodeToString (ie->GetEventDate(), buf_eventdate);
+		scid::database::date_DecodeToString (ie->GetEventDate(), buf_eventdate);
 		ginfo.push_back(buf_eventdate);
 		ginfo.push_back(ie->GetYear());
 		ginfo.push_back((welo + belo)/2);
@@ -440,11 +440,11 @@ UI_res_t sc_base_gameslist(scidBaseT* dbase, UI_handle_t ti, int argc, const cha
 	}
 
 	delete [] idxList;
-	return UI_Result(ti, OK, res);
+	return UI_Result(ti, scid::database::OK, res);
 }
 
-static UI_res_t sc_base_getGameHelper(UI_handle_t ti, Game& game) {
-	auto positions = gamepos::collectPositions(game);
+static UI_res_t sc_base_getGameHelper(UI_handle_t ti, scid::database::Game& game) {
+	auto positions = scid::database::gamepos::collectPositions(game);
 	UI_List res(positions.size());
 	UI_List posInfo(6);
 	for (const auto& pos : positions) {
@@ -455,7 +455,7 @@ static UI_res_t sc_base_getGameHelper(UI_handle_t ti, Game& game) {
 		std::string nags;
 		for (const auto& nag : pos.NAGs) {
 			char temp[16];
-			game_printNag(nag, temp, true, PGN_FORMAT_Plain);
+			game_printNag(nag, temp, true, scid::database::PGN_FORMAT_Plain);
 			if (!nags.empty())
 				nags += ' ';
 			nags += temp;
@@ -465,7 +465,7 @@ static UI_res_t sc_base_getGameHelper(UI_handle_t ti, Game& game) {
 		posInfo.push_back(pos.lastMoveSAN);
 		res.push_back(posInfo);
 	}
-	return UI_Result(ti, OK, res);
+	return UI_Result(ti, scid::database::OK, res);
 }
 
 /**
@@ -488,14 +488,14 @@ static UI_res_t sc_base_getGameHelper(UI_handle_t ti, Game& game) {
  * current position. The move is indicated using English "Standard Algebraic
  * Notation".
  */
-UI_res_t sc_base_getGame(scidBaseT* dbase, UI_handle_t ti, int argc,
+UI_res_t sc_base_getGame(scid::database::scidBaseT* dbase, UI_handle_t ti, int argc,
                          const char** argv) {
 	const char* usage = "Usage: sc_base getGame baseId gameNum [live]";
 	bool live = (argc == 5 && std::strcmp("live", argv[4]) == 0);
 	if (!live && argc != 4)
-		return UI_Result(ti, ERROR_BadArg, usage);
+		return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-	gamenumT gNum = strGetUnsigned(argv[3]);
+	scid::database::gamenumT gNum = scid::database::strGetUnsigned(argv[3]);
 	auto editor = scidup::app::editor::gameSession(*dbase);
 	if (live && gNum > 0 && editor.matchesLoadedGame(gNum - 1)) {
 		auto location = editor.game().currentLocation();
@@ -506,11 +506,11 @@ UI_res_t sc_base_getGame(scidBaseT* dbase, UI_handle_t ti, int argc,
 
 	auto ie = (gNum > 0) ? dbase->getIndexEntry_bounds(gNum - 1) : nullptr;
 	if (!ie)
-		return UI_Result(ti, ERROR_BadArg, usage);
+		return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-	Game game;
-	errorT err = dbase->getGame(*ie, game);
-	if (err != OK)
+	scid::database::Game game;
+	scid::database::errorT err = dbase->getGame(*ie, game);
+	if (err != scid::database::OK)
 		return UI_Result(ti, err);
 	return sc_base_getGameHelper(ti, game);
 }
@@ -523,18 +523,18 @@ UI_res_t sc_base_getGame(scidBaseT* dbase, UI_handle_t ti, int argc,
  *   games imported and a string containing import errors
  *   or warnings.
  */
-UI_res_t sc_base_import(scidBaseT* dbase, UI_handle_t ti, int argc,
+UI_res_t sc_base_import(scid::database::scidBaseT* dbase, UI_handle_t ti, int argc,
                         const char** argv) {
 	const char* usage = "Usage: sc_base import baseId filename";
 	if (argc != 4)
-		return UI_Result(ti, ERROR_BadArg, usage);
+		return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
 	const auto tcl_strings_are_utf8 =
 	    std::filesystem::path((const char8_t*)argv[3]).string();
 	const auto filename = tcl_strings_are_utf8.c_str();
 
 	// if (pgn)
-	auto codec = ICodecDatabase::PGN;
+	auto codec = scid::database::ICodecDatabase::PGN;
 
 	auto nImported = dbase->numGames();
 	std::string errorMsg;
@@ -545,7 +545,7 @@ UI_res_t sc_base_import(scidBaseT* dbase, UI_handle_t ti, int argc,
 	UI_List res(2);
 	res.push_back(dbase->numGames() - nImported);
 	res.push_back(errorMsg);
-	return UI_Result(ti, OK, res);
+	return UI_Result(ti, scid::database::OK, res);
 }
 
 
@@ -554,24 +554,24 @@ UI_res_t sc_base_import(scidBaseT* dbase, UI_handle_t ti, int argc,
  */
 UI_res_t sc_base_list(UI_handle_t ti, int argc, const char**) {
 	const char* usage = "Usage: sc_base list";
-	if (argc != 2) return UI_Result(ti, ERROR_BadArg, usage);
+	if (argc != 2) return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
 	std::vector<int> l = DBasePool::getHandles();
 	UI_List res(l.size());
 	for (size_t i=0, n=l.size(); i < n; i++) res.push_back(l[i]);
-	return UI_Result(ti, OK, res);
+	return UI_Result(ti, scid::database::OK, res);
 }
 
 
 /**
  * sc_base_numGames() - return the number of games in the database
  */
-UI_res_t sc_base_numGames(scidBaseT* dbase, UI_handle_t ti, int argc,
+UI_res_t sc_base_numGames(scid::database::scidBaseT* dbase, UI_handle_t ti, int argc,
                           const char**) {
 	const char* usage = "Usage: sc_base numGames baseId";
-	if (argc != 3) return UI_Result(ti, ERROR_BadArg, usage);
+	if (argc != 3) return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-	return UI_Result(ti, OK, dbase->numGames());
+	return UI_Result(ti, scid::database::OK, dbase->numGames());
 }
 
 
@@ -583,18 +583,18 @@ UI_res_t sc_base_numGames(scidBaseT* dbase, UI_handle_t ti, int argc,
  *            Other databases require file extension ("example.pgn").
  *
  * Return:
- * - on success or with ERROR_NameDataLoss: the handle assigned to the database
+ * - on success or with scid::database::ERROR_NameDataLoss: the handle assigned to the database
  */
 UI_res_t sc_base_open(UI_handle_t ti, int argc, const char** argv) {
 	const char* usage = "Usage: sc_base open <SCID4|PGN> filename";
 
 	if (argc == 3) // Old interface defaults to SCID4
-		return doOpenBase(ti, "SCID4", FMODE_Both, argv[2]);
+		return doOpenBase(ti, "SCID4", scid::database::FMODE_Both, argv[2]);
 
 	if (argc == 4)
-		return doOpenBase(ti, argv[2], FMODE_Both, argv[3]);
+		return doOpenBase(ti, argv[2], scid::database::FMODE_Both, argv[3]);
 
-	return UI_Result(ti, ERROR_BadArg, usage);
+	return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 }
 
 
@@ -611,14 +611,14 @@ UI_res_t sc_base_open(UI_handle_t ti, int argc, const char** argv) {
 UI_res_t sc_base_slot(UI_handle_t ti, int argc, const char** argv) {
 	const char* usage = "Usage: sc_base slot filename";
 	if (argc != 3)
-		return UI_Result(ti, ERROR_BadArg, usage);
+		return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
 	const auto tcl_strings_are_utf8 =
 	    std::filesystem::path((const char8_t*)argv[2]).string();
 	const auto filename = tcl_strings_are_utf8.c_str();
 
 	int res = DBasePool::find(filename);
-	return UI_Result(ti, OK, res);
+	return UI_Result(ti, scid::database::OK, res);
 }
 
 
@@ -627,18 +627,18 @@ UI_res_t sc_base_slot(UI_handle_t ti, int argc, const char** argv) {
  *
  * A sortchace is used to speed up the other sc_base functions with the same "sortCrit"
  */
-UI_res_t sc_base_sortcache(scidBaseT* dbase, UI_handle_t ti, int argc, const char** argv)
+UI_res_t sc_base_sortcache(scid::database::scidBaseT* dbase, UI_handle_t ti, int argc, const char** argv)
 {
 	const char* usage = "Usage: sc_base sortcache baseId <create|release> sortCrit";
-	if (argc != 5) return UI_Result(ti, ERROR_BadArg, usage);
+	if (argc != 5) return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
 	if (std::strcmp("create", argv[3]) == 0) {
 		if (!dbase->createSortCache(argv[4]))
-			return UI_Result(ti, ERROR);
+			return UI_Result(ti, scid::database::ERROR);
 	} else {
 		dbase->releaseSortCache(argv[4]);
 	}
-	return UI_Result(ti, OK);
+	return UI_Result(ti, scid::database::OK);
 }
 
 
@@ -655,16 +655,16 @@ UI_res_t sc_base_sortcache(scidBaseT* dbase, UI_handle_t ti, int argc, const cha
  *            A10 returns the sum of all the A10,A10a,A10a1...A10z4
  *            An empty string returns the sum of all valid ECO codes
  * flag ?  -> {number of games with the ? flag set}
- *            ? must be a valid flag char (see IndexEntry::CharToFlag())
+ *            ? must be a valid flag char (see scid::database::IndexEntry::CharToFlag())
  * flags   -> {n_games with D flag set} {n_games with W flag set} {n_games with B flag set}
  * ratings -> {minimum elo} {maximum elo {mean elo}
  * results -> {number of games won by white} {number of draws} {number of
  *             games won by black} {number of games with no result}
  */
-UI_res_t sc_base_stats(const scidBaseT* dbase, UI_handle_t ti, int argc, const char ** argv)
+UI_res_t sc_base_stats(const scid::database::scidBaseT* dbase, UI_handle_t ti, int argc, const char ** argv)
 {
 	const char* usage = "Usage: sc_base stats baseId <dates|eco ?|flag ?|flags|ratings|results>";
-	if (argc < 4) return UI_Result(ti, ERROR_BadArg, usage);
+	if (argc < 4) return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
 	const char* subcmd = argv[3];
 	auto const& stats = dbase->getStats();
@@ -672,36 +672,36 @@ UI_res_t sc_base_stats(const scidBaseT* dbase, UI_handle_t ti, int argc, const c
 
 	enum { OPT_DATE, OPT_ECO, OPT_FLAG, OPT_FLAGS, OPT_RATINGS, OPT_RESULTS };
 	const char * options[] = { "dates", "eco", "flag", "flags", "ratings", "results", NULL };
-	switch (strExactMatch(subcmd, options)) {
+	switch (scid::database::strExactMatch(subcmd, options)) {
 	case OPT_DATE:
-		res.push_back(date_GetYear(stats.minDate));
-		res.push_back(date_GetYear(stats.maxDate));
+		res.push_back(scid::database::date_GetYear(stats.minDate));
+		res.push_back(scid::database::date_GetYear(stats.maxDate));
 		res.push_back(stats.nYears == 0 ? 0 : size_t(stats.sumYears / stats.nYears));
 		break;
 	case OPT_ECO: {
-		const scidBaseT::Stats::Eco* eco = (argc != 5) ? 0 : stats.getEcoStats(argv[4]);
-		if (eco == 0) return UI_Result(ti, ERROR_BadArg, usage);
+		const scid::database::scidBaseT::Stats::Eco* eco = (argc != 5) ? 0 : stats.getEcoStats(argv[4]);
+		if (eco == 0) return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 		res.push_back(eco->count);
-		res.push_back(eco->results[RESULT_White]);
-		res.push_back(eco->results[RESULT_Draw]);
-		res.push_back(eco->results[RESULT_Black]);
-		res.push_back(eco->results[RESULT_None]);
-		ASSERT(eco->count >= eco->results[RESULT_None]);
-		uint count = eco->count - eco->results[RESULT_None];
-		uint score = eco->results[RESULT_White] * 2;
-		score += eco->results[RESULT_Draw];
+		res.push_back(eco->results[scid::database::RESULT_White]);
+		res.push_back(eco->results[scid::database::RESULT_Draw]);
+		res.push_back(eco->results[scid::database::RESULT_Black]);
+		res.push_back(eco->results[scid::database::RESULT_None]);
+		ASSERT(eco->count >= eco->results[scid::database::RESULT_None]);
+		scid::database::uint count = eco->count - eco->results[scid::database::RESULT_None];
+		scid::database::uint score = eco->results[scid::database::RESULT_White] * 2;
+		score += eco->results[scid::database::RESULT_Draw];
 		score *= 500;
 		res.push_back(count == 0 ? 0.0 : score / count / 10.0);
 		break; }
 	case OPT_FLAG: {
-		uint flag = (argc != 5) ? 0 : IndexEntry::CharToFlag(*(argv[4]));
-		if (flag == 0) return UI_Result(ti, ERROR_BadArg, usage);
+		scid::database::uint flag = (argc != 5) ? 0 : scid::database::IndexEntry::CharToFlag(*(argv[4]));
+		if (flag == 0) return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 		res.push_back(stats.flagCount[flag]);
 		break; }
 	case OPT_FLAGS:
-		res.push_back(stats.flagCount[IndexEntry::CharToFlag('D')]);
-		res.push_back(stats.flagCount[IndexEntry::CharToFlag('W')]);
-		res.push_back(stats.flagCount[IndexEntry::CharToFlag('B')]);
+		res.push_back(stats.flagCount[scid::database::IndexEntry::CharToFlag('D')]);
+		res.push_back(stats.flagCount[scid::database::IndexEntry::CharToFlag('W')]);
+		res.push_back(stats.flagCount[scid::database::IndexEntry::CharToFlag('B')]);
 		break;
 	case OPT_RATINGS:
 		res.push_back(stats.minRating);
@@ -709,16 +709,16 @@ UI_res_t sc_base_stats(const scidBaseT* dbase, UI_handle_t ti, int argc, const c
 		res.push_back(stats.nRatings == 0 ? 0 : size_t(stats.sumRatings / stats.nRatings));
 		break;
 	case OPT_RESULTS:
-		res.push_back(stats.nResults[RESULT_White]);
-		res.push_back(stats.nResults[RESULT_Draw]);
-		res.push_back(stats.nResults[RESULT_Black]);
-		res.push_back(stats.nResults[RESULT_None]);
+		res.push_back(stats.nResults[scid::database::RESULT_White]);
+		res.push_back(stats.nResults[scid::database::RESULT_Draw]);
+		res.push_back(stats.nResults[scid::database::RESULT_Black]);
+		res.push_back(stats.nResults[scid::database::RESULT_None]);
 		break;
 	default:
-		return UI_Result(ti, ERROR_BadArg, usage);
+		return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 	}
 
-	return UI_Result(ti, OK, res);
+	return UI_Result(ti, scid::database::OK, res);
 }
 
 
@@ -732,36 +732,36 @@ UI_res_t sc_base_stats(const scidBaseT* dbase, UI_handle_t ti, int argc, const c
  *
  * Return: the current database ID after the switch
  */
-UI_res_t sc_base_switch(scidBaseT* dbase, UI_handle_t ti)
+UI_res_t sc_base_switch(scid::database::scidBaseT* dbase, UI_handle_t ti)
 {
 	int res = DBasePool::switchCurrent(dbase);
-	return UI_Result(ti, OK, res);
+	return UI_Result(ti, scid::database::OK, res);
 }
 
 /// Remove all occurrences of the specified tags from the database.
 /// @returns the number of changed games.
-UI_res_t sc_base_strip(scidBaseT& dbase, UI_handle_t ti, int argc,
+UI_res_t sc_base_strip(scid::database::scidBaseT& dbase, UI_handle_t ti, int argc,
                        const char** argv) {
 	const char* usage = "Usage: sc_base strip baseId tagNames...";
 	if (argc < 4)
-		return UI_Result(ti, ERROR_BadArg, usage);
+		return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
 	std::vector<std::string_view> tags(argv + 3, argv + argc);
-	Filter filter_all(dbase.numGames());
+	scid::database::Filter filter_all(dbase.numGames());
 	auto progress = UI_CreateProgress(ti);
-	const auto res = dbase.stripGames(HFilter(&filter_all), progress, tags);
+	const auto res = dbase.stripGames(scid::database::HFilter(&filter_all), progress, tags);
 	return UI_Result(ti, res.first, res.second);
 }
 
 /// Produce a list of PGN tags used in the database
 /// @returns a even-sized list, where each pair of elements is a tag name and
 /// its frequency
-UI_res_t sc_base_taglist(scidBaseT& dbase, UI_handle_t ti) {
-	std::map<std::string, gamenumT, std::less<>> tag_freq;
+UI_res_t sc_base_taglist(scid::database::scidBaseT& dbase, UI_handle_t ti) {
+	std::map<std::string, scid::database::gamenumT, std::less<>> tag_freq;
 	auto progress = UI_CreateProgress(ti);
-	for (gamenumT gnum = 0, n = dbase.numGames(); gnum < n; ++gnum) {
+	for (scid::database::gamenumT gnum = 0, n = dbase.numGames(); gnum < n; ++gnum) {
 		if ((gnum % 1024 == 0) && !progress.report(gnum, n))
-			return UI_Result(ti, ERROR_UserCancel);
+			return UI_Result(ti, scid::database::ERROR_UserCancel);
 
 		const auto ie = dbase.getIndexEntry(gnum);
 		const auto err = dbase.getGame(*ie).decodeTags(
@@ -783,7 +783,7 @@ UI_res_t sc_base_taglist(scidBaseT& dbase, UI_handle_t ti) {
 			res.push_back(freq);
 		}
 	}
-	return UI_Result(ti, OK, res);
+	return UI_Result(ti, scid::database::OK, res);
 }
 
 /**
@@ -810,18 +810,18 @@ UI_res_t sc_base_taglist(scidBaseT& dbase, UI_handle_t ti) {
  *   number of games, average elo of the participants, lowest game number,
  *   winner name, winner elo, winner score, 2nd place name, 2nd elo, 2nd score.
  */
-UI_res_t sc_base_tournaments(const scidBaseT* dbase, UI_handle_t ti, int argc, const char ** argv)
+UI_res_t sc_base_tournaments(const scid::database::scidBaseT* dbase, UI_handle_t ti, int argc, const char ** argv)
 {
 	const char* usage = "Usage: sc_base tournaments baseId filterName n_maxResults [-avgelo range] [-n_games range] [-n_players range] [-sort criteria] ";
-	if (argc < 5) return UI_Result(ti, ERROR_BadArg, usage);
+	if (argc < 5) return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-	const HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
-	if (filter == 0) return UI_Result(ti, ERROR_BadArg, usage);
+	const scid::database::HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
+	if (filter == 0) return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-	SearchTournaments search(dbase, filter);
+	scid::database::SearchTournaments search(dbase, filter);
 
 	const char* sortCriteria = 0;
-	long nResults = strGetUnsigned(argv[4]);
+	long nResults = scid::database::strGetUnsigned(argv[4]);
 
 	static const char* options[] = {
 		"-avgelo", "-n_games", "-n_players", "-player", "-sort", NULL
@@ -829,18 +829,18 @@ UI_res_t sc_base_tournaments(const scidBaseT* dbase, UI_handle_t ti, int argc, c
 	enum { AVGELO, N_GAMES, N_PLAYERS, PLAYER, SORT };
 
 	for (int i = 5; (i + 1) < argc; i += 2) {
-		int index = strUniqueMatch(argv[i], options);
+		int index = scid::database::strUniqueMatch(argv[i], options);
 		const char* value = argv[i + 1];
 		if (*value == 0) continue;
 		switch (index) {
 		case AVGELO:
-			search.filterByAvgElo(StrRange(value));
+			search.filterByAvgElo(scid::database::StrRange(value));
 			break;
 		case N_GAMES:
-			search.filterByNGames(StrRange(value));
+			search.filterByNGames(scid::database::StrRange(value));
 			break;
 		case N_PLAYERS:
-			search.filterByNPlayers(StrRange(value));
+			search.filterByNPlayers(scid::database::StrRange(value));
 			break;
 		case PLAYER:
 			search.filterByPlayer(value);
@@ -849,51 +849,51 @@ UI_res_t sc_base_tournaments(const scidBaseT* dbase, UI_handle_t ti, int argc, c
 			sortCriteria = value;
 			break;
 		default:
-			return UI_Result(ti, ERROR_BadArg, usage);
+			return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 		}
 	}
 
 	if (sortCriteria != 0) {
 		if (!search.sort(sortCriteria, nResults))
-			return UI_Result(ti, ERROR_BadArg, usage);
+			return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 	}
 
-	SearchTournaments::Iter it = search.begin();
-	SearchTournaments::Iter it_end = search.end();
+	scid::database::SearchTournaments::Iter it = search.begin();
+	scid::database::SearchTournaments::Iter it_end = search.end();
 	if (std::distance(it, it_end) > nResults) {
 		it_end = it + nResults;
 	}
 
 	char buf_date[16];
-	const NameBase* nb = dbase->getNameBase();
+	const scid::database::NameBase* nb = dbase->getNameBase();
 	UI_List res(std::distance(it, it_end));
 	UI_List tourney(14);
 	for (; it != it_end; it++) {
 		tourney.clear();
-		date_DecodeToString(it->getStartDate(), buf_date);
-		strTrimDate(buf_date);
+		scid::database::date_DecodeToString(it->getStartDate(), buf_date);
+		scid::database::strTrimDate(buf_date);
 		tourney.push_back(buf_date);
-		tourney.push_back(nb->GetName(NAME_SITE, it->getSiteId()));
-		tourney.push_back(nb->GetName(NAME_EVENT, it->getEventId()));
+		tourney.push_back(nb->GetName(scid::database::NAME_SITE, it->getSiteId()));
+		tourney.push_back(nb->GetName(scid::database::NAME_EVENT, it->getEventId()));
 		tourney.push_back(it->nPlayers());
 		tourney.push_back(it->nGames());
 		tourney.push_back(it->getAvgElo());
 		tourney.push_back(it->getStartGameNum() + 1);
 		const char* name1st = "";
-		eloT elo1st = 0;
+		scid::database::eloT elo1st = 0;
 		double score1st = 0.0;
 		const char* name2nd = "";
-		eloT elo2nd = 0;
+		scid::database::eloT elo2nd = 0;
 		double score2nd = 0.0;
 		if (it->nPlayers() > 0) {
-			const Tourney::Player& p = it->getPlayer(0);
-			name1st = nb->GetName(NAME_PLAYER, p.nameId);
+			const scid::database::Tourney::Player& p = it->getPlayer(0);
+			name1st = nb->GetName(scid::database::NAME_PLAYER, p.nameId);
 			elo1st = p.elo;
 			score1st = p.score / 2.0;
 		}
 		if (it->nPlayers() > 1) {
-			const Tourney::Player& p = it->getPlayer(1);
-			name2nd = nb->GetName(NAME_PLAYER, p.nameId);
+			const scid::database::Tourney::Player& p = it->getPlayer(1);
+			name2nd = nb->GetName(scid::database::NAME_PLAYER, p.nameId);
 			elo2nd = p.elo;
 			score2nd = p.score / 2.0;
 		}
@@ -907,7 +907,7 @@ UI_res_t sc_base_tournaments(const scidBaseT* dbase, UI_handle_t ti, int argc, c
 		res.push_back(tourney);
 	}
 
-	return UI_Result(ti, OK, res);
+	return UI_Result(ti, scid::database::OK, res);
 }
 
 /**
@@ -916,22 +916,22 @@ UI_res_t sc_base_tournaments(const scidBaseT* dbase, UI_handle_t ti, int argc, c
  *   On success, return a list of years (the month is added in the fractional
  *   part: 2018.00 ==> gen 2018, 2018.75 ==> oct 2018, etc..) and elos.
  */
-UI_res_t sc_base_player_elo(const scidBaseT& dbase, UI_handle_t ti, int argc,
+UI_res_t sc_base_player_elo(const scid::database::scidBaseT& dbase, UI_handle_t ti, int argc,
                             const char** argv) {
 	const char* usage = "Usage: sc_base player_elo baseId filterName playerName";
 	if (argc != 5)
-		return UI_Result(ti, ERROR_BadArg, usage);
+		return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-	const HFilter filter = scidup::app::tree::resolveFilter(dbase, argv[3]);
+	const scid::database::HFilter filter = scidup::app::tree::resolveFilter(dbase, argv[3]);
 	if (filter == nullptr)
-		return UI_Result(ti, ERROR_BadArg, usage);
+		return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-	idNumberT id = 0;
-	if (dbase.getNameBase()->FindExactName(NAME_PLAYER, argv[4], &id) != OK)
-		return UI_Result(ti, OK);
+	scid::database::idNumberT id = 0;
+	if (dbase.getNameBase()->FindExactName(scid::database::NAME_PLAYER, argv[4], &id) != scid::database::OK)
+		return UI_Result(ti, scid::database::OK);
 
-	std::map<unsigned, eloT> eloByMonth;
-	auto getPlayerElo = [](auto idx_entry, auto player_id) -> eloT {
+	std::map<unsigned, scid::database::eloT> eloByMonth;
+	auto getPlayerElo = [](auto idx_entry, auto player_id) -> scid::database::eloT {
 		ASSERT(idx_entry);
 		if (idx_entry->GetWhite() == player_id)
 			return idx_entry->GetWhiteElo();
@@ -940,11 +940,11 @@ UI_res_t sc_base_player_elo(const scidBaseT& dbase, UI_handle_t ti, int argc,
 		return 0;
 	};
 	for (auto gnum : filter) {
-		const IndexEntry* ie = dbase.getIndexEntry(gnum);
+		const scid::database::IndexEntry* ie = dbase.getIndexEntry(gnum);
 		if (auto elo = getPlayerElo(ie, id)) {
 			auto date = ie->GetDate();
-			auto year = date_GetYear(date);
-			auto month = date_GetMonth(date);
+			auto year = scid::database::date_GetYear(date);
+			auto month = scid::database::date_GetMonth(date);
 			if (month > 0) {
 				month--;
 			}
@@ -960,7 +960,7 @@ UI_res_t sc_base_player_elo(const scidBaseT& dbase, UI_handle_t ti, int argc,
 		res.push_back(e.first / 12.0); // year
 		res.push_back(e.second);       // elo
 	}
-	return UI_Result(ti, OK, res);
+	return UI_Result(ti, scid::database::OK, res);
 }
 
 } // End of anonymous namespace
@@ -969,8 +969,8 @@ UI_res_t sc_base_player_elo(const scidBaseT& dbase, UI_handle_t ti, int argc,
 UI_res_t sc_base_inUse       (UI_extra_t, UI_handle_t, int argc, const char ** argv);
 UI_res_t sc_base_export      (UI_extra_t, UI_handle_t, int argc, const char ** argv);
 UI_res_t sc_base_piecetrack  (UI_extra_t, UI_handle_t, int argc, const char ** argv);
-UI_res_t sc_base_duplicates  (scidBaseT* dbase, UI_handle_t, int argc, const char ** argv);
-UI_res_t sc_base_gamesummary (const scidBaseT& dbase, UI_handle_t, int, const char**);
+UI_res_t sc_base_duplicates  (scid::database::scidBaseT* dbase, UI_handle_t, int argc, const char ** argv);
+UI_res_t sc_base_gamesummary (const scid::database::scidBaseT& dbase, UI_handle_t, int, const char**);
 
 
 UI_res_t sc_base (UI_extra_t cd, UI_handle_t ti, int argc, const char ** argv)
@@ -997,9 +997,9 @@ UI_res_t sc_base (UI_extra_t cd, UI_handle_t ti, int argc, const char ** argv)
 	    BASE_GAMESUMMARY
 	};
 
-	if (argc <= 1) return UI_Result(ti, ERROR_BadArg, "Usage: sc_base <cmd>");
+	if (argc <= 1) return UI_Result(ti, scid::database::ERROR_BadArg, "Usage: sc_base <cmd>");
 
-	int index = strUniqueMatch (argv[1], options);
+	int index = scid::database::strUniqueMatch (argv[1], options);
 	switch (index) {
 	case BASE_CREATE:
 		return sc_base_create(ti, argc, argv);
@@ -1027,9 +1027,9 @@ UI_res_t sc_base (UI_extra_t cd, UI_handle_t ti, int argc, const char ** argv)
 	}
 
 	//New multi-base functions
-	if (argc < 3) return UI_Result(ti, ERROR_BadArg, "Usage: sc_base <cmd> baseId [args]");
-	auto dbase = DBasePool::getBase(strGetUnsigned(argv[2]));
-	if (dbase == 0) return UI_Result(ti, ERROR_FileNotOpen);
+	if (argc < 3) return UI_Result(ti, scid::database::ERROR_BadArg, "Usage: sc_base <cmd> baseId [args]");
+	auto dbase = DBasePool::getBase(scid::database::strGetUnsigned(argv[2]));
+	if (dbase == 0) return UI_Result(ti, scid::database::ERROR_FileNotOpen);
 
 	switch (index) {
 	case BASE_CLOSE:
@@ -1066,7 +1066,7 @@ UI_res_t sc_base (UI_extra_t cd, UI_handle_t ti, int argc, const char ** argv)
 		return sc_base_import (dbase, ti, argc, argv);
 
 	case BASE_ISREADONLY:
-		return UI_Result(ti, OK, dbase->isReadOnly());
+		return UI_Result(ti, scid::database::OK, dbase->isReadOnly());
 
 	case BASE_NUMGAMES:
 		return sc_base_numGames (dbase, ti, argc, argv);
@@ -1098,5 +1098,5 @@ UI_res_t sc_base (UI_extra_t cd, UI_handle_t ti, int argc, const char ** argv)
 
 	std::string res = "sc_base\nInvalid minor command: ";
 	res.append(argv[1]);
-	return UI_Result(ti, ERROR_BadArg, res);
+	return UI_Result(ti, scid::database::ERROR_BadArg, res);
 }

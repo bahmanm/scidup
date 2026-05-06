@@ -24,6 +24,8 @@
 #include <string_view>
 #include <vector>
 
+namespace scid::database {
+
 namespace {
 
 class SearchName {
@@ -582,3 +584,5 @@ errorT search_index(const scidBaseT* base, HFilter& filter, int argc,
 	return OK;
 }
 
+
+} // namespace scid::database

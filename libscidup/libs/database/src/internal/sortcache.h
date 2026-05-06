@@ -27,6 +27,8 @@
 #include "scidup/database/common.h"
 
 #include <atomic>
+namespace scid::database {
+
 using std::atomic_bool;
 
 class HFilter;
@@ -165,4 +167,6 @@ private:
 	void th_sort();
 };
 
+
+} // namespace scid::database
 #endif

@@ -29,6 +29,8 @@
 /**
  * class TourneyGame - Private class used by Tourney and SearchTournaments
  */
+namespace scid::database {
+
 struct TourneyGame {
 	idNumberT siteID_;
 	idNumberT eventID_;
@@ -342,4 +344,6 @@ inline bool SearchTournaments::sort(const char* criteria, size_t nOrdered) {
 	return true;
 }
 
+
+} // namespace scid::database
 #endif

@@ -33,6 +33,8 @@
 #include <cstring>
 #include <vector>
 
+namespace scid::database {
+
 class CodecPgn final : public CodecProxy<CodecPgn> {
 	FilebufAppend file_;
 	std::string filename_;
@@ -156,4 +158,6 @@ public:
 	}
 };
 
+
+} // namespace scid::database
 #endif

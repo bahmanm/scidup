@@ -22,6 +22,8 @@
 
 // Matsigs are 32-bit unsigned ints.  We only use 24 bits of this.
 
+namespace scid::database {
+
 typedef uint32_t matSigT;
 
 // From most significant bits down to least, the matsig layout is:
@@ -341,6 +343,8 @@ inline bool hpSig_match(int hpSig, int nMoved, const byte* changeList) {
 	return sig == hpSig;
 }
 
+
+} // namespace scid::database
 #endif
 
 //////////////////////////////////////////////////////////////////////

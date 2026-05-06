@@ -21,6 +21,8 @@
 
 #include "scidup/database/fullmove.h"
 
+namespace scid::database {
+
 class StoredLine {
 	static constexpr int STORED_LINES = 255;
 	static const FullMove* Moves_[STORED_LINES + 1];
@@ -58,6 +60,8 @@ public:
 	}
 };
 
+
+} // namespace scid::database
 #endif  // #ifndef SCID_STORED_H
 
 //////////////////////////////////////////////////////////////////////

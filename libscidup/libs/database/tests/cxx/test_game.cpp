@@ -35,17 +35,17 @@ const char* gameLatin1Conv = SCIDUP_TEST_RESOURCES_DIR "res_gameLatin1expected.p
 TEST(Test_Game, clone) {
 	for (auto filename : {gameUTF8, gameLatin1, gameLatin1Conv}) {
 
-		scidBaseT dbase;
-		ASSERT_EQ(OK, dbase.open("PGN", FMODE_Both, filename));
+		scid::database::scidBaseT dbase;
+		ASSERT_EQ(scid::database::OK, dbase.open("PGN", scid::database::FMODE_Both, filename));
 		ASSERT_NE(nullptr, dbase.getIndexEntry_bounds(0));
 
-		Game game;
-		ASSERT_EQ(OK, dbase.getGame(*dbase.getIndexEntry(0), game));
+		scid::database::Game game;
+		ASSERT_EQ(scid::database::OK, dbase.getGame(*dbase.getIndexEntry(0), game));
 
 		std::mt19937 re(std::random_device{}());
 		game.MoveToLocationInPGN(std::uniform_int_distribution<>{0, 500}(re));
 
-		std::unique_ptr<Game> clone{game.clone()};
+		std::unique_ptr<scid::database::Game> clone{game.clone()};
 
 		ASSERT_EQ(clone->GetPgnOffset(), game.GetPgnOffset());
 
@@ -59,12 +59,12 @@ TEST(Test_Game, clone) {
 		clone->GetSAN(sanClone);
 		ASSERT_STREQ(sanGame, sanClone);
 
-		game.SetPgnFormat(PGN_FORMAT_Plain);
+		game.SetPgnFormat(scid::database::PGN_FORMAT_Plain);
 		game.ResetPgnStyle(PGN_STYLE_TAGS | PGN_STYLE_VARS |
 		                   PGN_STYLE_COMMENTS | PGN_STYLE_SCIDFLAGS);
 		auto pgnGame = game.WriteToPGN(75, true);
 
-		clone->SetPgnFormat(PGN_FORMAT_Plain);
+		clone->SetPgnFormat(scid::database::PGN_FORMAT_Plain);
 		clone->ResetPgnStyle(PGN_STYLE_TAGS | PGN_STYLE_VARS |
 		                     PGN_STYLE_COMMENTS | PGN_STYLE_SCIDFLAGS);
 		auto pgnClone = clone->WriteToPGN(75, true);
@@ -77,21 +77,21 @@ TEST(Test_Game, clone) {
 TEST(Test_Game, locationInPGN) {
 	for (auto filename : {gameUTF8, gameLatin1, gameLatin1Conv}) {
 
-		scidBaseT dbase;
-		ASSERT_EQ(OK, dbase.open("PGN", FMODE_Both, filename));
+		scid::database::scidBaseT dbase;
+		ASSERT_EQ(scid::database::OK, dbase.open("PGN", scid::database::FMODE_Both, filename));
 		ASSERT_NE(nullptr, dbase.getIndexEntry_bounds(0));
 
-		Game game;
+		scid::database::Game game;
 		auto bufGame = dbase.getGame(*dbase.getIndexEntry(0));
 		ASSERT_TRUE(bufGame);
-		ASSERT_EQ(OK, game.DecodeMovesOnly(bufGame));
+		ASSERT_EQ(scid::database::OK, game.DecodeMovesOnly(bufGame));
 
 		unsigned location = 1;
 		game.MoveToStart();
 		while (true) {
 			++location;
-			errorT errForward = game.MoveForwardInPGN();
-			if (errForward != OK) {
+			scid::database::errorT errForward = game.MoveForwardInPGN();
+			if (errForward != scid::database::OK) {
 				ASSERT_EQ(errForward, game.MoveToLocationInPGN(location));
 				break;
 			}
@@ -113,15 +113,15 @@ TEST(Test_Game, locationInPGN) {
 }
 
 TEST(Test_Game, MoveToStart_MoveToEnd) {
-	scidBaseT dbase;
-	ASSERT_EQ(OK, dbase.open("PGN", FMODE_Both, gameUTF8));
+	scid::database::scidBaseT dbase;
+	ASSERT_EQ(scid::database::OK, dbase.open("PGN", scid::database::FMODE_Both, gameUTF8));
 	auto ie = dbase.getIndexEntry_bounds(0);
 	ASSERT_NE(nullptr, ie);
 
 	auto randomEngine = std::mt19937(std::random_device{}());
 	auto distribution = std::uniform_int_distribution<>{2, 500};
-	Game game;
-	ASSERT_EQ(OK, dbase.getGame(*ie, game));
+	scid::database::Game game;
+	ASSERT_EQ(scid::database::OK, dbase.getGame(*ie, game));
 
 	for (int i = 0; i < 10; i++) {
 		game.MoveToLocationInPGN(distribution(randomEngine));
@@ -143,7 +143,7 @@ TEST(Test_Game, MoveToStart_MoveToEnd) {
 }
 
 TEST(Test_Game, viewTagPairs) {
-	Game game;
+	scid::database::Game game;
 
 	// Expect to visit the STR even for an empty game
 	std::vector<std::pair<std::string, std::string>> expected_STR = {
@@ -163,16 +163,16 @@ TEST(Test_Game, viewTagPairs) {
 	expected_STR[5].second = "black \\player\"";
 	game.SetBlackStr(expected_STR[5].second.c_str());
 	expected_STR[2].second = "2018.06.11";
-	game.SetDate(date_parsePGNTag("2018.06.11", 10));
+	game.SetDate(scid::database::date_parsePGNTag("2018.06.11", 10));
 	const char* white_elo = "2800";
 	expected_extra.emplace_back("WhiteRapid", white_elo);
-	game.setRating(WHITE, "Rapid", 5, {white_elo, white_elo + 4});
+	game.setRating(scid::database::WHITE, "Rapid", 5, {white_elo, white_elo + 4});
 	expected_extra.emplace_back("BlackElo", "2650");
 	game.SetBlackElo(2650);
 	expected_extra.emplace_back("ECO", "A01");
-	game.SetEco(eco_FromString("A01"));
+	game.SetEco(scid::database::eco_FromString("A01"));
 	expected_extra.emplace_back("EventDate", "2018.06.01");
-	game.SetEventDate(date_parsePGNTag("2018.06.01", 10));
+	game.SetEventDate(scid::database::date_parsePGNTag("2018.06.01", 10));
 	expected_extra.emplace_back("UTCDate", "2018.06.10");
 	game.addTag("UTCDate", "2018.06.10");
 	expected_extra.emplace_back("UTF-8", (const char*)u8"Hell\u00F6");
@@ -182,7 +182,7 @@ TEST(Test_Game, viewTagPairs) {
 	game.addTag(expected_extra.back().first.c_str(),
 	            expected_extra.back().second.c_str());
 	expected_STR[6].second = "0-1";
-	game.SetResult(RESULT_Black);
+	game.SetResult(scid::database::RESULT_Black);
 	expected_extra.emplace_back(
 	    "FEN", "8/N2P1pk1/2n2q2/1P2pp2/5PN1/QKPp1P2/8/8 w - - 0 1");
 	game.SetStartFen(expected_extra.back().second.c_str());
@@ -211,7 +211,7 @@ TEST(Test_Game, viewTagPairs) {
 TEST(Test_Game, empty_tag_name) {
 	std::vector<unsigned char> encodedGame;
 	{
-		Game game;
+		scid::database::Game game;
 		game.addTag("Normal tag ", "normal  value");
 		game.addTag("", "empty tag name");
 		game.addTag("Annotator", "common tag");
@@ -220,7 +220,7 @@ TEST(Test_Game, empty_tag_name) {
 		game.Encode(encodedGame);
 	}
 
-	ByteBuffer bbuf(encodedGame.data(), encodedGame.size());
+	scid::database::ByteBuffer bbuf(encodedGame.data(), encodedGame.size());
 	int i = 0;
 	bbuf.decodeTags([&i](auto tag_name, auto tag_value) {
 		if (i++ == 0) {
@@ -239,13 +239,13 @@ TEST(Test_Game, encodeFEN) {
 	const char* kiwipete =
 	    "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1";
 	{
-		Game game;
+		scid::database::Game game;
 		game.SetStartFen(kiwipete);
 		game.Encode(encodedGame);
 	}
 	{
-		ByteBuffer bbuf(encodedGame.data(), encodedGame.size());
-		Game game;
+		scid::database::ByteBuffer bbuf(encodedGame.data(), encodedGame.size());
+		scid::database::Game game;
 		game.DecodeMovesOnly(bbuf);
 		game.MoveToStart();
 		char str[1024];
@@ -256,8 +256,9 @@ TEST(Test_Game, encodeFEN) {
 
 TEST(Test_Game, currentPosUCI_startpos) {
 	std::string_view pgn = "1.d4 (1.e4 e5 ( 1...c5)) (1.c4) 1...d5 2.c4";
-	Game game;
-	pgn::parse_game({pgn.data(), pgn.data() + pgn.size()}, PgnVisitor{game});
+	scid::database::Game game;
+	scid::database::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()},
+	                                scid::database::PgnVisitor{game});
 
 	const std::pair<unsigned, const char*> expected[] = {
 	    {0, "position startpos moves"},
@@ -282,8 +283,9 @@ TEST(Test_Game, currentPosUCI_fen) {
 	std::string_view pgn =
 	    "[FEN 8/8/8/8/2p5/1k1p4/p4N2/2K5 w - - 0 198]\n"
 	    "198.Kd2 ( 198.Nxd3 a1=R+ 199.Kd2 cxd3 )198...a1=Q 199.Ke3 Qe1+ 0-1";
-	Game game;
-	pgn::parse_game({pgn.data(), pgn.data() + pgn.size()}, PgnVisitor{game});
+	scid::database::Game game;
+	scid::database::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()},
+	                                scid::database::PgnVisitor{game});
 
 	const std::pair<unsigned, const char*> expected[] = {
 	    // clang-format off
@@ -308,9 +310,9 @@ TEST(Test_Game, currentPosUCI_fen) {
 
 TEST(Test_Game, illegalPGN_Castling) {
 	std::string_view pgn = "1.e4 e5 2.Nf3 Nf6 3.Be2 Be7 4.O-O O-O 5.O-O";
-	Game game;
-	PgnParseLog pgnLog;
-	EXPECT_FALSE(pgnParseGame(pgn.data(), pgn.size(), game, pgnLog));
+	scid::database::Game game;
+	scid::database::PgnParseLog pgnLog;
+	EXPECT_FALSE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game, pgnLog));
 	EXPECT_FALSE(pgnLog.log.empty());
 	char fen[256];
 	game.MoveToEnd();
@@ -325,9 +327,9 @@ TEST(Test_Game, illegalPGN_Castling) {
 
 TEST(Test_Game, illegalPGN_KingCapture) {
 	std::string_view pgn = "1.d4 e6 2.e4 Bb4+ 3.-- Be1";
-	Game game;
-	PgnParseLog pgnLog;
-	EXPECT_FALSE(pgnParseGame(pgn.data(), pgn.size(), game, pgnLog));
+	scid::database::Game game;
+	scid::database::PgnParseLog pgnLog;
+	EXPECT_FALSE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game, pgnLog));
 	EXPECT_FALSE(pgnLog.log.empty());
 	char fen[256];
 	game.MoveToEnd();
@@ -341,8 +343,9 @@ namespace {
 /// Replace the move after the first comment with @e movecode
 auto make_invalid(unsigned char movecode, std::string_view pgn) {
 	std::vector<unsigned char> data;
-	Game g;
-	pgn::parse_game({pgn.data(), pgn.data() + pgn.size()}, PgnVisitor{g});
+	scid::database::Game g;
+	scid::database::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()},
+	                                scid::database::PgnVisitor{g});
 	g.Encode(data);
 	auto comment_tag = std::find(data.begin(), data.end(), 12);
 	if (comment_tag != data.end())
@@ -351,26 +354,26 @@ auto make_invalid(unsigned char movecode, std::string_view pgn) {
 }
 
 template <typename DataT> std::string decode_gameview(DataT const& data) {
-	auto bbuf = ByteBuffer{data.data() + 1, data.size()};
+	auto bbuf = scid::database::ByteBuffer{data.data() + 1, data.size()};
 	auto fen = bbuf.decodeStartBoard().second;
 	if (fen) {
-		Position startPos;
+		scid::database::Position startPos;
 		startPos.ReadFromFEN(fen);
-		return GameView(bbuf, startPos).getMoveSAN(0, 99);
+		return scid::database::GameView(bbuf, startPos).getMoveSAN(0, 99);
 	}
-	return GameView(bbuf).getMoveSAN(0, 99);
+	return scid::database::GameView(bbuf).getMoveSAN(0, 99);
 }
 
 template <typename DataT> std::string decode_game(DataT const& data) {
-	auto bbuf = ByteBuffer{data.data(), data.size()};
-	Game game;
+	auto bbuf = scid::database::ByteBuffer{data.data(), data.size()};
+	scid::database::Game game;
 	game.DecodeMovesOnly(bbuf);
 	game.MoveToStart();
 	std::string moves;
 	do {
 		moves += ' ';
 		moves.append(game.GetNextSAN());
-	} while (game.MoveForward() == OK);
+	} while (game.MoveForward() == scid::database::OK);
 	moves.erase(0, 1);
 	return moves;
 }

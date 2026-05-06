@@ -26,6 +26,8 @@
 
 // Version: div by 100 for major number, modulo 100 for minor number
 // so 109 = 1.9, 110 = 1.10, etc.
+namespace scid::database {
+
 typedef unsigned short versionT;
 const versionT SCID_VERSION = 400;     // Current file format version = 4.0
 
@@ -415,6 +417,8 @@ square_Adjacent (squareT from, squareT to)
     return true;
 }
 
+
+} // namespace scid::database
 #endif  // #ifdef SCID_COMMON_H
 
 //////////////////////////////////////////////////////////////////////

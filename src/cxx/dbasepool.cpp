@@ -24,7 +24,7 @@
 
 
 //Current database
-scidBaseT* db = NULL;
+scid::database::scidBaseT* db = NULL;
 
 namespace {
 // MAX_BASES is the maximum number of databases that can be open,
@@ -32,17 +32,17 @@ namespace {
 const int MAX_BASES = 9;
 const int CLIPBASE_NUM = MAX_BASES - 1;
 
-scidBaseT* dbList = NULL;      // array of database slots.
+scid::database::scidBaseT* dbList = NULL;      // array of database slots.
 }
 
 void DBasePool::init() {
-	dbList = new scidBaseT[MAX_BASES];
+	dbList = new scid::database::scidBaseT[MAX_BASES];
 	DBasePool::clearClipBase();
 	DBasePool::switchCurrent(&(dbList[CLIPBASE_NUM]));
 }
 
 void DBasePool::clearClipBase() {
-	dbList[CLIPBASE_NUM].open("MEMORY", FMODE_Create, "<clipbase>");
+	dbList[CLIPBASE_NUM].open("MEMORY", scid::database::FMODE_Create, "<clipbase>");
 	dbList[CLIPBASE_NUM].setExtraInfo("type", "2");
 	scidup::app::editor::reset(dbList[CLIPBASE_NUM]);
 	scidup::app::tree::reset(dbList[CLIPBASE_NUM]);
@@ -65,9 +65,9 @@ int DBasePool::find(const char* filename) {
 	return 0;
 }
 
-scidBaseT* DBasePool::getBase(int baseHandle) {
+scid::database::scidBaseT* DBasePool::getBase(int baseHandle) {
 	if (baseHandle < 1 || baseHandle > MAX_BASES) return 0;
-	scidBaseT* res = &(dbList[baseHandle - 1]);
+	scid::database::scidBaseT* res = &(dbList[baseHandle - 1]);
 	return res->isOpen() ? res : 0;
 }
 
@@ -75,7 +75,7 @@ int DBasePool::getClipBase() {
 	return CLIPBASE_NUM + 1;
 }
 
-scidBaseT* DBasePool::getFreeSlot() {
+scid::database::scidBaseT* DBasePool::getFreeSlot() {
 	for (int i = 0, n = MAX_BASES; i < n; i++) {
 		if (!dbList[i].isOpen()) { return &(dbList[i]); }
 	}
@@ -90,7 +90,7 @@ std::vector<int> DBasePool::getHandles() {
 	return res;
 }
 
-int DBasePool::switchCurrent(scidBaseT* dbase) {
+int DBasePool::switchCurrent(scid::database::scidBaseT* dbase) {
 	static int currentBase = 0;
 	if (dbase != 0) {
 		for (int i = 0; i < MAX_BASES; i++) {

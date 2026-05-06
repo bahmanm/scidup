@@ -26,9 +26,9 @@
 #include <gtest/gtest.h>
 
 // 1.d4 Nf6 2.c4 e6 3.Nc3 Bb4 4.Qc2 O-O
-std::tuple<squareT, squareT, bool> line63[] = {
-    {D2, D4, false}, {G8, F6, false}, {C2, C4, false}, {E7, E6, false},
-    {B1, C3, false}, {F8, B4, false}, {D1, C2, false}, {NS, NS, true}};
+std::tuple<scid::database::squareT, scid::database::squareT, bool> line63[] = {
+    {scid::database::D2, scid::database::D4, false}, {scid::database::G8, scid::database::F6, false}, {scid::database::C2, scid::database::C4, false}, {scid::database::E7, scid::database::E6, false},
+    {scid::database::B1, scid::database::C3, false}, {scid::database::F8, scid::database::B4, false}, {scid::database::D1, scid::database::C2, false}, {scid::database::NS, scid::database::NS, true}};
 const auto line63_fen =
     "rnbq1rk1/pppp1ppp/4pn2/8/1bPP4/2N5/PPQ1PPPP/R1B1KBNR w KQ - 0 5";
 
@@ -41,7 +41,7 @@ auto cmp_moves = [](auto move, auto line) {
 };
 
 TEST(Test_StoredLine, classify) {
-	auto code = StoredLine::classify([&](auto begin, auto end) {
+	auto code = scid::database::StoredLine::classify([&](auto begin, auto end) {
 		return std::equal(std::begin(line63), std::end(line63), begin, end,
 		                  cmp_moves);
 	});
@@ -51,15 +51,15 @@ TEST(Test_StoredLine, classify) {
 TEST(Test_StoredLine, getMove) {
 	auto it = std::begin(line63);
 	unsigned i = 0;
-	while (auto move = StoredLine::getMove(63, i++)) {
+	while (auto move = scid::database::StoredLine::getMove(63, i++)) {
 		EXPECT_TRUE(cmp_moves(*it++, move));
 	}
 }
 
 TEST(Test_StoredLine, match) {
-	Position pos;
+	scid::database::Position pos;
 	pos.ReadFromFEN(line63_fen);
-	const auto stored = StoredLine(pos.GetBoard(), pos.GetToMove());
+	const auto stored = scid::database::StoredLine(pos.GetBoard(), pos.GetToMove());
 	EXPECT_EQ(-1, stored.match(62));
 	EXPECT_EQ(8, stored.match(63));
 	EXPECT_EQ(8, stored.match(64));

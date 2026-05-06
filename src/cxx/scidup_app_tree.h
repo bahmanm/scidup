@@ -14,17 +14,17 @@
 namespace scidup::app::tree {
 
 struct State {
-	std::unique_ptr<Filter> filter = std::make_unique<Filter>(0);
-	TreeCache cache;
+	std::unique_ptr<scid::database::Filter> filter = std::make_unique<scid::database::Filter>(0);
+	scid::database::TreeCache cache;
 	uint64_t cacheToken = 0;
 
-	void reset(scidBaseT const& base) {
+	void reset(scid::database::scidBaseT const& base) {
 		filter->Init(base.numGames());
 		cache.CacheResize(250);
 		cacheToken = base.cacheInvalidationToken();
 	}
 
-	void sync(scidBaseT const& base) {
+	void sync(scid::database::scidBaseT const& base) {
 		if (filter->Size() != base.numGames()) {
 			filter->Resize(base.numGames());
 		}
@@ -37,49 +37,49 @@ struct State {
 
 namespace detail {
 inline auto& states() {
-	static std::unordered_map<scidBaseT const*, State> value;
+	static std::unordered_map<scid::database::scidBaseT const*, State> value;
 	return value;
 }
 
-inline State& stateFor(scidBaseT const& base) { return states()[&base]; }
+inline State& stateFor(scid::database::scidBaseT const& base) { return states()[&base]; }
 
-inline HFilter resolveSingleFilter(scidBaseT const& base, std::string_view id) {
+inline scid::database::HFilter resolveSingleFilter(scid::database::scidBaseT const& base, std::string_view id) {
 	if (id == "tree") {
 		auto& state = stateFor(base);
 		state.sync(base);
-		return HFilter(state.filter.get());
+		return scid::database::HFilter(state.filter.get());
 	}
 	return base.getFilter(id);
 }
 } // namespace detail
 
-inline void reset(scidBaseT& base) { detail::stateFor(base).reset(base); }
+inline void reset(scid::database::scidBaseT& base) { detail::stateFor(base).reset(base); }
 
-inline void release(scidBaseT& base) { detail::states().erase(&base); }
+inline void release(scid::database::scidBaseT& base) { detail::states().erase(&base); }
 
 class Session {
 public:
-	explicit Session(scidBaseT& base) : base_(&base) {}
+	explicit Session(scid::database::scidBaseT& base) : base_(&base) {}
 
-	HFilter filter() const {
+	scid::database::HFilter filter() const {
 		auto& s = state();
 		s.sync(*base_);
-		return HFilter(s.filter.get());
+		return scid::database::HFilter(s.filter.get());
 	}
 
-	TreeCache& cache() const {
+	scid::database::TreeCache& cache() const {
 		auto& s = state();
 		s.sync(*base_);
 		return s.cache;
 	}
 
-	bool cacheRestore(Position const& pos) const {
+	bool cacheRestore(scid::database::Position const& pos) const {
 		auto& s = state();
 		s.sync(*base_);
 		return s.cache.cacheRestore(pos, *s.filter);
 	}
 
-	void cacheAdd(Position const& pos) const {
+	void cacheAdd(scid::database::Position const& pos) const {
 		auto& s = state();
 		s.sync(*base_);
 		s.cache.cacheAdd(pos, *s.filter);
@@ -90,31 +90,31 @@ public:
 
 private:
 	State& state() const { return detail::stateFor(*base_); }
-	scidBaseT* base_;
+	scid::database::scidBaseT* base_;
 };
 
-inline Session session(scidBaseT& base) { return Session(base); }
+inline Session session(scid::database::scidBaseT& base) { return Session(base); }
 
-inline HFilter resolveFilter(scidBaseT const& base, std::string_view filterId) {
+inline scid::database::HFilter resolveFilter(scid::database::scidBaseT const& base, std::string_view filterId) {
 	if (filterId.empty() || filterId[0] != '+') {
 		return detail::resolveSingleFilter(base, filterId);
 	}
 
 	size_t maskName = filterId.find('+', 1);
 	if (maskName == std::string::npos) {
-		return HFilter(nullptr);
+		return scid::database::HFilter(nullptr);
 	}
 
 	auto main = detail::resolveSingleFilter(base, filterId.substr(1, maskName - 1));
 	auto mask = detail::resolveSingleFilter(base, filterId.substr(maskName + 1));
 	if (main == nullptr || mask == nullptr) {
-		return HFilter(nullptr);
+		return scid::database::HFilter(nullptr);
 	}
-	return HFilter(main.mainFilter(), mask.mainFilter());
+	return scid::database::HFilter(main.mainFilter(), mask.mainFilter());
 }
 
 inline std::pair<std::string, std::string>
-getFilterComponents(scidBaseT const& base, std::string_view filterId) {
+getFilterComponents(scid::database::scidBaseT const& base, std::string_view filterId) {
 	if (filterId.empty()) {
 		return {};
 	}
@@ -136,7 +136,7 @@ getFilterComponents(scidBaseT const& base, std::string_view filterId) {
 	return {std::string(main), std::string(mask)};
 }
 
-inline std::string composeFilter(scidBaseT const& base, std::string_view mainFilter,
+inline std::string composeFilter(scid::database::scidBaseT const& base, std::string_view mainFilter,
                                  std::string_view maskFilter) {
 	std::string res;
 	if (mainFilter.empty()) {

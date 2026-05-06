@@ -42,17 +42,17 @@ namespace {
 /// @filterId: valid identifier of a filter.
 /// @return the ids of the "main" and "mask" filters of the composed filter
 ///         @e filterId (if it is not composed returns @filterId and empty).
-UI_res_t sc_filter_components(UI_handle_t ti, const scidBaseT& dbase, int argc,
+UI_res_t sc_filter_components(UI_handle_t ti, const scid::database::scidBaseT& dbase, int argc,
                               const char** argv) {
 	const char* usage = "Usage: sc_filter components baseId filterId";
 	if (argc != 4)
-		return UI_Result(ti, ERROR_BadArg, usage);
+		return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
 	auto filters = scidup::app::tree::getFilterComponents(dbase, argv[3]);
 	UI_List res(2);
 	res.push_back(filters.first);
 	res.push_back(filters.second);
-	return UI_Result(ti, OK, res);
+	return UI_Result(ti, scid::database::OK, res);
 }
 
 /**
@@ -60,7 +60,7 @@ UI_res_t sc_filter_components(UI_handle_t ti, const scidBaseT& dbase, int argc,
  * @baseId: valid database identifier
  * @filterId: valid identifier of the "main" filter. If it is already a composed
  *            one, only the "main" part will be used.
- * @maskfilterId: identifier of the "mask" Filter, can be an empty "" string.
+ * @maskfilterId: identifier of the "mask" scid::database::Filter, can be an empty "" string.
  *
  * A composed filter include only the games contained in both @filterId and
  * @maskfilterId. This function allows to compose a new filter, if @filterId and
@@ -72,16 +72,16 @@ UI_res_t sc_filter_components(UI_handle_t ti, const scidBaseT& dbase, int argc,
  *   filter (modifying functions will affect only the "main" @filterId)
  * - on error, an empty string.
  */
-UI_res_t sc_filter_compose(UI_handle_t ti, const scidBaseT& dbase, int argc,
+UI_res_t sc_filter_compose(UI_handle_t ti, const scid::database::scidBaseT& dbase, int argc,
                            const char** argv) {
 	const char* usage = "Usage: sc_filter compose baseId filterId maskfilterId";
-	if (argc != 5) return UI_Result(ti, ERROR_BadArg, usage);
+	if (argc != 5) return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
 	std::string res = scidup::app::tree::composeFilter(dbase, argv[3], argv[4]);
 	if (res.empty())
-		return UI_Result(ti, ERROR_BadArg, "sc_filter: invalid filterId");
+		return UI_Result(ti, scid::database::ERROR_BadArg, "sc_filter: invalid filterId");
 
-	return UI_Result(ti, OK, res);
+	return UI_Result(ti, scid::database::OK, res);
 }
 
 /**
@@ -91,22 +91,22 @@ UI_res_t sc_filter_compose(UI_handle_t ti, const scidBaseT& dbase, int argc,
  * @-: also remove games before @gnumber
  * @sortCrit: criteria used to determine before/after
  */
-UI_res_t sc_filter_remove(UI_handle_t ti, scidBaseT& dbase, HFilter& filter,
+UI_res_t sc_filter_remove(UI_handle_t ti, scid::database::scidBaseT& dbase, scid::database::HFilter& filter,
                           int argc, const char** argv) {
 	const char* usage = "Usage: sc_filter remove baseId filterId gnumber [<+|-> sortCrit]";
-	if (argc != 5 && argc != 7) return UI_Result(ti, ERROR_BadArg, usage);
+	if (argc != 5 && argc != 7) return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-	uint gNum = strGetUnsigned(argv[4]);
+	scid::database::uint gNum = scid::database::strGetUnsigned(argv[4]);
 	if (gNum == 0 || gNum > dbase.numGames())
-		return UI_Result(ti, ERROR_BadArg);
+		return UI_Result(ti, scid::database::ERROR_BadArg);
 
 	if (argc == 5) {
 		filter.erase(gNum - 1);
 	} else {
 		const char* crit = argv[6];
 		size_t start = dbase.sortedPosition(crit, filter, gNum - 1);
-		if (start == INVALID_GAMEID)
-			return UI_Result(ti, ERROR_BadArg, usage);
+		if (start == scid::database::INVALID_GAMEID)
+			return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
 		size_t count;
 		switch (argv[5][0]) {
@@ -118,17 +118,17 @@ UI_res_t sc_filter_remove(UI_handle_t ti, scidBaseT& dbase, HFilter& filter,
 			start = 0;
 			break;
 		default:
-			return UI_Result(ti, ERROR_BadArg, usage);
+			return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 		}
 
-		gamenumT* idxList = new gamenumT[count];
+		scid::database::gamenumT* idxList = new scid::database::gamenumT[count];
 		count = dbase.listGames(crit, start, count, filter, idxList);
 		for (size_t i = 0; i < count; ++i) {
 			filter.erase(idxList[i]);
 		}
 		delete[] idxList;
 	}
-	return UI_Result(ti, OK);
+	return UI_Result(ti, scid::database::OK);
 }
 
 /**
@@ -136,19 +136,19 @@ UI_res_t sc_filter_remove(UI_handle_t ti, scidBaseT& dbase, HFilter& filter,
  * @full: reset the filter to include all the games
  * @empty: reset the filter to exclude all the games
  */
-UI_res_t sc_filter_reset(UI_handle_t ti, HFilter& filter, int argc,
+UI_res_t sc_filter_reset(UI_handle_t ti, scid::database::HFilter& filter, int argc,
                          const char** argv) {
 	const char* usage = "Usage: sc_filter reset baseId filterId <full|empty>";
-	if (argc != 5) return UI_Result(ti, ERROR_BadArg, usage);
+	if (argc != 5) return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
 	if (strcmp("full", argv[4]) == 0) {
 		filter->includeAll();
 	} else if (strcmp("empty", argv[4]) == 0) {
 		filter->clear();
 	} else {
-		return UI_Result(ti, ERROR_BadArg, usage);
+		return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 	}
-	return UI_Result(ti, OK);
+	return UI_Result(ti, scid::database::OK);
 }
 
 /**
@@ -193,13 +193,13 @@ bool strMatch(std::string_view haystack, std::string_view needle) {
  * - tagValue* matches all values that start with tagValue.
  * - *tagValue* matches all values that include tagValue.
  */
-UI_res_t sc_filter_search_tags(UI_handle_t ti, const scidBaseT& dbase,
-                               HFilter& filter, int argc, const char** argv,
-                               Progress const& progress = {}) {
+UI_res_t sc_filter_search_tags(UI_handle_t ti, const scid::database::scidBaseT& dbase,
+                               scid::database::HFilter& filter, int argc, const char** argv,
+                               scid::database::Progress const& progress = {}) {
 	const char* usage =
 	    "Usage: sc_filter search baseId filterId tags tagName tagValue";
 	if (argc != 7)
-		return UI_Result(ti, ERROR_BadArg, usage);
+		return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
 	std::string_view tagName = argv[5];
 	std::string_view tagValue = argv[6];
@@ -207,7 +207,7 @@ UI_res_t sc_filter_search_tags(UI_handle_t ti, const scidBaseT& dbase,
 	auto filterSz = filter.size();
 	for (auto gnum : filter) {
 		if (++iProgress % 8192 == 0 && !progress.report(iProgress, filterSz))
-			return UI_Result(ti, ERROR_UserCancel);
+			return UI_Result(ti, scid::database::ERROR_UserCancel);
 
 		bool remove = true;
 		auto ie = dbase.getIndexEntry(gnum);
@@ -218,7 +218,7 @@ UI_res_t sc_filter_search_tags(UI_handle_t ti, const scidBaseT& dbase,
 		if (remove)
 			filter.erase(gnum);
 	}
-	return UI_Result(ti, OK);
+	return UI_Result(ti, scid::database::OK);
 }
 
 /**
@@ -230,14 +230,14 @@ UI_res_t sc_filter_search_tags(UI_handle_t ti, const scidBaseT& dbase,
  * - the number of games included in the "main" filter composing @filterId
  *   (if @filterId is not a combined filter, this value is equal to the first).
  */
-UI_res_t sc_filter_sizes(UI_handle_t ti, const scidBaseT& dbase,
-                         HFilter& filter) {
+UI_res_t sc_filter_sizes(UI_handle_t ti, const scid::database::scidBaseT& dbase,
+                         scid::database::HFilter& filter) {
 	// "Usage: sc_filter sizes baseId filterId";
 	UI_List res(3);
 	res.push_back(filter.size());
 	res.push_back(dbase.numGames());
 	res.push_back(filter.mainSize());
-	return UI_Result(ti, OK, res);
+	return UI_Result(ti, scid::database::OK, res);
 }
 
 } // End of anonymous namespace
@@ -247,18 +247,18 @@ int sc_filter_old(ClientData cd, Tcl_Interp* ti, int argc, const char** argv);
 UI_res_t sc_filter(UI_extra_t cd, UI_handle_t ti, int argc, const char** argv) {
 	const char* usage = "Usage: sc_filter <cmd> baseId filterId [args]";
 	if (argc < 2)
-		return UI_Result(ti, ERROR_BadArg, usage);
+		return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
 	if (argc > 3 &&
 	    (strcmp("stats", argv[1]) != 0) // TODO: sc_filter stats baseID filterId
 	) {
-		auto dbase = DBasePool::getBase(strGetUnsigned(argv[2]));
+		auto dbase = DBasePool::getBase(scid::database::strGetUnsigned(argv[2]));
 		if (!dbase)
-			return UI_Result(ti, ERROR_BadArg, usage);
+			return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-		HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
+		scid::database::HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
 		if (filter == nullptr)
-			return UI_Result(ti, ERROR_BadArg, usage);
+			return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
 		const std::string_view cmd = argv[1];
 		if (cmd == "components")

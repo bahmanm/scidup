@@ -60,11 +60,11 @@ std::string encodePgn(const TCont& game)
 	};
 
 	auto FEN_getColor = [](const std::string& FEN) {
-		colorT res = NOCOLOR;
+		scid::database::colorT res = scid::database::NOCOLOR;
 		size_t toMove = FEN.find(' ');
 		if (toMove != std::string::npos && ++toMove < FEN.size()) {
-			if (FEN[toMove] == 'w') res = WHITE;
-			else if (FEN[toMove] == 'b') res = BLACK;
+			if (FEN[toMove] == 'w') res = scid::database::WHITE;
+			else if (FEN[toMove] == 'b') res = scid::database::BLACK;
 		}
 		return res;
 	};
@@ -77,9 +77,9 @@ std::string encodePgn(const TCont& game)
 		return res;
 	};
 
-	std::vector<uint> RAVid = { 0 };
-	auto handleRAV = [&](uint RAVdepth, const uint& RAVnum) {
-		std::pair<uint, uint> res = { 0,0 };
+	std::vector<scid::database::uint> RAVid = { 0 };
+	auto handleRAV = [&](scid::database::uint RAVdepth, const scid::database::uint& RAVnum) {
+		std::pair<scid::database::uint, scid::database::uint> res = { 0,0 };
 		if (++RAVdepth > RAVid.size()) {
 			RAVid.push_back(RAVnum);
 			ASSERT(RAVdepth == RAVid.size());
@@ -101,7 +101,7 @@ std::string encodePgn(const TCont& game)
 	};
 
 	bool forceMoveNum = false;
-	auto needMoveNum = [&forceMoveNum](colorT lastCol) {
+	auto needMoveNum = [&forceMoveNum](scid::database::colorT lastCol) {
 		// 8.2.2.2: Export format move number indications
 		//
 		// There are two export format move number indication formats, one for use
@@ -120,7 +120,7 @@ std::string encodePgn(const TCont& game)
 		//
 		// There are no other cases where move number indications appear in PGN export
 		// format.
-		bool res = (lastCol == BLACK || forceMoveNum);
+		bool res = (lastCol == scid::database::BLACK || forceMoveNum);
 		forceMoveNum = false;
 		return res;
 	};
@@ -128,12 +128,12 @@ std::string encodePgn(const TCont& game)
 	std::string line;
 	for (auto& pos : game) {
 		auto ravs = handleRAV(pos.RAVdepth, pos.RAVnum);
-		for (uint i = 0; i < ravs.second; i++) {
+		for (scid::database::uint i = 0; i < ravs.second; i++) {
 			line += token.sep;
 			line += token.RAVend;
 			forceMoveNum = true;
 		}
-		for (uint i = 0; i < ravs.first; i++) {
+		for (scid::database::uint i = 0; i < ravs.first; i++) {
 			line += token.sep;
 			line += token.RAVstart;
 			forceMoveNum = true;
@@ -149,13 +149,13 @@ std::string encodePgn(const TCont& game)
 				res += token.endl;
 			}
 		} else {
-			colorT lastCol = FEN_getColor(pos.FEN);
-			ASSERT(lastCol != NOCOLOR);
+			scid::database::colorT lastCol = FEN_getColor(pos.FEN);
+			ASSERT(lastCol != scid::database::NOCOLOR);
 			bool printMoveNum = needMoveNum(lastCol);
 			if (printMoveNum) {
 				std::string num = FEN_getMoveNum(pos.FEN);
 				const char* endMoveNum = token.MoveNumEndW;
-				if (lastCol == WHITE) {
+				if (lastCol == scid::database::WHITE) {
 					endMoveNum = token.MoveNumEndB;
 					int temp = atoi(num.c_str());
 					num = std::to_string(--temp);
@@ -198,7 +198,7 @@ std::string encodePgn(const TCont& game)
 		formatLine(line, res);
 	}
 	auto ravs = handleRAV(0, 0);
-	for (uint i = 0; i < ravs.second; i++) {
+	for (scid::database::uint i = 0; i < ravs.second; i++) {
 		line += token.sep;
 		line += token.RAVend;
 	}
@@ -266,14 +266,14 @@ class Test_Scidbase : public ::testing::Test {
 	}
 
 protected:
-	std::vector<gamepos::GamePos> test_GamePos;
+	std::vector<scid::database::gamepos::GamePos> test_GamePos;
 	std::string test_pgnLong;
 	const std::string test_pgnShort =
 		"1. d4 d5 2. c4 ( 2. Nf3 Nf6 ( 2... Bg4 ) 3. c3 ) ( 2. g3 Nf6 3. Bg2 ( 3. Nf3 ) )";
 
-	gamepos::GamePos makeGamePos(uint RAVdepth, uint RAVnum, const char* FEN, const char* SAN)
+	scid::database::gamepos::GamePos makeGamePos(scid::database::uint RAVdepth, scid::database::uint RAVnum, const char* FEN, const char* SAN)
 	{
-		gamepos::GamePos res;
+		scid::database::gamepos::GamePos res;
 		res.RAVdepth = RAVdepth;
 		res.RAVnum = RAVnum;
 		res.FEN = FEN;
@@ -282,26 +282,26 @@ protected:
 	}
 };
 
-auto collectPositions(const scidBaseT& dbase, gamenumT gnum) {
+auto collectPositions(const scid::database::scidBaseT& dbase, scid::database::gamenumT gnum) {
 	auto ie_bounds = dbase.getIndexEntry_bounds(gnum);
 	auto ie = dbase.getIndexEntry(gnum);
-	Game game;
-	if (ie_bounds && ie && dbase.getGame(*ie_bounds, game) == OK)
-		return gamepos::collectPositions(game);
+	scid::database::Game game;
+	if (ie_bounds && ie && dbase.getGame(*ie_bounds, game) == scid::database::OK)
+		return scid::database::gamepos::collectPositions(game);
 
-	return decltype(gamepos::collectPositions(game))();
+	return decltype(scid::database::gamepos::collectPositions(game))();
 }
 
 TEST_F(Test_Scidbase, getGamePos1) {
-	Game game;
-	PgnParseLog parseLog;
-	ASSERT_TRUE(pgnParseGame(test_pgnShort.c_str(), test_pgnShort.size(), game,
+	scid::database::Game game;
+	scid::database::PgnParseLog parseLog;
+	ASSERT_TRUE(scid::database::pgnParseGame(test_pgnShort.c_str(), test_pgnShort.size(), game,
 	                         parseLog));
 	ASSERT_STREQ(parseLog.log.c_str(), "");
 
-	scidBaseT dbase;
-	ASSERT_EQ(OK, dbase.open("MEMORY", FMODE_Create, "Memory"));
-	ASSERT_EQ(OK, dbase.saveGame(&game));
+	scid::database::scidBaseT dbase;
+	ASSERT_EQ(scid::database::OK, dbase.open("MEMORY", scid::database::FMODE_Create, "Memory"));
+	ASSERT_EQ(scid::database::OK, dbase.saveGame(&game));
 	ASSERT_NE(nullptr, dbase.getIndexEntry_bounds(0));
 
 	auto gamepos = collectPositions(dbase, 0);
@@ -320,15 +320,15 @@ TEST_F(Test_Scidbase, getGamePos1) {
 }
 
 TEST_F(Test_Scidbase, getGamePos2) {
-	Game game;
-	PgnParseLog parseLog;
-	ASSERT_TRUE(pgnParseGame(test_pgnShort.c_str(), test_pgnShort.size(), game,
+	scid::database::Game game;
+	scid::database::PgnParseLog parseLog;
+	ASSERT_TRUE(scid::database::pgnParseGame(test_pgnShort.c_str(), test_pgnShort.size(), game,
 	                         parseLog));
 	ASSERT_STREQ(parseLog.log.c_str(), "");
 
-	scidBaseT dbase;
-	ASSERT_EQ(OK, dbase.open("MEMORY", FMODE_Create, "Memory"));
-	ASSERT_EQ(OK, dbase.saveGame(&game));
+	scid::database::scidBaseT dbase;
+	ASSERT_EQ(scid::database::OK, dbase.open("MEMORY", scid::database::FMODE_Create, "Memory"));
+	ASSERT_EQ(scid::database::OK, dbase.saveGame(&game));
 	ASSERT_NE(nullptr, dbase.getIndexEntry_bounds(0));
 
 	auto gamepos = collectPositions(dbase, 0);
@@ -336,8 +336,8 @@ TEST_F(Test_Scidbase, getGamePos2) {
 }
 
 TEST_F(Test_Scidbase, new_compose_delete_get_Filter) {
-	scidBaseT dbase;
-	ASSERT_EQ(OK, dbase.open("MEMORY", FMODE_Create, "Memory"));
+	scid::database::scidBaseT dbase;
+	ASSERT_EQ(scid::database::OK, dbase.open("MEMORY", scid::database::FMODE_Create, "Memory"));
 
 	std::vector<std::pair<std::string, bool>> tests = {
 	    {" dbfilter", false},   {"dbfilter ", false}, {"dbfilter", true},

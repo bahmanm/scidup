@@ -46,6 +46,8 @@
  * Some common tags are encoded in one byte, using a tag_length value over 240
  * and a tag name of 0 bytes.
  */
+namespace scid::database {
+
 inline constexpr size_t MAX_TAG_LEN = 240;
 inline constexpr std::string_view commonTags[] = {
     // 241, 242: Country
@@ -370,3 +372,5 @@ public:
 		return {from, INVALID_PIECE}; // decode error
 	}
 };
+
+} // namespace scid::database

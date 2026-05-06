@@ -19,6 +19,7 @@
 #ifndef SCID_UI_TCLTK_H
 #define SCID_UI_TCLTK_H
 
+#include "scidup/database/misc.h"
 #include <chrono>
 #include <tcl.h>
 #include <sstream>
@@ -27,7 +28,6 @@
 #include <vector>
 
 namespace UI_impl {
-
 
 typedef int         UI_res_t;
 typedef ClientData  UI_extra_t;
@@ -76,7 +76,7 @@ inline int Main (int argc, char* argv[], void (*exit) (void*)) {
 	return 0;
 }
 
-class tcl_Progress : public Progress::Impl {
+class tcl_Progress : public scid::database::Progress::Impl {
 	UI_handle_t ti_;
 	using clock = std::chrono::high_resolution_clock;
 	decltype(clock::now()) timer_ = clock::now();
@@ -105,7 +105,7 @@ public:
 	}
 };
 
-inline Progress CreateProgress(UI_handle_t ti) {
+inline scid::database::Progress CreateProgress(UI_handle_t ti) {
 	Tcl_Obj* cmd[2];
 	cmd[0] = Tcl_NewStringObj("::progressCallBack", -1);
 	cmd[1] = Tcl_NewStringObj("init", -1);
@@ -117,7 +117,7 @@ inline Progress CreateProgress(UI_handle_t ti) {
 	if (err != TCL_OK)
 		return {};
 
-	return Progress(new UI_impl::tcl_Progress(ti));
+	return scid::database::Progress(new UI_impl::tcl_Progress(ti));
 }
 
 class List {
@@ -194,19 +194,19 @@ inline void List::push_back(const T& value) {
 }
 
 
-inline UI_res_t ResultHelper(UI_handle_t ti, errorT res) {
-	if (res == OK) return TCL_OK;
+inline UI_res_t ResultHelper(UI_handle_t ti, scid::database::errorT res) {
+	if (res == scid::database::OK) return TCL_OK;
 	Tcl_SetObjErrorCode(ti, Tcl_NewWideIntObj(res));
 	return TCL_ERROR;
 }
 
-inline UI_res_t Result(UI_handle_t ti, errorT res) {
+inline UI_res_t Result(UI_handle_t ti, scid::database::errorT res) {
 	Tcl_ResetResult(ti);
 	return UI_impl::ResultHelper(ti, res);
 }
 
 template <typename T>
-inline UI_res_t Result(UI_handle_t ti, errorT res, const T& value) {
+inline UI_res_t Result(UI_handle_t ti, scid::database::errorT res, const T& value) {
 	Tcl_SetObjResult(ti, UI_impl::ObjMaker(value));
 	return UI_impl::ResultHelper(ti, res);
 }

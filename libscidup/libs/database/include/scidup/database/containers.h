@@ -31,6 +31,8 @@
  * modify obj;
  * obj_ptr = undo(obj_ptr); // obj_ptr now contains the copy of (1)
  */
+namespace scid::database {
+
 template <class TElem, size_t UNDOMAX> class UndoRedo {
 	std::vector<TElem*> undo_;
 	std::vector<TElem*> redo_;
@@ -202,4 +204,6 @@ public:
 	size_t size() const { return size_; }
 };
 
+
+} // namespace scid::database
 #endif
