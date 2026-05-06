@@ -22,6 +22,7 @@
 #include "scidup/core/fullmove.h"
 #include "scidup/core/game_result.h"
 #include "scidup/database/common.h"
+#include "scidup/database/game_id.h"
 
 namespace scid::database {
 

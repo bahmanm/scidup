@@ -1,4 +1,5 @@
 #include "scidup/database/searchpos.h"
+#include "scidup/database/game_id.h"
 
 #include "stored.h"
 

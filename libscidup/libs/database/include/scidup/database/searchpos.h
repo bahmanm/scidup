@@ -25,6 +25,7 @@
 
 #include "scidup/core/fullmove.h"
 #include "scidup/database/common.h"
+#include "scidup/database/game_id.h"
 #include "scidup/database/matsig.h"
 #include "scidup/core/position.h"
 #include "scidup/database/scidbase.h"

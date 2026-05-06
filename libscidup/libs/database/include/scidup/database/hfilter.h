@@ -20,6 +20,7 @@
 #define SCID_HFILTER_H
 
 #include "scidup/database/common.h"
+#include "scidup/database/game_id.h"
 #include <algorithm>
 #include <iterator>
 #include <memory>

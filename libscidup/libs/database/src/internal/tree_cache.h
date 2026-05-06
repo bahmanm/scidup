@@ -1,5 +1,6 @@
 #pragma once
 
+#include "scidup/database/game_id.h"
 #include "scidup/database/hfilter.h"
 #include <algorithm>
 #include <cstddef>

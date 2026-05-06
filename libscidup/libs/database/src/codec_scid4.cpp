@@ -23,6 +23,7 @@
  */
 
 #include "codec_scid4.h"
+#include "scidup/database/game_id.h"
 #include <algorithm>
 #include <limits>
 #include <string_view>

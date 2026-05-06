@@ -18,6 +18,7 @@
 
 #include "scidup/core/game_result.h"
 #include "scidup/database/common.h"
+#include "scidup/database/game_id.h"
 #include "scidup/database/misc.h"
 #include "scidup/database/scidbase.h"
 #include <algorithm>

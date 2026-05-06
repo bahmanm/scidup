@@ -26,6 +26,7 @@
 
 #include "codec.h"
 #include "containers.h"
+#include "scidup/database/game_id.h"
 #include "scidup/database/index.h"
 #include "scidup/database/namebase.h"
 

@@ -27,6 +27,7 @@
 
 #include "scidup/database/bytebuf.h"
 #include "scidup/database/common.h"
+#include "scidup/database/game_id.h"
 #include "scidup/database/namebase.h"
 #include <string>
 #include <vector>

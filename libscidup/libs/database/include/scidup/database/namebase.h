@@ -19,6 +19,7 @@
 #ifndef SCID_NAMEBASE_H
 #define SCID_NAMEBASE_H
 
+#include "scidup/database/game_id.h"
 #include "scidup/database/index.h"
 #include "scidup/database/indexentry.h"
 #include "scidup/database/misc.h"

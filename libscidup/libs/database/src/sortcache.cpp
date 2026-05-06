@@ -22,6 +22,7 @@
  */
 
 #include "sortcache.h"
+#include "scidup/database/game_id.h"
 #include "scidup/database/hfilter.h"
 #include "scidup/database/index.h"
 #include "scidup/database/misc.h"
