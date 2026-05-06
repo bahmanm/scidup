@@ -29,9 +29,11 @@
 #include <sstream>
 #include <string>
 
-/// Store the number of pieces for each type and color.
 namespace scid::database {
 
+class GameView {
+private:
+/// Store the number of pieces for each type and color.
 class MaterialCount {
 	int8_t n_[2][8] = {};
 
@@ -160,6 +162,16 @@ public:
 	static FastBoard stdStart() {
 		static const auto std_start = FastBoard(Position::getStdStart());
 		return std_start;
+	}
+
+	static MaterialCount countMaterial(const pieceT* board) {
+		MaterialCount mt_count;
+		for (int i = 0; i < 64; ++i) {
+			if (board[i] != EMPTY) {
+				mt_count.incr(piece_Color_NotEmpty(board[i]), piece_Type(board[i]));
+			}
+		}
+		return mt_count;
 	}
 
 	void Init(const Position& pos) {
@@ -397,7 +409,6 @@ private:
 	}
 };
 
-class GameView {
 	FastBoard board_;
 	ByteBuffer bbuf_;
 	colorT cToMove_;
@@ -467,8 +478,8 @@ public:
 		return res.str();
 	}
 
-	template <colorT toMove>
-	int search(const byte* board, const MaterialCount& mt_count) {
+	template <colorT toMove> int search(const pieceT* board) {
+		const auto mt_count = FastBoard::countMaterial(board);
 		int ply = 1;
 		auto less_material = [](const MaterialCount& a, const MaterialCount& b,
 		                        const colorT color, const auto move) {

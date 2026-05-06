@@ -32,42 +32,11 @@
 #include <algorithm>
 #include <memory>
 
-/// Return true if there is a piece's count in @e a which is less than its
-/// counterpart in @e b.
-/// @param promo: pawns' difference is considered when comparing queen.
-/// @param upromo: minor pieces' count is not compared.
 namespace scid::database {
-
-template <typename TMaterialCount>
-bool less_mat(const TMaterialCount& a, matSigT b, bool promo, bool upromo) {
-	int wp_diff = a.count(WHITE, PAWN) - static_cast<int>(MATSIG_Count_WP(b));
-	int bp_diff = a.count(BLACK, PAWN) - static_cast<int>(MATSIG_Count_BP(b));
-	if (wp_diff < 0 || bp_diff < 0)
-		return true;
-
-	int wq_diff = a.count(WHITE, QUEEN) - static_cast<int>(MATSIG_Count_WQ(b));
-	int bq_diff = a.count(BLACK, QUEEN) - static_cast<int>(MATSIG_Count_BQ(b));
-	if (promo) {
-		wq_diff += wp_diff;
-		bq_diff += bp_diff;
-	}
-	if (wq_diff < 0 || bq_diff < 0)
-		return true;
-
-	if (upromo)
-		return false;
-
-	return a.count(WHITE, ROOK) < static_cast<int>(MATSIG_Count_WR(b)) ||
-	       a.count(WHITE, BISHOP) < static_cast<int>(MATSIG_Count_WB(b)) ||
-	       a.count(WHITE, KNIGHT) < static_cast<int>(MATSIG_Count_WN(b)) ||
-	       a.count(BLACK, ROOK) < static_cast<int>(MATSIG_Count_BR(b)) ||
-	       a.count(BLACK, BISHOP) < static_cast<int>(MATSIG_Count_BB(b)) ||
-	       a.count(BLACK, KNIGHT) < static_cast<int>(MATSIG_Count_BN(b));
-}
 
 /// Search for an exact position (same material in the same squares).
 class SearchPos {
-	MaterialCount nPieces_;
+	matSigT materialSig_;
 	pieceT board_[64];
 	std::unique_ptr<StoredLine> storedLine_;
 	std::pair<uint16_t, uint16_t> hpSig_;
@@ -77,13 +46,7 @@ class SearchPos {
 public:
 	explicit SearchPos(Position const& pos) {
 		std::copy_n(pos.GetBoard(), 64, board_);
-
-		for (auto piece : board_) {
-			if (piece != EMPTY) {
-				nPieces_.incr(piece_Color_NotEmpty(piece), piece_Type(piece));
-			}
-		}
-
+		materialSig_ = matsig_Make(pos.GetMaterial());
 		hpSig_ = hpSig_make(board_);
 		toMove_ = pos.GetToMove();
 		isStdStard_ = pos.IsStdStart();
@@ -115,7 +78,7 @@ public:
 			if (!hpSig_match(hpSig_.first, hpSig_.second, ie.GetHomePawnData()))
 				return -2;
 		}
-		if (less_mat(nPieces_, ie.GetFinalMatSig(), ie.GetPromotionsFlag(),
+		if (less_mat(materialSig_, ie.GetFinalMatSig(), ie.GetPromotionsFlag(),
 		             ie.GetUnderPromoFlag())) {
 			return -2;
 		}
@@ -141,8 +104,8 @@ public:
 		}
 
 		auto gameview = base.getGame(ie);
-		ply = (toMove_ == WHITE) ? gameview.search<WHITE>(board_, nPieces_)
-		                         : gameview.search<BLACK>(board_, nPieces_);
+		ply = (toMove_ == WHITE) ? gameview.search<WHITE>(board_)
+		                         : gameview.search<BLACK>(board_);
 		if (ply > 0)
 			return {ply, gameview.getMove(0)};
 
@@ -168,7 +131,7 @@ private:
 		for (gamenumT i = 0, n = base.numGames(); i < n; i++) {
 			const IndexEntry* ie = base.getIndexEntry(i);
 			if (ie->GetStartFlag()) {
-				int ply = base.getGame(ie).search<WHITE>(board_, nPieces_);
+				int ply = base.getGame(ie).search<WHITE>(board_);
 				filter.set(i, (ply > 255) ? 255 : ply);
 			}
 		}
@@ -186,7 +149,7 @@ private:
 			if (ply >= 0) {
 				filter.set(i, static_cast<byte>(ply + 1));
 			} else if (ply == -1) {
-				ply = base.getGame(ie).search<TOMOVE>(board_, nPieces_);
+				ply = base.getGame(ie).search<TOMOVE>(board_);
 				if (ply != 0)
 					filter.set(i, (ply > 255) ? 255 : ply);
 			}
@@ -194,6 +157,38 @@ private:
 				return false;
 		}
 		return true;
+	}
+
+	/// Return true if any searched material count is below its final-game
+	/// counterpart.
+	static bool less_mat(matSigT a, matSigT b, bool promo, bool upromo) {
+		int wp_diff = static_cast<int>(MATSIG_Count_WP(a)) -
+		              static_cast<int>(MATSIG_Count_WP(b));
+		int bp_diff = static_cast<int>(MATSIG_Count_BP(a)) -
+		              static_cast<int>(MATSIG_Count_BP(b));
+		if (wp_diff < 0 || bp_diff < 0)
+			return true;
+
+		int wq_diff = static_cast<int>(MATSIG_Count_WQ(a)) -
+		              static_cast<int>(MATSIG_Count_WQ(b));
+		int bq_diff = static_cast<int>(MATSIG_Count_BQ(a)) -
+		              static_cast<int>(MATSIG_Count_BQ(b));
+		if (promo) {
+			wq_diff += wp_diff;
+			bq_diff += bp_diff;
+		}
+		if (wq_diff < 0 || bq_diff < 0)
+			return true;
+
+		if (upromo)
+			return false;
+
+		return MATSIG_Count_WR(a) < MATSIG_Count_WR(b) ||
+		       MATSIG_Count_WB(a) < MATSIG_Count_WB(b) ||
+		       MATSIG_Count_WN(a) < MATSIG_Count_WN(b) ||
+		       MATSIG_Count_BR(a) < MATSIG_Count_BR(b) ||
+		       MATSIG_Count_BB(a) < MATSIG_Count_BB(b) ||
+		       MATSIG_Count_BN(a) < MATSIG_Count_BN(b);
 	}
 };
 
