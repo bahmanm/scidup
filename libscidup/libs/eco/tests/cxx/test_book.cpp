@@ -1,5 +1,4 @@
 #include "scidup/eco/book.h"
-#include "scidup/database/misc.h"
 #include "scidup/core/position.h"
 #include <filesystem>
 #include <fstream>
@@ -69,12 +68,12 @@ TEST_F(EcoBookTest, LoadIndexesPositionsAndClassifiesKnownLines) {
 	scid::database::Position position;
 	position.StdStart();
 	EXPECT_EQ("A00a [Start position]", book.findEcoString(position));
-	EXPECT_EQ(scid::database::eco_FromString("A00a"), book.findEco(position));
+	EXPECT_EQ(scidup::eco::fromString("A00a"), book.findEco(position));
 
 	play(position, "e4");
 	play(position, "c5");
 	EXPECT_EQ("B20 [Sicilian Defence]", book.findEcoString(position));
-	EXPECT_EQ(scid::database::eco_FromString("B20"), book.findEco(position));
+	EXPECT_EQ(scidup::eco::fromString("B20"), book.findEco(position));
 }
 
 TEST_F(EcoBookTest, LinesWithPrefixReturnsStructuredRows) {

@@ -19,7 +19,6 @@
  */
 
 #include "scidup/eco/book.h"
-#include "scidup/database/common.h"
 #include "scidup/database/misc.h"
 #include "scidup/core/position.h"
 #include <algorithm>
@@ -102,7 +101,7 @@ Code Book::findEco(const scid::database::Position& position) const {
 
 	char buf[8] = {0};
 	it.copy(buf, 6);
-	return scid::database::eco_FromString(buf);
+	return fromString(buf);
 }
 
 std::vector<Book::Line> Book::linesWithPrefix(const std::string_view prefix) const {
@@ -144,7 +143,7 @@ Book::load(const std::filesystem::path& path) {
     std_start.StdStart();
     std::string text;
     std::string moves;
-    scid::database::ecoStringT ecoStr;
+    String ecoStr;
     Code ecoCode;
     int ch;
     Error err = scid::database::OK;
@@ -190,8 +189,8 @@ Book::load(const std::filesystem::path& path) {
         }
 
         // Now put ecoCode in the text string and read the text in quotes:
-        ecoCode = scid::database::eco_FromString (ecoStr);
-        scid::database::eco_ToExtendedString (ecoCode, ecoStr);
+        ecoCode = fromString(ecoStr);
+        toExtendedString(ecoCode, ecoStr);
         text.clear();
         text.append("eco ");
         text.append(ecoStr);

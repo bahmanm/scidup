@@ -21,7 +21,8 @@
 #ifndef SCIDUP_ECO_BOOK_H
 #define SCIDUP_ECO_BOOK_H
 
-#include "scidup/database/common.h"
+#include "scidup/core/error.h"
+#include "scidup/eco/code.h"
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -35,11 +36,9 @@ class Position;
 
 namespace scidup::eco {
 
-using Code = scid::database::ecoT;
 using Error = scid::database::errorT;
 using Position = scid::database::Position;
 
-inline constexpr Code ECO_None = scid::database::ECO_None;
 inline constexpr Error OK = scid::database::OK;
 inline constexpr Error ERROR_FileOpen = scid::database::ERROR_FileOpen;
 inline constexpr Error ERROR_Corrupt = scid::database::ERROR_Corrupt;
