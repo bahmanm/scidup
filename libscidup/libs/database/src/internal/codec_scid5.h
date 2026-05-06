@@ -377,7 +377,6 @@ private:
 		}
 
 		const size_t n_games = file_size / INDEX_ENTRY_SIZE;
-		idx_->entries_.resize(n_games);
 		constexpr auto eof = Filebuf::traits_type::eof();
 		for (size_t gnum = 0; idxfile_.sgetc() != eof; ++gnum) {
 			if ((gnum % 8192) == 0) {
@@ -389,7 +388,7 @@ private:
 			if (idxfile_.sgetn(buf, INDEX_ENTRY_SIZE) != INDEX_ENTRY_SIZE)
 				return ERROR_FileRead;
 
-			idx_->entries_[gnum] = decode_IndexEntry(buf);
+			idx_->addEntry(decode_IndexEntry(buf));
 		}
 		return OK;
 	}

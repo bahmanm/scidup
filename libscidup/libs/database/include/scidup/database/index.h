@@ -43,9 +43,6 @@ private:
     VectorChunked<IndexEntry, 16> entries_; // A two-level array of the entire index.
     int nInvalidNameId_;
 
-    friend class CodecSCID4;
-    friend class CodecSCID5;
-
 public:
     Index()  { Init(); }
 
@@ -66,6 +63,8 @@ public:
      * This functions returns the number of invalid name handles.
      */
     int GetBadNameIdCount() const { return nInvalidNameId_; }
+
+    void setBadNameIdCount(int count) { nInvalidNameId_ = count; }
 
     /**
      * Header getter functions
@@ -99,4 +98,3 @@ private:
 //////////////////////////////////////////////////////////////////////
 //  EOF: index.h
 //////////////////////////////////////////////////////////////////////
-

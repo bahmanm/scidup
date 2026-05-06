@@ -547,7 +547,7 @@ errorT CodecSCID4::dyn_open(fileModeT fMode, const char* filename,
 		return ERROR_FileOpen;
 
 	idx_ = idx;
-	idx_->Init();
+	idx_->Close();
 	nb_ = nb;
 
 	filenames_.resize(3);
@@ -675,7 +675,6 @@ errorT CodecSCID4::readIndex(gamenumT nGames, Progress const& progress) {
 		return true;
 	};
 
-	idx_->entries_.resize(nGames);
 	const auto nBytes = (header_.version < 400) ? OLD_INDEX_ENTRY_SIZE
 	                                            : INDEX_ENTRY_SIZE;
 	for (gamenumT gNum = 0; idxfile_.sgetc() != EOF; ++gNum) {
@@ -691,15 +690,20 @@ errorT CodecSCID4::readIndex(gamenumT nGames, Progress const& progress) {
 		if (idxfile_.sgetn(buf, nBytes) != nBytes)
 			return ERROR_FileRead;
 
-		IndexEntry& ie = idx_->entries_[gNum];
+		IndexEntry ie;
 		decodeIndexEntry(buf, header_.version, &ie);
 
 		if (!validateNameIDs(&ie))
 			return ERROR_CorruptData;
+
+		idx_->addEntry(ie);
 	}
 	progress.report(1, 1);
 
-	idx_->nInvalidNameId_ = nUnknowIDs;
+	if (idx_->GetNumGames() != nGames)
+		return ERROR_FileRead;
+
+	idx_->setBadNameIdCount(nUnknowIDs);
 	return (nUnknowIDs == 0) ? OK : ERROR_NameDataLoss;
 }
 
