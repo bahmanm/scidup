@@ -21,8 +21,9 @@
 #ifndef SCID_INDEXENTRY_V4_6_H
 #define SCID_INDEXENTRY_V4_6_H
 
-#include "scidup/database/common.h"
 #include "scidup/core/date.h"
+#include "scidup/core/game_result.h"
+#include "scidup/database/common.h"
 #include "scidup/database/matsig.h"
 #include "scidup/database/namebase.h"
 

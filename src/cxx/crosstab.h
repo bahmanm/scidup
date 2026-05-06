@@ -17,9 +17,10 @@
 #ifndef SCID_CROSSTAB_H
 #define SCID_CROSSTAB_H
 
-#include "scidup/database/common.h"
 #include "scidup/core/date.h"
 #include "scidup/core/dstring.h"
+#include "scidup/core/game_result.h"
+#include "scidup/database/common.h"
 #include <scidup/spelling/spelling.h>
 
 const scid::database::uint CROSSTABLE_MaxPlayers = 500;  // Max. number of players.
