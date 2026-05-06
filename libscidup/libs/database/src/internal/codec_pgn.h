@@ -26,9 +26,9 @@
 #define CODEC_PGN_H
 
 #include "codec_proxy.h"
+#include "pgnparse_impl.h"
 #include "scidup/database/filebuf.h"
 #include "scidup/database/pgn_encode.h"
-#include "scidup/database/pgnparse.h"
 #include <algorithm>
 #include <cstring>
 #include <vector>
@@ -116,7 +116,7 @@ public:
 		}
 
 		nParsed_ += parse.first;
-		parseLog_.logGame(parse.first, visitor);
+		pgn_impl::logGame(parseLog_, parse.first, visitor);
 		if (eof && !parse.second && *game.GetMoveComment() == '\0')
 			return ERROR_NotFound;
 

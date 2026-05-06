@@ -72,7 +72,6 @@ Use these headers for PGN parsing and encoding:
 
 - `pgnparse.h`: parse PGN into `Game`
 - `pgn_encode.h`: encode PGN output
-- `pgn_lexer.h`: lower-level PGN tokenisation helpers
 
 Most consumers should start with `pgnparse.h`.
 

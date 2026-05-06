@@ -16,6 +16,7 @@
 
 #include "scidup/database/game.h"
 #include "scidup/database/pgnparse.h"
+#include "pgnparse_impl.h"
 #include <algorithm>
 #include <cctype>
 #include <cstring>
