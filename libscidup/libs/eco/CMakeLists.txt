@@ -6,6 +6,7 @@ project(
 
 set(
     SCIDUP_ECO_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/code.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/book.cpp" )
 
 set(
@@ -34,7 +35,7 @@ target_include_directories(
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 target_link_libraries(
     scidup_eco
-    PUBLIC ScidUp::Core ScidUp::EcoCode )
+    PUBLIC ScidUp::Core )
 
 if( PROJECT_IS_TOP_LEVEL )
     include( CTest )

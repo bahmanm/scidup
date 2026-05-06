@@ -84,7 +84,7 @@ target_include_directories(
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/internal" )
 target_link_libraries(
     scidup_database
-    PUBLIC ScidUp::Core ScidUp::EcoCode Threads::Threads )
+    PUBLIC ScidUp::Core ScidUp::Eco Threads::Threads )
 
 if( PROJECT_IS_TOP_LEVEL )
     include( CTest )
