@@ -48,12 +48,12 @@ Use these headers when working with game lists, tags and names:
 - `indexentry.h`: per-game metadata record
 - `index.h`: collection of index entries
 - `namebase.h`: mapping between name IDs and player/event/site/round strings
-- `date.h`: compact date representation and helpers
 - `tree.h`: opening-tree result statistics
 - `matsig.h`: material signatures
 
 Most consumers should retrieve metadata through `scidBaseT` instead of owning
-`Index` or `NameBase` directly.
+`Index` or `NameBase` directly. Game and index metadata dates use the compact
+`scidup/core/date.h` value type.
 
 # 4. Filters And Query Helpers
 
@@ -91,6 +91,7 @@ state, position hashing and shared status codes live in core headers:
 - `scidup/core/primitives.h`: scalar aliases and primitive chess encodings
 - `scidup/core/board.h`: board constants, piece helpers, square helpers and
   direction helpers
+- `scidup/core/date.h`: compact game-date value type and PGN date helpers
 - `scidup/core/error.h`: shared `errorT` definitions
 - `scidup/core/fullmove.h`: compact move representation with SAN-related
   information
