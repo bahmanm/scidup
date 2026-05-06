@@ -19,15 +19,13 @@
 #include <algorithm>
 #include <cstdio>
 
-using namespace scid::database;
-
-uint
-endgameTheme (matSigT msig)
+scid::database::uint
+endgameTheme (scid::database::matSigT msig)
 {
     bool queens = MATSIG_HasQueens (msig);
     bool rooks = MATSIG_HasRooks (msig);
     bool minors = MATSIG_HasBishops (msig) || MATSIG_HasKnights (msig);
-    uint idx = EGTHEME_P;
+    scid::database::uint idx = EGTHEME_P;
 
     if (queens) {
         if (rooks) {
@@ -45,77 +43,77 @@ endgameTheme (matSigT msig)
     return idx;
 }
 
-inline bool posHasIQP (Position * pos, colorT c)
+inline bool posHasIQP (scid::database::Position * pos, scid::database::colorT c)
 {
-    pieceT p = piece_Make (c, PAWN);
-    return (pos->FyleCount (p,C_FYLE) == 0  &&  pos->FyleCount (p,E_FYLE) == 0
-            && pos->FyleCount (p, D_FYLE) > 0);
+    scid::database::pieceT p = scid::database::piece_Make (c, scid::database::PAWN);
+    return (pos->FyleCount (p,scid::database::C_FYLE) == 0  &&  pos->FyleCount (p,scid::database::E_FYLE) == 0
+            && pos->FyleCount (p, scid::database::D_FYLE) > 0);
 }
 
-inline bool posHasAdvancedPawn (Position * pos, colorT c)
+inline bool posHasAdvancedPawn (scid::database::Position * pos, scid::database::colorT c)
 {
-    if (c == WHITE) {
-        return (pos->RankCount (WP,RANK_5) > 0  ||
-                pos->RankCount (WP,RANK_6) > 0  ||
-                pos->RankCount (WP,RANK_7) > 0);
+    if (c == scid::database::WHITE) {
+        return (pos->RankCount (scid::database::WP,scid::database::RANK_5) > 0  ||
+                pos->RankCount (scid::database::WP,scid::database::RANK_6) > 0  ||
+                pos->RankCount (scid::database::WP,scid::database::RANK_7) > 0);
     }
-    return (pos->RankCount (BP,RANK_4) > 0  ||
-            pos->RankCount (BP,RANK_3) > 0  ||
-            pos->RankCount (BP,RANK_2) > 0);
+    return (pos->RankCount (scid::database::BP,scid::database::RANK_4) > 0  ||
+            pos->RankCount (scid::database::BP,scid::database::RANK_3) > 0  ||
+            pos->RankCount (scid::database::BP,scid::database::RANK_2) > 0);
 }
 
-inline bool posHasKPawnStorm (Position * pos, colorT c)
+inline bool posHasKPawnStorm (scid::database::Position * pos, scid::database::colorT c)
 {
-    const pieceT* bd = pos->GetBoard();
+    const scid::database::pieceT* bd = pos->GetBoard();
     // A kingside pawn storm by White is defined to be a situation
     // where there is no longer any white pawn on h2, g2, h3 or g3,
     // but there is a white pawn on the g or h file.
-    if (c == WHITE) {
-        return (bd[G2] != WP && bd[H2] != WP && bd[G3] != WP && bd[H3] != WP
-                && (pos->FyleCount (WP, G_FYLE) > 0 ||
-                    pos->FyleCount (WP,H_FYLE) > 0));
+    if (c == scid::database::WHITE) {
+        return (bd[scid::database::G2] != scid::database::WP && bd[scid::database::H2] != scid::database::WP && bd[scid::database::G3] != scid::database::WP && bd[scid::database::H3] != scid::database::WP
+                && (pos->FyleCount (scid::database::WP, scid::database::G_FYLE) > 0 ||
+                    pos->FyleCount (scid::database::WP,scid::database::H_FYLE) > 0));
     }
-    return (bd[G7] != BP && bd[H7] != BP && bd[G6] != BP && bd[H6] != BP
-            && (pos->FyleCount (BP, G_FYLE) > 0 ||
-                pos->FyleCount (BP,H_FYLE) > 0));
+    return (bd[scid::database::G7] != scid::database::BP && bd[scid::database::H7] != scid::database::BP && bd[scid::database::G6] != scid::database::BP && bd[scid::database::H6] != scid::database::BP
+            && (pos->FyleCount (scid::database::BP, scid::database::G_FYLE) > 0 ||
+                pos->FyleCount (scid::database::BP,scid::database::H_FYLE) > 0));
 }
 
-inline bool posHasOpenFyle (Position * pos, fyleT f)
+inline bool posHasOpenFyle (scid::database::Position * pos, scid::database::fyleT f)
 {
-    return (pos->FyleCount (WP, f) == 0  &&  pos->FyleCount (BP, f) == 0);
+    return (pos->FyleCount (scid::database::WP, f) == 0  &&  pos->FyleCount (scid::database::BP, f) == 0);
 }
 
 void
 OpLine::Init (void)
 {
     GameNumber = 0;
-    White = strDuplicate("");
-    Black = strDuplicate("");
-    Site = strDuplicate("");
+    White = scid::database::strDuplicate("");
+    Black = scid::database::strDuplicate("");
+    Site = scid::database::strDuplicate("");
     WhiteID = BlackID = 0;
     WhiteElo = BlackElo = 0;
     AvgElo = 0;
-    Date = ZERO_DATE;
-    Result = RESULT_None;
+    Date = scid::database::ZERO_DATE;
+    Result = scid::database::RESULT_None;
     Length = 0;
     StartPly = 0;
     NumMoves = 0;
     ShortGame = false;
     NoteNumber = NoteMoveNum = 0;
-    for (uint i=0; i < OPLINE_MOVES; i++) {
+    for (scid::database::uint i=0; i < OPLINE_MOVES; i++) {
         Move[i][0] = 0;
     }
-    for (uint t=0; t < NUM_POSTHEMES; t++) { Theme[t] = 0; }
+    for (scid::database::uint t=0; t < NUM_POSTHEMES; t++) { Theme[t] = 0; }
     EgTheme = NUM_EGTHEMES;
 }
 
 void
-OpLine::Init (Game * g, const IndexEntry * ie, gamenumT gameNum,
-              uint maxExtraMoves, uint maxThemeMoveNumber)
+OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, scid::database::gamenumT gameNum,
+              scid::database::uint maxExtraMoves, scid::database::uint maxThemeMoveNumber)
 {
-    White = strDuplicate (g->GetWhiteStr());
-    Black = strDuplicate (g->GetBlackStr());
-    Site = strDuplicate (g->GetSiteStr());
+    White = scid::database::strDuplicate (g->GetWhiteStr());
+    Black = scid::database::strDuplicate (g->GetBlackStr());
+    Site = scid::database::strDuplicate (g->GetSiteStr());
 
     WhiteID = ie->GetWhite();
     BlackID = ie->GetBlack();
@@ -131,28 +129,28 @@ OpLine::Init (Game * g, const IndexEntry * ie, gamenumT gameNum,
     Length = 0;
     StartPly = g->GetCurrentPly();
     auto location = g->currentLocation();
-    if (g->GetCurrentPos()->GetToMove() == BLACK) {
+    if (g->GetCurrentPos()->GetToMove() == scid::database::BLACK) {
         g->MoveBackup();
     }
     NoteNumber = NoteMoveNum = 0;
-    uint columnMoves = OPTABLE_COLUMNS * 2;
-    uint maxLineMoves = (OPTABLE_COLUMNS + maxExtraMoves) * 2;
+    scid::database::uint columnMoves = OPTABLE_COLUMNS * 2;
+    scid::database::uint maxLineMoves = (OPTABLE_COLUMNS + maxExtraMoves) * 2;
     if (maxLineMoves > OPLINE_MOVES) { maxLineMoves = OPLINE_MOVES; }
     EgTheme = endgameTheme (ie->GetFinalMatSig());
 
     // First read in just the moves that will appear in table columns:
-    uint i = 0;
+    scid::database::uint i = 0;
     ShortGame = false;
     while (i < columnMoves) {
-        simpleMoveT * sm = g->GetCurrentMove();
+        scid::database::simpleMoveT * sm = g->GetCurrentMove();
         if (sm == NULL) {
             Move[i][0] = 0;
             ShortGame = true;
         } else {
             Length++;
-            g->GetCurrentPos()->MakeSANString (sm, Move[i], SAN_CHECKTEST);
-            strStrip (Move[i], '-');
-            strStrip (Move[i], '=');
+            g->GetCurrentPos()->MakeSANString (sm, Move[i], scid::database::SAN_CHECKTEST);
+            scid::database::strStrip (Move[i], '-');
+            scid::database::strStrip (Move[i], '=');
             g->MoveForward();
         }
         i++;
@@ -160,15 +158,15 @@ OpLine::Init (Game * g, const IndexEntry * ie, gamenumT gameNum,
 
     // Now read in all the extra note moves:
     while (i < maxLineMoves) {
-        simpleMoveT * sm = g->GetCurrentMove();
+        scid::database::simpleMoveT * sm = g->GetCurrentMove();
         if (sm == NULL) {
             Move[i][0] = 0;
             ShortGame = true;
         } else {
             Length++;
-            g->GetCurrentPos()->MakeSANString (sm, Move[i], SAN_CHECKTEST);
-            strStrip (Move[i], '-');
-            strStrip (Move[i], '=');
+            g->GetCurrentPos()->MakeSANString (sm, Move[i], scid::database::SAN_CHECKTEST);
+            scid::database::strStrip (Move[i], '-');
+            scid::database::strStrip (Move[i], '=');
             g->MoveForward();
         }
         i++;
@@ -176,11 +174,11 @@ OpLine::Init (Game * g, const IndexEntry * ie, gamenumT gameNum,
     if (g->GetCurrentMove() == NULL) { ShortGame = true; }
 
     // Now set positional themes:
-    uint maxThemePly = maxThemeMoveNumber * 2;
+    scid::database::uint maxThemePly = maxThemeMoveNumber * 2;
     for (i=0; i < NUM_POSTHEMES; i++) { Theme[i] = 0; }
     g->MoveToStart();
     for (i=0; i < maxThemePly; i++) {
-        if (g->MoveForward() != OK) { break; }
+        if (g->MoveForward() != scid::database::OK) { break; }
         SetPositionalThemes (g->GetCurrentPos());
     }
 
@@ -198,44 +196,44 @@ OpLine::Destroy (void)
 
 
 void
-OpLine::SetPositionalThemes (Position * pos)
+OpLine::SetPositionalThemes (scid::database::Position * pos)
 {
-    squareT wk = pos->GetKingSquare (WHITE);
-    squareT bk = pos->GetKingSquare (BLACK);
-    fyleT wkf = square_Fyle (wk);
-    fyleT bkf = square_Fyle (bk);
+    scid::database::squareT wk = pos->GetKingSquare (scid::database::WHITE);
+    scid::database::squareT bk = pos->GetKingSquare (scid::database::BLACK);
+    scid::database::fyleT wkf = scid::database::square_Fyle (wk);
+    scid::database::fyleT bkf = scid::database::square_Fyle (bk);
 
-    if ((wkf <= C_FYLE && bkf <= C_FYLE) || (wkf >= G_FYLE && bkf >= G_FYLE)) {
+    if ((wkf <= scid::database::C_FYLE && bkf <= scid::database::C_FYLE) || (wkf >= scid::database::G_FYLE && bkf >= scid::database::G_FYLE)) {
         Theme[POSTHEME_CastSame]++;
     }
-    if ((wkf <= C_FYLE && bkf >= G_FYLE) || (wkf >= G_FYLE && bkf <= C_FYLE)) {
+    if ((wkf <= scid::database::C_FYLE && bkf >= scid::database::G_FYLE) || (wkf >= scid::database::G_FYLE && bkf <= scid::database::C_FYLE)) {
         Theme[POSTHEME_CastOpp]++;
     }
-    if (pos->PieceCount(WQ) == 0  &&  pos->PieceCount(BQ) == 0) {
+    if (pos->PieceCount(scid::database::WQ) == 0  &&  pos->PieceCount(scid::database::BQ) == 0) {
         Theme[POSTHEME_QueenSwap]++;
     }
-    bool wBPair = (pos->PieceCount (WB) >= 2);
-    bool bBPair = (pos->PieceCount (BB) >= 2);
+    bool wBPair = (pos->PieceCount (scid::database::WB) >= 2);
+    bool bBPair = (pos->PieceCount (scid::database::BB) >= 2);
     if ((wBPair && !bBPair)  ||  (!wBPair && bBPair)) {
         Theme[POSTHEME_OneBPair]++;
     }
-    if (posHasKPawnStorm (pos, WHITE)  ||  posHasKPawnStorm (pos, BLACK)) {
+    if (posHasKPawnStorm (pos, scid::database::WHITE)  ||  posHasKPawnStorm (pos, scid::database::BLACK)) {
         Theme[POSTHEME_Kstorm]++;
     }
-    if (posHasIQP (pos, WHITE)) {
+    if (posHasIQP (pos, scid::database::WHITE)) {
         Theme[POSTHEME_WIQP]++;
     }
-    if (posHasIQP (pos, BLACK)) {
+    if (posHasIQP (pos, scid::database::BLACK)) {
         Theme[POSTHEME_BIQP]++;
     }
-    if (posHasAdvancedPawn (pos, WHITE)) {
+    if (posHasAdvancedPawn (pos, scid::database::WHITE)) {
         Theme[POSTHEME_WAdvPawn]++;
     }
-    if (posHasAdvancedPawn (pos, BLACK)) {
+    if (posHasAdvancedPawn (pos, scid::database::BLACK)) {
         Theme[POSTHEME_BAdvPawn]++;
     }
-    if (posHasOpenFyle (pos, C_FYLE)  ||  posHasOpenFyle (pos, D_FYLE)
-          ||  posHasOpenFyle (pos, E_FYLE)) {
+    if (posHasOpenFyle (pos, scid::database::C_FYLE)  ||  posHasOpenFyle (pos, scid::database::D_FYLE)
+          ||  posHasOpenFyle (pos, scid::database::E_FYLE)) {
         Theme[POSTHEME_OpenFyle]++;
     }
 }
@@ -263,25 +261,25 @@ OpLine::Insert (OpLine * subline)
     }
 }
 
-uint
+scid::database::uint
 OpLine::CommonLength (OpLine * line)
 {
-    uint length = 0;
+    scid::database::uint length = 0;
     for (length=0; length < OPLINE_MOVES; length++) {
-        if (! strEqual (Move[length], line->Move[length])) { break; }
-        if (strEqual (Move[length], "")) { break; }
+        if (! scid::database::strEqual (Move[length], line->Move[length])) { break; }
+        if (scid::database::strEqual (Move[length], "")) { break; }
     }
     return length;
 }
 
 void
-OpLine::PrintMove (DString * dstr, const char * move, uint format)
+OpLine::PrintMove (scid::database::DString * dstr, const char * move, scid::database::uint format)
 {
     char tempTrans[5000];
 
     if (format == OPTABLE_Compact) {
         strcpy(tempTrans, move);
-        transPieces(tempTrans);
+        scid::database::transPieces(tempTrans);
         char *ptr = tempTrans;
         char ch = *ptr; //*move;
         while (ch != 0) {
@@ -296,7 +294,7 @@ OpLine::PrintMove (DString * dstr, const char * move, uint format)
 
     if (format != OPTABLE_LaTeX) {
         strcpy(tempTrans, move);
-        transPieces(tempTrans);
+        scid::database::transPieces(tempTrans);
         dstr->Append(tempTrans);//(move);
         return;
     }
@@ -320,7 +318,7 @@ OpLine::PrintMove (DString * dstr, const char * move, uint format)
 }
 
 void
-OpLine::PrintNote (DString * dstr, uint movenum, uint start, uint format)
+OpLine::PrintNote (scid::database::DString * dstr, scid::database::uint movenum, scid::database::uint start, scid::database::uint format)
 {
     bool wtm = true;
     const char * preFirstMove = "";
@@ -332,7 +330,7 @@ OpLine::PrintNote (DString * dstr, uint movenum, uint start, uint format)
         preFirstMove = "<b>";
         postFirstMove = "</b>";
     }
-    for (uint i=0; i < Length; i++) {
+    for (scid::database::uint i=0; i < Length; i++) {
         if (i < start) {
             // do nothing
         } else {
@@ -366,18 +364,18 @@ OpLine::PrintNote (DString * dstr, uint movenum, uint start, uint format)
 //   or the game continues after the last stored line move, the
 //   number of moves in the game is printed after the result.
 void
-OpLine::PrintSummary (DString * dstr, uint format, bool fullDate, bool nmoves)
+OpLine::PrintSummary (scid::database::DString * dstr, scid::database::uint format, bool fullDate, bool nmoves)
 {
     if (format == OPTABLE_CText  &&  GameNumber > 0) {
         dstr->Append ("<g_", GameNumber, ">");
     }
 
-    const char * resultStr = RESULT_STR[Result];
+    const char * resultStr = scid::database::RESULT_STR[Result];
     if (format == OPTABLE_LaTeX) {
         switch (Result) {
-            case RESULT_White: resultStr = "{\\win}"; break;
-            case RESULT_Black: resultStr = "{\\loss}"; break;
-            case RESULT_Draw:  resultStr = "{\\draw}"; break;
+            case scid::database::RESULT_White: resultStr = "{\\win}"; break;
+            case scid::database::RESULT_Black: resultStr = "{\\loss}"; break;
+            case scid::database::RESULT_Draw:  resultStr = "{\\draw}"; break;
             default: resultStr = "*"; break;
         }
     }
@@ -444,7 +442,7 @@ OpLine::PrintSummary (DString * dstr, uint format, bool fullDate, bool nmoves)
     dstr->Append (", ", Site, " ");
     if (fullDate) {
         char dateStr[16] = {};
-        date_DecodeToString (Date, dateStr);
+        scid::database::date_DecodeToString (Date, dateStr);
         // Remove any unknown date fields:
         auto s_end = dateStr + 16;
         auto s = std::find(dateStr + 4, s_end, '?');
@@ -454,7 +452,7 @@ OpLine::PrintSummary (DString * dstr, uint format, bool fullDate, bool nmoves)
         }
         dstr->Append (dateStr);
     } else {
-        dstr->Append (date_GetYear (Date));
+        dstr->Append (scid::database::date_GetYear (Date));
     }
 
     if (format == OPTABLE_CText  &&  GameNumber > 0) {
@@ -467,9 +465,9 @@ OpLine::PrintSummary (DString * dstr, uint format, bool fullDate, bool nmoves)
 
 
 void
-OpTable::Init (const char * type, Game * g, scidup::eco::Book * ebook)
+OpTable::Init (const char * type, scid::database::Game * g, scidup::eco::Book * ebook)
 {
-    Type = strDuplicate (type);
+    Type = scid::database::strDuplicate (type);
     TargetRows = OPTABLE_DEFAULT_ROWS;
     MaxTableLines = OPTABLE_MAX_TABLE_LINES;
     NumRows = 0;
@@ -479,16 +477,16 @@ OpTable::Init (const char * type, Game * g, scidup::eco::Book * ebook)
     NumMoveOrders = 0;
     Format = OPTABLE_Text;
     StartLength = 0;
-    WTM = (g->GetCurrentPos()->GetToMove() == WHITE ? true : false);
+    WTM = (g->GetCurrentPos()->GetToMove() == scid::database::WHITE ? true : false);
     DecimalChar = '.';
 
-    Results[RESULT_White] = Results[RESULT_Black] = 0;
-    Results[RESULT_Draw] = Results[RESULT_None] = 0;
-    TheoryResults[RESULT_White] = TheoryResults[RESULT_Black] = 0;
-    TheoryResults[RESULT_Draw] = TheoryResults[RESULT_None] = 0;
+    Results[scid::database::RESULT_White] = Results[scid::database::RESULT_Black] = 0;
+    Results[scid::database::RESULT_Draw] = Results[scid::database::RESULT_None] = 0;
+    TheoryResults[scid::database::RESULT_White] = TheoryResults[scid::database::RESULT_Black] = 0;
+    TheoryResults[scid::database::RESULT_Draw] = TheoryResults[scid::database::RESULT_None] = 0;
     ExcludeMove[0] = 0;
 
-    uint i;
+    scid::database::uint i;
     for (i=0; i < NUM_POSTHEMES; i++) { ThemeCount[i] = 0; }
 
     for (i=0; i < NUM_EGTHEMES; i++) {
@@ -508,10 +506,10 @@ OpTable::Init (const char * type, Game * g, scidup::eco::Book * ebook)
                 ECOstr_.append(eco);
         }
         g->MoveBackup();
-        simpleMoveT * sm = g->GetCurrentMove();
+        scid::database::simpleMoveT * sm = g->GetCurrentMove();
         if (sm == NULL) { break; }
         g->GetCurrentPos()->MakeSANString (sm, StartLine[StartLength],
-                                           SAN_CHECKTEST);
+                                           scid::database::SAN_CHECKTEST);
         StartLength++;
         if (StartLength >= OPTABLE_MAX_STARTLINE) { break; }
     }
@@ -523,7 +521,7 @@ OpTable::Init (const char * type, Game * g, scidup::eco::Book * ebook)
 void
 OpTable::Clear (void)
 {
-    uint i;
+    scid::database::uint i;
     for (i=0; i < NumLines; i++) {
         delete Line[i];
     }
@@ -537,10 +535,10 @@ OpTable::Clear (void)
     NumLines = NumTableLines = 0;
     NumMoveOrders = 0;
     FilterCount = TheoryCount = 0;
-    Results[RESULT_White] = Results[RESULT_Black] = 0;
-    Results[RESULT_Draw] = Results[RESULT_None] = 0;
-    TheoryResults[RESULT_White] = TheoryResults[RESULT_Black] = 0;
-    TheoryResults[RESULT_Draw] = TheoryResults[RESULT_None] = 0;
+    Results[scid::database::RESULT_White] = Results[scid::database::RESULT_Black] = 0;
+    Results[scid::database::RESULT_Draw] = Results[scid::database::RESULT_None] = 0;
+    TheoryResults[scid::database::RESULT_White] = TheoryResults[scid::database::RESULT_Black] = 0;
+    TheoryResults[scid::database::RESULT_Draw] = TheoryResults[scid::database::RESULT_None] = 0;
     ExcludeMove[0] = 0;
 }
 
@@ -548,10 +546,10 @@ void
 OpTable::ClearNotes (void)
 {
     // Clear all notes:
-    for (uint i=0; i < NumTableLines; i++) {
+    for (scid::database::uint i=0; i < NumTableLines; i++) {
         Row[i] = Line[i];
         NLines[i] = 1;
-        RowScore[i] = RESULT_SCORE[Line[i]->Result];
+        RowScore[i] = scid::database::RESULT_SCORE[Line[i]->Result];
         Line[i]->Next = NULL;
         Line[i]->NoteMoveNum = 0;
         Line[i]->NoteNumber = 0;
@@ -559,7 +557,7 @@ OpTable::ClearNotes (void)
     NumNotes = 0;
 }
 
-uint
+scid::database::uint
 OpTable::FormatFromStr (const char * str)
 {
     switch (str[0]) {
@@ -591,14 +589,14 @@ OpTable::SetFormat (const char * str)
 //    games that have been added to the database.
 //    The integer value returned is the percentage * 10,
 //    e.g. "573" for 57.3%
-uint
+scid::database::uint
 OpTable::PercentScore (void)
 {
-    uint percent = Results[RESULT_White] * 2;
-    percent += Results[RESULT_Draw];
+    scid::database::uint percent = Results[scid::database::RESULT_White] * 2;
+    percent += Results[scid::database::RESULT_Draw];
     percent = percent * 500;
-    uint total = Results[RESULT_White] + Results[RESULT_Draw]
-        + Results[RESULT_Black];
+    scid::database::uint total = Results[scid::database::RESULT_White] + Results[scid::database::RESULT_Draw]
+        + Results[scid::database::RESULT_Black];
     if (total > 0) { percent = percent / total; }
     return percent;
 }
@@ -607,13 +605,13 @@ OpTable::PercentScore (void)
 // OpTable::TheoryPercent():
 //    Returns the percentage score for White across all
 //    games except those excluded from the theory table.
-uint
+scid::database::uint
 OpTable::TheoryPercent (void) {
-    uint percent = TheoryResults[RESULT_White] * 2;
-    percent += TheoryResults[RESULT_Draw];
+    scid::database::uint percent = TheoryResults[scid::database::RESULT_White] * 2;
+    percent += TheoryResults[scid::database::RESULT_Draw];
     percent = percent * 500;
-    uint total = TheoryResults[RESULT_White] + TheoryResults[RESULT_Draw]
-        + TheoryResults[RESULT_Black];
+    scid::database::uint total = TheoryResults[scid::database::RESULT_White] + TheoryResults[scid::database::RESULT_Draw]
+        + TheoryResults[scid::database::RESULT_Black];
     if (total > 0) { percent = percent / total; }
     return percent;
 }
@@ -623,22 +621,22 @@ OpTable::TheoryPercent (void) {
 //   Returns the score for White (multiplied by 2 to be an
 //   integer value) for all games except those excluded
 //   from the theory table.
-uint
+scid::database::uint
 OpTable::TheoryScore (void)
 {
-    return TheoryResults[RESULT_White] * 2 + TheoryResults[RESULT_Draw];
+    return TheoryResults[scid::database::RESULT_White] * 2 + TheoryResults[scid::database::RESULT_Draw];
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // OpTable::PercentFreq():
 //    Returns the frequency of a particular result as a percentage.
 //    The integer value returned is the percentage * 10.
-uint
-OpTable::PercentFreq (resultT result)
+scid::database::uint
+OpTable::PercentFreq (scid::database::resultT result)
 {
-    uint percent = Results[result] * 1000;
-    uint total = Results[RESULT_White] + Results[RESULT_Draw] +
-        Results[RESULT_Black] + Results[RESULT_None];
+    scid::database::uint percent = Results[result] * 1000;
+    scid::database::uint total = Results[scid::database::RESULT_White] + Results[scid::database::RESULT_Draw] +
+        Results[scid::database::RESULT_Black] + Results[scid::database::RESULT_None];
     if (total > 0) { percent = percent / total; }
     return percent;
 }
@@ -654,19 +652,19 @@ bool
 OpTable::Add (OpLine * line)
 {
     if (! WTM) {
-        strCopy (line->Move[0], StartLine[0]);
-        strStrip (line->Move[0], '-');
-        strStrip (line->Move[0], '=');
+        scid::database::strCopy (line->Move[0], StartLine[0]);
+        scid::database::strStrip (line->Move[0], '-');
+        scid::database::strStrip (line->Move[0], '=');
     }
-    for (uint theme=0; theme < NUM_POSTHEMES; theme++) {
+    for (scid::database::uint theme=0; theme < NUM_POSTHEMES; theme++) {
         if (line->Theme[theme] >= POSTHEME_THRESHOLD) { ThemeCount[theme]++; }
     }
     Results[line->Result]++;
     FilterCount++;
 
     // Stop here if this line is excluded from the theory table:
-    if (WTM  && strEqual (line->Move[0], ExcludeMove)) { return false; }
-    if (!WTM  &&  strEqual (line->Move[1], ExcludeMove)) { return false; }
+    if (WTM  && scid::database::strEqual (line->Move[0], ExcludeMove)) { return false; }
+    if (!WTM  &&  scid::database::strEqual (line->Move[1], ExcludeMove)) { return false; }
 
     TheoryCount++;
     TheoryResults[line->Result]++;
@@ -680,10 +678,10 @@ OpTable::Add (OpLine * line)
     // The table is full, so if this line is to be added, it must
     // evict an existing line with a smaller average Elo rating.
 
-    eloT evictElo = line->AvgElo;
+    scid::database::eloT evictElo = line->AvgElo;
     int evictIndex = -1;
-    for (uint i=0; i < NumLines; i++) {
-        eloT elo = Line[i]->AvgElo;
+    for (scid::database::uint i=0; i < NumLines; i++) {
+        scid::database::eloT elo = Line[i]->AvgElo;
         if (elo < evictElo) {
             evictElo = elo;
             evictIndex = i;
@@ -700,11 +698,11 @@ OpTable::Add (OpLine * line)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // int_sqrt(): Integer square root.
 //    Used by OpTable::GuessNumRows().
-static uint
-int_sqrt (uint val)
+static scid::database::uint
+int_sqrt (scid::database::uint val)
 {
-    uint guess=0;
-    uint bit;
+    scid::database::uint guess=0;
+    scid::database::uint bit;
     for (bit = 1 << 15; bit != 0; bit >>= 1) {
         guess ^= bit;
         /* Can set this bit without going over sqrt(val)? */
@@ -731,9 +729,9 @@ void
 OpTable::DumpLines (/*FILE * */ Tcl_Channel fp)
 {
     MakeRows();
-    DString * dstr = new DString;
+    scid::database::DString * dstr = new scid::database::DString;
     char buf[1024];
-    for (uint i=0; i < NumRows; i++) {
+    for (scid::database::uint i=0; i < NumRows; i++) {
         bool first = true;
         OpLine * line = Row[i];
         OpLine * prevLine = NULL;
@@ -767,8 +765,8 @@ void
 OpTable::DumpLines (FILE * fp)
 {
     MakeRows();
-    DString * dstr = new DString;
-    for (uint i=0; i < NumRows; i++) {
+    scid::database::DString * dstr = new scid::database::DString;
+    for (scid::database::uint i=0; i < NumRows; i++) {
         bool first = true;
         OpLine * line = Row[i];
         OpLine * prevLine = NULL;
@@ -793,22 +791,22 @@ OpTable::DumpLines (FILE * fp)
 #endif
 
 bool
-OpTable::IsRowMergable (uint rownum)
+OpTable::IsRowMergable (scid::database::uint rownum)
 {
     ASSERT (rownum > 0  &&  rownum < NumRows-1);
-    uint prevLength = Row[rownum]->CommonLength (Row[rownum-1]);
-    uint nextLength = Row[rownum]->CommonLength (Row[rownum+1]);
+    scid::database::uint prevLength = Row[rownum]->CommonLength (Row[rownum-1]);
+    scid::database::uint nextLength = Row[rownum]->CommonLength (Row[rownum+1]);
     return (nextLength > prevLength);
 }
 
 void
-OpTable::MergeRow (uint rownum)
+OpTable::MergeRow (scid::database::uint rownum)
 {
     ASSERT (rownum < NumRows-1);
     Row[rownum+1]->Insert (Row[rownum]);
     NLines[rownum+1] += NLines[rownum];
     RowScore[rownum+1] += RowScore[rownum];
-    for (uint i=rownum; i < NumRows-1; i++) {
+    for (scid::database::uint i=rownum; i < NumRows-1; i++) {
         NLines[i] = NLines[i+1];
         Row[i] = Row[i+1];
         RowScore[i] = RowScore[i+1];
@@ -823,12 +821,12 @@ OpTable::MergeRow (uint rownum)
 void
 OpTable::SelectTableLines (void)
 {
-    uint i, j;
+    scid::database::uint i, j;
     if (NumLines == NumTableLines) { return; }
     ASSERT (NumTableLines < NumLines);
     for (i=0; i < NumTableLines; i++) {
-        uint bestIndex = i;
-        uint bestAvgElo = Line[i]->AvgElo;
+        scid::database::uint bestIndex = i;
+        scid::database::uint bestAvgElo = Line[i]->AvgElo;
         for (j = i+1; j < NumLines; j++) {
             if (Line[j]->AvgElo >= bestAvgElo) {
                 bestIndex = j;
@@ -845,7 +843,7 @@ OpTable::SelectTableLines (void)
 
 void
 OpTable::MakeRows (void) {
-    uint i;
+    scid::database::uint i;
 
     if (NumLines == 0) { return; }
 
@@ -868,7 +866,7 @@ OpTable::MakeRows (void) {
     // perhaps extra moves as well).
 
     for (i=0; i < NumRows-1;) {
-        uint clength = Row[i]->CommonLength (Row[i+1]);
+        scid::database::uint clength = Row[i]->CommonLength (Row[i+1]);
         if (clength >= 2*OPTABLE_COLUMNS) {
             MergeRow (i);
         } else if (clength == Row[i]->Length) {
@@ -888,11 +886,11 @@ OpTable::MakeRows (void) {
         // only be merged into N+1 if CommonLength(N,N+1) is greater
         // than CommonLength(N-1,N).
 
-        uint bestcost = NLines[0] + NLines[1];
-        uint bestrow = 0;
+        scid::database::uint bestcost = NLines[0] + NLines[1];
+        scid::database::uint bestrow = 0;
         for (i=1; i < NumRows-1; i++) {
             if (IsRowMergable (i)) {
-                uint cost = NLines[i] + NLines[i+1];
+                scid::database::uint cost = NLines[i] + NLines[i+1];
                 if (cost < bestcost) {
                     bestcost = cost;
                     bestrow = i;
@@ -927,9 +925,9 @@ struct opSortT {
 };
 
 void
-OpTable::SortTableLines (OpLine ** lines, uint nlines, uint depth)
+OpTable::SortTableLines (OpLine ** lines, scid::database::uint nlines, scid::database::uint depth)
 {
-    uint i, j, nUnique = 0;
+    scid::database::uint i, j, nUnique = 0;
     if (nlines < 2) { return; }
     if (depth >= OPLINE_MOVES) { return; }
 
@@ -942,7 +940,7 @@ OpTable::SortTableLines (OpLine ** lines, uint nlines, uint depth)
     for (i=0; i < nlines; i++) {
         bool newMove = true;
         for (j=0; j < nUnique; j++) {
-            if (strEqual (lines[i]->GetMove(depth), moves[j].move)) {
+            if (scid::database::strEqual (lines[i]->GetMove(depth), moves[j].move)) {
                 newMove = false;
                 moves[j].count++;
                 lines[i]->Next = moves[j].lineList;
@@ -969,11 +967,11 @@ OpTable::SortTableLines (OpLine ** lines, uint nlines, uint depth)
             }
             // If still equal, sort by move notation:
             if (result == 0) {
-                result = strCompare (moves[i].move, moves[j].move);
+                result = scid::database::strCompare (moves[i].move, moves[j].move);
             }
             // Ensure short lines (with no more moves) come first:
-            if (strEqual (moves[i].move, "")) { result = -1; }
-            if (strEqual (moves[j].move, "")) { result = 1; }
+            if (scid::database::strEqual (moves[i].move, "")) { result = -1; }
+            if (scid::database::strEqual (moves[j].move, "")) { result = 1; }
             // Swap if necessary:
             if (result > 0) {
                 opSortT temp = moves[i];
@@ -984,7 +982,7 @@ OpTable::SortTableLines (OpLine ** lines, uint nlines, uint depth)
     }
 
     // Now rearrange the lines according to the order of moves:
-    uint count = 0;
+    scid::database::uint count = 0;
     for (i=0; i < nUnique; i++) {
         OpLine * line = moves[i].lineList;
         while (line != NULL) {
@@ -1010,9 +1008,9 @@ OpTable::SortTableLines (OpLine ** lines, uint nlines, uint depth)
 }
 
 void
-OpTable::PrintStemLine (DString * dstr, uint format, bool exclude)
+OpTable::PrintStemLine (scid::database::DString * dstr, scid::database::uint format, bool exclude)
 {
-    for (uint i=0; i < StartLength; i++) {
+    for (scid::database::uint i=0; i < StartLength; i++) {
         dstr->Append (" ");
         if (i % 2 == 0) { dstr->Append ((i+2)/2, "."); }
         OpLine::PrintMove (dstr, StartLine[StartLength-1-i], format);
@@ -1026,7 +1024,7 @@ OpTable::PrintStemLine (DString * dstr, uint format, bool exclude)
 }
 
 void
-OpTable::PrintTable (DString * dstr, const char * title, const char * comment)
+OpTable::PrintTable (scid::database::DString * dstr, const char * title, const char * comment)
 {
     ASSERT (title != NULL  &&  comment != NULL);
     switch (Format) {
@@ -1047,9 +1045,9 @@ OpTable::PrintTable (DString * dstr, const char * title, const char * comment)
 
 
 void
-OpTable::PrintLaTeX (DString * dstr, const char * title, const char * comment)
+OpTable::PrintLaTeX (scid::database::DString * dstr, const char * title, const char * comment)
 {
-    uint i;
+    scid::database::uint i;
     MakeRows();
     NumNotes = 0;
     // Increasing arraystretch above 1.0 adds more whitespace between
@@ -1063,10 +1061,10 @@ OpTable::PrintLaTeX (DString * dstr, const char * title, const char * comment)
     dstr->Append ("\\multicolumn{11}{p{13cm}}{\\textbf{");
     PrintStemLine (dstr, OPTABLE_LaTeX, true);
     dstr->Append ("}: \\mbox{");
-    dstr->Append (" +", TheoryResults[RESULT_White]);
-    dstr->Append (" =", TheoryResults[RESULT_Draw]);
-    dstr->Append (" --", TheoryResults[RESULT_Black]);
-    uint score = TheoryScore();
+    dstr->Append (" +", TheoryResults[scid::database::RESULT_White]);
+    dstr->Append (" =", TheoryResults[scid::database::RESULT_Draw]);
+    dstr->Append (" --", TheoryResults[scid::database::RESULT_Black]);
+    scid::database::uint score = TheoryScore();
     dstr->Append (" (", score/2);
     if (score % 2) { dstr->AddChar (DecimalChar); dstr->AddChar ('5'); }
     dstr->Append ("/", TheoryCount, ": ");
@@ -1079,11 +1077,11 @@ OpTable::PrintLaTeX (DString * dstr, const char * title, const char * comment)
     //dstr->Append ("\\hline\n");
 
     // Print each row:
-    for (uint row=0; row < NumRows; row++) {
+    for (scid::database::uint row=0; row < NumRows; row++) {
         dstr->Append ("\\textbf{", row+1, "}");
-        uint nSameMoves = 0;
+        scid::database::uint nSameMoves = 0;
         if (row > 0) { nSameMoves = Row[row]->CommonLength(Row[row-1]); }
-        for (uint j=0; j < 2*OPTABLE_COLUMNS; j++) {
+        for (scid::database::uint j=0; j < 2*OPTABLE_COLUMNS; j++) {
             //dstr->Append (j % 2 == 0 ? " & " : " \\newline ");
             if (j % 2 == 0) {
                 dstr->Append (" & ");
@@ -1102,8 +1100,8 @@ OpTable::PrintLaTeX (DString * dstr, const char * title, const char * comment)
                 // Compile following section to indicate number of games
                 // and score in each note:
 #if 0
-                uint ncount = NoteCount(NumNotes);
-                uint nscore = NoteScore(NumNotes);
+                scid::database::uint ncount = NoteCount(NumNotes);
+                scid::database::uint nscore = NoteScore(NumNotes);
                 dstr->Append ("_{\\mbox{\\tiny ", ncount, ":");
                 if (ncount == 1) {
                     switch (nscore) {
@@ -1122,7 +1120,7 @@ OpTable::PrintLaTeX (DString * dstr, const char * title, const char * comment)
 
         // Print number of games in this row, and White percentage score:
         dstr->Append (" & ", NLines[row], " & ");
-        uint score = 0;
+        scid::database::uint score = 0;
         if (NLines[row] > 0) {
             score = (RowScore[row] * 50 + (NLines[row]/2)) / NLines[row];
         }
@@ -1130,7 +1128,7 @@ OpTable::PrintLaTeX (DString * dstr, const char * title, const char * comment)
     }
 
     dstr->Append ("\\hline\n");
-    if (! strEqual (comment, "")) {
+    if (! scid::database::strEqual (comment, "")) {
         dstr->Append ("\\multicolumn{11}{r}{\\em ", comment, "}\n");
     }
     dstr->Append ("\\end{tabular}\n\\end{center}\n]\n");
@@ -1138,19 +1136,19 @@ OpTable::PrintLaTeX (DString * dstr, const char * title, const char * comment)
 }
 
 void
-OpTable::PrintHTML (DString * dstr, const char * title, const char * comment)
+OpTable::PrintHTML (scid::database::DString * dstr, const char * title, const char * comment)
 {
-    uint i;
+    scid::database::uint i;
     MakeRows();
     NumNotes = 0;
     dstr->Append (title);
     dstr->Append ("<center>");
     PrintStemLine (dstr, OPTABLE_HTML, true);
     dstr->Append (": ");
-    dstr->Append (" +", TheoryResults[RESULT_White]);
-    dstr->Append (" =", TheoryResults[RESULT_Draw]);
-    dstr->Append (" -", TheoryResults[RESULT_Black]);
-    uint score = TheoryScore();
+    dstr->Append (" +", TheoryResults[scid::database::RESULT_White]);
+    dstr->Append (" =", TheoryResults[scid::database::RESULT_Draw]);
+    dstr->Append (" -", TheoryResults[scid::database::RESULT_Black]);
+    scid::database::uint score = TheoryScore();
     dstr->Append (" (", score/2);
     if (score % 2) { dstr->AddChar (DecimalChar); dstr->AddChar ('5'); }
     dstr->Append ("/", TheoryCount, ": ");
@@ -1163,11 +1161,11 @@ OpTable::PrintHTML (DString * dstr, const char * title, const char * comment)
     dstr->Append ("</tr>\n");
 
     // Print each row:
-    for (uint row=0; row < NumRows; row++) {
+    for (scid::database::uint row=0; row < NumRows; row++) {
         dstr->Append ("<tr><th>", row+1, "</th>\n");
-        uint nSameMoves = 0;
+        scid::database::uint nSameMoves = 0;
         if (row > 0) { nSameMoves = Row[row]->CommonLength(Row[row-1]); }
-        for (uint j=0; j < 2*OPTABLE_COLUMNS; j++) {
+        for (scid::database::uint j=0; j < 2*OPTABLE_COLUMNS; j++) {
             dstr->Append (j % 2 == 0 ? " <td> " : " <br> ");
             if (j < nSameMoves) {
                 dstr->Append ("...");
@@ -1184,7 +1182,7 @@ OpTable::PrintHTML (DString * dstr, const char * title, const char * comment)
         }
         // Print number of games in this row, and White percentage score:
         dstr->Append (" <td>", NLines[row], ": ");
-        uint score = 0;
+        scid::database::uint score = 0;
         if (NLines[row] > 0) {
             score = (RowScore[row] * 50 + (NLines[row]/2)) / NLines[row];
         }
@@ -1192,19 +1190,19 @@ OpTable::PrintHTML (DString * dstr, const char * title, const char * comment)
         dstr->Append ("</tr>\n");
     }
     dstr->Append ("</table>");
-    if (! strEqual (comment, "")) { dstr->Append (comment, "\n"); }
+    if (! scid::database::strEqual (comment, "")) { dstr->Append (comment, "\n"); }
     dstr->Append ("</center>");
     PrintNotes (dstr, OPTABLE_HTML);
 }
 
 void
-OpTable::PrintText (DString * dstr, const char * title, const char * comment,
+OpTable::PrintText (scid::database::DString * dstr, const char * title, const char * comment,
                     bool ctext)
 {
-    uint i;
+    scid::database::uint i;
     MakeRows();
     NumNotes = 0;
-    const uint cellBytes = 9;
+    const scid::database::uint cellBytes = 9;
     char cell [18];
     const char * hrule = "-------------------------------------------------------------------------------\n";
 
@@ -1221,10 +1219,10 @@ OpTable::PrintText (DString * dstr, const char * title, const char * comment,
         if (ctext) { dstr->Append ("</run></darkblue>"); }
         dstr->Append (":");
     }
-    dstr->Append (" +", TheoryResults[RESULT_White]);
-    dstr->Append (" =", TheoryResults[RESULT_Draw]);
-    dstr->Append (" -", TheoryResults[RESULT_Black]);
-    uint score = TheoryScore();
+    dstr->Append (" +", TheoryResults[scid::database::RESULT_White]);
+    dstr->Append (" =", TheoryResults[scid::database::RESULT_Draw]);
+    dstr->Append (" -", TheoryResults[scid::database::RESULT_Black]);
+    scid::database::uint score = TheoryScore();
     dstr->Append (" (", score/2);
     if (score % 2) { dstr->AddChar (DecimalChar); dstr->AddChar ('5'); }
     dstr->Append ("/", TheoryCount, ": ");
@@ -1236,13 +1234,13 @@ OpTable::PrintText (DString * dstr, const char * title, const char * comment,
     }
     dstr->Append ("\n", hrule);
 
-    DString wStr, bStr, dTemp;
-    DString* wstr = &wStr;
-    DString* bstr = &bStr;
-    DString* dtemp = &dTemp;
+    scid::database::DString wStr, bStr, dTemp;
+    scid::database::DString* wstr = &wStr;
+    scid::database::DString* bstr = &bStr;
+    scid::database::DString* dtemp = &dTemp;
 
     // Print each row:
-    for (uint row=0; row < NumRows; row++) {
+    for (scid::database::uint row=0; row < NumRows; row++) {
         wstr->Clear();
         bstr->Clear();
         bool wtm = true;
@@ -1250,9 +1248,9 @@ OpTable::PrintText (DString * dstr, const char * title, const char * comment,
         std::snprintf(tempStr, sizeof(tempStr), "%2u  ", row+1);
         wstr->Append (tempStr);
         bstr->Append ("    ");
-        uint nSameMoves = 0;
+        scid::database::uint nSameMoves = 0;
         if (row > 0) { nSameMoves = Row[row]->CommonLength(Row[row-1]); }
-        for (uint j=0; j < 2*OPTABLE_COLUMNS; j++) {
+        for (scid::database::uint j=0; j < 2*OPTABLE_COLUMNS; j++) {
             size_t width = 0;
             dtemp->Clear();
             if (j < nSameMoves) {
@@ -1262,7 +1260,7 @@ OpTable::PrintText (DString * dstr, const char * title, const char * comment,
                 if (ctext  &&  j >= nSameMoves) {
                     dtemp->Append ("<darkblue><run importMoveListTrans {");
                     PrintStemLine (dtemp, OPTABLE_Text, false);
-                    uint x = 0;
+                    scid::database::uint x = 0;
                     if (! WTM) { x = 1; }
                     for (; x <= j; x++) {
                         dtemp->Append (" ");
@@ -1308,7 +1306,7 @@ OpTable::PrintText (DString * dstr, const char * title, const char * comment,
         // Print number of games in this row, and White percentage score:
         std::snprintf(cell, sizeof(cell), "%2u:", NLines[row]);
         wstr->Append (cell);
-        uint score = 0;
+        scid::database::uint score = 0;
         if (NLines[row] > 0) {
             score = (RowScore[row] * 50 + (NLines[row]/2)) / NLines[row];
         }
@@ -1317,7 +1315,7 @@ OpTable::PrintText (DString * dstr, const char * title, const char * comment,
         dstr->Append (wstr->Data(), "\n", bstr->Data(), "\n\n");
     }
     dstr->Append (hrule);
-    if (! strEqual (comment, "")) { dstr->Append (comment, "\n"); }
+    if (! scid::database::strEqual (comment, "")) { dstr->Append (comment, "\n"); }
     dstr->Append ("\n");
     if (ctext) { dstr->Append ("</tt>"); }
     PrintNotes (dstr, ctext ? OPTABLE_CText : OPTABLE_Text);
@@ -1330,7 +1328,7 @@ OpTable::PrintText (DString * dstr, const char * title, const char * comment,
 //    all footnote lines for the new footnote have their NoteMoveNum
 //    set to the new footnote number, and true is returned.
 bool
-OpTable::HasNotes (OpLine * line, uint movenum)
+OpTable::HasNotes (OpLine * line, scid::database::uint movenum)
 {
     // Check for a footnote: there will be one if this is the last
     // move on the row that will appear in the table, or if there
@@ -1366,25 +1364,25 @@ OpTable::HasNotes (OpLine * line, uint movenum)
     return noteSeen;
 }
 
-uint
-OpTable::NoteCount (uint note)
+scid::database::uint
+OpTable::NoteCount (scid::database::uint note)
 {
-    uint count = 0;
-    for (uint n = 0; n < NumTableLines; n++) {
+    scid::database::uint count = 0;
+    for (scid::database::uint n = 0; n < NumTableLines; n++) {
         if (Line[n]->NoteNumber == note) { count++; }
     }
     return count;
 }
 
-uint
-OpTable::NoteScore (uint note)
+scid::database::uint
+OpTable::NoteScore (scid::database::uint note)
 {
-    uint count = 0;
-    uint score = 0;
-    for (uint n = 0; n < NumTableLines; n++) {
+    scid::database::uint count = 0;
+    scid::database::uint score = 0;
+    for (scid::database::uint n = 0; n < NumTableLines; n++) {
         if (Line[n]->NoteNumber == note) {
             count++;
-            score += RESULT_SCORE[Line[n]->Result];
+            score += scid::database::RESULT_SCORE[Line[n]->Result];
         }
     }
     if (count > 0) {
@@ -1394,7 +1392,7 @@ OpTable::NoteScore (uint note)
 }
 
 void
-OpTable::PrintNotes (DString * dstr, uint format)
+OpTable::PrintNotes (scid::database::DString * dstr, scid::database::uint format)
 {
     if (NumNotes == 0) { return; }
 
@@ -1419,7 +1417,7 @@ OpTable::PrintNotes (DString * dstr, uint format)
     }
     dstr->Append (preNotesList);
 
-    for (uint note=1; note <= NumNotes; note++) {
+    for (scid::database::uint note=1; note <= NumNotes; note++) {
         if (format == OPTABLE_LaTeX) {
             dstr->Append ("\\notenum{", note, "}\n");
         } else if (format == OPTABLE_HTML) {
@@ -1436,7 +1434,7 @@ OpTable::PrintNotes (DString * dstr, uint format)
         OpLine *  prevLine =  NULL;
         for (int n = NumTableLines-1; n >= 0; n--) {
             if (Line[n]->NoteNumber == note) {
-                uint mnum = Line[n]->NoteMoveNum;
+                scid::database::uint mnum = Line[n]->NoteMoveNum;
                 if (prevLine != NULL) {
                     mnum = Line[n]->CommonLength(prevLine);
                     if (mnum <= Line[n]->NoteMoveNum  &&
@@ -1456,7 +1454,7 @@ OpTable::PrintNotes (DString * dstr, uint format)
 }
 
 void
-OpTable::BestGames (DString * dstr, uint count, const char * rtype)
+OpTable::BestGames (scid::database::DString * dstr, scid::database::uint count, const char * rtype)
 {
     enum {
         BEST_White, BEST_Black, BEST_AvgElo, BEST_Oldest, BEST_Newest
@@ -1498,7 +1496,7 @@ OpTable::BestGames (DString * dstr, uint count, const char * rtype)
         endLine = "<br>\n";
     }
 
-    uint i;
+    scid::database::uint i;
     for (i=0; i < NumLines; i++) {
         Line[i]->Selected = false;
     }
@@ -1506,20 +1504,20 @@ OpTable::BestGames (DString * dstr, uint count, const char * rtype)
     dstr->Append (preList);
     bool printFullDate = (rt == BEST_Oldest || rt == BEST_Newest);
 
-    for (uint c=1; c <= count; c++) {
-        uint bestValue = 0;
+    for (scid::database::uint c=1; c <= count; c++) {
+        scid::database::uint bestValue = 0;
         int bestIndex = -1;
         for (i=0; i < NumLines; i++) {
             if (Line[i]->Selected) { continue; }
-            uint v = 0;
+            scid::database::uint v = 0;
             switch (rt) {
             case BEST_White:
-                if (Line[i]->Result != RESULT_White) { continue; }
+                if (Line[i]->Result != scid::database::RESULT_White) { continue; }
                 v = 1000 - Line[i]->NumMoves;
                 v = (v << 12) + Line[i]->AvgElo;
                 break;
             case BEST_Black:
-                if (Line[i]->Result != RESULT_Black) { continue; }
+                if (Line[i]->Result != scid::database::RESULT_Black) { continue; }
                 v = 1000 - Line[i]->NumMoves;
                 v = (v << 12) + Line[i]->AvgElo;
                 break;
@@ -1527,8 +1525,8 @@ OpTable::BestGames (DString * dstr, uint count, const char * rtype)
                 v = Line[i]->AvgElo;
                 break;
             case BEST_Oldest:
-                v = DATE_MAKE(YEAR_MAX,12,31) - Line[i]->Date;
-                if (Line[i]->Date == ZERO_DATE) { v = 0; }
+                v = (((scid::database::YEAR_MAX) << scid::database::YEAR_SHIFT) | ((12) << scid::database::MONTH_SHIFT) | (31)) - Line[i]->Date;
+                if (Line[i]->Date == scid::database::ZERO_DATE) { v = 0; }
                 break;
             case BEST_Newest:
                 v = Line[i]->Date;
@@ -1575,16 +1573,16 @@ OpTable::BestGames (DString * dstr, uint count, const char * rtype)
 #define PLAYERFREQ_MAXNOTES 8
 struct playerFreqT {
     const char * name;
-    uint frequency;
-    eloT minElo;
-    eloT maxElo;
-    uint minYear;
-    uint maxYear;
-    uint score;
-    uint oppEloSum;   // Sum of opponent Elos.
-    uint oppEloCount; // Number of games where opponent has Elo rating.
-    uint oppEloScore; // Score in games where opponent has Elo rating.
-    uint noteNumber [PLAYERFREQ_MAXNOTES + 1];
+    scid::database::uint frequency;
+    scid::database::eloT minElo;
+    scid::database::eloT maxElo;
+    scid::database::uint minYear;
+    scid::database::uint maxYear;
+    scid::database::uint score;
+    scid::database::uint oppEloSum;   // Sum of opponent Elos.
+    scid::database::uint oppEloCount; // Number of games where opponent has Elo rating.
+    scid::database::uint oppEloScore; // Score in games where opponent has Elo rating.
+    scid::database::uint noteNumber [PLAYERFREQ_MAXNOTES + 1];
 };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1592,14 +1590,14 @@ struct playerFreqT {
 //    Returns (through dstr) a list of the most frequent players
 //    of the report line, as White or Black.
 void
-OpTable::TopPlayers (DString * dstr, colorT c, uint count)
+OpTable::TopPlayers (scid::database::DString * dstr, scid::database::colorT c, scid::database::uint count)
 {
-    uint i;
+    scid::database::uint i;
 
     // Set up zero-filled array of player frequencies:
-    uint largestPlayerID = 0;
+    scid::database::uint largestPlayerID = 0;
     for (i=0; i < NumLines; i++) {
-        uint id = (c == WHITE ? Line[i]->WhiteID : Line[i]->BlackID);
+        scid::database::uint id = (c == scid::database::WHITE ? Line[i]->WhiteID : Line[i]->BlackID);
         if (id > largestPlayerID) { largestPlayerID = id; }
     }
 #ifdef WINCE
@@ -1614,32 +1612,32 @@ OpTable::TopPlayers (DString * dstr, colorT c, uint count)
         pf[i].score = 0;
         pf[i].minYear = pf[i].maxYear = 0;
         pf[i].oppEloSum = pf[i].oppEloCount = pf[i].oppEloScore = 0;
-        for (uint n=0; n <= PLAYERFREQ_MAXNOTES; n++) {
+        for (scid::database::uint n=0; n <= PLAYERFREQ_MAXNOTES; n++) {
             pf[i].noteNumber[n] = 0;
         }
     }
 
     // Fill in the player frequencies array:
     for (i=0; i < NumLines; i++) {
-        uint id = 0;
-        eloT elo = 0;
-        eloT oppElo = 0;
+        scid::database::uint id = 0;
+        scid::database::eloT elo = 0;
+        scid::database::eloT oppElo = 0;
         const char * name = NULL;
-        uint score = 0;
-        uint year = date_GetYear (Line[i]->Date);
+        scid::database::uint score = 0;
+        scid::database::uint year = scid::database::date_GetYear (Line[i]->Date);
         OpLine * line = Line[i];
-        if (c == WHITE) {
+        if (c == scid::database::WHITE) {
             id = line->WhiteID;
             elo = line->WhiteElo;
             oppElo = line->BlackElo;
             name = line->White;
-            score = RESULT_SCORE[line->Result];
+            score = scid::database::RESULT_SCORE[line->Result];
         } else {
             id = line->BlackID;
             elo = line->BlackElo;
             oppElo = line->WhiteElo;
             name = line->Black;
-            score = RESULT_SCORE[ RESULT_OPPOSITE[line->Result] ];
+            score = scid::database::RESULT_SCORE[ scid::database::RESULT_OPPOSITE[line->Result] ];
         }
         ASSERT (id <= largestPlayerID);
         pf[id].frequency++;
@@ -1661,7 +1659,7 @@ OpTable::TopPlayers (DString * dstr, colorT c, uint count)
             if (year > pf[id].maxYear) { pf[id].maxYear = year; }
         }
         if (Line[i]->NoteNumber != 0) {
-            for (uint n=0; n <= PLAYERFREQ_MAXNOTES; n++) {
+            for (scid::database::uint n=0; n <= PLAYERFREQ_MAXNOTES; n++) {
                 if (pf[id].noteNumber[n] == Line[i]->NoteNumber) { break; }
                 if (pf[id].noteNumber[n] == 0) {
                     pf[id].noteNumber[n] = Line[i]->NoteNumber;
@@ -1711,14 +1709,14 @@ OpTable::TopPlayers (DString * dstr, colorT c, uint count)
     dstr->Append (startTable);
 
     // Now find the "count" most frequent players:
-    for (uint n=1; n <= count; n++) {
-        uint maxFreq = 0;
-        uint maxElo = 0;
+    for (scid::database::uint n=1; n <= count; n++) {
+        scid::database::uint maxFreq = 0;
+        scid::database::uint maxElo = 0;
         int index = 0;
         bool found = false;
-        for (uint id=0; id <= largestPlayerID; id++) {
-            uint freq = pf[id].frequency;
-            uint elo = pf[id].maxElo;
+        for (scid::database::uint id=0; id <= largestPlayerID; id++) {
+            scid::database::uint freq = pf[id].frequency;
+            scid::database::uint elo = pf[id].maxElo;
             if (freq == 0) { continue; }
             if ((freq > maxFreq)  ||  (freq == maxFreq  &&  elo > maxElo)) {
                 found = true;
@@ -1732,17 +1730,17 @@ OpTable::TopPlayers (DString * dstr, colorT c, uint count)
             char tempStr [100];
             std::snprintf(tempStr, sizeof(tempStr), "%2u", n);
             dstr->Append (startRow, preNum, tempStr, postNum);
-            uint freq = pf[index].frequency;
+            scid::database::uint freq = pf[index].frequency;
             ASSERT (freq > 0);
             ASSERT (pf[index].name != NULL);
             std::snprintf(tempStr, sizeof(tempStr), "%3u", freq);
             dstr->Append (nextCell, tempStr);
 
             // Print the year range in which the player played this line:
-            uint minYear = pf[index].minYear;
-            uint maxYear = pf[index].maxYear;
+            scid::database::uint minYear = pf[index].minYear;
+            scid::database::uint maxYear = pf[index].maxYear;
             if (maxYear == 0) {
-                strCopy (tempStr, "         ");
+                scid::database::strCopy (tempStr, "         ");
             } else if (minYear == maxYear) {
                 std::snprintf(tempStr, sizeof(tempStr), "     %4u", minYear);
             } else {
@@ -1752,12 +1750,12 @@ OpTable::TopPlayers (DString * dstr, colorT c, uint count)
             dstr->Append (nextCell, " ", tempStr);
 
             // Print the score with this line:
-            uint score = (50 * pf[index].score + (freq / 2)) / freq;
+            scid::database::uint score = (50 * pf[index].score + (freq / 2)) / freq;
             std::snprintf(tempStr, sizeof(tempStr), "%3u%s", score, percentStr);
             dstr->Append (nextCell, tempStr);
 
             // Print peak Elo while playing this line:
-            uint maxElo = pf[index].maxElo;
+            scid::database::uint maxElo = pf[index].maxElo;
             if (maxElo == 0) {
                 std::snprintf(tempStr, sizeof(tempStr), "%s    %s", preElo, postElo);
             } else {
@@ -1775,7 +1773,7 @@ OpTable::TopPlayers (DString * dstr, colorT c, uint count)
             // Print the note numbers containing games by this player:
             if (pf[index].noteNumber[0] != 0) {
                 dstr->Append (startNotes);
-                for (uint n=0; n < PLAYERFREQ_MAXNOTES; n++) {
+                for (scid::database::uint n=0; n < PLAYERFREQ_MAXNOTES; n++) {
                     if (pf[index].noteNumber[n] == 0) { break; }
                     if (n > 0) { dstr->Append (","); }
                     if (Format == OPTABLE_CText) {
@@ -1811,28 +1809,28 @@ OpTable::TopPlayers (DString * dstr, colorT c, uint count)
 //    sections of the report games.
 //    This is generally only useful for a Player report.
 void
-OpTable::TopEcoCodes (DString * dstr, uint count)
+OpTable::TopEcoCodes (scid::database::DString * dstr, scid::database::uint count)
 {
-    uint ecoCount [50];
-    uint ecoScore [50];
-    uint ecoSubCount[50][10];
+    scid::database::uint ecoCount [50];
+    scid::database::uint ecoScore [50];
+    scid::database::uint ecoSubCount[50][10];
 
-    for (uint ecoGroup=0; ecoGroup < 50; ecoGroup++) {
+    for (scid::database::uint ecoGroup=0; ecoGroup < 50; ecoGroup++) {
         ecoCount[ecoGroup] = 0;
         ecoScore[ecoGroup] = 0;
-        for (uint subCode = 0; subCode < 10; subCode++) {
+        for (scid::database::uint subCode = 0; subCode < 10; subCode++) {
             ecoSubCount[ecoGroup][subCode] = 0;
         }
     }
 
     // Fill in the ECO frequencies array:
-    for (uint i=0; i < NumLines; i++) {
+    for (scid::database::uint i=0; i < NumLines; i++) {
         int ecoClass = -1;
         int ecoSubCode = -1;
-        ecoT ecoCode = Line[i]->EcoCode;
-        if (ecoCode != ECO_None) {
-            ecoStringT ecoStr;
-            eco_ToBasicString (ecoCode, ecoStr);
+        scid::database::ecoT ecoCode = Line[i]->EcoCode;
+        if (ecoCode != scid::database::ECO_None) {
+            scid::database::ecoStringT ecoStr;
+            scid::database::eco_ToBasicString (ecoCode, ecoStr);
             if (ecoStr[0] != 0) {
                 ecoClass = ((ecoStr[0] - 'A') * 10) + (ecoStr[1] - '0');
                 if (ecoClass < 0  ||  ecoClass >= 50) { ecoClass = -1; }
@@ -1841,7 +1839,7 @@ OpTable::TopEcoCodes (DString * dstr, uint count)
         }
         if (ecoClass >= 0) {
             ecoCount[ecoClass]++;
-            ecoScore[ecoClass] += RESULT_SCORE[Line[i]->Result];
+            ecoScore[ecoClass] += scid::database::RESULT_SCORE[Line[i]->Result];
             ecoSubCount[ecoClass][ecoSubCode]++;
         }
     }
@@ -1878,10 +1876,10 @@ OpTable::TopEcoCodes (DString * dstr, uint count)
     dstr->Append (startTable);
 
     // Now find the "count" most frequent ECO groups:
-    for (uint n=1; n <= count; n++) {
-        uint maxFreq = 0;
-        uint ecoClass = 0;
-        for (uint i=0; i < 50; i++) {
+    for (scid::database::uint n=1; n <= count; n++) {
+        scid::database::uint maxFreq = 0;
+        scid::database::uint ecoClass = 0;
+        for (scid::database::uint i=0; i < 50; i++) {
             if (ecoCount[i] > maxFreq) {
                 ecoClass = i;
                 maxFreq = ecoCount[i];
@@ -1889,7 +1887,7 @@ OpTable::TopEcoCodes (DString * dstr, uint count)
         }
         if (maxFreq > 0) {
             char ecoStr[8];
-            strCopy (ecoStr, "A00-E99");
+            scid::database::strCopy (ecoStr, "A00-E99");
             ecoStr[0] = (ecoClass / 10) + 'A';
             ecoStr[1] = (ecoClass % 10) + '0';
             ecoStr[2] = '0';
@@ -1904,7 +1902,7 @@ OpTable::TopEcoCodes (DString * dstr, uint count)
             std::snprintf(tempStr, sizeof(tempStr), "%3u", maxFreq);
             dstr->Append (nextCell, tempStr);
 
-            uint score = (50 * ecoScore[ecoClass] + (maxFreq / 2)) / maxFreq;
+            scid::database::uint score = (50 * ecoScore[ecoClass] + (maxFreq / 2)) / maxFreq;
             std::snprintf(tempStr, sizeof(tempStr), "%3u%s", score, percentStr);
             dstr->Append (nextCell, tempStr);
             dstr->Append (endRow);
@@ -1914,12 +1912,12 @@ OpTable::TopEcoCodes (DString * dstr, uint count)
     dstr->Append (endTable);
 }
 
-uint
-OpTable::AvgLength (resultT result)
+scid::database::uint
+OpTable::AvgLength (scid::database::resultT result)
 {
-    uint n = 0;
-    uint sum = 0;
-    for (uint i=0; i < NumLines; i++) {
+    scid::database::uint n = 0;
+    scid::database::uint sum = 0;
+    for (scid::database::uint i=0; i < NumLines; i++) {
         if (Line[i]->Result == result) {
             n++;
             sum += Line[i]->NumMoves;
@@ -1929,24 +1927,24 @@ OpTable::AvgLength (resultT result)
     return (sum / n);
 }
 
-uint
-OpTable::AvgElo (colorT color, uint * count, uint * oppScore, uint * oppPerf)
+scid::database::uint
+OpTable::AvgElo (scid::database::colorT color, scid::database::uint * count, scid::database::uint * oppScore, scid::database::uint * oppPerf)
 {
-    uint n = 0;
-    uint sum = 0;
-    uint score = 0;
-    for (uint i=0; i < NumLines; i++) {
-        eloT elo = (color == WHITE ? Line[i]->WhiteElo : Line[i]->BlackElo);
+    scid::database::uint n = 0;
+    scid::database::uint sum = 0;
+    scid::database::uint score = 0;
+    for (scid::database::uint i=0; i < NumLines; i++) {
+        scid::database::eloT elo = (color == scid::database::WHITE ? Line[i]->WhiteElo : Line[i]->BlackElo);
         if (elo > 0) {
             n++;
             sum += elo;
-            resultT r = Line[i]->Result;
-            if (color == WHITE) {
-                r = RESULT_OPPOSITE[r];
+            scid::database::resultT r = Line[i]->Result;
+            if (color == scid::database::WHITE) {
+                r = scid::database::RESULT_OPPOSITE[r];
             }
-            if (r == RESULT_White) {
+            if (r == scid::database::RESULT_White) {
                 score += 2;
-            } else if (r == RESULT_Draw  ||  r == RESULT_None) {
+            } else if (r == scid::database::RESULT_Draw  ||  r == scid::database::RESULT_None) {
                 score++;
             }
         }
@@ -1957,8 +1955,8 @@ OpTable::AvgElo (colorT color, uint * count, uint * oppScore, uint * oppPerf)
         if (oppPerf != NULL) { *oppPerf = 0; }
         return 0;
     }
-    uint avgElo = (sum + (n/2)) / n;
-    uint percent = ((score * 50) + (n/2)) / n;
+    scid::database::uint avgElo = (sum + (n/2)) / n;
+    scid::database::uint percent = ((score * 50) + (n/2)) / n;
     if (percent > 100) { percent = 100; }
     if (oppScore != NULL) { *oppScore = percent; }
     if (oppPerf != NULL) {
@@ -1969,18 +1967,18 @@ OpTable::AvgElo (colorT color, uint * count, uint * oppScore, uint * oppPerf)
     return (avgElo);
 }
 
-uint
-OpTable::AddMoveOrder (Game * g)
+scid::database::uint
+OpTable::AddMoveOrder (scid::database::Game * g)
 {
-    uint id = 0;
+    scid::database::uint id = 0;
     int index = -1;
-    DString dstr;
+    scid::database::DString dstr;
     g->GetPartialMoveList (&dstr, g->GetCurrentPly());
 
     // Search for this move order in the current list:
 
-    for (uint i=0; i < NumMoveOrders; i++) {
-        if (strEqual (dstr.Data(), MoveOrder[i].moves)) {
+    for (scid::database::uint i=0; i < NumMoveOrders; i++) {
+        if (scid::database::strEqual (dstr.Data(), MoveOrder[i].moves)) {
             index = i;
             MoveOrder[i].count++;
             id = MoveOrder[i].id;
@@ -1993,7 +1991,7 @@ OpTable::AddMoveOrder (Game * g)
     if (index < 0) {
         if (NumMoveOrders == OPTABLE_MAX_LINES) { return 0; }
         MoveOrder[NumMoveOrders].count = 1;
-        MoveOrder[NumMoveOrders].moves = strDuplicate (dstr.Data());
+        MoveOrder[NumMoveOrders].moves = scid::database::strDuplicate (dstr.Data());
         MoveOrder[NumMoveOrders].id = NumMoveOrders + 1;
         id = MoveOrder[NumMoveOrders].id;
         index = NumMoveOrders;
@@ -2009,7 +2007,7 @@ OpTable::AddMoveOrder (Game * g)
         if (index <= 0) { break; }
         if (MoveOrder[index].count < MoveOrder[index-1].count) { break; }
         if (MoveOrder[index].count == MoveOrder[index-1].count  &&
-            strCompare(MoveOrder[index].moves, MoveOrder[index-1].moves) > 0) {
+            scid::database::strCompare(MoveOrder[index].moves, MoveOrder[index-1].moves) > 0) {
             break;
         }
         // Move the record for the current move order up one slot by
@@ -2017,10 +2015,10 @@ OpTable::AddMoveOrder (Game * g)
         char * tempMoves = MoveOrder[index].moves;
         MoveOrder[index].moves = MoveOrder[index-1].moves;
         MoveOrder[index-1].moves = tempMoves;
-        uint tempCount = MoveOrder[index].count;
+        scid::database::uint tempCount = MoveOrder[index].count;
         MoveOrder[index].count = MoveOrder[index-1].count;
         MoveOrder[index-1].count = tempCount;
-        uint tempID = MoveOrder[index].id;
+        scid::database::uint tempID = MoveOrder[index].id;
         MoveOrder[index].id = MoveOrder[index-1].id;
         MoveOrder[index-1].id = tempID;
         index--;
@@ -2030,7 +2028,7 @@ OpTable::AddMoveOrder (Game * g)
 }
 
 void
-OpTable::PopularMoveOrders (DString * dstr, uint count)
+OpTable::PopularMoveOrders (scid::database::DString * dstr, scid::database::uint count)
 {
 
     const char * preNum = " ";
@@ -2058,7 +2056,7 @@ OpTable::PopularMoveOrders (DString * dstr, uint count)
 
     dstr->Append (preList);
 
-    for (uint i=0; i < count; i++) {
+    for (scid::database::uint i=0; i < count; i++) {
         if (i == NumMoveOrders) { break; }
         char tempStr [16];
         std::snprintf(tempStr, sizeof(tempStr), "%2u", i+1);
@@ -2079,7 +2077,7 @@ OpTable::PopularMoveOrders (DString * dstr, uint count)
 }
 
 void
-OpTable::ThemeReport (DString * dstr, uint argc, const char ** argv)
+OpTable::ThemeReport (scid::database::DString * dstr, scid::database::uint argc, const char ** argv)
 {
     const char * endLine = "\n";
     const char * percentStr = "%";
@@ -2131,17 +2129,17 @@ OpTable::ThemeReport (DString * dstr, uint argc, const char ** argv)
     argv++;
 
     dstr->Append (startTable);
-    uint leftcol = (NUM_POSTHEMES + 1) / 2;
-    uint longestLength = 0;
-    for (uint i=0; i < NUM_POSTHEMES; i++) {
-        uint len = strLength (argv[i]);
+    scid::database::uint leftcol = (NUM_POSTHEMES + 1) / 2;
+    scid::database::uint longestLength = 0;
+    for (scid::database::uint i=0; i < NUM_POSTHEMES; i++) {
+        scid::database::uint len = scid::database::strLength (argv[i]);
         if (len > longestLength) { longestLength = len; }
     }
 
-    uint theme = 0;
+    scid::database::uint theme = 0;
     while (true) {
         dstr->Append (theme < leftcol ? startRow : nextCell);
-        strPad (tempStr, argv[theme], longestLength, ' ');
+        scid::database::strPad (tempStr, argv[theme], longestLength, ' ');
         if (Format == OPTABLE_CText) {
             dstr->Append ("<darkblue><run sc_report ", Type, " select theme ");
             dstr->Append (theme, "; ::windows::stats::Refresh>");
@@ -2149,7 +2147,7 @@ OpTable::ThemeReport (DString * dstr, uint argc, const char ** argv)
         dstr->Append (" ", tempStr);
         if (Format == OPTABLE_CText) { dstr->Append ("</run></darkblue>"); }
         dstr->Append (nextCellRight);
-        uint percent = 0;
+        scid::database::uint percent = 0;
         if (FilterCount > 0) {
             percent = ((100 * ThemeCount[theme]) + (FilterCount/2)) / FilterCount;
         }
@@ -2174,9 +2172,9 @@ OpTable::ThemeReport (DString * dstr, uint argc, const char ** argv)
 }
 
 void
-OpTable::AddEndMaterial (matSigT msig, bool inFilter)
+OpTable::AddEndMaterial (scid::database::matSigT msig, bool inFilter)
 {
-    uint idx = endgameTheme (msig);
+    scid::database::uint idx = endgameTheme (msig);
     EndgameCount [OPTABLE_All][idx]++;
     if (inFilter) {
         EndgameCount [OPTABLE_Line][idx]++;
@@ -2184,7 +2182,7 @@ OpTable::AddEndMaterial (matSigT msig, bool inFilter)
 }
 
 void
-OpTable::EndMaterialReport (DString * dstr, const char * repGames,
+OpTable::EndMaterialReport (scid::database::DString * dstr, const char * repGames,
                             const char * allGames)
 {
     const char * startTable = "";
@@ -2216,9 +2214,9 @@ OpTable::EndMaterialReport (DString * dstr, const char * repGames,
 
     char numStr [16];
     dstr->Append (startTable);
-    uint length[2];
-    length[OPTABLE_Line] = strLength (repGames);
-    length[OPTABLE_All] = strLength (allGames);
+    scid::database::uint length[2];
+    length[OPTABLE_Line] = scid::database::strLength (repGames);
+    length[OPTABLE_All] = scid::database::strLength (allGames);
 
     if (Format == OPTABLE_LaTeX) {
         const char * q = " & \\hspace*{\\fill}{\\F Q}\\hspace*{\\fill}";
@@ -2234,22 +2232,22 @@ OpTable::EndMaterialReport (DString * dstr, const char * repGames,
         dstr->Append (endRow, "\\hline\n");
     } else {
         dstr->Append(startRow);
-        uint len = length[OPTABLE_Line];
+        scid::database::uint len = length[OPTABLE_Line];
         if (length[OPTABLE_All] > len) { len = length[OPTABLE_All]; }
         len++;
-        for (uint space=0; space < len; space++) { dstr->AddChar (' '); }
+        for (scid::database::uint space=0; space < len; space++) { dstr->AddChar (' '); }
         char t1[10]; char t2[10];
         strcpy(t1, "     P"); strcpy(t2, "    BN");
-        transPieces(t1); transPieces(t2);
+        scid::database::transPieces(t1); scid::database::transPieces(t2);
         dstr->Append (nextCell, t1, nextCell, t2);
         strcpy(t1, "     R"); strcpy(t2, "  R,BN");
-        transPieces(t1); transPieces(t2);
+        scid::database::transPieces(t1); scid::database::transPieces(t2);
         dstr->Append (nextCell, t1, nextCell, t2);
         strcpy(t1, "     Q"); strcpy(t2, "  Q,BN");
-        transPieces(t1); transPieces(t2);
+        scid::database::transPieces(t1); scid::database::transPieces(t2);
         dstr->Append (nextCell, t1, nextCell, t2);
         strcpy(t1, "   Q,R"); strcpy(t2, "Q,R,BN");
-        transPieces(t1); transPieces(t2);
+        scid::database::transPieces(t1); scid::database::transPieces(t2);
         dstr->Append (nextCell, t1, nextCell, t2);
 //         dstr->Append (nextCell, "     P", nextCell, "    BN");
 //         dstr->Append (nextCell, "     R", nextCell, "  R,BN");
@@ -2258,16 +2256,16 @@ OpTable::EndMaterialReport (DString * dstr, const char * repGames,
         dstr->Append (endRow);
     }
     const char * rowName [2] = { repGames, allGames };
-    for (uint t = OPTABLE_Line; t <= OPTABLE_All; t++) {
+    for (scid::database::uint t = OPTABLE_Line; t <= OPTABLE_All; t++) {
         dstr->AddChar (' ');
         dstr->Append (startRow, rowName[t]);
         int diff = length[1-t] - length[t];
         while (diff > 0) { dstr->AddChar (' '); diff--; }
 
-        uint i, sum = 0;
+        scid::database::uint i, sum = 0;
         for (i=0; i < NUM_EGTHEMES; i++) { sum += EndgameCount[t][i]; }
         for (i=0; i < NUM_EGTHEMES; i++) {
-            uint pc = 0;
+            scid::database::uint pc = 0;
             if (sum > 0) { pc = ((100 * EndgameCount[t][i]) + (sum/2)) / sum; }
             std::snprintf(numStr, sizeof(numStr), "%5u", pc);
             dstr->Append (nextCell);
@@ -2296,17 +2294,17 @@ OpTable::EndMaterialReport (DString * dstr, const char * repGames,
 //    Each pair of elements contains the game number, and
 //    its start ply. The caller is responsible for deleting
 //    the allocated array, which ends with a (0,0) pair.
-uint *
-OpTable::SelectGames (char type, uint number)
+scid::database::uint *
+OpTable::SelectGames (char type, scid::database::uint number)
 {
 #ifdef WINCE
-    uint * matches = (uint *) my_Tcl_Alloc(sizeof( uint [NumLines * 2 + 2]));
+    scid::database::uint * matches = (scid::database::uint *) my_Tcl_Alloc(sizeof( scid::database::uint [NumLines * 2 + 2]));
 #else
-    uint * matches = new uint [NumLines * 2 + 2];
+    scid::database::uint * matches = new scid::database::uint [NumLines * 2 + 2];
 #endif
-    uint * match = matches;
+    scid::database::uint * match = matches;
 
-    for (uint i=0; i < NumLines; i++) {
+    for (scid::database::uint i=0; i < NumLines; i++) {
         OpLine * line = Line[i];
         if (line == NULL) { continue; }
         if (line->GameNumber == 0) { continue; }

@@ -21,8 +21,6 @@
 #include <numeric>
 #include <random>
 
-using namespace scid::database;
-
 class Test_Filebuf : public ::testing::Test {};
 class Test_FilebufGetline : public ::testing::TestWithParam<size_t> {};
 
@@ -42,15 +40,15 @@ TEST_F(Test_Filebuf, FilebufAppend) {
 
 	try {
 		{ // Test sequential write: write half of the data.
-			FilebufAppend file;
-			ASSERT_EQ(OK, file.open(fname, FMODE_Create));
+			scid::database::FilebufAppend file;
+			ASSERT_EQ(scid::database::OK, file.open(fname, scid::database::FMODE_Create));
 			auto buf = reinterpret_cast<const char*>(v.data());
 			file.append(buf, v.size() / 2);
 		}
 		{ // Test random read/write: write the remaining part of the data,
 		  // alternating with random-access read.
-			FilebufAppend file;
-			ASSERT_EQ(OK, file.open(fname, FMODE_Both));
+			scid::database::FilebufAppend file;
+			ASSERT_EQ(scid::database::OK, file.open(fname, scid::database::FMODE_Both));
 
 			std::vector<unsigned char> v2(v.size());
 			auto buf2 = reinterpret_cast<char*>(v2.data());
@@ -75,8 +73,8 @@ TEST_F(Test_Filebuf, FilebufAppend) {
 			}
 		}
 		{ // Test sequential read: read all the file.
-			FilebufAppend file;
-			ASSERT_EQ(OK, file.open(fname, FMODE_ReadOnly));
+			scid::database::FilebufAppend file;
+			ASSERT_EQ(scid::database::OK, file.open(fname, scid::database::FMODE_ReadOnly));
 			std::vector<unsigned char> v2(v.size());
 			auto buf2 = reinterpret_cast<char*>(v2.data());
 			file.pubseekpos(0);
@@ -117,11 +115,11 @@ TEST_F(Test_Filebuf, read_write_uint32_t) {
 		v32.push_back(dis32(gen));
 
 	{ // Test sequential write
-		Filebuf file;
-		ASSERT_EQ(OK, file.Open(fileName32, FMODE_Create));
+		scid::database::Filebuf file;
+		ASSERT_EQ(scid::database::OK, file.Open(fileName32, scid::database::FMODE_Create));
 
 		for (auto& e : v8) {
-			ASSERT_EQ(1, file.WriteOneByte(static_cast<byte>(e)));
+			ASSERT_EQ(1, file.WriteOneByte(static_cast<scid::database::byte>(e)));
 		}
 		for (auto& e : v16) {
 			ASSERT_EQ(2, file.WriteTwoBytes(e));
@@ -134,15 +132,15 @@ TEST_F(Test_Filebuf, read_write_uint32_t) {
 		}
 	}
 	{ // Test random write
-		Filebuf file;
-		ASSERT_EQ(OK, file.Open(fileName32, FMODE_Both));
+		scid::database::Filebuf file;
+		ASSERT_EQ(scid::database::OK, file.Open(fileName32, scid::database::FMODE_Both));
 
 		std::uniform_int_distribution<> rpos(0, 1000);
 		for (int i = 0; i < 1000; ++i) {
 			int pos = rpos(gen);
 
 			file.pubseekpos(pos / 4);
-			ASSERT_EQ(1, file.WriteOneByte(static_cast<byte>(v8[pos / 4])));
+			ASSERT_EQ(1, file.WriteOneByte(static_cast<scid::database::byte>(v8[pos / 4])));
 
 			file.pubseekpos(v8.size() + pos * 2);
 			ASSERT_EQ(2, file.WriteTwoBytes(v16[pos]));
@@ -156,8 +154,8 @@ TEST_F(Test_Filebuf, read_write_uint32_t) {
 		}
 	}
 	{ // Test sequential read
-		Filebuf file;
-		ASSERT_EQ(OK, file.Open(fileName32, FMODE_Both));
+		scid::database::Filebuf file;
+		ASSERT_EQ(scid::database::OK, file.Open(fileName32, scid::database::FMODE_Both));
 
 		for (int i = 0; i < 2; ++i) {
 			for (auto& e : v8)
@@ -178,8 +176,8 @@ TEST_F(Test_Filebuf, read_write_uint32_t) {
 		}
 	}
 	{ // Test random read
-		Filebuf file;
-		ASSERT_EQ(OK, file.Open(fileName32, FMODE_Both));
+		scid::database::Filebuf file;
+		ASSERT_EQ(scid::database::OK, file.Open(fileName32, scid::database::FMODE_Both));
 
 		std::uniform_int_distribution<> rpos(0, 1000);
 		for (int i = 0; i < 1000; ++i) {
@@ -205,7 +203,7 @@ static const char* filename = SCIDUP_TEST_RESOURCES_DIR "res_utf8.txt";
 
 TEST_F(Test_Filebuf, readAll) {
 	std::streamsize fileSize = -1;
-	Filebuf file;
+	scid::database::Filebuf file;
 	if (file.open(filename, std::ios::in | std::ios::binary | std::ios::ate) !=
 	    0) {
 		fileSize = file.pubseekoff(0, std::ios::cur, std::ios::in);
@@ -225,7 +223,7 @@ TEST_F(Test_Filebuf, readAll) {
 	EXPECT_EQ(EOF, file.sgetc());
 	EXPECT_EQ(fileSize, nTot);
 	EXPECT_EQ(bEnd, line + 1);
-	{ // Verify that Filebuf::getline behaves like std::fstream::getline
+	{ // Verify that scid::database::Filebuf::getline behaves like std::fstream::getline
 		const char* s = buf.get();
 		std::fstream stl(filename, std::ios::in | std::ios::binary);
 		char stlBuf[1024];
@@ -244,12 +242,12 @@ TEST_F(Test_Filebuf, Filebuf_open) {
 	} cleanup;
 
 	{
-		Filebuf file;
-		ASSERT_NE(OK, file.Open(fname, FMODE_None));
+		scid::database::Filebuf file;
+		ASSERT_NE(scid::database::OK, file.Open(fname, scid::database::FMODE_None));
 	}
 	{
-		Filebuf file;
-		ASSERT_EQ(OK, file.Open(fname, FMODE_Create));
+		scid::database::Filebuf file;
+		ASSERT_EQ(scid::database::OK, file.Open(fname, scid::database::FMODE_Create));
 		ASSERT_EQ(1, file.WriteOneByte(0x01));
 		ASSERT_EQ(2, file.WriteTwoBytes(0x0202));
 		ASSERT_EQ(3, file.WriteThreeBytes(0x030303));
@@ -261,8 +259,8 @@ TEST_F(Test_Filebuf, Filebuf_open) {
 		ASSERT_EQ(0x04040404U, file.ReadFourBytes());
 	}
 	{
-		Filebuf file;
-		ASSERT_EQ(OK, file.Open(fname, FMODE_ReadOnly));
+		scid::database::Filebuf file;
+		ASSERT_EQ(scid::database::OK, file.Open(fname, scid::database::FMODE_ReadOnly));
 		ASSERT_EQ(0x01U, file.ReadOneByte());
 		ASSERT_EQ(0x0202U, file.ReadTwoBytes());
 		ASSERT_EQ(0x030303U, file.ReadThreeBytes());
@@ -281,20 +279,20 @@ TEST_F(Test_Filebuf, Filebuf_open) {
 		ASSERT_EQ(0x04040404U, file.ReadFourBytes());
 	}
 	{
-		Filebuf file;
-		ASSERT_EQ(OK, file.Open(fname, FMODE_WriteOnly));
+		scid::database::Filebuf file;
+		ASSERT_EQ(scid::database::OK, file.Open(fname, scid::database::FMODE_WriteOnly));
 		ASSERT_EQ(4, file.WriteFourBytes(0x04040404));
 		ASSERT_EQ(3, file.WriteThreeBytes(0x030303));
 		ASSERT_EQ(2, file.WriteTwoBytes(0x0202));
 		ASSERT_EQ(1, file.WriteOneByte(0x01));
 		file.pubseekpos(0);
-		ASSERT_EQ(static_cast<byte>(EOF), file.ReadOneByte());
+		ASSERT_EQ(static_cast<scid::database::byte>(EOF), file.ReadOneByte());
 		ASSERT_EQ(static_cast<uint16_t>(EOF), file.ReadTwoBytes());
 		ASSERT_EQ(static_cast<uint32_t>(EOF), file.ReadFourBytes());
 	}
 	{
-		Filebuf file;
-		ASSERT_EQ(OK, file.Open(fname, FMODE_Both));
+		scid::database::Filebuf file;
+		ASSERT_EQ(scid::database::OK, file.Open(fname, scid::database::FMODE_Both));
 		ASSERT_EQ(0x04040404U, file.ReadFourBytes());
 		ASSERT_EQ(0x030303U, file.ReadThreeBytes());
 		ASSERT_EQ(0x0202U, file.ReadTwoBytes());
@@ -335,7 +333,7 @@ lines getlineSTL(size_t bufSize) {
 	return vStl;
 }
 
-lines getlineScid(Filebuf& file, size_t bufSize) {
+lines getlineScid(scid::database::Filebuf& file, size_t bufSize) {
 	lines vScid;
 	std::unique_ptr<char[]> unique_buf(new char[bufSize]);
 	char* buf = unique_buf.get();
@@ -361,7 +359,7 @@ TEST_P(Test_FilebufGetline, read) {
 	const size_t bufSize = GetParam();
 	lines vStl = getlineSTL(bufSize);
 
-	Filebuf file;
+	scid::database::Filebuf file;
 	file.open(filename, std::ios::in);
 	lines vScid = getlineScid(file, bufSize);
 	EXPECT_EQ(EOF, file.sgetc());
@@ -377,7 +375,7 @@ TEST_P(Test_FilebufGetline, filesize) {
 
 	std::streamsize fileSize = -1;
 	{ // Verify that all the chars are read.
-		Filebuf file;
+		scid::database::Filebuf file;
 		if (file.open(filename,
 		              std::ios::in | std::ios::binary | std::ios::ate) != 0) {
 			fileSize = file.pubseekoff(0, std::ios::cur, std::ios::in);
@@ -395,8 +393,8 @@ TEST_P(Test_FilebufGetline, filesize) {
 		EXPECT_EQ(fileSize, nTot);
 	}
 	{ // Verify that FilebufAppend::size() is correct.
-		FilebufAppend fileAppend;
-		fileAppend.open(filename, FMODE_ReadOnly);
+		scid::database::FilebufAppend fileAppend;
+		fileAppend.open(filename, scid::database::FMODE_ReadOnly);
 		EXPECT_EQ(fileSize, std::streamsize(fileAppend.size()));
 	}
 }

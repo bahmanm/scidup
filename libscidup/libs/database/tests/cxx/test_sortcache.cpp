@@ -22,19 +22,17 @@
 #include <random>
 #include <stdint.h>
 
-using namespace scid::database;
-
 class Test_SortCache : public ::testing::Test {};
 
 TEST_F(Test_SortCache, select_sortedPosition) {
 	// Open the test database
-	scidBaseT dbase;
+	scid::database::scidBaseT dbase;
 	static const char* database = SCIDUP_TEST_RESOURCES_DIR "res_database";
-	ASSERT_EQ(OK, dbase.open("SCID4", FMODE_ReadOnly, database));
+	ASSERT_EQ(scid::database::OK, dbase.open("SCID4", scid::database::FMODE_ReadOnly, database));
 	ASSERT_NE(0U, dbase.numGames());
-	const NameBase* nb = dbase.getNameBase();
+	const scid::database::NameBase* nb = dbase.getNameBase();
 	std::uniform_int_distribution<> rndID(0, dbase.numGames() - 1);
-	std::vector<gamenumT> buf(dbase.numGames());
+	std::vector<scid::database::gamenumT> buf(dbase.numGames());
 
 	// Create filters
 	auto dbfilter = dbase.getFilter("dbfilter");
@@ -44,8 +42,8 @@ TEST_F(Test_SortCache, select_sortedPosition) {
 	std::mt19937 re;
 	std::uniform_int_distribution<> rndBool(0, 1);
 	std::uniform_int_distribution<> filterVal(0, 255);
-	for (gamenumT i = 0, n = dbase.numGames(); i < n; ++i) {
-		filter.set(i, static_cast<byte>(rndBool(re) * filterVal(re)));
+	for (scid::database::gamenumT i = 0, n = dbase.numGames(); i < n; ++i) {
+		filter.set(i, static_cast<scid::database::byte>(rndBool(re) * filterVal(re)));
 	}
 
 	// Valid fields
@@ -60,7 +58,7 @@ TEST_F(Test_SortCache, select_sortedPosition) {
 	// Create a Vector with the Index data
 	using IndexRec = std::array<int64_t, sizeof fields>;
 	std::vector<IndexRec> vIndex(dbase.numGames());
-	gamenumT gameId = 0;
+	scid::database::gamenumT gameId = 0;
 	for (auto& rec : vIndex) {
 		static const int RESULT_SORT[] = {0, 3, 1, 2};
 
@@ -85,9 +83,9 @@ TEST_F(Test_SortCache, select_sortedPosition) {
 		rec[17] = ie->GetCommentCount();
 		rec[18] = ie->GetVariationCount();
 		rec[19] = ie->GetNagCount();
-		rec[20] = ie->GetResult() == RESULT_White ? 1 : 0;
-		rec[21] = ie->GetResult() == RESULT_Draw ? 1 : 0;
-		rec[22] = ie->GetResult() == RESULT_Black ? 1 : 0;
+		rec[20] = ie->GetResult() == scid::database::RESULT_White ? 1 : 0;
+		rec[21] = ie->GetResult() == scid::database::RESULT_Draw ? 1 : 0;
+		rec[22] = ie->GetResult() == scid::database::RESULT_Black ? 1 : 0;
 		rec[23] = ie->GetRating();
 	}
 
@@ -105,31 +103,31 @@ TEST_F(Test_SortCache, select_sortedPosition) {
 					return false;
 
 				// clang-format off
-				nameT nt = field == 3 ? NAME_EVENT :
-				           field == 4 ? NAME_SITE :
-				           field == 6 ? NAME_PLAYER:
-				           field == 7 ? NAME_PLAYER:
-				           NAME_INVALID;
+				scid::database::nameT nt = field == 3 ? scid::database::NAME_EVENT :
+				           field == 4 ? scid::database::NAME_SITE :
+				           field == 6 ? scid::database::NAME_PLAYER:
+				           field == 7 ? scid::database::NAME_PLAYER:
+				           scid::database::NAME_INVALID;
 				// clang-format on
-				if (nt != NAME_INVALID) {
-					res = strCaseCompare(
-					    nb->GetName(nt, static_cast<idNumberT>(a[field])),
-					    nb->GetName(nt, static_cast<idNumberT>(b[field])));
+				if (nt != scid::database::NAME_INVALID) {
+					res = scid::database::strCaseCompare(
+					    nb->GetName(nt, static_cast<scid::database::idNumberT>(a[field])),
+					    nb->GetName(nt, static_cast<scid::database::idNumberT>(b[field])));
 				} else if (field == 5) {
-					nt = NAME_ROUND;
-					res = strCompareRound(
-					    nb->GetName(nt, static_cast<idNumberT>(a[field])),
-					    nb->GetName(nt, static_cast<idNumberT>(b[field])));
+					nt = scid::database::NAME_ROUND;
+					res = scid::database::strCompareRound(
+					    nb->GetName(nt, static_cast<scid::database::idNumberT>(a[field])),
+					    nb->GetName(nt, static_cast<scid::database::idNumberT>(b[field])));
 				} else if (field == 12) {
-					auto strA = nb->GetName(NAME_SITE,
-					                        static_cast<idNumberT>(a[field]));
-					auto strB = nb->GetName(NAME_SITE,
-					                        static_cast<idNumberT>(b[field]));
+					auto strA = nb->GetName(scid::database::NAME_SITE,
+					                        static_cast<scid::database::idNumberT>(a[field]));
+					auto strB = nb->GetName(scid::database::NAME_SITE,
+					                        static_cast<scid::database::idNumberT>(b[field]));
 					if (std::strlen(strA) > 3)
 						strA += std::strlen(strA) - 3;
 					if (std::strlen(strB) > 3)
 						strB += std::strlen(strB) - 3;
-					res = strCaseCompare(strA, strB);
+					res = scid::database::strCaseCompare(strA, strB);
 				}
 
 				return (reverse == '+') ? res < 0 : res > 0;
@@ -148,7 +146,7 @@ TEST_F(Test_SortCache, select_sortedPosition) {
 	};
 
 	auto test_sortedPosition = [&](auto crit, auto flt) {
-		gamenumT id;
+		scid::database::gamenumT id;
 		do {
 			id = rndID(re);
 		} while (flt.get(id) == 0);
@@ -194,36 +192,36 @@ TEST_F(Test_SortCache, select_sortedPosition) {
 				if (validCriteria) {
 					stable_partition(
 					    vIndex.begin(), vIndex.end(), [flt](auto& e) {
-						    return flt->get(static_cast<gamenumT>(e[0])) != 0;
+						    return flt->get(static_cast<scid::database::gamenumT>(e[0])) != 0;
 					    });
 				}
 
-				// Test scidBaseT::listGames()
+				// Test scid::database::scidBaseT::listGames()
 				for (size_t off = 0, n = flt.size(); off < n; off += n / 4) {
 					size_t expCount = validCriteria ? flt.size() - off : 0;
 					test_listGames(crit, flt, off, expCount);
 				}
 
-				// Test scidBaseT::sortedPosition()
+				// Test scid::database::scidBaseT::sortedPosition()
 				if (validCriteria && flt.size()) {
 					for (int j = 0; j < 10; j++)
 						test_sortedPosition(crit, flt);
 				}
 			}
 
-			// Test scidBaseT::createSortCache()
+			// Test scid::database::scidBaseT::createSortCache()
 			if (!pass) {
 				auto sc = dbase.createSortCache(crit);
 				EXPECT_EQ(validCriteria, sc);
 			}
 
-			// Test scidBaseT::releaseSortCache()
+			// Test scid::database::scidBaseT::releaseSortCache()
 			if (pass)
 				dbase.releaseSortCache(crit);
 		}
 	}
 
-	// Test scidBaseT::Close() when background threads are running.
+	// Test scid::database::scidBaseT::Close() when background threads are running.
 	EXPECT_TRUE(dbase.createSortCache("w+s-"));
 	EXPECT_TRUE(dbase.createSortCache("i-d-n+"));
 }

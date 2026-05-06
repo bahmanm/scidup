@@ -22,8 +22,6 @@
 #include <gtest/gtest.h>
 #include <vector>
 
-using namespace scid::database;
-
 namespace {
 
 int nObjects = 0;
@@ -49,7 +47,7 @@ public:
 } // namespace
 
 TEST(Test_Containers, VectorChunked) {
-	VectorChunked<RefCounted, 3> v; // 8 elements per chunk
+	scid::database::VectorChunked<RefCounted, 3> v; // 8 elements per chunk
 
 	// Test push_back
 	for (size_t i = 0; i < 30; ++i) {
@@ -118,7 +116,7 @@ TEST(Test_Containers, VectorChunked) {
 }
 
 TEST(Test_Containers, UndoRedo) {
-	UndoRedo<RefCounted, 10> cont; // max 10 elements
+	scid::database::UndoRedo<RefCounted, 10> cont; // max 10 elements
 
 	RefCounted* cur = new RefCounted();
 
@@ -187,7 +185,7 @@ TEST(Test_Containers, ByteBuffer_GetTerminatedString) {
 		}
 		return res;
 	}();
-	ByteBuffer buf(reinterpret_cast<unsigned char*>(v.data()), v.size());
+	scid::database::ByteBuffer buf(reinterpret_cast<unsigned char*>(v.data()), v.size());
 	for (auto str : test_data) {
 		EXPECT_STREQ(str, buf.GetTerminatedString());
 	}

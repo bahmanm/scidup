@@ -27,8 +27,6 @@
 #include <string>
 #include <string_view>
 
-using namespace scid::database;
-
 TEST(Test_PgnEncode, break_lines) {
 	using namespace std::literals;
 	{
@@ -174,19 +172,19 @@ TEST(Test_PgnEncode, encode_comment) {
 	}
 }
 
-static void SAN_hack(Game& game) {
+static void SAN_hack(scid::database::Game& game) {
 	// TODO: we need this to fill in all the moveT->san
 	// It would be better to do this when the game is decoded.
 	game.MoveToStart();
 	do {
 		game.GetNextSAN();
-	} while (game.MoveForwardInPGN() == OK);
+	} while (game.MoveForwardInPGN() == scid::database::OK);
 };
 
 TEST(Test_PgnEncode, encode_game) {
 	using namespace std::literals;
 	{
-		Game empty;
+		scid::database::Game empty;
 		auto expected = "[Event\0\"\"]\n"sv
 		                "[Site\0\"\"]\n"sv
 		                "[Date\0\"????.??.??\"]\n"sv
@@ -200,10 +198,10 @@ TEST(Test_PgnEncode, encode_game) {
 		EXPECT_EQ(pgn, expected);
 	}
 	{
-		Game game;
+		scid::database::Game game;
 		game.SetMoveComment("before the move");
-		simpleMoveT sm;
-		game.currentPos()->makeMove(E2, E4, EMPTY, sm);
+		scid::database::simpleMoveT sm;
+		game.currentPos()->makeMove(scid::database::E2, scid::database::E4, scid::database::EMPTY, sm);
 		game.AddMove(sm);
 		game.SetMoveComment("after the move");
 		SAN_hack(game);
@@ -226,7 +224,7 @@ TEST(Test_PgnEncode, encode_game) {
 
 TEST(Test_PgnEncode, encode) {
 	{
-		Game empty;
+		scid::database::Game empty;
 		auto expected = "[Event \"\"]\n"
 		                "[Site \"\"]\n"
 		                "[Date \"????.??.??\"]\n"
@@ -240,10 +238,10 @@ TEST(Test_PgnEncode, encode) {
 		EXPECT_STREQ(pgn.c_str(), expected);
 	}
 	{
-		Game game;
+		scid::database::Game game;
 		game.SetMoveComment("before the move");
-		simpleMoveT sm;
-		game.currentPos()->makeMove(E2, E4, EMPTY, sm);
+		scid::database::simpleMoveT sm;
+		game.currentPos()->makeMove(scid::database::E2, scid::database::E4, scid::database::EMPTY, sm);
 		game.AddMove(sm);
 		game.SetMoveComment("after the move");
 		SAN_hack(game);
@@ -265,9 +263,9 @@ TEST(Test_PgnEncode, encode) {
 		std::string_view src =
 		    "{pre} 1. e4 {comm} ({pre var} 1. d4 d5 {end var with comm}) 1... "
 		    "e5 $1 {nag} (1... c5 $2) 2. Nf3 {last}";
-		Game game;
+		scid::database::Game game;
 		scid::database::pgn::parse_game({src.data(), src.data() + src.size()},
-		                PgnVisitor{game});
+		                scid::database::PgnVisitor{game});
 		SAN_hack(game);
 		auto expected =
 		    "[Event \"\"]\n"

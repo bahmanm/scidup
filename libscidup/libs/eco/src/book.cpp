@@ -27,16 +27,14 @@
 
 namespace {
 
-using namespace scid::database;
-
 std::string_view
 epd_findOpcode (const char * epdStr, const char * opcode)
 {
     const char * s = epdStr;
     while (*s != 0) {
         while (*s == ' '  ||  *s == '\n') { s++; }
-        if (strIsPrefix (opcode, s)) {
-            const char *codeEnd = s + strLength(opcode);
+        if (scid::database::strIsPrefix (opcode, s)) {
+            const char *codeEnd = s + scid::database::strLength(opcode);
             if (*codeEnd == ' ') {
                 return codeEnd + 1;
             }
@@ -48,26 +46,26 @@ epd_findOpcode (const char * epdStr, const char * opcode)
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Position::ReadLine():
+// scid::database::Position::ReadLine():
 //      Parse a sequence of moves separated by whitespace and
 //      move numbers, e.g. "1.e4 e5 2.Nf3" or "e4 e5 Nf3".
 //
-errorT ReadLine(Position& pos, const char* s) {
+scid::database::errorT ReadLine(scid::database::Position& pos, const char* s) {
 	while (true) {
 		while (!isalpha(static_cast<unsigned char>(*s)) && *s != 0) {
 			s++;
 		}
 		if (*s == '\0')
-			return OK;
+			return scid::database::OK;
 
 		const char* begin = s;
 		while (!isspace(static_cast<unsigned char>(*s)) && *s != '\0') {
 			s++;
 		}
 
-		simpleMoveT sm;
-		errorT err = pos.ParseMove(&sm, begin, s);
-		if (err != OK)
+		scid::database::simpleMoveT sm;
+		scid::database::errorT err = pos.ParseMove(&sm, begin, s);
+		if (err != scid::database::OK)
 			return err;
 
 		pos.DoSimpleMove(sm);
@@ -80,7 +78,7 @@ errorT ReadLine(Position& pos, const char* s) {
 
 namespace scidup::eco {
 
-std::string_view Book::findEcoString(const Position& position) const {
+std::string_view Book::findEcoString(const scid::database::Position& position) const {
 	auto [it, end] = pos_.equal_range(position.HashValue());
 	if (it == end)
 		return {};
@@ -97,14 +95,14 @@ std::string_view Book::findEcoString(const Position& position) const {
 	return res.substr(0, res.find('\n'));
 }
 
-Code Book::findEco(const Position& position) const {
+Code Book::findEco(const scid::database::Position& position) const {
 	auto it = findEcoString(position);
 	if (it.empty())
 		return ECO_None;
 
 	char buf[8] = {0};
 	it.copy(buf, 6);
-	return eco_FromString(buf);
+	return scid::database::eco_FromString(buf);
 }
 
 std::vector<Book::Line> Book::linesWithPrefix(const std::string_view prefix) const {
@@ -142,14 +140,14 @@ Book::load(const std::filesystem::path& path) {
 
     Book book;
     book.lineCount_ = 1;
-    Position std_start;
+    scid::database::Position std_start;
     std_start.StdStart();
     std::string text;
     std::string moves;
-    ecoStringT ecoStr;
+    scid::database::ecoStringT ecoStr;
     Code ecoCode;
     int ch;
-    Error err = OK;
+    Error err = scid::database::OK;
     bool done = false;
 
     // Loop to read in and add all positions:
@@ -192,8 +190,8 @@ Book::load(const std::filesystem::path& path) {
         }
 
         // Now put ecoCode in the text string and read the text in quotes:
-        ecoCode = eco_FromString (ecoStr);
-        eco_ToExtendedString (ecoCode, ecoStr);
+        ecoCode = scid::database::eco_FromString (ecoStr);
+        scid::database::eco_ToExtendedString (ecoCode, ecoStr);
         text.clear();
         text.append("eco ");
         text.append(ecoStr);
@@ -223,21 +221,21 @@ Book::load(const std::filesystem::path& path) {
             }
             prev = ch;
         }
-        Position pos (std_start);
+        scid::database::Position pos (std_start);
         err = ReadLine(pos, moves.c_str());
-        if (err != OK) { goto corrupt; }
+        if (err != scid::database::OK) { goto corrupt; }
         text.append("moves ");
-        text.append(strTrimLeft(moves.c_str()));
+        text.append(scid::database::strTrimLeft(moves.c_str()));
         text.push_back('\n');
 
         char* cboard = new char[36];
         pos.PrintCompactStr(cboard);
         auto it = book.pos_.emplace(
-            pos.HashValue(), BookData{cboard, strDuplicate(text.c_str())});
+            pos.HashValue(), BookData{cboard, scid::database::strDuplicate(text.c_str())});
         book.comments_.push_back(it->second.comment.get());
         book.leastMaterial_ = std::min(book.leastMaterial_, pos.TotalMaterial());
     }
-    return std::pair<Error, Book>(OK, std::move(book));
+    return std::pair<Error, Book>(scid::database::OK, std::move(book));
 
 corrupt:
     return std::make_pair(ERROR_Corrupt, Book{});

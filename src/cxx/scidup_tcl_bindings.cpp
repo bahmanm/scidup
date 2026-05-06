@@ -56,8 +56,6 @@
 #include <type_traits>
 #include <unordered_map>
 
-using namespace scid::database;
-
 //TODO: delete
 #include "scidup_tcl_bindings.h"
 
@@ -76,12 +74,12 @@ extern "C" TCL_NORETURN void Tcl_ConsolePanic(const char* format, ...) {
 
 
 //TODO: delete
-extern scidBaseT* db;
+extern scid::database::scidBaseT* db;
 const int MAX_BASES = 9;
 /////////////////
 
 
-static Game * scratchGame = NULL;      // "scratch" game for searches, etc.
+static scid::database::Game * scratchGame = NULL;      // "scratch" game for searches, etc.
 static std::unique_ptr<scidup::eco::Book> ecoBook; // eco classification book.
 static std::unique_ptr<scidup::spelling::SpellChecker> spellChk; // Name correction.
 static OpTable * reports[2] = {NULL, NULL};
@@ -104,7 +102,7 @@ void scid_Exit(void*) {
  * Link to <a href="../gcov/index.html">code coverage</a>
  */
 int main(int argc, char* argv[]) {
-	scratchGame = new Game;
+	scratchGame = new scid::database::Game;
 	DBasePool::init();
 
 	return UI_Main(argc, argv, scid_Exit);
@@ -117,11 +115,11 @@ int main(int argc, char* argv[]) {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Global variables:
 static const char * reportTypeName[2] = { "opening", "player" };
-static const uint REPORT_OPENING = 0;
-static const uint REPORT_PLAYER = 1;
+static const scid::database::uint REPORT_OPENING = 0;
+static const scid::database::uint REPORT_PLAYER = 1;
 
 static char decimalPointChar = '.';
-static uint htmlDiagStyle = 0;
+static scid::database::uint htmlDiagStyle = 0;
 
 //////////////////////////////////////////////////////////////////////
 //
@@ -155,7 +153,7 @@ setIntResult (Tcl_Interp * ti, int i)
 //    Inline function to set the Tcl interpreter result to an
 //    unsigned integer value.
 inline int
-setUintResult (Tcl_Interp * ti, uint i)
+setUintResult (Tcl_Interp * ti, scid::database::uint i)
 {
     Tcl_SetObjResult (ti, Tcl_NewWideIntObj(i));
     return TCL_OK;
@@ -212,7 +210,7 @@ AppendElement (Tcl_Interp* ti, const char* element)
 //    Inline function to append the specified unsigned value to the
 //    Tcl interpreter result.
 inline int
-appendUintResult (Tcl_Interp * ti, uint i)
+appendUintResult (Tcl_Interp * ti, scid::database::uint i)
 {
     char temp [20];
     std::snprintf(temp, sizeof(temp), "%u", i);
@@ -224,8 +222,8 @@ appendUintResult (Tcl_Interp * ti, uint i)
 // appendUintElement:
 //    Inline function to append the specified unsigned value to the
 //    Tcl interpreter list result.
-inline uint
-appendUintElement (Tcl_Interp * ti, uint i)
+inline scid::database::uint
+appendUintElement (Tcl_Interp * ti, scid::database::uint i)
 {
     char temp[20];
     std::snprintf(temp, sizeof(temp), "%u", i);
@@ -238,7 +236,7 @@ appendUintElement (Tcl_Interp * ti, uint i)
 //    Inline function to set the Tcl interpreter result to an
 //    unsigned integer value, with zeroes to pad to the desired width.
 inline int
-setUintWidthResult (Tcl_Interp * ti, uint i, uint width)
+setUintWidthResult (Tcl_Interp * ti, scid::database::uint i, scid::database::uint width)
 {
     char temp [20];
     std::snprintf(temp, sizeof(temp), "%0*u", width, i);
@@ -280,14 +278,14 @@ translate (Tcl_Interp * ti, const char * name)
     return translate (ti, name, name);
 }
 
-inline int errorResult (Tcl_Interp * ti, errorT err, const char* errorMsg = 0) {
+inline int errorResult (Tcl_Interp * ti, scid::database::errorT err, const char* errorMsg = 0) {
     if (errorMsg != 0) Tcl_SetObjResult (ti, Tcl_NewStringObj(errorMsg, -1));
-    ASSERT(err != OK);
+    ASSERT(err != scid::database::OK);
     Tcl_SetObjErrorCode(ti, Tcl_NewWideIntObj(err));
     return TCL_ERROR;
 }
 inline int errorResult (Tcl_Interp * ti, const char* errorMsg) {
-    return errorResult(ti, ERROR_BadArg, errorMsg);
+    return errorResult(ti, scid::database::ERROR_BadArg, errorMsg);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -353,7 +351,7 @@ str_is_prefix (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: strIsPrefix <shortStr> <longStr>");
     }
 
-    return UI_Result(ti, OK, strIsPrefix (argv[1], argv[2]));
+    return UI_Result(ti, scid::database::OK, scid::database::strIsPrefix (argv[1], argv[2]));
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -367,7 +365,7 @@ str_prefix_len (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: strPrefixLen <str> <str>");
     }
 
-    return setUintResult (ti, strPrefix (argv[1], argv[2]));
+    return setUintResult (ti, scid::database::strPrefix (argv[1], argv[2]));
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -378,11 +376,11 @@ sc_base_inUse (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     auto basePtr = db;
     if (argc > 2) {
-        basePtr = DBasePool::getBase(strGetUnsigned(argv[2]));
-        if (basePtr == 0) return UI_Result(ti, OK, false);
+        basePtr = DBasePool::getBase(scid::database::strGetUnsigned(argv[2]));
+        if (basePtr == 0) return UI_Result(ti, scid::database::OK, false);
     }
 
-    return UI_Result(ti, OK, basePtr->isOpen());
+    return UI_Result(ti, scid::database::OK, basePtr->isOpen());
 }
 
 
@@ -390,31 +388,31 @@ sc_base_inUse (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 //  exportGame:
 //    Called by sc_base_export() to export a single game.
 void
-exportGame (Game * g, FILE * exportFile, gameFormatT format, uint pgnStyle)
+exportGame (scid::database::Game * g, FILE * exportFile, scid::database::gameFormatT format, scid::database::uint pgnStyle)
 {
-    char old_language = language;
+    char old_language = scid::database::language;
 
     g->ResetPgnStyle (pgnStyle);
     g->SetPgnFormat (format);
 
     // Format-specific settings:
     switch (format) {
-    case PGN_FORMAT_HTML:
-    case PGN_FORMAT_LaTeX:
+    case scid::database::PGN_FORMAT_HTML:
+    case scid::database::PGN_FORMAT_LaTeX:
         g->AddPgnStyle (PGN_STYLE_SHORT_HEADER);
         break;
     default:
-        language = 0;
+        scid::database::language = 0;
         break;
     }
 
     g->SetHtmlStyle (htmlDiagStyle);
-    std::pair<const char*, unsigned> pgn = g->WriteToPGN(75, true, format != PGN_FORMAT_LaTeX);
+    std::pair<const char*, unsigned> pgn = g->WriteToPGN(75, true, format != scid::database::PGN_FORMAT_LaTeX);
     //size_t nWrited =
     fwrite(pgn.first, 1, pgn.second, exportFile);
     //TODO:
     //if (nWrited != db->tbuf->GetByteCount()) error
-    language = old_language;
+    scid::database::language = old_language;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -426,11 +424,11 @@ sc_base_export (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     bool exportFilter = false;
     bool appendToFile = false;
-    gameFormatT outputFormat = PGN_FORMAT_Plain;
+    scid::database::gameFormatT outputFormat = scid::database::PGN_FORMAT_Plain;
     const char * startText = "";
     const char * endText = "";
     const char * usage = "Usage: sc_base export current|filter PGN|HTML|LaTeX <pgn_filename> options...";
-    uint pgnStyle = PGN_STYLE_TAGS;
+    scid::database::uint pgnStyle = PGN_STYLE_TAGS;
 
     const char * options[] = {
         "-append", "-starttext", "-endtext", "-comments", "-variations",
@@ -445,15 +443,15 @@ sc_base_export (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     if (argc < 5) { return errorResult (ti, usage); }
 
-    if (strIsPrefix (argv[2], "current")) {
+    if (scid::database::strIsPrefix (argv[2], "current")) {
         exportFilter = false;
-    } else if (strIsPrefix (argv[2], "filter")) {
+    } else if (scid::database::strIsPrefix (argv[2], "filter")) {
         exportFilter = true;
     } else {
         return errorResult (ti, usage);
     }
 
-    if (! Game::PgnFormatFromString (argv[3], &outputFormat)) {
+    if (! scid::database::Game::PgnFormatFromString (argv[3], &outputFormat)) {
         return errorResult (ti, usage);
     }
 
@@ -467,8 +465,8 @@ sc_base_export (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // Parse all optional parameters:
     for (int arg = 5; arg < argc; arg += 2) {
         const char * value = argv[arg+1];
-        bool flag = strGetBoolean (value);
-        int option = strUniqueMatch (argv[arg], options);
+        bool flag = scid::database::strGetBoolean (value);
+        int option = scid::database::strUniqueMatch (argv[arg], options);
 
         switch (option) {
         case OPT_APPEND:
@@ -533,23 +531,23 @@ sc_base_export (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
     // Write start text or find the place in the file to append games:
     if (appendToFile) {
-        if (outputFormat == PGN_FORMAT_Plain) {
+        if (outputFormat == scid::database::PGN_FORMAT_Plain) {
             fseek (exportFile, 0, SEEK_END);
         } else {
             fseek (exportFile, 0, SEEK_SET);
             const char * endMarker = "";
-            if (outputFormat == PGN_FORMAT_HTML) {
+            if (outputFormat == scid::database::PGN_FORMAT_HTML) {
                 endMarker = "</body>";
-            } else if (outputFormat == PGN_FORMAT_LaTeX) {
+            } else if (outputFormat == scid::database::PGN_FORMAT_LaTeX) {
                 endMarker = "\\end{document}";
             }
             char line [1024];
-            uint pos = 0;
+            scid::database::uint pos = 0;
             while (1) {
                 char* err = fgets(line, 1024, exportFile);
                 if (err == 0 || feof(exportFile)) break;
-                const char * s = strTrimLeft (line, " ");
-                if (strIsCasePrefix (endMarker, s)) {
+                const char * s = scid::database::strTrimLeft (line, " ");
+                if (scid::database::strIsCasePrefix (endMarker, s)) {
                     // We have seen the line to stop at, so break out
                     break;
                 }
@@ -565,20 +563,20 @@ sc_base_export (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         auto editor = scidup::app::editor::gameSession(*db);
         exportGame (&editor.game(), exportFile, outputFormat, pgnStyle);
     } else { //TODO: remove this (duplicate of sc_filter export)
-        Progress progress = UI_CreateProgress(ti);
-        uint numSeen = 0;
-        uint numToExport = db->defaultFilterCount();
-        Game * g = scratchGame;
-        for (gamenumT i=0, n=db->numGames(); i < n; i++) {
+        scid::database::Progress progress = UI_CreateProgress(ti);
+        scid::database::uint numSeen = 0;
+        scid::database::uint numToExport = db->defaultFilterCount();
+        scid::database::Game * g = scratchGame;
+        for (scid::database::gamenumT i=0, n=db->numGames(); i < n; i++) {
             if (db->defaultFilterGet(i)) { // Export this game:
                 if (++numSeen % 1024 == 0) {  // Update the percentage done bar:
                     if (!progress.report(numSeen, numToExport)) break;
                 }
 
                 // Print the game, skipping any corrupt games:
-                const IndexEntry* ie = db->getIndexEntry(i);
+                const scid::database::IndexEntry* ie = db->getIndexEntry(i);
                 if (ie->GetLength() == 0) { continue; }
-                if (db->getGame(*ie, *g) != OK) {
+                if (db->getGame(*ie, *g) != scid::database::OK) {
                     continue;
                 }
                 exportGame (g, exportFile, outputFormat, pgnStyle);
@@ -610,10 +608,10 @@ sc_base_piecetrack (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     bool timeOnSquareMode = false;
     int arg = 2;
     if (argv[arg][0] == '-') {
-        if (argv[arg][1] == 'g'  && strIsPrefix (argv[arg], "-games")) {
+        if (argv[arg][1] == 'g'  && scid::database::strIsPrefix (argv[arg], "-games")) {
             timeOnSquareMode = false;
             arg++;
-        } else if (argv[arg][1] == 't'  && strIsPrefix (argv[arg], "-time")) {
+        } else if (argv[arg][1] == 't'  && scid::database::strIsPrefix (argv[arg], "-time")) {
             timeOnSquareMode = true;
             arg++;
         } else {
@@ -622,9 +620,9 @@ sc_base_piecetrack (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     // Read the two move-number parameters:
-    uint minPly = strGetUnsigned(argv[arg]) * 2;
+    scid::database::uint minPly = scid::database::strGetUnsigned(argv[arg]) * 2;
     arg++;
-    uint maxPly = strGetUnsigned(argv[arg]) * 2;
+    scid::database::uint maxPly = scid::database::strGetUnsigned(argv[arg]) * 2;
     arg++;
 
     // Convert moves to plycounts, e.g. "5-10" -> "9-20"
@@ -633,12 +631,12 @@ sc_base_piecetrack (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     minPly--;
 
     // Parse the variable number of tracked square arguments:
-    uint sqFreq[64] = {0};
+    scid::database::uint sqFreq[64] = {0};
     bool trackSquare[64] = { false };
     int nTrackSquares = 0;
     for (int a=arg; a < argc; a++) {
-        squareT sq = strGetSquare (argv[a]);
-        if (sq == NULL_SQUARE) { return errorResult (ti, usage); }
+        scid::database::squareT sq = scid::database::strGetSquare (argv[a]);
+        if (sq == scid::database::NULL_SQUARE) { return errorResult (ti, usage); }
         if (!trackSquare[sq]) {
             // Seen another starting square to track.
             trackSquare[sq] = true;
@@ -650,24 +648,24 @@ sc_base_piecetrack (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // squares specified, then just return a zero-filled list:
 
     if (! db->isOpen()  ||  db->defaultFilterCount() == 0  ||  nTrackSquares == 0) {
-        for (uint i=0; i < 64; i++) { appendUintElement (ti, 0); }
+        for (scid::database::uint i=0; i < 64; i++) { appendUintElement (ti, 0); }
         return TCL_OK;
     }
 
     // Examine every filter game and track the selected pieces:
 
-    Progress progress = UI_CreateProgress(ti);
+    scid::database::Progress progress = UI_CreateProgress(ti);
     const auto filter = db->getFilter("dbfilter");
     const size_t filterCount = filter->size();
     size_t filterSeen = 0;
     for (const auto gnum : filter) {
         if (++filterSeen % 1024 == 0) {
             if (!progress.report(filterSeen, filterCount)) {
-                return UI_Result(ti, ERROR_UserCancel);
+                return UI_Result(ti, scid::database::ERROR_UserCancel);
             }
         }
 
-        const IndexEntry* ie = db->getIndexEntry(gnum);
+        const scid::database::IndexEntry* ie = db->getIndexEntry(gnum);
 
         // Skip games with non-standard start or no moves:
         if (ie->GetStartFlag()) { continue; }
@@ -680,47 +678,47 @@ sc_base_piecetrack (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         bool movedTo[64] = { false };
         bool track[64];
         int ntrack = nTrackSquares;
-        for (uint sq=0; sq < 64; sq++) { track[sq] = trackSquare[sq]; }
+        for (scid::database::uint sq=0; sq < 64; sq++) { track[sq] = trackSquare[sq]; }
 
         // Process each game move until the maximum ply or end of
         // the game is reached:
-        uint plyCount = 0;
+        scid::database::uint plyCount = 0;
         db->getGame(ie).mainLine([&](auto move) {
             if (plyCount++ >= maxPly)
                 return false;
 
-            squareT toSquare = move.getTo();
-            squareT fromSquare = move.getFrom();
+            scid::database::squareT toSquare = move.getTo();
+            scid::database::squareT fromSquare = move.getFrom();
 
             // Special hack for castling:
             if (move.isCastle()) {
-                if (toSquare == H1) {
-                    if (track[H1]) {
-                        fromSquare = H1;
-                        toSquare = F1;
+                if (toSquare == scid::database::H1) {
+                    if (track[scid::database::H1]) {
+                        fromSquare = scid::database::H1;
+                        toSquare = scid::database::F1;
                     } else {
-                        toSquare = G1;
+                        toSquare = scid::database::G1;
                     }
-                } else if (toSquare == A1) {
-                    if (track[A1]) {
-                        fromSquare = A1;
-                        toSquare = D1;
+                } else if (toSquare == scid::database::A1) {
+                    if (track[scid::database::A1]) {
+                        fromSquare = scid::database::A1;
+                        toSquare = scid::database::D1;
                     } else {
-                        toSquare = C1;
+                        toSquare = scid::database::C1;
                     }
-                } else if (toSquare == H8) {
-                    if (track[H8]) {
-                        fromSquare = H8;
-                        toSquare = F8;
+                } else if (toSquare == scid::database::H8) {
+                    if (track[scid::database::H8]) {
+                        fromSquare = scid::database::H8;
+                        toSquare = scid::database::F8;
                     } else {
-                        toSquare = G8;
+                        toSquare = scid::database::G8;
                     }
-                } else if (toSquare == A8) {
-                    if (track[A8]) {
-                        fromSquare = A8;
-                        toSquare = D8;
+                } else if (toSquare == scid::database::A8) {
+                    if (track[scid::database::A8]) {
+                        fromSquare = scid::database::A8;
+                        toSquare = scid::database::D8;
                     } else {
-                        toSquare = C8;
+                        toSquare = scid::database::C8;
                     }
                 }
             }
@@ -755,7 +753,7 @@ sc_base_piecetrack (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 // (there are ntrack of them) and increment the
                 // frequency of each.
                 int nleft = ntrack;
-                for (uint i=0; i < 64; i++) {
+                for (scid::database::uint i=0; i < 64; i++) {
                     if (track[i]) {
                         sqFreq[i]++;
                         nleft--;
@@ -777,7 +775,7 @@ sc_base_piecetrack (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // the value for each square is the number of plies when a
     // tracked piece was on it, so halve it to convert to moves:
 
-    for (uint i=0; i < 64; i++) {
+    for (scid::database::uint i=0; i < 64; i++) {
         appendUintElement (ti, timeOnSquareMode ? sqFreq[i] / 2 : sqFreq[i]);
     }
     return TCL_OK;
@@ -796,7 +794,7 @@ sc_base_piecetrack (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
 struct gNumListT {
     uint64_t hash;
-    uint gNumber;
+    scid::database::uint gNumber;
     bool operator<(const gNumListT& a) const { return hash < a.hash; }
 };
 
@@ -815,8 +813,8 @@ struct dupCriteriaT {
 };
 
 bool
-checkDuplicate (scidBaseT * base,
-                const IndexEntry * ie1, const IndexEntry * ie2,
+checkDuplicate (scid::database::scidBaseT * base,
+                const scid::database::IndexEntry * ie1, const scid::database::IndexEntry * ie2,
                 dupCriteriaT * cr)
 {
     if (ie1->GetDeleteFlag()  ||  ie2->GetDeleteFlag()) { return false; }
@@ -842,10 +840,10 @@ checkDuplicate (scidBaseT * base,
         if (ie1->GetResult() != ie2->GetResult()) { return false; }
     }
     if (cr->sameEcoCode) {
-        ecoStringT a;
-        ecoStringT b;
-        eco_ToBasicString (ie1->GetEcoCode(), a);
-        eco_ToBasicString (ie2->GetEcoCode(), b);
+        scid::database::ecoStringT a;
+        scid::database::ecoStringT b;
+        scid::database::eco_ToBasicString (ie1->GetEcoCode(), a);
+        scid::database::eco_ToBasicString (ie2->GetEcoCode(), b);
         if (a[0] != b[0]  ||  a[1] != b[1]  ||  a[2] != b[2]) { return false; }
     }
 
@@ -867,11 +865,11 @@ checkDuplicate (scidBaseT * base,
     // of the shorter game:
 
     if (cr->sameMoves) {
-        const byte * hpData1 = ie1->GetHomePawnData();
-        const byte * hpData2 = ie2->GetHomePawnData();
-        if (! hpSig_Prefix (hpData1, hpData2)) { return false; }
+        const scid::database::byte * hpData1 = ie1->GetHomePawnData();
+        const scid::database::byte * hpData2 = ie2->GetHomePawnData();
+        if (! scid::database::hpSig_Prefix (hpData1, hpData2)) { return false; }
         // Now we have to check the actual moves of the games:
-        uint length = std::min(ie1->GetNumHalfMoves(), ie2->GetNumHalfMoves());
+        scid::database::uint length = std::min(ie1->GetNumHalfMoves(), ie2->GetNumHalfMoves());
         std::string a = base->getGame(ie1).getMoveSAN(0, length);
         std::string b = base->getGame(ie2).getMoveSAN(0, length);
         return (a == b);
@@ -879,7 +877,7 @@ checkDuplicate (scidBaseT * base,
     return true;
 }
 
-UI_res_t sc_base_duplicates(scidBaseT* dbase, UI_handle_t ti, int argc,
+UI_res_t sc_base_duplicates(scid::database::scidBaseT* dbase, UI_handle_t ti, int argc,
                             const char** argv) {
     dupCriteriaT criteria;
     criteria.exactNames  = false;
@@ -924,8 +922,8 @@ UI_res_t sc_base_duplicates(scidBaseT* dbase, UI_handle_t ti, int argc,
     for (int arg = 3; arg < argc; arg += 2) {
         const char * optStr = argv[arg];
         const char * valueStr = argv[arg + 1];
-        bool b = strGetBoolean (valueStr);
-        int index = strUniqueMatch (optStr, options);
+        bool b = scid::database::strGetBoolean (valueStr);
+        int index = scid::database::strUniqueMatch (optStr, options);
         switch (index) {
             case OPT_PLAYERS:     criteria.exactNames = b;   break;
             case OPT_COLORS:      criteria.sameColors = b;   break;
@@ -945,25 +943,25 @@ UI_res_t sc_base_duplicates(scidBaseT* dbase, UI_handle_t ti, int argc,
             case OPT_USEFILTER:   onlyFilterGames = b;       break;
             case OPT_DELETE:
                 if (dbase->isReadOnly())
-                    return UI_Result(ti, ERROR_FileReadOnly);
-                if (strIsCasePrefix (valueStr, "shorter")) {
+                    return UI_Result(ti, scid::database::ERROR_FileReadOnly);
+                if (scid::database::strIsCasePrefix (valueStr, "shorter")) {
                     deleteStrategy = DELETE_SHORTER;
-                } else if (strIsCasePrefix (valueStr, "older")) {
+                } else if (scid::database::strIsCasePrefix (valueStr, "older")) {
                     deleteStrategy = DELETE_OLDER;
-                } else if (strIsCasePrefix (valueStr, "newer")) {
+                } else if (scid::database::strIsCasePrefix (valueStr, "newer")) {
                     deleteStrategy = DELETE_NEWER;
                 } else {
-                    return UI_Result(ti, ERROR_BadArg, "Invalid option.");
+                    return UI_Result(ti, scid::database::ERROR_BadArg, "Invalid option.");
                 }
                 break;
             default:
-                return UI_Result(ti, ERROR_BadArg, "Invalid option.");
+                return UI_Result(ti, scid::database::ERROR_BadArg, "Invalid option.");
         }
     }
-    const gamenumT numGames = dbase->numGames();
+    const scid::database::gamenumT numGames = dbase->numGames();
 
     // Setup duplicates array:
-    auto duplicates = std::make_unique<gamenumT[]>(numGames);
+    auto duplicates = std::make_unique<scid::database::gamenumT[]>(numGames);
 
     // We use a hashtable to limit duplicate game comparisons; each game
     // is only compared to others that hash to the same value.
@@ -971,9 +969,9 @@ UI_res_t sc_base_duplicates(scidBaseT* dbase, UI_handle_t ti, int argc,
     size_t n_hash = 0;
     const std::vector<uint32_t>& hashMap = (criteria.exactNames)
             ? std::vector<uint32_t>()
-            : dbase->getNameBase()->generateHashMap(NAME_PLAYER);
-    for (gamenumT i=0; i < numGames; i++) {
-        const IndexEntry* ie = dbase->getIndexEntry(i);
+            : dbase->getNameBase()->generateHashMap(scid::database::NAME_PLAYER);
+    for (scid::database::gamenumT i=0; i < numGames; i++) {
+        const scid::database::IndexEntry* ie = dbase->getIndexEntry(i);
         if (! ie->GetDeleteFlag()  /* &&  !ie->GetStartFlag() */
             &&  (!skipShortGames  ||  ie->GetNumHalfMoves() >= 10)
             &&  (!onlyFilterGames  ||  dbase->defaultFilterGet(i) > 0)) {
@@ -995,30 +993,30 @@ UI_res_t sc_base_duplicates(scidBaseT* dbase, UI_handle_t ti, int argc,
     hash.resize(n_hash);
     std::sort(hash.begin(), hash.end());
 
-    Filter tmp_filter(numGames);
-    HFilter filter = setFilterToDups ? dbase->getFilter("dbfilter")
-                                     : HFilter(&tmp_filter);
+    scid::database::Filter tmp_filter(numGames);
+    scid::database::HFilter filter = setFilterToDups ? dbase->getFilter("dbfilter")
+                                     : scid::database::HFilter(&tmp_filter);
     filter.clear();
-    Progress progress = UI_CreateProgress(ti);
+    scid::database::Progress progress = UI_CreateProgress(ti);
     // Now check same-hash games for duplicates:
     for (size_t i=0; i < n_hash; i++) {
         if ((i % 1024) == 0) {
             if (!progress.report(i, numGames)) break;
         }
         const gNumListT& head = hash[i];
-        const IndexEntry* ieHead = dbase->getIndexEntry(head.gNumber);
+        const scid::database::IndexEntry* ieHead = dbase->getIndexEntry(head.gNumber);
 
         for (size_t comp=i+1; comp < n_hash; comp++) {
             const gNumListT& compare = hash[comp];
             if (compare.hash != head.hash) break;
 
-            const IndexEntry* ieComp = dbase->getIndexEntry(compare.gNumber);
+            const scid::database::IndexEntry* ieComp = dbase->getIndexEntry(compare.gNumber);
 
             if (checkDuplicate(dbase, ieHead, ieComp, &criteria)) {
                 duplicates[head.gNumber] = compare.gNumber + 1;
                 duplicates[compare.gNumber] = head.gNumber + 1;
 
-                auto isImmune = [&](const IndexEntry* ie) {
+                auto isImmune = [&](const scid::database::IndexEntry* ie) {
                     if (keepAllCommentedGames && ie->GetCommentsFlag())
                         return true;
                     return keepAllGamesWithVars && ie->GetVariationsFlag();
@@ -1032,15 +1030,15 @@ UI_res_t sc_base_duplicates(scidBaseT* dbase, UI_handle_t ti, int argc,
                     deleteHead = (head.gNumber > compare.gNumber);
                 } else {
                     ASSERT(deleteStrategy == DELETE_SHORTER);
-                    uint a = ieHead->GetNumHalfMoves();
-                    uint b = ieComp->GetNumHalfMoves();
+                    scid::database::uint a = ieHead->GetNumHalfMoves();
+                    scid::database::uint b = ieComp->GetNumHalfMoves();
                     deleteHead = (a <= b);
                     if (a == b && isImmune(ieHead))
                         deleteHead = false;
                 }
 
-                gamenumT gnumDelete = compare.gNumber;
-                const IndexEntry* ieDelete = ieComp;
+                scid::database::gamenumT gnumDelete = compare.gNumber;
+                const scid::database::IndexEntry* ieDelete = ieComp;
                 if (deleteHead) {
                     gnumDelete = head.gNumber;
                     ieDelete = ieHead;
@@ -1052,20 +1050,20 @@ UI_res_t sc_base_duplicates(scidBaseT* dbase, UI_handle_t ti, int argc,
             }
         }
     }
-    auto[err, nDel] = dbase->transformIndex(filter, {}, [](IndexEntry& ie) {
+    auto[err, nDel] = dbase->transformIndex(filter, {}, [](scid::database::IndexEntry& ie) {
         ie.SetDeleteFlag(true);
         return true;
     });
     dbase->setDuplicates(std::move(duplicates));
     progress.report(1, 1);
-    return (err == OK) ? UI_Result(ti, OK, nDel) : UI_Result(ti, err);
+    return (err == scid::database::OK) ? UI_Result(ti, scid::database::OK, nDel) : UI_Result(ti, err);
 }
 
 //////////////////////////////////////////////////////////////////////
 /// CLIPBASE functions
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // sc_clipbase:
-//    Game clipbase functions.
+//    scid::database::Game clipbase functions.
 //    Copies a game to, or pastes from, the clipbase database.
 int
 sc_clipbase (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
@@ -1081,7 +1079,7 @@ sc_clipbase (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     };
     int index = -1;
 
-    if (argc > 1) { index = strUniqueMatch (argv[1], options); }
+    if (argc > 1) { index = scid::database::strUniqueMatch (argv[1], options); }
 
     switch (index) {
     case CLIP_CLEAR:
@@ -1101,7 +1099,7 @@ sc_clipbase (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return InvalidCommand(ti, "sc_clipbase", options);
     }
 
-    return UI_Result(ti, OK);
+    return UI_Result(ti, scid::database::OK);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1118,7 +1116,7 @@ struct ecoTranslateT {
 };
 
 static ecoTranslateT * ecoTranslations = NULL;
-void translateECO (Tcl_Interp * ti, const char * strFrom, DString * dstrTo);
+void translateECO (Tcl_Interp * ti, const char * strFrom, scid::database::DString * dstrTo);
 
 int
 sc_eco (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
@@ -1133,7 +1131,7 @@ sc_eco (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         ECO_TRANSLATE
     };
 
-    if (argc > 1) { index = strUniqueMatch (argv[1], options); }
+    if (argc > 1) { index = scid::database::strUniqueMatch (argv[1], options); }
 
     switch (index) {
     case ECO_BASE:
@@ -1176,7 +1174,7 @@ sc_eco (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 //    extensions (e.g. "B12j" instead of just "B12") should be used.
 //
 //    If the database is read-only, games can still be classified but
-//    the results will not be stored to the database file.
+//    the results will not be scid::database::stored to the database file.
 int
 sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
@@ -1184,7 +1182,7 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: sc_eco base <bool:all_games> <bool:extensions>");
     }
     if (!ecoBook) { return errorResult (ti, "No ECO Book is loaded."); }
-    if (! db->isOpen()) return errorResult (ti, ERROR_FileNotOpen);
+    if (! db->isOpen()) return errorResult (ti, scid::database::ERROR_FileNotOpen);
 
     int option = -1;
     enum {ECO_NOCODE, ECO_ALL, ECO_DATE, ECO_FILTER};
@@ -1201,14 +1199,14 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         option = ECO_ALL; break;
     }
 
-    bool extendedCodes = strGetBoolean(argv[3]);
-    dateT startDate = ZERO_DATE;
+    bool extendedCodes = scid::database::strGetBoolean(argv[3]);
+    scid::database::dateT startDate = scid::database::ZERO_DATE;
     if (option == ECO_DATE) {
-        startDate = date_EncodeFromString (&(argv[2][5]));
+        startDate = scid::database::date_EncodeFromString (&(argv[2][5]));
     }
 
-    scidBaseT& dbase = *db;
-    auto entry_op = [&](IndexEntry& ie) {
+    scid::database::scidBaseT& dbase = *db;
+    auto entry_op = [&](scid::database::IndexEntry& ie) {
         if (ie.GetLength() == 0)
             return false;
 
@@ -1221,8 +1219,8 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             return false;
 
         auto bbuf = dbase.getGame(ie);
-        Game* g = scratchGame;
-        if (g->DecodeSkipTags(&bbuf) != OK)
+        scid::database::Game* g = scratchGame;
+        if (g->DecodeSkipTags(&bbuf) != scid::database::OK)
             return false;
 
         scidup::eco::Code ecoCode = scidup::eco::ECO_None;
@@ -1236,15 +1234,15 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 ecoCode = eco;
             }
 
-            simpleMoveT sm;
-            if (g->DecodeNextMove(&bbuf, sm) != OK)
+            scid::database::simpleMoveT sm;
+            if (g->DecodeNextMove(&bbuf, sm) != scid::database::OK)
                 break;
 
             g->GetCurrentPos()->DoSimpleMove(sm);
         }
 
         if (!extendedCodes) {
-            ecoCode = eco_BasicCode(ecoCode);
+            ecoCode = scid::database::eco_BasicCode(ecoCode);
         }
 
         if (ie.GetEcoCode() != ecoCode) {
@@ -1273,10 +1271,10 @@ int
 sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     auto editor = scidup::app::editor::gameSession(*db);
-    Game& game = editor.game();
-    uint returnPly = 0;
+    scid::database::Game& game = editor.game();
+    scid::database::uint returnPly = 0;
     if (argc > 2) {
-        if (argc == 3  &&  strIsPrefix (argv[2], "ply")) {
+        if (argc == 3  &&  scid::database::strIsPrefix (argv[2], "ply")) {
             returnPly = 1;
         } else {
             return errorResult (ti, "Usage: sc_game eco [ply]");
@@ -1289,20 +1287,20 @@ sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scidup::eco::Code ecoCode = scidup::eco::ECO_None;
     do {
         ecoCode = ecoBook->findEco(*game.GetCurrentPos());
-    } while (ecoCode == scidup::eco::ECO_None && game.MoveBackup() == OK);
+    } while (ecoCode == scidup::eco::ECO_None && game.MoveBackup() == scid::database::OK);
 
     auto ply = game.GetCurrentPly();
     game.restoreLocation(location);
 
     if (ecoCode == scidup::eco::ECO_None)
-        return UI_Result(ti, OK);
+        return UI_Result(ti, scid::database::OK);
 
     if (returnPly)
-        return UI_Result(ti, OK, ply);
+        return UI_Result(ti, scid::database::OK, ply);
 
-    ecoStringT extEco;
-    eco_ToExtendedString(ecoCode, extEco);
-    return UI_Result(ti, OK, extEco);
+    scid::database::ecoStringT extEco;
+    scid::database::eco_ToExtendedString(ecoCode, extEco);
+    return UI_Result(ti, scid::database::OK, extEco);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1326,7 +1324,7 @@ sc_eco_read (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return book.first;
     }
     ecoBook = std::make_unique<scidup::eco::Book>(std::move(book.second));
-    return UI_Result(ti, OK, ecoBook->size());
+    return UI_Result(ti, scid::database::OK, ecoBook->size());
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1371,15 +1369,15 @@ sc_eco_summary (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (argc != 3  &&  argc != 4) {
         return errorResult (ti, "Usage: sc_eco summary <ECO-prefix> [<bool:color>]");
     }
-    if (argc == 4) { color = strGetBoolean (argv[3]); }
+    if (argc == 4) { color = scid::database::strGetBoolean (argv[3]); }
     if (!ecoBook) { return TCL_OK; }
-    DString * dstr = new DString;
-    DString * temp = new DString;
+    scid::database::DString * dstr = new scid::database::DString;
+    scid::database::DString * temp = new scid::database::DString;
     bool inMoveList = false;
     translateECO(ti, formatEcoSummary(*ecoBook, argv[2]).c_str(), dstr);
     if (color) {
-        DString * oldstr = dstr;
-        dstr = new DString;
+        scid::database::DString * oldstr = dstr;
+        dstr = new scid::database::DString;
         const char * s = oldstr->Data();
         while (*s) {
             char ch = *s;
@@ -1403,7 +1401,7 @@ sc_eco_summary (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 break;
             default:
                 dstr->AddChar (ch);
-                if (inMoveList) { temp->AddChar (transPiecesChar(ch)); }//{ temp->AddChar (ch); }
+                if (inMoveList) { temp->AddChar (scid::database::transPiecesChar(ch)); }//{ temp->AddChar (ch); }
             }
             s++;
         }
@@ -1432,18 +1430,18 @@ sc_eco_translate (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 #endif
     trans->next = ecoTranslations;
     trans->language = argv[2][0];
-    trans->from = strDuplicate (argv[3]);
-    trans->to = strDuplicate (argv[4]);
+    trans->from = scid::database::strDuplicate (argv[3]);
+    trans->to = scid::database::strDuplicate (argv[4]);
     ecoTranslations = trans;
     return TCL_OK;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // translateECO:
-//    Translates an ECO opening name into the current language.
+//    Translates an ECO opening name into the current scid::database::language.
 //
 void
-translateECO (Tcl_Interp * ti, const char * strFrom, DString * dstrTo)
+translateECO (Tcl_Interp * ti, const char * strFrom, scid::database::DString * dstrTo)
 {
     ecoTranslateT * trans = ecoTranslations;
     dstrTo->Clear();
@@ -1454,15 +1452,15 @@ translateECO (Tcl_Interp * ti, const char * strFrom, DString * dstrTo)
     char lang = language[0];
     while (trans != NULL) {
         if (trans->language == lang
-            &&  strContains (dstrTo->Data(), trans->from)) {
+            &&  scid::database::strContains (dstrTo->Data(), trans->from)) {
             // Translate this phrase in the string:
-            char * temp = strDuplicate (dstrTo->Data());
+            char * temp = scid::database::strDuplicate (dstrTo->Data());
             dstrTo->Clear();
             char * in = temp;
             while (*in != 0) {
-                if (strIsPrefix (trans->from, in)) {
+                if (scid::database::strIsPrefix (trans->from, in)) {
                     dstrTo->Append (trans->to);
-                    in += strLength (trans->from);
+                    in += scid::database::strLength (trans->from);
                 } else {
                     dstrTo->AddChar (*in);
                     in++;
@@ -1500,7 +1498,7 @@ namespace {
 //    the other does not, the other rating will be assumed to be
 //    same as the nonzero rating, up to a maximum of 2200.
 int
-sc_filter_freq (scidBaseT* dbase, const HFilter& filter, Tcl_Interp * ti, int argc, const char ** argv)
+sc_filter_freq (scid::database::scidBaseT* dbase, const scid::database::HFilter& filter, Tcl_Interp * ti, int argc, const char ** argv)
 {
     const char * usage =
         "Usage: sc_filter freq baseId filterName date|elo|move <startDate|minElo|lowerhalfMove> [<endDate|maxElo|higherhalfMove>] [GuessElo]";
@@ -1513,7 +1511,7 @@ sc_filter_freq (scidBaseT* dbase, const HFilter& filter, Tcl_Interp * ti, int ar
     int option = -1;
 
     if (argc >= 6  &&  argc <= 8) {
-        option = strUniqueMatch (argv[4], options);
+        option = scid::database::strUniqueMatch (argv[4], options);
     }
     switch (option) {
         case OPT_DATE: eloMode = false; break;
@@ -1522,20 +1520,20 @@ sc_filter_freq (scidBaseT* dbase, const HFilter& filter, Tcl_Interp * ti, int ar
         default: return errorResult (ti, usage);
     }
 
-    dateT startDate = date_EncodeFromString (argv[5]);
-    dateT endDate = DATE_MAKE (YEAR_MAX, 12, 31);
-    uint minElo = strGetUnsigned (argv[5]);
-    uint maxElo = MAX_ELO;
-    uint maxMove, minMove;
+    scid::database::dateT startDate = scid::database::date_EncodeFromString (argv[5]);
+    scid::database::dateT endDate = (((scid::database::YEAR_MAX) << scid::database::YEAR_SHIFT) | ((12) << scid::database::MONTH_SHIFT) | (31));
+    scid::database::uint minElo = scid::database::strGetUnsigned (argv[5]);
+    scid::database::uint maxElo = scid::database::MAX_ELO;
+    scid::database::uint maxMove, minMove;
 
     minMove = minElo;
     maxMove = minMove + 1;
     if (argc >= 7) {
-        endDate = date_EncodeFromString (argv[6]);
-        maxMove = maxElo = strGetUnsigned (argv[6]);
+        endDate = scid::database::date_EncodeFromString (argv[6]);
+        maxMove = maxElo = scid::database::strGetUnsigned (argv[6]);
     }
     if (argc == 8) {
-        guessElo = strGetUnsigned (argv[7]);
+        guessElo = scid::database::strGetUnsigned (argv[7]);
     }
     if ( guessElo ) {
     // Double min/max Elos to avoid halving every mean Elo:
@@ -1543,16 +1541,16 @@ sc_filter_freq (scidBaseT* dbase, const HFilter& filter, Tcl_Interp * ti, int ar
         maxElo = maxElo + maxElo + 1;
     }
     // Calculate frequencies in the specified date or rating range:
-    uint filteredCount = 0;
-    uint allCount = 0;
+    scid::database::uint filteredCount = 0;
+    scid::database::uint allCount = 0;
 
     if (eloMode) {
-        for (uint gnum=0, n = dbase->numGames(); gnum < n; gnum++) {
-            const IndexEntry* ie = dbase->getIndexEntry(gnum);
+        for (scid::database::uint gnum=0, n = dbase->numGames(); gnum < n; gnum++) {
+            const scid::database::IndexEntry* ie = dbase->getIndexEntry(gnum);
             if ( guessElo ) {
-                uint wElo = ie->GetWhiteElo();
-                uint bElo = ie->GetBlackElo();
-                uint bothElo = wElo + bElo;
+                scid::database::uint wElo = ie->GetWhiteElo();
+                scid::database::uint bElo = ie->GetBlackElo();
+                scid::database::uint bothElo = wElo + bElo;
                 if (wElo == 0  &&  bElo != 0) {
                     bothElo += (bElo > 2200 ? 2200 : bElo);
                 } else if (bElo == 0  &&  wElo != 0) {
@@ -1566,7 +1564,7 @@ sc_filter_freq (scidBaseT* dbase, const HFilter& filter, Tcl_Interp * ti, int ar
                 }
             } else {
                 //Klimmek: if lowest Elo in the Range: count them
-                uint mini = ie->GetWhiteElo();
+                scid::database::uint mini = ie->GetWhiteElo();
                 if ( mini > ie->GetBlackElo() ) mini = ie->GetBlackElo();
                 if (mini < minElo  ||  mini >= maxElo)
                     continue;
@@ -1578,9 +1576,9 @@ sc_filter_freq (scidBaseT* dbase, const HFilter& filter, Tcl_Interp * ti, int ar
         }
     } else if ( moveMode ) {
         //Klimmek: count games with x Moves minMove=NumberHalfmove and maxMove Numberhalfmove+1
-        for (uint gnum=0, n = dbase->numGames(); gnum < n; gnum++) {
-            const IndexEntry* ie = dbase->getIndexEntry(gnum);
-            uint move = ie->GetNumHalfMoves();
+        for (scid::database::uint gnum=0, n = dbase->numGames(); gnum < n; gnum++) {
+            const scid::database::IndexEntry* ie = dbase->getIndexEntry(gnum);
+            scid::database::uint move = ie->GetNumHalfMoves();
             if (move >= minMove  &&  move <= maxMove) {
                 allCount++;
                 if (filter.get(gnum) != 0) {
@@ -1590,9 +1588,9 @@ sc_filter_freq (scidBaseT* dbase, const HFilter& filter, Tcl_Interp * ti, int ar
         }
     }
     else { // datemode
-        for (uint gnum=0, n = dbase->numGames(); gnum < n; gnum++) {
-            const IndexEntry* ie = dbase->getIndexEntry(gnum);
-            dateT date = ie->GetDate();
+        for (scid::database::uint gnum=0, n = dbase->numGames(); gnum < n; gnum++) {
+            const scid::database::IndexEntry* ie = dbase->getIndexEntry(gnum);
+            scid::database::dateT date = ie->GetDate();
             if (date >= startDate  &&  date <= endDate) {
                 allCount++;
                 if (filter.get(gnum) != 0) {
@@ -1617,7 +1615,7 @@ sc_filter_freq (scidBaseT* dbase, const HFilter& filter, Tcl_Interp * ti, int ar
 int
 sc_filter_first(ClientData, Tcl_Interp * ti, int, const char**)
 {
-	for (uint gnum=0; gnum < db->numGames(); gnum++) {
+	for (scid::database::uint gnum=0; gnum < db->numGames(); gnum++) {
 		if (db->defaultFilterGet(gnum) == 0) continue;
 		return setUintResult (ti, gnum +1);
 	}
@@ -1648,7 +1646,7 @@ sc_filter_next(ClientData, Tcl_Interp * ti, int, const char**)
     auto editor = scidup::app::editor::gameSession(*db);
     if (db->isOpen()) {
         auto loadedGameId = editor.loadedGameId();
-        uint nextNumber = loadedGameId ? *loadedGameId + 1 : 0;
+        scid::database::uint nextNumber = loadedGameId ? *loadedGameId + 1 : 0;
         while (nextNumber < db->numGames()) {
             if (db->defaultFilterGet(nextNumber) > 0) {
                 return setUintResult (ti, nextNumber + 1);
@@ -1694,9 +1692,9 @@ sc_filter_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: sc_filter stats [all | elo <xx> | year <xx>]");
     }
     int statType = STATS_ALL;
-    uint min = 0;
-    uint max = 0;
-    uint inv_max = 0;
+    scid::database::uint min = 0;
+    scid::database::uint max = 0;
+    scid::database::uint inv_max = 0;
     if (argc > 2) {
         if (argv[2][0] == 'e') { statType = STATS_ELO; }
         if (argv[2][0] == 'y') { statType = STATS_YEAR; }
@@ -1705,19 +1703,19 @@ sc_filter_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         if (argc < 4) {
             return errorResult (ti, "Incorrect number of parameters.");
         }
-        min = strGetUnsigned (argv[3]);
-        max = strGetUnsigned (argv[4]);
+        min = scid::database::strGetUnsigned (argv[3]);
+        max = scid::database::strGetUnsigned (argv[4]);
         //Klimmek: +10000 workaround to trigger max elo in filter function
         if ( max > 10000 ) {
             max -= 10000;
             inv_max = 1;
         }
     }
-    uint results[4] = {0, 0, 0, 0};
-    uint total = 0;
-    const HFilter filter = db->getFilter("dbfilter");
-    for (uint i=0, n = db->numGames(); i < n; i++) {
-        const IndexEntry* ie = db->getIndexEntry(i);
+    scid::database::uint results[4] = {0, 0, 0, 0};
+    scid::database::uint total = 0;
+    const scid::database::HFilter filter = db->getFilter("dbfilter");
+    for (scid::database::uint i=0, n = db->numGames(); i < n; i++) {
+        const scid::database::IndexEntry* ie = db->getIndexEntry(i);
         if (filter.get(i)) {
             if ( max == 0 ) { //Old Statistic :
                 if (statType == STATS_ELO  &&
@@ -1725,28 +1723,28 @@ sc_filter_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                     continue;
                 }
                 if (statType == STATS_YEAR
-                    &&  date_GetYear(ie->GetDate()) < min) {
+                    &&  scid::database::date_GetYear(ie->GetDate()) < min) {
                     continue;
                 }
             } else { //Klimmek:  new statistic: evaluation in intervals
                 //count all games where player with highest Elo is in the specific range
                 if (statType == STATS_ELO ) {
                     if (inv_max) {
-                        uint maxi = ie->GetWhiteElo();
+                        scid::database::uint maxi = ie->GetWhiteElo();
                         if ( maxi < ie->GetBlackElo() ) maxi = ie->GetBlackElo();
                         if (maxi < min  ||  maxi >= max)
                             continue;
                     }
                     else {
                 //count all games where player with lowest Elo is in the specific range
-                        uint mini = ie->GetWhiteElo();
+                        scid::database::uint mini = ie->GetWhiteElo();
                         if ( mini > ie->GetBlackElo() ) mini = ie->GetBlackElo();
                         if (mini < min  ||  mini >= max)
                             continue;
                     }
                 }
                 if (statType == STATS_YEAR
-                    &&  ( date_GetYear(ie->GetDate()) < min || date_GetYear(ie->GetDate()) >= max) ) {
+                    &&  ( scid::database::date_GetYear(ie->GetDate()) < min || scid::database::date_GetYear(ie->GetDate()) >= max) ) {
                     continue;
                 }
             }
@@ -1755,14 +1753,14 @@ sc_filter_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         }
     }
     char temp[80];
-    uint percentScore = results[RESULT_White] * 2 + results[RESULT_Draw] +
-        results[RESULT_None];
+    scid::database::uint percentScore = results[scid::database::RESULT_White] * 2 + results[scid::database::RESULT_Draw] +
+        results[scid::database::RESULT_None];
     percentScore = total ? percentScore * 500 / total : 0;
     std::snprintf(temp, sizeof(temp), "%7u %7u %7u %7u   %3u%c%u%%",
              total,
-             results[RESULT_White],
-             results[RESULT_Draw],
-             results[RESULT_Black],
+             results[scid::database::RESULT_White],
+             results[scid::database::RESULT_Draw],
+             results[scid::database::RESULT_Black],
              percentScore / 10, decimalPointChar, percentScore % 10);
     AppendResult (ti, temp, NULL);
     return TCL_OK;
@@ -1795,24 +1793,24 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         FILTER_TREESTATS, FILTER_EXPORT, FILTER_COPY, FILTER_AND, FILTER_OR, FILTER_NEW
     };
 
-    if (argc > 1) { index = strUniqueMatch (argv[1], options); }
+    if (argc > 1) { index = scid::database::strUniqueMatch (argv[1], options); }
 
     switch (index) {
     case FILTER_COUNT:
         if (argc == 2) {
             size_t res = db->getFilter("dbfilter")->size();
-            return UI_Result(ti, OK, res);
+            return UI_Result(ti, scid::database::OK, res);
         }
         break;
 
     case FILTER_NEW:
         if (argc == 3) {
-            if (auto dbase = DBasePool::getBase(strGetUnsigned(argv[2])))
-                return UI_Result(ti, OK, dbase->newFilter());
+            if (auto dbase = DBasePool::getBase(scid::database::strGetUnsigned(argv[2])))
+                return UI_Result(ti, scid::database::OK, dbase->newFilter());
 
-            return UI_Result(ti, ERROR_BadArg, "sc_filter: invalid baseId");
+            return UI_Result(ti, scid::database::ERROR_BadArg, "sc_filter: invalid baseId");
         }
-        return UI_Result(ti, ERROR_BadArg, "Usage: sc_filter new baseId");
+        return UI_Result(ti, scid::database::ERROR_BadArg, "Usage: sc_filter new baseId");
 
     case FILTER_FIRST:
         return sc_filter_first (cd, ti, argc, argv);
@@ -1832,43 +1830,43 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     if (argc < 4) return errorResult (ti, "Usage: sc_filter <cmd> baseId filterName");
-    auto dbase = DBasePool::getBase(strGetUnsigned(argv[2]));
+    auto dbase = DBasePool::getBase(scid::database::strGetUnsigned(argv[2]));
     if (dbase == NULL) return errorResult (ti, "sc_filter: invalid baseId");
-    HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
+    scid::database::HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
     if (filter == 0) return errorResult (ti, "sc_filter: invalid filterName");
     switch (index) {
     case FILTER_AND:
         if (argc == 5) {
-            const HFilter f = scidup::app::tree::resolveFilter(*dbase, argv[4]);
+            const scid::database::HFilter f = scidup::app::tree::resolveFilter(*dbase, argv[4]);
             if (f != 0) {
-                for (uint i=0, n = dbase->numGames(); i < n; i++) {
+                for (scid::database::uint i=0, n = dbase->numGames(); i < n; i++) {
                     if (filter.get(i) != 0 && f.get(i) == 0) filter.set(i, 0);
                 }
-                return UI_Result(ti, OK);
+                return UI_Result(ti, scid::database::OK);
             }
         }
         return errorResult (ti, "Usage: sc_filter and baseId filterName filterAnd");
 
     case FILTER_OR:
         if (argc == 5) {
-            const HFilter f = scidup::app::tree::resolveFilter(*dbase, argv[4]);
+            const scid::database::HFilter f = scidup::app::tree::resolveFilter(*dbase, argv[4]);
             if (f != 0) {
-                for (uint i=0, n = dbase->numGames(); i < n; i++) {
+                for (scid::database::uint i=0, n = dbase->numGames(); i < n; i++) {
                     if (filter.get(i) == 0) filter.set(i, f.get(i));
                 }
-                return UI_Result(ti, OK);
+                return UI_Result(ti, scid::database::OK);
             }
         }
         return errorResult (ti, "Usage: sc_filter or baseId filterName filterOr");
 
     case FILTER_COPY:
         if (argc == 5) {
-            const HFilter f = scidup::app::tree::resolveFilter(*dbase, argv[4]);
+            const scid::database::HFilter f = scidup::app::tree::resolveFilter(*dbase, argv[4]);
             if (f != 0) {
-                for (uint i=0, n = dbase->numGames(); i < n; i++) {
+                for (scid::database::uint i=0, n = dbase->numGames(); i < n; i++) {
                     filter.set(i, f.get(i));
                 }
-                return UI_Result(ti, OK);
+                return UI_Result(ti, scid::database::OK);
             }
         }
         return errorResult (ti, "Usage: sc_filter copy baseId filterTo filterFrom");
@@ -1877,13 +1875,13 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_filter_freq (dbase, filter, ti, argc, argv);
 
     case FILTER_NEGATE:
-        for (uint i=0, n = dbase->numGames(); i < n; i++) {
+        for (scid::database::uint i=0, n = dbase->numGames(); i < n; i++) {
             filter.set(i, ! filter.get(i) );
         }
-        return UI_Result(ti, OK);
+        return UI_Result(ti, scid::database::OK);
 
     case FILTER_COUNT:
-        return UI_Result(ti, OK, filter->size());
+        return UI_Result(ti, scid::database::OK, filter->size());
 
     case FILTER_RELEASE:
         dbase->deleteFilter(argv[3]);
@@ -1904,16 +1902,16 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                     auto const& pos = *editor.game().GetCurrentPos();
                     if (useCache &&
                         scidup::app::tree::session(*dbase).cacheRestore(pos))
-                        return UI_Result(ti, OK);
+                        return UI_Result(ti, scid::database::OK);
 
-                    if (!SearchPos(pos).setFilter(
+                    if (!scid::database::SearchPos(pos).setFilter(
                             *dbase, filter, UI_CreateProgress(ti)))
-                        return UI_Result(ti, ERROR_UserCancel);
+                        return UI_Result(ti, scid::database::ERROR_UserCancel);
 
                     if (useCache)
                         scidup::app::tree::session(*dbase).cacheAdd(pos);
 
-                    return UI_Result(ti, OK);
+                    return UI_Result(ti, scid::database::OK);
                 }
 
                 if (argc == 10) {
@@ -1933,16 +1931,16 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                 ginfo.clear();
                 ginfo.push_back(node.move ? node.move.getSAN() : "[end]");
                 ginfo.push_back(node.freq[0]);
-                ginfo.push_back(node.freq[RESULT_White]);
-                ginfo.push_back(node.freq[RESULT_Draw]);
-                ginfo.push_back(node.freq[RESULT_Black]);
+                ginfo.push_back(node.freq[scid::database::RESULT_White]);
+                ginfo.push_back(node.freq[scid::database::RESULT_Draw]);
+                ginfo.push_back(node.freq[scid::database::RESULT_Black]);
                 ginfo.push_back(node.avgElo());
                 ginfo.push_back(node.eloPerformance());
                 ginfo.push_back(node.eloCount);
-                ginfo.push_back(node.move.getColor() == WHITE ? "W" : "B");
+                ginfo.push_back(node.move.getColor() == scid::database::WHITE ? "W" : "B");
                 res.push_back(ginfo);
             }
-            return UI_Result(ti, OK, res);
+            return UI_Result(ti, scid::database::OK, res);
         }
 
     case FILTER_EXPORT:
@@ -1952,40 +1950,40 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             const auto exportFileName = tcl_strings_are_utf8.c_str();
             auto exportFile = fopen(exportFileName, "wb");
             if (exportFile == NULL) return errorResult (ti, "Error opening file for exporting games.");
-            auto old_language = language;
-            Game g;
-            if (strCompare("LaTeX", argv[6]) == 0) {
-                g.SetPgnFormat (PGN_FORMAT_LaTeX);
+            auto old_language = scid::database::language;
+            scid::database::Game g;
+            if (scid::database::strCompare("LaTeX", argv[6]) == 0) {
+                g.SetPgnFormat (scid::database::PGN_FORMAT_LaTeX);
                 g.ResetPgnStyle (PGN_STYLE_TAGS | PGN_STYLE_COMMENTS | PGN_STYLE_VARS | PGN_STYLE_SHORT_HEADER | PGN_STYLE_SYMBOLS | PGN_STYLE_INDENT_VARS);
             } else { //Default to PGN
-                g.SetPgnFormat (PGN_FORMAT_Plain);
+                g.SetPgnFormat (scid::database::PGN_FORMAT_Plain);
                 g.ResetPgnStyle (PGN_STYLE_TAGS | PGN_STYLE_COMMENTS | PGN_STYLE_VARS);
-                language = 0;
+                scid::database::language = 0;
             }
             if (argc > 7) fprintf(exportFile, "%s", argv[7]);
-            Progress progress = UI_CreateProgress(ti);
+            scid::database::Progress progress = UI_CreateProgress(ti);
             size_t count = filter->size();
-            gamenumT* idxList = new gamenumT[count];
+            scid::database::gamenumT* idxList = new scid::database::gamenumT[count];
             count = dbase->listGames(argv[4], 0, count, filter, idxList);
-            errorT err = OK;
+            scid::database::errorT err = scid::database::OK;
                 for (size_t i = 0; i < count; ++i) {
-                    const IndexEntry* ie = dbase->getIndexEntry(idxList[i]);
+                    const scid::database::IndexEntry* ie = dbase->getIndexEntry(idxList[i]);
                     // Skip any corrupt games:
-                    if (dbase->getGame(*ie, g) != OK) continue;
+                    if (dbase->getGame(*ie, g) != scid::database::OK) continue;
 
                     std::pair<const char*, unsigned> pgn = g.WriteToPGN(75, true);
                     if (pgn.second != fwrite(pgn.first, 1, pgn.second, exportFile)) {
-                        err = ERROR_FileWrite;
+                        err = scid::database::ERROR_FileWrite;
                         break;
                     }
                     if ((i % 1024 == 0) && !progress.report(i, count)) {
-                        err = ERROR_UserCancel;
+                        err = scid::database::ERROR_UserCancel;
                         break;
                     }
                 }
-            if (err == OK && argc > 8)
+            if (err == scid::database::OK && argc > 8)
                 fprintf(exportFile, "%s", argv[8]);
-            language = old_language;
+            scid::database::language = old_language;
             fclose (exportFile);
             delete[] idxList;
             return UI_Result(ti, err);
@@ -2026,11 +2024,11 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
     char old_language = 0;
     auto editor = scidup::app::editor::gameSession(*db);
 
-    if (argc > 1) { index = strUniqueMatch (argv[1], options);}
+    if (argc > 1) { index = scid::database::strUniqueMatch (argv[1], options);}
 
     switch (index) {
     case GAME_ALTERED:
-        return UI_Result(ti, OK, editor.isDirty());
+        return UI_Result(ti, scid::database::OK, editor.isDirty());
 
     case GAME_CROSSTABLE:
         return sc_game_crosstable (cd, ti, argc, argv);
@@ -2082,14 +2080,14 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
     case GAME_SANTOUCI:
         if (argc == 3) {
             auto pos = editor.game().GetCurrentPos();
-            simpleMoveT sm;
+            scid::database::simpleMoveT sm;
             auto end = argv[2] + std::strlen(argv[2]);
             if (auto err = pos->ParseMove(&sm, argv[2], end))
                 return UI_Result(ti, err);
 
             char buf[16] = {};
             sm.toLongNotation(buf);
-            return UI_Result(ti, OK, buf);
+            return UI_Result(ti, scid::database::OK, buf);
         }
         return errorResult(ti, "usage sc_game SANtoUCI move");
 
@@ -2106,9 +2104,9 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_game_tags (cd, ti, argc, argv);
 
     case GAME_TRUNCATE:
-        old_language = language;
-        language = 0;
-        if (argc > 2 && strIsPrefix (argv[2], "-start")) {
+        old_language = scid::database::language;
+        scid::database::language = 0;
+        if (argc > 2 && scid::database::strIsPrefix (argv[2], "-start")) {
             // "sc_game truncate -start" truncates the moves up to the
             // current position:
             editor.game().TruncateStart();
@@ -2117,24 +2115,24 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             editor.game().Truncate();
         }
         editor.setDirty();
-        language = old_language;
+        scid::database::language = old_language;
         break;
 
     case GAME_VARIANT:
-        return UI_Result(ti, OK,
+        return UI_Result(ti, scid::database::OK,
                          editor.game().currentPos()->isChess960()
                              ? "chess960"
                              : "standard");
 
     case GAME_UCI_CURRENTPOS:
-        return UI_Result(ti, OK, editor.game().currentPosUCI());
+        return UI_Result(ti, scid::database::OK, editor.game().currentPosUCI());
 
     case GAME_UNDO:
-        if (argc > 2 && strCompare("size", argv[2]) == 0) {
-            return UI_Result(ti, OK, static_cast<uint>(editor.undoSize()));
+        if (argc > 2 && scid::database::strCompare("size", argv[2]) == 0) {
+            return UI_Result(ti, scid::database::OK, static_cast<scid::database::uint>(editor.undoSize()));
         }
         editor.undo();
-        return UI_Result(ti, OK);
+        return UI_Result(ti, scid::database::OK);
 
     case GAME_UNDO_ALL:
         return UI_Result(ti, editor.undoAll());
@@ -2144,11 +2142,11 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         break;
 
     case GAME_REDO:
-        if (argc > 2 && strCompare("size", argv[2]) == 0) {
-            return UI_Result(ti, OK, static_cast<uint>(editor.redoSize()));
+        if (argc > 2 && scid::database::strCompare("size", argv[2]) == 0) {
+            return UI_Result(ti, scid::database::OK, static_cast<scid::database::uint>(editor.redoSize()));
         }
         editor.redo();
-        return UI_Result(ti, OK);
+        return UI_Result(ti, scid::database::OK);
 
     default:
         return InvalidCommand (ti, "sc_game", options);
@@ -2164,13 +2162,13 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 //    Event and Site, and a Date within the specified range or
 //    have the specified non-zero EventDate.
 static inline bool
-isCrosstableGame (const IndexEntry* ie, idNumberT siteID, idNumberT eventID,
-                  dateT eventDate)
+isCrosstableGame (const scid::database::IndexEntry* ie, scid::database::idNumberT siteID, scid::database::idNumberT eventID,
+                  scid::database::dateT eventDate)
 {
     if (ie->GetSite() != siteID  ||  ie->GetEvent() != eventID) {
         return false;
     }
-    dateT EventDate = ie->GetEventDate();
+    scid::database::dateT EventDate = ie->GetEventDate();
     if (eventDate != 0  && EventDate != 0 && EventDate != eventDate) {
         return false;
     }
@@ -2244,15 +2242,15 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     bool scoreGroups = false;
     bool useDeletedGames = false;
     bool numColumns = false;  // Numbers for columns in all-play-all table
-    uint numTableGames = 0;
-    uint gameNumber = 0;
+    scid::database::uint numTableGames = 0;
+    scid::database::uint gameNumber = 0;
     bool threewin = false;
 
-    if (argc >= 3) { option = strUniqueMatch (argv[2], options); }
+    if (argc >= 3) { option = scid::database::strUniqueMatch (argv[2], options); }
     if (option < 0) { return errorResult (ti, usageMsg); }
 
     for (int arg=3; arg < argc; arg++) {
-        int extraOption = strUniqueMatch (argv[arg], extraOptions);
+        int extraOption = scid::database::strUniqueMatch (argv[arg], extraOptions);
         switch (extraOption) {
             case EOPT_ALLPLAY:        mode = CROSSTABLE_AllPlayAll; break;
             case EOPT_KNOCKOUT:       mode = CROSSTABLE_Knockout;   break;
@@ -2285,10 +2283,10 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             case EOPT_NUMCOLUMNS_OFF: numColumns = false;      break;
             case EOPT_NUMCOLUMNS_ON:  numColumns = true;       break;
             case EOPT_GNUMBER:
-                // Game number to print the crosstable for is
+                // scid::database::Game number to print the crosstable for is
                 // given in the next argument:
                 if (arg+1 >= argc) { return errorResult (ti, usageMsg); }
-                gameNumber = strGetUnsigned (argv[arg+1]);
+                gameNumber = scid::database::strGetUnsigned (argv[arg+1]);
                 arg++;
                 break;
             case EOPT_THREEWIN_OFF:  threewin = false ; break;
@@ -2308,33 +2306,33 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Load crosstable game if necessary:
     auto editor = scidup::app::editor::gameSession(*db);
-    Game * g = &editor.game();
+    scid::database::Game * g = &editor.game();
     if (gameNumber > 0) {
         g = scratchGame;
         g->Clear();
         if (gameNumber > db->numGames()) {
             return setResult (ti, "Invalid game number");
         }
-        const IndexEntry* ie = db->getIndexEntry(gameNumber - 1);
+        const scid::database::IndexEntry* ie = db->getIndexEntry(gameNumber - 1);
         if (ie->GetLength() == 0) {
             return errorResult (ti, "Error: empty game file record.");
         }
-        if (db->getGame(*ie, *g) != OK) {
+        if (db->getGame(*ie, *g) != scid::database::OK) {
             return errorResult (ti, "Error reading game file.");
         }
     }
 
-    idNumberT eventId = 0, siteId = 0;
-    if (db->getNameBase()->FindExactName (NAME_EVENT, g->GetEventStr(), &eventId) != OK) {
+    scid::database::idNumberT eventId = 0, siteId = 0;
+    if (db->getNameBase()->FindExactName (scid::database::NAME_EVENT, g->GetEventStr(), &eventId) != scid::database::OK) {
         return TCL_OK;
     }
-    if (db->getNameBase()->FindExactName (NAME_SITE, g->GetSiteStr(), &siteId) != OK) {
+    if (db->getNameBase()->FindExactName (scid::database::NAME_SITE, g->GetSiteStr(), &siteId) != scid::database::OK) {
         return TCL_OK;
     }
 
-    dateT eventDate = g->GetEventDate();
-    dateT firstSeenDate = g->GetDate();
-    dateT lastSeenDate = g->GetDate();
+    scid::database::dateT eventDate = g->GetEventDate();
+    scid::database::dateT firstSeenDate = g->GetDate();
+    scid::database::dateT lastSeenDate = g->GetDate();
 
     Crosstable * ctable = new Crosstable;
     if (sort == EOPT_SORT_NAME) { ctable->SortByName(); }
@@ -2364,16 +2362,16 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // Find all games that should be listed in the crosstable:
     const scidup::spelling::SpellChecker* spell = spellChk.get();
     bool tableFullMessage = false;
-    for (uint i=0, n = db->numGames(); i < n; i++) {
-        const IndexEntry* ie = db->getIndexEntry(i);
+    for (scid::database::uint i=0, n = db->numGames(); i < n; i++) {
+        const scid::database::IndexEntry* ie = db->getIndexEntry(i);
         if (ie->GetDeleteFlag()  &&  !useDeletedGames) { continue; }
         if (! isCrosstableGame (ie, siteId, eventId, eventDate)) {
             continue;
         }
-        idNumberT whiteId = ie->GetWhite();
-        const char * whiteName = db->getNameBase()->GetName (NAME_PLAYER, whiteId);
-        idNumberT blackId = ie->GetBlack();
-        const char * blackName = db->getNameBase()->GetName (NAME_PLAYER, blackId);
+        scid::database::idNumberT whiteId = ie->GetWhite();
+        const char * whiteName = db->getNameBase()->GetName (scid::database::NAME_PLAYER, whiteId);
+        scid::database::idNumberT blackId = ie->GetBlack();
+        const char * blackName = db->getNameBase()->GetName (scid::database::NAME_PLAYER, blackId);
 
         // Ensure we have two different players:
         if (whiteId == blackId) { continue; }
@@ -2391,8 +2389,8 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         }
 
         // Add the two players to the crosstable:
-        if (ctable->AddPlayer (whiteId, whiteName, ie->GetWhiteElo(), spell) != OK  ||
-            ctable->AddPlayer (blackId, blackName, ie->GetBlackElo(), spell) != OK)
+        if (ctable->AddPlayer (whiteId, whiteName, ie->GetWhiteElo(), spell) != scid::database::OK  ||
+            ctable->AddPlayer (blackId, blackName, ie->GetBlackElo(), spell) != scid::database::OK)
         {
             if (! tableFullMessage) {
                 tableFullMessage = true;
@@ -2401,9 +2399,9 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             continue;
         }
 
-        uint round = strGetUnsigned (db->getNameBase()->GetName (NAME_ROUND, ie->GetRound()));
-        dateT date = ie->GetDate();
-        resultT result = ie->GetResult();
+        scid::database::uint round = scid::database::strGetUnsigned (db->getNameBase()->GetName (scid::database::NAME_ROUND, ie->GetRound()));
+        scid::database::dateT date = ie->GetDate();
+        scid::database::resultT result = ie->GetResult();
         ctable->AddResult (i+1, whiteId, blackId, result, round, date);
         if (date < firstSeenDate) { firstSeenDate = date; }
         if (date > lastSeenDate) { lastSeenDate = date; }
@@ -2435,7 +2433,7 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (mode == CROSSTABLE_Auto) { mode = ctable->BestMode(); }
 
     // Limit all-play-all tables to 300 players:
-    uint apaLimit = 300;
+    scid::database::uint apaLimit = 300;
     if (mode == CROSSTABLE_AllPlayAll  &&
             ctable->NumPlayers() > apaLimit  &&
             !tableFullMessage) {
@@ -2445,22 +2443,22 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     char stemp[1000];
     std::snprintf(stemp, sizeof(stemp), "%s%s%s, ", g->GetEventStr(), newlineStr, g->GetSiteStr());
     AppendResult (ti, stemp, NULL);
-    date_DecodeToString (firstSeenDate, stemp);
-    strTrimDate (stemp);
+    scid::database::date_DecodeToString (firstSeenDate, stemp);
+    scid::database::strTrimDate (stemp);
     AppendResult (ti, stemp, NULL);
     if (lastSeenDate != firstSeenDate) {
-        date_DecodeToString (lastSeenDate, stemp);
-        strTrimDate (stemp);
+        scid::database::date_DecodeToString (lastSeenDate, stemp);
+        scid::database::strTrimDate (stemp);
         AppendResult (ti, " - ", stemp, NULL);
     }
     AppendResult (ti, newlineStr, NULL);
 
-    eloT avgElo = ctable->AvgRating();
+    scid::database::eloT avgElo = ctable->AvgRating();
     if (avgElo > 0  &&  showRatings) {
         AppendResult (ti, translate (ti, "AverageRating", "Average Rating"),
                           ": ", NULL);
         appendUintResult (ti, avgElo);
-        uint category = ctable->FideCategory (avgElo);
+        scid::database::uint category = ctable->FideCategory (avgElo);
         if (category > 0  &&  mode == CROSSTABLE_AllPlayAll) {
             std::snprintf(stemp, sizeof(stemp), "  (%s %u)",
                      translate (ti, "Category", "Category"), category);
@@ -2469,7 +2467,7 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         AppendResult (ti, newlineStr, NULL);
     }
 
-    DString * dstr = new DString;
+    scid::database::DString * dstr = new scid::database::DString;
     if (mode != CROSSTABLE_AllPlayAll) { apaLimit = 0; }
     auto currentEditor = scidup::app::editor::gameSession(*db);
     ctable->PrintTable(
@@ -2501,30 +2499,30 @@ sc_game_find (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "sc_game_find: Incorrect parameters");
     }
 
-    uint gnum = strGetUnsigned (argv[2]);
+    scid::database::uint gnum = scid::database::strGetUnsigned (argv[2]);
     if (gnum == 0) { return setUintResult (ti, 0); }
     gnum--;
     const char * whiteStr = argv[3];
     const char * blackStr = argv[4];
     const char * siteStr = argv[5];
     const char * roundStr = argv[6];
-    uint year = strGetUnsigned(argv[7]);
-    resultT result = strGetResult (argv[8]);
+    scid::database::uint year = scid::database::strGetUnsigned(argv[7]);
+    scid::database::resultT result = scid::database::strGetResult (argv[8]);
 
-    idNumberT white, black, site, round;
+    scid::database::idNumberT white, black, site, round;
     white = black = site = round = 0;
-    db->getNameBase()->FindExactName (NAME_PLAYER, whiteStr, &white);
-    db->getNameBase()->FindExactName (NAME_PLAYER, blackStr, &black);
-    db->getNameBase()->FindExactName (NAME_SITE, siteStr, &site);
-    db->getNameBase()->FindExactName (NAME_ROUND, roundStr, &round);
+    db->getNameBase()->FindExactName (scid::database::NAME_PLAYER, whiteStr, &white);
+    db->getNameBase()->FindExactName (scid::database::NAME_PLAYER, blackStr, &black);
+    db->getNameBase()->FindExactName (scid::database::NAME_SITE, siteStr, &site);
+    db->getNameBase()->FindExactName (scid::database::NAME_ROUND, roundStr, &round);
 
     // We give each game a "score" which is 1 for each matching field.
     // So the best possible score is 6.
 
     // First, check if the specified game number matches all fields:
     if (db->numGames() > gnum) {
-        uint score = 0;
-        const IndexEntry* ie = db->getIndexEntry(gnum);
+        scid::database::uint score = 0;
+        const scid::database::IndexEntry* ie = db->getIndexEntry(gnum);
         if (ie->GetWhite() == white) { score++; }
         if (ie->GetBlack() == black) { score++; }
         if (ie->GetSite() == site) { score++; }
@@ -2535,12 +2533,12 @@ sc_game_find (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     // Now look for the best matching game:
-    uint bestNum = 0;
-    uint bestScore = 0;
+    scid::database::uint bestNum = 0;
+    scid::database::uint bestScore = 0;
 
-    for (uint i=0, n = db->numGames(); i < n; i++) {
-        uint score = 0;
-        const IndexEntry* ie = db->getIndexEntry(i);
+    for (scid::database::uint i=0, n = db->numGames(); i < n; i++) {
+        scid::database::uint score = 0;
+        const scid::database::IndexEntry* ie = db->getIndexEntry(i);
         if (ie->GetWhite() == white) { score++; }
         if (ie->GetBlack() == black) { score++; }
         if (ie->GetSite() == site) { score++; }
@@ -2573,15 +2571,15 @@ sc_game_firstMoves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, errMsgNotOpen(ti));
     }
 
-    int plyCount = strGetInteger (argv[2]);
+    int plyCount = scid::database::strGetInteger (argv[2]);
     // Check plyCount is a reasonable value, or set it to current plycount.
     auto editor = scidup::app::editor::gameSession(*db);
     if (plyCount < 0)  plyCount = editor.game().GetCurrentPly();
     if (plyCount == 0) plyCount = 1;
 
-    DString dstr;
+    scid::database::DString dstr;
     editor.game().GetPartialMoveList (&dstr, plyCount);
-    return UI_Result(ti, OK, std::string(dstr.Data()));
+    return UI_Result(ti, scid::database::OK, std::string(dstr.Data()));
 }
 
 int sc_game_import(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
@@ -2591,152 +2589,152 @@ int sc_game_import(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 	auto editor = scidup::app::editor::gameSession(*db);
 	editor.setDirty();
 	bool new_variation = false;
-	if (editor.game().MoveForward() == OK) {
-		new_variation = (editor.game().AddVariation() == OK);
+	if (editor.game().MoveForward() == scid::database::OK) {
+		new_variation = (editor.game().AddVariation() == scid::database::OK);
 	}
 
-	PgnParseLog pgn;
-	auto ok = pgnParseGame(argv[2], std::strlen(argv[2]), editor.game(), pgn);
+	scid::database::PgnParseLog pgn;
+	auto ok = scid::database::pgnParseGame(argv[2], std::strlen(argv[2]), editor.game(), pgn);
 
 	if (new_variation && editor.game().AtEmptyVar()) {
 		editor.game().DeleteVariation();
 	}
 
 	if (!ok && pgn.log.empty())
-		return UI_Result(ti, OK, "No PGN text found.");
+		return UI_Result(ti, scid::database::OK, "No PGN text found.");
 
 	if (pgn.log.empty())
-		return UI_Result(ti, OK,
+		return UI_Result(ti, scid::database::OK,
 		                 "PGN text imported with no errors or warnings.");
 
-	return UI_Result(ti, OK,
+	return UI_Result(ti, scid::database::OK,
 	                 "Errors/warnings importing PGN text:\n\n" + pgn.log);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // sc_game_info:
-//    Return the Game Info string for the active game.
+//    Return the scid::database::Game Info string for the active game.
 //    The returned text includes color codes.
 int
 sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     auto editor = scidup::app::editor::gameSession(*db);
-    Game& g = editor.game();
+    scid::database::Game& g = editor.game();
     const auto loadedGameId = editor.loadedGameId();
     bool hideNextMove = false;
     bool showMaterialValue = false;
     bool showFEN = false;
-    uint commentWidth = 50;
-    uint commentHeight = 1;
+    scid::database::uint commentWidth = 50;
+    scid::database::uint commentHeight = 1;
     bool fullComment = false;
     char temp[1024];
 
     int arg = 2;
     while (arg < argc) {
-        if  (strIsPrefix (argv[arg], "-hideNextMove")) {
+        if  (scid::database::strIsPrefix (argv[arg], "-hideNextMove")) {
             if (arg+1 < argc) {
                 arg++;
-                hideNextMove = strGetBoolean(argv[arg]);
+                hideNextMove = scid::database::strGetBoolean(argv[arg]);
             }
-        } else if  (strIsPrefix (argv[arg], "-materialValue")) {
+        } else if  (scid::database::strIsPrefix (argv[arg], "-materialValue")) {
             if (arg+1 < argc) {
                 arg++;
-                showMaterialValue = strGetBoolean(argv[arg]);
+                showMaterialValue = scid::database::strGetBoolean(argv[arg]);
             }
-        } else if  (strIsPrefix (argv[arg], "-fen")) {
+        } else if  (scid::database::strIsPrefix (argv[arg], "-fen")) {
             if (arg+1 < argc) {
                 arg++;
-                showFEN = strGetBoolean(argv[arg]);
+                showFEN = scid::database::strGetBoolean(argv[arg]);
             }
-        } else if  (strIsPrefix (argv[arg], "-cfull")) {
+        } else if  (scid::database::strIsPrefix (argv[arg], "-cfull")) {
             // Show full comment:
             if (arg+1 < argc) {
                 arg++;
-                fullComment = strGetBoolean(argv[arg]);
+                fullComment = scid::database::strGetBoolean(argv[arg]);
                 if (fullComment) {
                     commentWidth = 99999;
                     commentHeight = 99999;
                 }
             }
-        } else if  (strIsPrefix (argv[arg], "-cwidth")) {
+        } else if  (scid::database::strIsPrefix (argv[arg], "-cwidth")) {
             if (arg+1 < argc) {
                 arg++;
-                commentWidth = strGetBoolean(argv[arg]);
+                commentWidth = scid::database::strGetBoolean(argv[arg]);
             }
-        } else if  (strIsPrefix (argv[arg], "-cheight")) {
+        } else if  (scid::database::strIsPrefix (argv[arg], "-cheight")) {
             if (arg+1 < argc) {
                 arg++;
-                commentHeight = strGetBoolean(argv[arg]);
+                commentHeight = scid::database::strGetBoolean(argv[arg]);
             }
-        } else if (strIsPrefix (argv[arg], "white")) {
+        } else if (scid::database::strIsPrefix (argv[arg], "white")) {
             AppendResult (ti, g.GetWhiteStr(), NULL);
             return TCL_OK;
-        } else if (strIsPrefix (argv[arg], "welo")) {
+        } else if (scid::database::strIsPrefix (argv[arg], "welo")) {
             return setIntResult (ti, g.GetWhiteElo() );
-        } else if (strIsPrefix (argv[arg], "black")) {
+        } else if (scid::database::strIsPrefix (argv[arg], "black")) {
             AppendResult (ti, g.GetBlackStr(), NULL);
             return TCL_OK;
-        } else if (strIsPrefix (argv[arg], "belo")) {
+        } else if (scid::database::strIsPrefix (argv[arg], "belo")) {
             return setIntResult (ti, g.GetBlackElo() );
-        } else if (strIsPrefix (argv[arg], "event")) {
+        } else if (scid::database::strIsPrefix (argv[arg], "event")) {
             AppendResult (ti, g.GetEventStr(), NULL);
             return TCL_OK;
-        } else if (strIsPrefix (argv[arg], "site")) {
+        } else if (scid::database::strIsPrefix (argv[arg], "site")) {
             AppendResult (ti, g.GetSiteStr(), NULL);
             return TCL_OK;
-        } else if (strIsPrefix (argv[arg], "round")) {
+        } else if (scid::database::strIsPrefix (argv[arg], "round")) {
             AppendResult (ti, g.GetRoundStr(), NULL);
             return TCL_OK;
-        } else if (strIsPrefix (argv[arg], "date")) {
+        } else if (scid::database::strIsPrefix (argv[arg], "date")) {
             char dateStr [12];
-            date_DecodeToString (g.GetDate(), dateStr);
+            scid::database::date_DecodeToString (g.GetDate(), dateStr);
             AppendResult (ti, dateStr, NULL);
             return TCL_OK;
-        } else if (strIsPrefix (argv[arg], "year")) {
-            return setUintResult (ti, date_GetYear (g.GetDate()));
-        } else if (strIsPrefix (argv[arg], "result")) {
-            return setResult (ti, RESULT_STR[g.GetResult()]);
-        } else if (strIsPrefix (argv[arg], "nextMove")) {
+        } else if (scid::database::strIsPrefix (argv[arg], "year")) {
+            return setUintResult (ti, scid::database::date_GetYear (g.GetDate()));
+        } else if (scid::database::strIsPrefix (argv[arg], "result")) {
+            return setResult (ti, scid::database::RESULT_STR[g.GetResult()]);
+        } else if (scid::database::strIsPrefix (argv[arg], "nextMove")) {
             g.GetSAN (temp);
-            transPieces(temp);
+            scid::database::transPieces(temp);
             AppendResult (ti, temp, NULL);
             return TCL_OK;
 // nextMoveNT is the same as nextMove, except that the move is not translated
-        } else if (strIsPrefix (argv[arg], "nextMoveNT")) {
+        } else if (scid::database::strIsPrefix (argv[arg], "nextMoveNT")) {
             g.GetSAN (temp);
             AppendResult (ti, temp, NULL);
             return TCL_OK;
 // returns next move played in UCI format
-        } else if (strIsPrefix (argv[arg], "nextMoveUCI")) {
+        } else if (scid::database::strIsPrefix (argv[arg], "nextMoveUCI")) {
           g.GetNextMoveUCI (temp);
           AppendResult (ti, temp, NULL);
           return TCL_OK;
-        } else if (strIsPrefix (argv[arg], "previousMove")) {
+        } else if (scid::database::strIsPrefix (argv[arg], "previousMove")) {
             g.GetPrevSAN (temp);
-            transPieces(temp);
+            scid::database::transPieces(temp);
             AppendResult (ti, temp, NULL);
             return TCL_OK;
 // previousMoveNT is the same as previousMove, except that the move is not translated
-        } else if (strIsPrefix (argv[arg], "previousMoveNT")) {
+        } else if (scid::database::strIsPrefix (argv[arg], "previousMoveNT")) {
             g.GetPrevSAN (temp);
             AppendResult (ti, temp, NULL);
             return TCL_OK;
 // returns previous move played in UCI format
-        } else if (strIsPrefix (argv[arg], "previousMoveUCI")) {
+        } else if (scid::database::strIsPrefix (argv[arg], "previousMoveUCI")) {
             g.GetPrevMoveUCI (temp);
             AppendResult (ti, temp, NULL);
             return TCL_OK;
-        } else if (strIsPrefix (argv[arg], "duplicate")) {
-            uint dupGameNum = loadedGameId ? db->getDuplicates(*loadedGameId) : 0;
+        } else if (scid::database::strIsPrefix (argv[arg], "duplicate")) {
+            scid::database::uint dupGameNum = loadedGameId ? db->getDuplicates(*loadedGameId) : 0;
             return setUintResult (ti, dupGameNum);
-        } else if (strIsPrefix(argv[arg], "ECO")) {
+        } else if (scid::database::strIsPrefix(argv[arg], "ECO")) {
             std::string str;
             if (ecoBook) {
                 auto ecoStr = ecoBook->findEcoString(*g.GetCurrentPos());
                 if (!ecoStr.empty())
                     str.append(ecoStr);
             }
-            return UI_Result(ti, OK, str);
+            return UI_Result(ti, scid::database::OK, str);
         }
         arg++;
     }
@@ -2750,7 +2748,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                       " (%s)", whCountry);
 
     AppendResult (ti, temp, NULL);
-    eloT elo = g.GetWhiteElo();
+    scid::database::eloT elo = g.GetWhiteElo();
     if (elo != 0) {
         std::snprintf(temp, sizeof(temp), " <red>%u</red>", elo);
         AppendResult (ti, temp, NULL);
@@ -2773,29 +2771,29 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                  translate (ti, "Result"), translate (ti, "hidden"));
     } else {
         std::snprintf(temp, sizeof(temp), "<br>%s <red>(%u)</red>",
-                 RESULT_LONGSTR[g.GetResult()],
+                 scid::database::RESULT_LONGSTR[g.GetResult()],
                  (g.GetNumHalfMoves() + 1) / 2);
     }
     AppendResult (ti, temp, NULL);
 
     if (g.GetEco() != 0) {
-        ecoStringT fullEcoStr;
-        eco_ToExtendedString (g.GetEco(), fullEcoStr);
-        ecoStringT basicEcoStr;
-        strCopy (basicEcoStr, fullEcoStr);
-        if (strLength(basicEcoStr) >= 4) { basicEcoStr[3] = 0; }
+        scid::database::ecoStringT fullEcoStr;
+        scid::database::eco_ToExtendedString (g.GetEco(), fullEcoStr);
+        scid::database::ecoStringT basicEcoStr;
+        scid::database::strCopy (basicEcoStr, fullEcoStr);
+        if (scid::database::strLength(basicEcoStr) >= 4) { basicEcoStr[3] = 0; }
         AppendResult (ti, "   <blue><run ::windows::eco::Refresh ",
                           basicEcoStr, ">", fullEcoStr,
                           "</run></blue>", NULL);
     }
     char dateStr[20];
-    date_DecodeToString (g.GetDate(), dateStr);
-    strTrimDate (dateStr);
+    scid::database::date_DecodeToString (g.GetDate(), dateStr);
+    scid::database::strTrimDate (dateStr);
     AppendResult (ti, "   <red>", dateStr, "</red>", NULL);
 
     if (loadedGameId) {
         // Check if this game is deleted or has other user-settable flags:
-        const IndexEntry* ie = db->getIndexEntry(*loadedGameId);
+        const scid::database::IndexEntry* ie = db->getIndexEntry(*loadedGameId);
         if (ie->GetDeleteFlag()) {
             AppendResult (ti, "   <gray>(",
                               translate (ti, "deleted"), ")</gray>", NULL);
@@ -2857,26 +2855,26 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     char san [20];
     char tempTrans[20];
-    byte * nags;
-    colorT toMove = g.GetCurrentPos()->GetToMove();
-    uint moveCount = g.GetCurrentPos()->GetFullMoveCount();
-    uint prevMoveCount = moveCount;
-    if (toMove == WHITE) { prevMoveCount--; }
+    scid::database::byte * nags;
+    scid::database::colorT toMove = g.GetCurrentPos()->GetToMove();
+    scid::database::uint moveCount = g.GetCurrentPos()->GetFullMoveCount();
+    scid::database::uint prevMoveCount = moveCount;
+    if (toMove == scid::database::WHITE) { prevMoveCount--; }
 
     g.GetPrevSAN (san);
     strcpy(tempTrans, san);
-    transPieces(tempTrans);
+    scid::database::transPieces(tempTrans);
     bool printNags = true;
     if (san[0] == 0) {
-        strCopy (temp, "(");
-        strAppend (temp, g.GetVarLevel() == 0 ?
+        scid::database::strCopy (temp, "(");
+        scid::database::strAppend (temp, g.GetVarLevel() == 0 ?
                    translate (ti, "GameStart", "Start of game") :
                    translate (ti, "LineStart", "Start of line"));
-        strAppend (temp, ")");
+        scid::database::strAppend (temp, ")");
         printNags = false;
     } else {
         std::snprintf(temp, sizeof(temp), "<run ::move::Back>%u.%s%s</run>",
-	                 prevMoveCount, toMove==WHITE ? ".." : "", tempTrans);//san);
+	                 prevMoveCount, toMove==scid::database::WHITE ? ".." : "", tempTrans);//san);
         printNags = true;
     }
     AppendResult (ti, translate (ti, "LastMove", "Last move"), NULL);
@@ -2884,9 +2882,9 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     nags = g.GetNags();
     if (printNags  &&  *nags != 0  &&  !hideNextMove) {
         AppendResult (ti, "<red>", NULL);
-        for (uint nagCount = 0 ; nags[nagCount] != 0; nagCount++) {
+        for (scid::database::uint nagCount = 0 ; nags[nagCount] != 0; nagCount++) {
             char nagstr[20];
-            game_printNag (nags[nagCount], nagstr, true, PGN_FORMAT_Plain);
+            game_printNag (nags[nagCount], nagstr, true, scid::database::PGN_FORMAT_Plain);
             if (nagCount > 0  ||  (nagstr[0] != '!' && nagstr[0] != '?')) {
                 AppendResult (ti, " ", NULL);
             }
@@ -2899,22 +2897,22 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     g.GetSAN (san);
     strcpy(tempTrans, san);
-    transPieces(tempTrans);
+    scid::database::transPieces(tempTrans);
     if (san[0] == 0) {
-        strCopy (temp, "(");
-        strAppend (temp, g.GetVarLevel() == 0 ?
+        scid::database::strCopy (temp, "(");
+        scid::database::strAppend (temp, g.GetVarLevel() == 0 ?
                    translate (ti, "GameEnd", "End of game") :
                    translate (ti, "LineEnd", "End of line"));
-        strAppend (temp, ")");
+        scid::database::strAppend (temp, ")");
         printNags = false;
     } else if (hideNextMove) {
-        std::snprintf(temp, sizeof(temp), "%u.%s(", moveCount, toMove==WHITE ? "" : "..");
-        strAppend (temp, translate (ti, "hidden"));
-        strAppend (temp, ")");
+        std::snprintf(temp, sizeof(temp), "%u.%s(", moveCount, toMove==scid::database::WHITE ? "" : "..");
+        scid::database::strAppend (temp, translate (ti, "hidden"));
+        scid::database::strAppend (temp, ")");
         printNags = false;
     } else {
         std::snprintf(temp, sizeof(temp), "<run ::move::Forward>%u.%s%s</run>",
-	                 moveCount, toMove==WHITE ? "" : "..", tempTrans);//san);
+	                 moveCount, toMove==scid::database::WHITE ? "" : "..", tempTrans);//san);
         printNags = true;
     }
     AppendResult (ti, "   ", translate (ti, "NextMove", "Next"), NULL);
@@ -2922,9 +2920,9 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     nags = g.GetNextNags();
     if (printNags  &&  !hideNextMove  &&  *nags != 0) {
         AppendResult (ti, "<red>", NULL);
-        for (uint nagCount = 0 ; nags[nagCount] != 0; nagCount++) {
+        for (scid::database::uint nagCount = 0 ; nags[nagCount] != 0; nagCount++) {
             char nagstr[20];
-            game_printNag (nags[nagCount], nagstr, true, PGN_FORMAT_Plain);
+            game_printNag (nags[nagCount], nagstr, true, scid::database::PGN_FORMAT_Plain);
             if (nagCount > 0  ||  (nagstr[0] != '!' && nagstr[0] != '?')) {
                 AppendResult (ti, " ", NULL);
             }
@@ -2939,8 +2937,8 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     if (showMaterialValue) {
-        uint mWhite = g.GetCurrentPos()->MaterialValue (WHITE);
-        uint mBlack = g.GetCurrentPos()->MaterialValue (BLACK);
+        scid::database::uint mWhite = g.GetCurrentPos()->MaterialValue (scid::database::WHITE);
+        scid::database::uint mBlack = g.GetCurrentPos()->MaterialValue (scid::database::BLACK);
         std::snprintf(temp, sizeof(temp), "    <gray>(%u-%u", mWhite, mBlack);
         AppendResult (ti, temp, NULL);
         if (mWhite > mBlack) {
@@ -2955,15 +2953,15 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Print first few variations if there are any:
 
-    uint varCount = g.GetNumVariations();
+    scid::database::uint varCount = g.GetNumVariations();
     if (!hideNextMove  &&  varCount > 0) {
         AppendResult (ti, "<br>", translate (ti, "Variations"), ":", NULL);
-        for (uint vnum = 0; vnum < varCount && vnum < 5; vnum++) {
+        for (scid::database::uint vnum = 0; vnum < varCount && vnum < 5; vnum++) {
             char s[20];
             g.MoveIntoVariation (vnum);
             g.GetSAN (s);
             strcpy(tempTrans, s);
-            transPieces(tempTrans);
+            scid::database::transPieces(tempTrans);
             std::snprintf(temp, sizeof(temp), "   <run sc_var enter %u; updateBoard -animate>v%u",
 	                     vnum, vnum+1);
             AppendResult (ti, "<green>", temp, "</green>: ", NULL);
@@ -2971,12 +2969,12 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 std::snprintf(temp, sizeof(temp), "<darkblue>(empty)</darkblue>");
             } else {
                 std::snprintf(temp, sizeof(temp), "<darkblue>%u.%s%s</darkblue>",
-	                         moveCount, toMove == WHITE ? "" : "..", tempTrans);//s);
+	                         moveCount, toMove == scid::database::WHITE ? "" : "..", tempTrans);//s);
             }
             AppendResult (ti, temp, NULL);
-            byte * firstNag = g.GetNextNags();
-            if (*firstNag >= NAG_GoodMove  &&  *firstNag <= NAG_DubiousMove) {
-                game_printNag (*firstNag, s, true, PGN_FORMAT_Plain);
+            scid::database::byte * firstNag = g.GetNextNags();
+            if (*firstNag >= scid::database::NAG_GoodMove  &&  *firstNag <= scid::database::NAG_DubiousMove) {
+                game_printNag (*firstNag, s, true, scid::database::PGN_FORMAT_Plain);
                 AppendResult (ti, "<red>", s, "</red>", NULL);
             }
             AppendResult (ti, "</run>", NULL);
@@ -2989,11 +2987,11 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (g.GetMoveComment() != NULL) {
         AppendResult (ti, "<br>", translate(ti, "Comment"),
                           " <green><run makeCommentWin>", NULL);
-        char * str = strDuplicate(g.GetMoveComment());
-        strTrimMarkCodes (str);
+        char * str = scid::database::strDuplicate(g.GetMoveComment());
+        scid::database::strTrimMarkCodes (str);
         const char * s = str;
-        uint len;
-        uint lines = 0;
+        scid::database::uint len;
+        scid::database::uint lines = 0;
         // Add the first commentWidth characters of the comment, up to
         // the first commentHeight lines:
         for (len = 0; len < commentWidth; len++, s++) {
@@ -3032,12 +3030,12 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         auto ecoStr = ecoBook->findEcoString(*g.GetCurrentPos());
         if (!ecoStr.empty()) {
             std::string ecoComment(ecoStr);
-            ecoT eco = eco_FromString(ecoComment.c_str());
-            ecoStringT estr;
-            eco_ToExtendedString (eco, estr);
-            uint len = strLength (estr);
+            scid::database::ecoT eco = scid::database::eco_FromString(ecoComment.c_str());
+            scid::database::ecoStringT estr;
+            scid::database::eco_ToExtendedString (eco, estr);
+            scid::database::uint len = scid::database::strLength (estr);
             if (len >= 4) { estr[3] = 0; }
-            DString tempDStr;
+            scid::database::DString tempDStr;
             translateECO (ti, ecoComment.c_str(), &tempDStr);
             AppendResult (ti, "<br>ECO:  <blue><run ::windows::eco::Refresh ",
                               estr, ">", tempDStr.Data(),
@@ -3065,7 +3063,7 @@ sc_game_load (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (argc != 3) {
         return errorResult (ti, "Usage: sc_game load <gameNumber>");
     }
-    uint gnum = strGetUnsigned (argv[2]);
+    scid::database::uint gnum = scid::database::strGetUnsigned (argv[2]);
 
     // Check the game number is valid::
     if (gnum < 1  ||  gnum > db->numGames()) {
@@ -3075,10 +3073,10 @@ sc_game_load (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // We number games from 0 internally, so subtract one:
     gnum--;
     auto err = editor.load(gnum);
-    if (err != OK) {
+    if (err != scid::database::OK) {
         return errorResult (ti, "Sorry, this game appears to be corrupt.");
     }
-    return OK;
+    return scid::database::OK;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3089,16 +3087,16 @@ int
 sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     auto editor = scidup::app::editor::gameSession(*db);
-    Game& game = editor.game();
+    scid::database::Game& game = editor.game();
     const char * usage = "Usage: sc_game merge <baseNum> <gameNum> [<endPly>]";
     if (argc < 4  ||  argc > 5) { return errorResult (ti, usage); }
 
-    const scidBaseT* base = DBasePool::getBase(strGetUnsigned(argv[2]));
-    if (base == 0) return UI_Result(ti, ERROR_FileNotOpen);
+    const scid::database::scidBaseT* base = DBasePool::getBase(scid::database::strGetUnsigned(argv[2]));
+    if (base == 0) return UI_Result(ti, scid::database::ERROR_FileNotOpen);
 
-    uint gnum = strGetUnsigned (argv[3]);
-    uint endPly = 9999;     // Defaults to huge number for all moves.
-    if (argc == 5) { endPly = strGetUnsigned (argv[4]); }
+    scid::database::uint gnum = scid::database::strGetUnsigned (argv[3]);
+    scid::database::uint endPly = 9999;     // Defaults to huge number for all moves.
+    if (argc == 5) { endPly = scid::database::strGetUnsigned (argv[4]); }
 
     if (gnum < 1  ||  gnum > base->numGames()) {
         return errorResult (ti, "Invalid game number.");
@@ -3119,10 +3117,10 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Load the merge game:
 
-    const IndexEntry* ie = base->getIndexEntry(gnum);
+    const scid::database::IndexEntry* ie = base->getIndexEntry(gnum);
     auto bbuf = base->getGame(*ie);
-    Game * merge = scratchGame;
-    if (merge->DecodeMovesOnly(bbuf) != OK) {
+    scid::database::Game * merge = scratchGame;
+    if (merge->DecodeMovesOnly(bbuf) != scid::database::OK) {
         return errorResult (ti, "Error decoding game.");
     }
     if (merge->HasNonStandardStart()) {
@@ -3130,11 +3128,11 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     // Set up an array of all the game positions in the merge game:
-    uint nMergePos = merge->GetNumHalfMoves() + 1;
+    scid::database::uint nMergePos = merge->GetNumHalfMoves() + 1;
     typedef char compactBoardStr [36];
     compactBoardStr * mergeBoards = new compactBoardStr [nMergePos];
     merge->MoveToStart();
-    for (uint i=0; i < nMergePos; i++) {
+    for (scid::database::uint i=0; i < nMergePos; i++) {
         merge->GetCurrentPos()->PrintCompactStr (mergeBoards[i]);
         merge->MoveForward();
     }
@@ -3142,17 +3140,17 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // Now find the deepest position in the current game that occurs
     // in the merge game:
     game.MoveToStart();
-    uint matchPly = 0;
-    uint mergePly = 0;
-    uint ply = 0;
+    scid::database::uint matchPly = 0;
+    scid::database::uint mergePly = 0;
+    scid::database::uint ply = 0;
     bool done = false;
     while (!done) {
-        if (game.MoveForward() != OK) { done = true; }
+        if (game.MoveForward() != scid::database::OK) { done = true; }
         ply++;
         compactBoardStr currentBoard;
         game.GetCurrentPos()->PrintCompactStr (currentBoard);
-        for (uint n=0; n < nMergePos; n++) {
-            if (strEqual (currentBoard, mergeBoards[n])) {
+        for (scid::database::uint n=0; n < nMergePos; n++) {
+            if (scid::database::strEqual (currentBoard, mergeBoards[n])) {
                 matchPly = ply;
                 mergePly = n;
             }
@@ -3166,7 +3164,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // Create a new variation and add merge-game moves to it:
     game.MoveToPly (matchPly);
     bool atLastMove = game.AtEnd();
-    simpleMoveT * sm = NULL;
+    scid::database::simpleMoveT * sm = NULL;
     if (atLastMove) {
         // At end of game, so remember final game move for replicating
         // at the start of the variation:
@@ -3185,10 +3183,10 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     merge->MoveToPly (mergePly);
     ply = mergePly;
     while (ply < endPly) {
-        simpleMoveT * mergeMove = merge->GetCurrentMove();
-        if (merge->MoveForward() != OK) { break; }
+        scid::database::simpleMoveT * mergeMove = merge->GetCurrentMove();
+        if (merge->MoveForward() != scid::database::OK) { break; }
         if (mergeMove == NULL) { break; }
-        if (game.AddMove(*mergeMove) != OK) { break; }
+        if (game.AddMove(*mergeMove) != scid::database::OK) { break; }
         ply++;
     }
 
@@ -3196,8 +3194,8 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     const auto tags = base->tagRoster(*ie);
     const auto welo = ie->GetWhiteElo();
     const auto belo = ie->GetBlackElo();
-    auto dstr = DString();
-    dstr.Append(RESULT_LONGSTR[ie->GetResult()]);
+    auto dstr = scid::database::DString();
+    dstr.Append(scid::database::RESULT_LONGSTR[ie->GetResult()]);
     if (ply < merge->GetNumHalfMoves()) {
         dstr.Append("(", (merge->GetNumHalfMoves() + 1) / 2, ")");
     }
@@ -3233,11 +3231,11 @@ sc_game_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     bool sanFormat = true;
     bool printMoves = true;
     bool listFormat = false;
-    const uint MAXMOVES = 500;
-    sanStringT * moveStrings = new sanStringT [MAXMOVES];
-    uint plyCount = 0;
+    const scid::database::uint MAXMOVES = 500;
+    scid::database::sanStringT * moveStrings = new scid::database::sanStringT [MAXMOVES];
+    scid::database::uint plyCount = 0;
     auto editor = scidup::app::editor::gameSession(*db);
-    Game * g = &editor.game();
+    scid::database::Game * g = &editor.game();
     for (int arg = 2; arg < argc; arg++) {
         if (argv[arg][0] == 'c') { sanFormat = false; }
         if (argv[arg][0] == 'n') { printMoves = false; }
@@ -3251,7 +3249,7 @@ sc_game_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             continue;
         }
         g->MoveBackup();
-        simpleMoveT * sm = g->GetCurrentMove();
+        scid::database::simpleMoveT * sm = g->GetCurrentMove();
         if (sm == NULL) { break; }
         char * s = moveStrings[plyCount];
         if (sanFormat) {
@@ -3269,17 +3267,17 @@ sc_game_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         }
     }
     g->restoreLocation(location);
-    uint count = 0;
-    for (uint i = plyCount; i > 0; i--, count++) {
+    scid::database::uint count = 0;
+    for (scid::database::uint i = plyCount; i > 0; i--, count++) {
         char move [20];
         if (sanFormat) {
 	            move[0] = 0;
 	            if (printMoves  &&  (count % 2 == 0)) {
 	                std::snprintf(move, sizeof(move), "%u.", (count / 2) + 1);
 	            }
-	            strAppend (move, moveStrings[i - 1]);
+	            scid::database::strAppend (move, moveStrings[i - 1]);
         } else {
-            strCopy (move, moveStrings [i - 1]);
+            scid::database::strCopy (move, moveStrings [i - 1]);
         }
         if (listFormat) {
             AppendElement (ti, move);
@@ -3319,36 +3317,36 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     int baseArg = 2;
     if (argc >= baseArg
         &&  argv[baseArg][0] == '-'  &&  argv[baseArg][1] == 'o'
-        &&  strIsPrefix (argv[baseArg], "-older")) {
+        &&  scid::database::strIsPrefix (argv[baseArg], "-older")) {
         olderGamesOnly = true;
         baseArg++;
     }
     if (argc < baseArg  ||  argc > baseArg+1) return errorResult(ti, usage);
-    auto base = DBasePool::getBase(strGetInteger (argv[baseArg]));
-    if (base == 0) return UI_Result(ti, ERROR_BadArg);
+    auto base = DBasePool::getBase(scid::database::strGetInteger (argv[baseArg]));
+    if (base == 0) return UI_Result(ti, scid::database::ERROR_BadArg);
 
     // First, move to the deepest ECO position in the game.
     // This code is adapted from sc_eco_game().
     auto editor = scidup::app::editor::gameSession(*base);
-    Game* g = &editor.game();
+    scid::database::Game* g = &editor.game();
     if (ecoBook) {
-        while (g->MoveForward() == OK) {}
+        while (g->MoveForward() == scid::database::OK) {}
         while (ecoBook->findEcoString(*g->GetCurrentPos()).empty()) {
-            if (g->MoveBackup() != OK) break;
+            if (g->MoveBackup() != scid::database::OK) break;
         }
     }
 
     // Now keep doing an exact position search (ignoring the current
     // game) and skipping to the next game position whenever a match
     // is found, until a position not in any database game is reached:
-    Progress progress = UI_CreateProgress(ti);
+    scid::database::Progress progress = UI_CreateProgress(ti);
     std::string filtername = base->newFilter();
-    HFilter filter = scidup::app::tree::resolveFilter(*base, filtername);
-    dateT currentDate = g->GetDate();
-    while (g->MoveForward() == OK) {
-        SearchPos(*g->GetCurrentPos()).setFilter(*base, filter, Progress());
+    scid::database::HFilter filter = scidup::app::tree::resolveFilter(*base, filtername);
+    scid::database::dateT currentDate = g->GetDate();
+    while (g->MoveForward() == scid::database::OK) {
+        scid::database::SearchPos(*g->GetCurrentPos()).setFilter(*base, filter, scid::database::Progress());
         int count = 0;
-        for (uint i=0, n = base->numGames(); i < n; i++) {
+        for (scid::database::uint i=0, n = base->numGames(); i < n; i++) {
             if (filter.get(i) == 0) continue;
 
             // Ignore newer games if requested:
@@ -3360,18 +3358,18 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         if (count <= 1) { // Novelty found
             base->deleteFilter(filtername.c_str());
-            return UI_Result(ti, OK, g->GetCurrentPly());
+            return UI_Result(ti, scid::database::OK, g->GetCurrentPly());
         }
 
         auto work_done = g->GetCurrentPly() + 1;
         if (!progress.report(work_done, g->GetNumHalfMoves())) {
             base->deleteFilter(filtername.c_str());
-            return UI_Result(ti, ERROR_UserCancel);
+            return UI_Result(ti, scid::database::ERROR_UserCancel);
         }
     }
 
     base->deleteFilter(filtername.c_str());
-    return UI_Result(ti, OK, -1);
+    return UI_Result(ti, scid::database::OK, -1);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3409,12 +3407,12 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         OPT_NOMARKS, OPT_UNICODE,
     };
 
-    scidBaseT* base = db;
+    scid::database::scidBaseT* base = db;
     auto editor = scidup::app::editor::gameSession(*base);
-    Game * g = &editor.game();
-    uint lineWidth = 99999;
+    scid::database::Game * g = &editor.game();
+    scid::database::uint lineWidth = 99999;
     g->ResetPgnStyle();
-    g->SetPgnFormat (PGN_FORMAT_Plain);
+    g->SetPgnFormat (scid::database::PGN_FORMAT_Plain);
     g->AddPgnStyle (PGN_STYLE_TAGS | PGN_STYLE_COMMENTS | PGN_STYLE_VARS);
 
     // Parse all the command options:
@@ -3423,7 +3421,7 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     int thisArg = 2;
     while (thisArg < argc) {
-        int index = strUniqueMatch (argv[thisArg], options);
+        int index = scid::database::strUniqueMatch (argv[thisArg], options);
         if (index == -1) {
             AppendResult (ti, "Invalid option to sc_game pgn: ",
                               argv[thisArg], "; valid options are: ", NULL);
@@ -3440,14 +3438,14 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             return TCL_ERROR;
         }
 
-        uint value = strGetUnsigned (argv[thisArg+1]);
+        scid::database::uint value = scid::database::strGetUnsigned (argv[thisArg+1]);
 
         if (index == OPT_WIDTH) {
             lineWidth = value;
 
         } else if (index == OPT_BASE) {
             base = DBasePool::getBase(value);
-            if (base == 0) return UI_Result(ti, ERROR_FileNotOpen);
+            if (base == 0) return UI_Result(ti, scid::database::ERROR_FileNotOpen);
             editor = scidup::app::editor::gameSession(*base);
             g = &editor.game();
 
@@ -3459,11 +3457,11 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             if (value < 1  ||  value > base->numGames()) {
                 return setResult (ti, "Invalid game number");
             }
-            const IndexEntry* ie = base->getIndexEntry(value - 1);
+            const scid::database::IndexEntry* ie = base->getIndexEntry(value - 1);
             if (ie->GetLength() == 0) {
                 return errorResult (ti, "Error: empty game file record.");
             }
-            if (base->getGame(*ie, *g) != OK) {
+            if (base->getGame(*ie, *g) != scid::database::OK) {
                 return errorResult (ti, "Error reading game file.");
             }
 
@@ -3475,7 +3473,7 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         } else {
             // The option is a boolean affecting pgn style:
-            uint bitmask = 0;
+            scid::database::uint bitmask = 0;
             switch (index) {
                 case OPT_COLUMN:
                     bitmask = PGN_STYLE_COLUMN;        break;
@@ -3561,32 +3559,32 @@ sc_game_save (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     auto editor = scidup::app::editor::gameSession(*db);
     auto dbase = db;
-    Game& currGame = editor.game();
+    scid::database::Game& currGame = editor.game();
     if (argc == 4) {
-        dbase = DBasePool::getBase(strGetUnsigned(argv[3]));
+        dbase = DBasePool::getBase(scid::database::strGetUnsigned(argv[3]));
         if (dbase == 0) return errorResult (ti, "Invalid database number.");
     } else if (argc != 3) {
         return errorResult (ti, "Usage: sc_game save <gameNumber> [targetbaseId]");
     }
 
-    gamenumT gnum = strGetUnsigned(argv[2]);
+    scid::database::gamenumT gnum = scid::database::strGetUnsigned(argv[2]);
     if (gnum == 0) {
-        gnum = INVALID_GAMEID;
+        gnum = scid::database::INVALID_GAMEID;
     } else {
         gnum -= 1;
-        const IndexEntry* ieOld = dbase->getIndexEntry_bounds(gnum);
-        if (ieOld == 0) return ERROR_BadArg;
-        // User-settable flags were stored in currGame when the game
+        const scid::database::IndexEntry* ieOld = dbase->getIndexEntry_bounds(gnum);
+        if (ieOld == 0) return scid::database::ERROR_BadArg;
+        // User-settable flags were scid::database::stored in currGame when the game
         // was loaded, but the user may have changed them.
-        char buf[IndexEntry::IDX_NUM_FLAGS + 1];
+        char buf[scid::database::IndexEntry::IDX_NUM_FLAGS + 1];
         ieOld->GetFlagStr(buf, "WBMENPTKQ!?U123456");
         currGame.SetScidFlags(buf);
     }
     auto location = currGame.currentLocation();
-    errorT res = dbase->saveGame(currGame, gnum);
+    scid::database::errorT res = dbase->saveGame(currGame, gnum);
     currGame.restoreLocation(location);
-    if (res == OK) {
-        if (gnum == INVALID_GAMEID && db == dbase) {
+    if (res == scid::database::OK) {
+        if (gnum == scid::database::INVALID_GAMEID && db == dbase) {
             // Saved new game, so set gameNumber to the saved game number:
             editor.setLoadedGameId(db->numGames() - 1);
         }
@@ -3608,17 +3606,17 @@ sc_game_startBoard (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     auto editor = scidup::app::editor::gameSession(*db);
     if (argc == 2) {
-        return UI_Result(ti, OK, editor.game().HasNonStandardStart());
+        return UI_Result(ti, scid::database::OK, editor.game().HasNonStandardStart());
     } else if (argc != 3) {
         return errorResult (ti, "Usage: sc_game startBoard <fenString>");
     }
     const char * str = argv[2];
     auto err = editor.game().SetStartFen(str);
-    if (err != OK)
+    if (err != scid::database::OK)
         return errorResult(ti, "Invalid FEN string.");
 
     editor.setDirty();
-    return UI_Result(ti, OK);
+    return UI_Result(ti, scid::database::OK);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3634,59 +3632,59 @@ int sc_game_strip(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 		return errorResult(ti, "Usage: sc_game strip [comments|variations]");
 	}
 	editor.setDirty();
-	return UI_Result(ti, OK);
+	return UI_Result(ti, scid::database::OK);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //    Returns summary information of the specified game:
 //    its players, site, etc; or its moves; or all its boards
 //    positions.
-UI_res_t sc_base_gamesummary(const scidBaseT& base, UI_handle_t ti, int argc,
+UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t ti, int argc,
                              const char** argv) {
 	const char* usage = "Usage: sc_base gamesummary baseId gameNum";
 	if (argc != 4)
-		return UI_Result(ti, ERROR_BadArg, usage);
+		return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-	Game* g = scratchGame;
-	gamenumT gnum = strGetUnsigned(argv[3]);
+	scid::database::Game* g = scratchGame;
+	scid::database::gamenumT gnum = scid::database::strGetUnsigned(argv[3]);
 	if (gnum > 0) {
 		auto ie = base.getIndexEntry_bounds(gnum - 1);
-		if (!ie || base.getGame(*ie, *scratchGame) != OK) {
-			return UI_Result(ti, ERROR_BadArg, usage);
+		if (!ie || base.getGame(*ie, *scratchGame) != scid::database::OK) {
+			return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 		}
 	} else {
 		auto editor =
-		    scidup::app::editor::gameSession(const_cast<scidBaseT&>(base));
+		    scidup::app::editor::gameSession(const_cast<scid::database::scidBaseT&>(base));
 		g = &editor.game();
 	}
 
     UI_List res(3);
 
     // Return header summary if requested:
-        DString dstr;
+        scid::database::DString dstr;
         dstr.Append (g->GetWhiteStr());
-        eloT elo = g->GetWhiteElo();
+        scid::database::eloT elo = g->GetWhiteElo();
         if (elo > 0) { dstr.Append (" (", elo, ")"); }
         dstr.Append ("  --  ", g->GetBlackStr());
         elo = g->GetBlackElo();
         if (elo > 0) { dstr.Append (" (", elo, ")"); }
         dstr.Append ("\n", g->GetEventStr());
         const char * round = g->GetRoundStr();
-        if (! strIsUnknownName(round)) {
+        if (! scid::database::strIsUnknownName(round)) {
             dstr.Append (" (", round, ")");
         }
         dstr.Append ("  ", g->GetSiteStr(), "\n");
         char dateStr [20];
-        date_DecodeToString (g->GetDate(), dateStr);
+        scid::database::date_DecodeToString (g->GetDate(), dateStr);
         // Remove ".??" or ".??.??" from end of date:
         if (dateStr[4] == '.'  &&  dateStr[5] == '?') { dateStr[4] = 0; }
         if (dateStr[7] == '.'  &&  dateStr[8] == '?') { dateStr[7] = 0; }
         dstr.Append (dateStr, "  ");
-        dstr.Append (RESULT_LONGSTR[g->GetResult()]);
-        ecoT eco = g->GetEco();
+        dstr.Append (scid::database::RESULT_LONGSTR[g->GetResult()]);
+        scid::database::ecoT eco = g->GetEco();
         if (eco != 0) {
-            ecoStringT ecoStr;
-            eco_ToExtendedString (eco, ecoStr);
+            scid::database::ecoStringT ecoStr;
+            scid::database::eco_ToExtendedString (eco, ecoStr);
             dstr.Append ("  ", ecoStr);
         }
         res.push_back(dstr.Data());
@@ -3702,41 +3700,41 @@ UI_res_t sc_base_gamesummary(const scidBaseT& base, UI_handle_t ti, int argc,
             g->GetCurrentPos()->MakeLongStr (boardStr);
             boards.push_back(boardStr);
 
-            colorT toMove = g->GetCurrentPos()->GetToMove();
-            uint moveCount = g->GetCurrentPos()->GetFullMoveCount();
+            scid::database::colorT toMove = g->GetCurrentPos()->GetToMove();
+            scid::database::uint moveCount = g->GetCurrentPos()->GetFullMoveCount();
             char san [20];
             g->GetSAN (san);
 	            if (san[0] != 0) {
 	                char temp[40];
-	                if (toMove == WHITE) {
+	                if (toMove == scid::database::WHITE) {
 	                    std::snprintf(temp, sizeof(temp), "%u.%s", moveCount, san);
 	                } else {
-	                    strCopy (temp, san);
+	                    scid::database::strCopy (temp, san);
 	                }
-                byte * nags = g->GetNextNags();
+                scid::database::byte * nags = g->GetNextNags();
                 if (*nags != 0) {
-                    for (uint nagCount = 0 ; nags[nagCount] != 0; nagCount++) {
+                    for (scid::database::uint nagCount = 0 ; nags[nagCount] != 0; nagCount++) {
                         char nagstr[20];
                         game_printNag (nags[nagCount], nagstr, true,
-                                       PGN_FORMAT_Plain);
+                                       scid::database::PGN_FORMAT_Plain);
                         if (nagCount > 0  ||
                               (nagstr[0] != '!' && nagstr[0] != '?')) {
-                            strAppend (temp, " ");
+                            scid::database::strAppend (temp, " ");
                         }
-                        strAppend (temp, nagstr);
+                        scid::database::strAppend (temp, nagstr);
                     }
                 }
                 moves.push_back(temp);
             } else {
-                moves.push_back(RESULT_LONGSTR[g->GetResult()]);
+                moves.push_back(scid::database::RESULT_LONGSTR[g->GetResult()]);
             }
 
-    } while (g->MoveForward() == OK);
+    } while (g->MoveForward() == scid::database::OK);
     g->restoreLocation(location);
 
     res.push_back(boards);
     res.push_back(moves);
-    return UI_Result(ti, OK, res);
+    return UI_Result(ti, scid::database::OK, res);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3752,7 +3750,7 @@ sc_game_tags (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
     enum { OPT_GET, OPT_SET, OPT_RELOAD, OPT_SHARE };
 
     int index = -1;
-    if (argc >= 3) { index = strUniqueMatch (argv[2], options); }
+    if (argc >= 3) { index = scid::database::strUniqueMatch (argv[2], options); }
 
     switch (index) {
         case OPT_GET:    return sc_game_tags_get (cd, ti, argc, argv);
@@ -3794,25 +3792,25 @@ sc_game_tags_get (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     const char * usage = "Usage: sc_game tags get [-last] <tagName>";
     const char * tagName;
     auto editor = scidup::app::editor::gameSession(*db);
-    Game * g = &editor.game();
+    scid::database::Game * g = &editor.game();
 
     if (argc < 4  ||  argc > 5) {
         return errorResult (ti, usage);
     }
     tagName = argv[3];
     if (argc == 5) {
-        if (!strEqual (argv[3], "-last")) { return errorResult (ti, usage); }
+        if (!scid::database::strEqual (argv[3], "-last")) { return errorResult (ti, usage); }
         tagName = argv[4];
         if (db->numGames() > 0) {
             g = scratchGame;
-            const IndexEntry* ie = db->getIndexEntry(db->numGames() - 1);
-            if (db->getGame(*ie, *g) != OK) {
+            const scid::database::IndexEntry* ie = db->getIndexEntry(db->numGames() - 1);
+            if (db->getGame(*ie, *g) != scid::database::OK) {
                 return errorResult (ti, "Error reading game file.");
             }
         }
     }
     const char * s;
-    int index = strExactMatch (tagName, options);
+    int index = scid::database::strExactMatch (tagName, options);
 
     switch (index) {
     case T_Event:
@@ -3828,19 +3826,19 @@ sc_game_tags_get (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     case T_Date:
         {
             char dateStr[20];
-            date_DecodeToString (g->GetDate(), dateStr);
+            scid::database::date_DecodeToString (g->GetDate(), dateStr);
             AppendResult (ti, dateStr, NULL);
         }
         break;
 
     case T_Year:
-        return setUintResult (ti, date_GetYear (g->GetDate()));
+        return setUintResult (ti, scid::database::date_GetYear (g->GetDate()));
 
     case T_Month:
-        return setUintWidthResult (ti, date_GetMonth (g->GetDate()), 2);
+        return setUintWidthResult (ti, scid::database::date_GetMonth (g->GetDate()), 2);
 
     case T_Day:
-        return setUintWidthResult (ti, date_GetDay (g->GetDate()), 2);
+        return setUintWidthResult (ti, scid::database::date_GetDay (g->GetDate()), 2);
 
     case T_Round:
         s = g->GetRoundStr();  if (!s) { s = "?"; }
@@ -3858,7 +3856,7 @@ sc_game_tags_get (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         break;
 
     case T_Result:
-        return UI_Result(ti, OK, std::string(1, RESULT_CHAR[g->GetResult()]));
+        return UI_Result(ti, scid::database::OK, std::string(1, scid::database::RESULT_CHAR[g->GetResult()]));
 
     case T_WhiteElo:
         return setUintResult (ti, g->GetWhiteElo());
@@ -3867,15 +3865,15 @@ sc_game_tags_get (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return setUintResult (ti, g->GetBlackElo());
 
     case T_WhiteRType:
-        return setResult (ti, ratingTypeNames[g->GetWhiteRatingType()]);
+        return setResult (ti, scid::database::ratingTypeNames[g->GetWhiteRatingType()]);
 
     case T_BlackRType:
-        return setResult (ti, ratingTypeNames[g->GetBlackRatingType()]);
+        return setResult (ti, scid::database::ratingTypeNames[g->GetBlackRatingType()]);
 
     case T_ECO:
         {
-            ecoStringT ecoStr;
-            eco_ToExtendedString (g->GetEco(), ecoStr);
+            scid::database::ecoStringT ecoStr;
+            scid::database::eco_ToExtendedString (g->GetEco(), ecoStr);
             AppendResult (ti, ecoStr, NULL);
             break;
         }
@@ -3883,19 +3881,19 @@ sc_game_tags_get (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     case T_EDate:
         {
             char dateStr[20];
-            date_DecodeToString (g->GetEventDate(), dateStr);
+            scid::database::date_DecodeToString (g->GetEventDate(), dateStr);
             AppendResult (ti, dateStr, NULL);
         }
         break;
 
     case T_EYear:
-        return setUintResult (ti, date_GetYear (g->GetEventDate()));
+        return setUintResult (ti, scid::database::date_GetYear (g->GetEventDate()));
 
     case T_EMonth:
-        return setUintWidthResult (ti, date_GetMonth (g->GetEventDate()), 2);
+        return setUintWidthResult (ti, scid::database::date_GetMonth (g->GetEventDate()), 2);
 
     case T_EDay:
-        return setUintWidthResult (ti, date_GetDay (g->GetEventDate()), 2);
+        return setUintWidthResult (ti, scid::database::date_GetDay (g->GetEventDate()), 2);
 
     case T_Extra:
         for (auto& tag : g->GetExtraTags()) {
@@ -3910,10 +3908,10 @@ sc_game_tags_get (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     return TCL_OK;
 }
 
-static uint strGetRatingType (const char * name) {
-    uint i = 0;
-    while (ratingTypeNames[i] != NULL) {
-        if (strEqual (name, ratingTypeNames[i])) { return i; }
+static scid::database::uint strGetRatingType (const char * name) {
+    scid::database::uint i = 0;
+    while (scid::database::ratingTypeNames[i] != NULL) {
+        if (scid::database::strEqual (name, scid::database::ratingTypeNames[i])) { return i; }
         i++;
     }
     return 0;
@@ -3931,7 +3929,7 @@ int
 sc_game_tags_set (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     auto editor = scidup::app::editor::gameSession(*db);
-    Game& game = editor.game();
+    scid::database::Game& game = editor.game();
     const char * options[] = {
         "-event", "-site", "-date", "-round", "-white", "-black", "-result",
         "-whiteElo", "-whiteRatingType", "-blackElo", "-blackRatingType",
@@ -3951,7 +3949,7 @@ sc_game_tags_set (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Process each pair of parameters:
     while (arg+1 < argc) {
-        int index = strUniqueMatch (argv[arg], options);
+        int index = scid::database::strUniqueMatch (argv[arg], options);
         const char * value = argv[arg+1];
         arg += 2;
 
@@ -3959,24 +3957,24 @@ sc_game_tags_set (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             case T_EVENT: game.SetEventStr (value); break;
             case T_SITE: game.SetSiteStr (value); break;
             case T_DATE:
-                game.SetDate (date_EncodeFromString(value));
+                game.SetDate (scid::database::date_EncodeFromString(value));
                 break;
             case T_ROUND: game.SetRoundStr (value); break;
             case T_WHITE: game.SetWhiteStr (value); break;
             case T_BLACK: game.SetBlackStr (value); break;
-            case T_RESULT: game.SetResult (strGetResult(value)); break;
+            case T_RESULT: game.SetResult (scid::database::strGetResult(value)); break;
             case T_WHITE_ELO:
-                game.SetWhiteElo (strGetUnsigned(value)); break;
+                game.SetWhiteElo (scid::database::strGetUnsigned(value)); break;
             case T_WHITE_RTYPE:
                 game.SetWhiteRatingType (strGetRatingType (value)); break;
             case T_BLACK_ELO:
-                game.SetBlackElo (strGetUnsigned(value)); break;
+                game.SetBlackElo (scid::database::strGetUnsigned(value)); break;
             case T_BLACK_RTYPE:
                 game.SetBlackRatingType (strGetRatingType (value)); break;
             case T_ECO:
-                game.SetEco (eco_FromString (value)); break;
+                game.SetEco (scid::database::eco_FromString (value)); break;
             case T_EVENTDATE:
-                game.SetEventDate (date_EncodeFromString(value));
+                game.SetEventDate (scid::database::date_EncodeFromString(value));
                 break;
             case T_EXTRA:
                 {
@@ -4051,16 +4049,16 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         "Usage: sc_game tags share [check|update] <gameNumber1> <gameNumber2>";
     if (argc != 6) { return errorResult (ti, usage); }
     bool updateMode = false;
-    if (strIsPrefix (argv[3], "check")) {
+    if (scid::database::strIsPrefix (argv[3], "check")) {
         updateMode = false;
-    } else if (strIsPrefix (argv[3], "update")) {
+    } else if (scid::database::strIsPrefix (argv[3], "update")) {
         updateMode = true;
     } else {
         return errorResult (ti, usage);
     }
     // Get the two game numbers, which should be different and non-zero.
-    uint gn1 = strGetUnsigned (argv[4]);
-    uint gn2 = strGetUnsigned (argv[5]);
+    scid::database::uint gn1 = scid::database::strGetUnsigned (argv[4]);
+    scid::database::uint gn2 = scid::database::strGetUnsigned (argv[5]);
     if (gn1 == 0) { return TCL_OK; }
     if (gn2 == 0) { return TCL_OK; }
     if (gn1 == gn2) { return TCL_OK; }
@@ -4071,24 +4069,24 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (!db->isOpen()  ||  db->isReadOnly()) { return TCL_OK; }
 
     // Make a local copy of each index entry:
-    IndexEntry ie1 = *(db->getIndexEntry(gn1 - 1));
-    IndexEntry ie2 = *(db->getIndexEntry(gn2 - 1));
+    scid::database::IndexEntry ie1 = *(db->getIndexEntry(gn1 - 1));
+    scid::database::IndexEntry ie2 = *(db->getIndexEntry(gn2 - 1));
     bool updated1 = false;
     bool updated2 = false;
 
     // Share dates if appropriate:
     char dateStr1 [16];
     char dateStr2 [16];
-    dateT date1 = ie1.GetDate();
-    dateT date2 = ie2.GetDate();
-    date_DecodeToString (date1, dateStr1);
-    date_DecodeToString (date2, dateStr2);
-    strTrimDate (dateStr1);
-    strTrimDate (dateStr2);
+    scid::database::dateT date1 = ie1.GetDate();
+    scid::database::dateT date2 = ie2.GetDate();
+    scid::database::date_DecodeToString (date1, dateStr1);
+    scid::database::date_DecodeToString (date2, dateStr2);
+    scid::database::strTrimDate (dateStr1);
+    scid::database::strTrimDate (dateStr2);
     if (date1 == 0) { *dateStr1 = 0; }
     if (date2 == 0) { *dateStr2 = 0; }
     // Check if one date is a prefix of the other:
-    if (!strEqual (dateStr1, dateStr2)  &&  strIsPrefix (dateStr1, dateStr2)) {
+    if (!scid::database::strEqual (dateStr1, dateStr2)  &&  scid::database::strIsPrefix (dateStr1, dateStr2)) {
         // Copy date grom game 2 to game 1:
         if (updateMode) {
             ie1.SetDate (date2);
@@ -4100,7 +4098,7 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             AppendElement (ti, dateStr2);
         }
     }
-    if (!strEqual (dateStr1, dateStr2)  &&  strIsPrefix (dateStr2, dateStr1)) {
+    if (!scid::database::strEqual (dateStr1, dateStr2)  &&  scid::database::strIsPrefix (dateStr2, dateStr1)) {
         // Copy date grom game 1 to game 2:
         if (updateMode) {
             ie2.SetDate (date1);
@@ -4114,12 +4112,12 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     // Check if an event name can be updated:
-    idNumberT event1 = ie1.GetEvent();
-    idNumberT event2 = ie2.GetEvent();
-    const char* eventStr1 = db->getNameBase()->GetName(NAME_EVENT, event1);
-    const char* eventStr2 = db->getNameBase()->GetName(NAME_EVENT, event2);
-    bool event1empty = strEqual (eventStr1, "")  ||  strEqual (eventStr1, "?");
-    bool event2empty = strEqual (eventStr2, "")  ||  strEqual (eventStr2, "?");
+    scid::database::idNumberT event1 = ie1.GetEvent();
+    scid::database::idNumberT event2 = ie2.GetEvent();
+    const char* eventStr1 = db->getNameBase()->GetName(scid::database::NAME_EVENT, event1);
+    const char* eventStr2 = db->getNameBase()->GetName(scid::database::NAME_EVENT, event2);
+    bool event1empty = scid::database::strEqual (eventStr1, "")  ||  scid::database::strEqual (eventStr1, "?");
+    bool event2empty = scid::database::strEqual (eventStr2, "")  ||  scid::database::strEqual (eventStr2, "?");
     if (event1empty  && !event2empty) {
         // Copy event from event 2 to game 1:
         if (updateMode) {
@@ -4146,12 +4144,12 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     // Check if a round name can be updated:
-    idNumberT round1 = ie1.GetRound();
-    idNumberT round2 = ie2.GetRound();
-    const char* roundStr1 = db->getNameBase()->GetName(NAME_ROUND, round1);
-    const char* roundStr2 = db->getNameBase()->GetName(NAME_ROUND, round2);
-    bool round1empty = strEqual (roundStr1, "")  ||  strEqual (roundStr1, "?");
-    bool round2empty = strEqual (roundStr2, "")  ||  strEqual (roundStr2, "?");
+    scid::database::idNumberT round1 = ie1.GetRound();
+    scid::database::idNumberT round2 = ie2.GetRound();
+    const char* roundStr1 = db->getNameBase()->GetName(scid::database::NAME_ROUND, round1);
+    const char* roundStr2 = db->getNameBase()->GetName(scid::database::NAME_ROUND, round2);
+    bool round1empty = scid::database::strEqual (roundStr1, "")  ||  scid::database::strEqual (roundStr1, "?");
+    bool round2empty = scid::database::strEqual (roundStr2, "")  ||  scid::database::strEqual (roundStr2, "?");
     if (round1empty  && !round2empty) {
         // Copy round from game 2 to game 1:
         if (updateMode) {
@@ -4178,10 +4176,10 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     // Check if Elo ratings can be shared:
-    eloT welo1 = ie1.GetWhiteElo();
-    eloT belo1 = ie1.GetBlackElo();
-    eloT welo2 = ie2.GetWhiteElo();
-    eloT belo2 = ie2.GetBlackElo();
+    scid::database::eloT welo1 = ie1.GetWhiteElo();
+    scid::database::eloT belo1 = ie1.GetBlackElo();
+    scid::database::eloT welo2 = ie2.GetWhiteElo();
+    scid::database::eloT belo2 = ie2.GetBlackElo();
     if (welo1 == 0  &&  welo2 != 0) {
         // Copy White rating from game 2 to game 1:
         if (updateMode) {
@@ -4235,24 +4233,24 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return TCL_OK;
 
     auto duplicates = db->extractDuplicates();
-    errorT err1 = OK;
-    errorT err2 = OK;
+    scid::database::errorT err1 = scid::database::OK;
+    scid::database::errorT err2 = scid::database::OK;
     if (updated1) {
-        Game game;
+        scid::database::Game game;
         err1 = db->getGame(ie1, game);
-        if (err1 == OK) {
+        if (err1 == scid::database::OK) {
             err1 = db->saveGame(&game, gn1 - 1);
         }
     }
     if (updated2) {
-        Game game;
+        scid::database::Game game;
         err2 = db->getGame(ie2, game);
-        if (err2 == OK) {
+        if (err2 == scid::database::OK) {
             err2 = db->saveGame(&game, gn2 - 1);
         }
     }
     db->setDuplicates(std::move(duplicates));
-    return UI_Result(ti, err1 != OK ? err1 : err2);
+    return UI_Result(ti, err1 != scid::database::OK ? err1 : err2);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -4260,11 +4258,11 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 static bool
 date_ValidString (const char * str)
 {
-    uint maxValues[3] = { YEAR_MAX, 12, 31 };
+    scid::database::uint maxValues[3] = { scid::database::YEAR_MAX, 12, 31 };
 
     // Check year, then month, then day:
-    for (uint i=0; i < 3; i++) {
-        uint maxValue = maxValues[i];
+    for (scid::database::uint i=0; i < 3; i++) {
+        scid::database::uint maxValue = maxValues[i];
         bool seenQuestion, seenDigit, seenOther;
         seenQuestion = seenDigit = seenOther = false;
         const char * start = str;
@@ -4284,7 +4282,7 @@ date_ValidString (const char * str)
         if (seenQuestion  &&  seenDigit) { return false; }
         if (seenDigit) {
             // Check that the value is not too large:
-            uint value = strGetUnsigned (start);
+            scid::database::uint value = scid::database::strGetUnsigned (start);
             if (value > maxValue) { return false; }
         }
         if (*str == 0) { return true; } else { str++; }
@@ -4310,17 +4308,17 @@ sc_info (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
     };
     int index = -1;
 
-    if (argc > 1) { index = strUniqueMatch (argv[1], options); }
+    if (argc > 1) { index = scid::database::strUniqueMatch (argv[1], options); }
 
     switch (index) {
     case INFO_CLIPBASE:
-        return UI_Result(ti, OK, DBasePool::getClipBase());
+        return UI_Result(ti, scid::database::OK, DBasePool::getClipBase());
 
     case INFO_DECIMAL:
         if (argc >= 3) {
             decimalPointChar = argv[2][0];
         } else {
-            return UI_Result(ti, OK, std::string(1, decimalPointChar));
+            return UI_Result(ti, scid::database::OK, std::string(1, decimalPointChar));
         }
         break;
 
@@ -4329,7 +4327,7 @@ sc_info (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case INFO_HTML:
         if (argc >= 3) {
-            htmlDiagStyle = strGetUnsigned (argv[2]);
+            htmlDiagStyle = scid::database::strGetUnsigned (argv[2]);
         } else {
             return setUintResult (ti, htmlDiagStyle);
         }
@@ -4340,9 +4338,9 @@ sc_info (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case INFO_RATINGS:   // List of all recognised rating types.
         {
-            uint i = 0;
-            while (ratingTypeNames[i] != NULL) {
-                AppendElement (ti, (char *) ratingTypeNames[i]);
+            scid::database::uint i = 0;
+            while (scid::database::ratingTypeNames[i] != NULL) {
+                AppendElement (ti, (char *) scid::database::ratingTypeNames[i]);
                 i++;
             }
         }
@@ -4352,18 +4350,18 @@ sc_info (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         if (argc != 3) {
             return errorResult (ti, "Usage: sc_info validDate <datestring>");
         }
-        return UI_Result(ti, OK, date_ValidString (argv[2]));
+        return UI_Result(ti, scid::database::OK, date_ValidString (argv[2]));
 
 
     case INFO_RELEASE:
         if (argc != 3) {
             return errorResult (ti, "Usage: sc_info release <version|date|is_prerelease>");
         }
-        if (strIsPrefix (argv[2], "version")) {
+        if (scid::database::strIsPrefix (argv[2], "version")) {
             setResult (ti, scidup::release::kVersion);
-        } else if (strIsPrefix (argv[2], "date")) {
+        } else if (scid::database::strIsPrefix (argv[2], "date")) {
             setResult (ti, scidup::release::kDate);
-        } else if (strIsPrefix (argv[2], "is_prerelease")) {
+        } else if (scid::database::strIsPrefix (argv[2], "is_prerelease")) {
             const char* version = scidup::release::kVersion;
             const int isPrerelease =
                 (version != nullptr && version[0] != 0 && std::strstr(version, "-testing-") != nullptr) ? 1 : 0;
@@ -4376,19 +4374,19 @@ sc_info (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
       if (argc != 3) {
         return errorResult (ti, "Usage: sc_info language <lang>");
       }
-      if ( strcmp(argv[2], "en") == 0) {language = 0;}
-      if ( strcmp(argv[2], "fr") == 0) {language = 1;}
-      if ( strcmp(argv[2], "es") == 0) {language = 2;}
-      if ( strcmp(argv[2], "de") == 0) {language = 3;}
-      if ( strcmp(argv[2], "it") == 0) {language = 4;}
-      if ( strcmp(argv[2], "ne") == 0) {language = 5;}
-      if ( strcmp(argv[2], "cz") == 0) {language = 6;}
-      if ( strcmp(argv[2], "hu") == 0) {language = 7;}
-      if ( strcmp(argv[2], "no") == 0) {language = 8;}
-      if ( strcmp(argv[2], "sw") == 0) {language = 9;}
-      if ( strcmp(argv[2], "ca") == 0) {language = 10;}
-      if ( strcmp(argv[2], "fi") == 0) {language = 11;}
-      if ( strcmp(argv[2], "gr") == 0) {language = 12;}
+      if ( strcmp(argv[2], "en") == 0) {scid::database::language = 0;}
+      if ( strcmp(argv[2], "fr") == 0) {scid::database::language = 1;}
+      if ( strcmp(argv[2], "es") == 0) {scid::database::language = 2;}
+      if ( strcmp(argv[2], "de") == 0) {scid::database::language = 3;}
+      if ( strcmp(argv[2], "it") == 0) {scid::database::language = 4;}
+      if ( strcmp(argv[2], "ne") == 0) {scid::database::language = 5;}
+      if ( strcmp(argv[2], "cz") == 0) {scid::database::language = 6;}
+      if ( strcmp(argv[2], "hu") == 0) {scid::database::language = 7;}
+      if ( strcmp(argv[2], "no") == 0) {scid::database::language = 8;}
+      if ( strcmp(argv[2], "sw") == 0) {scid::database::language = 9;}
+      if ( strcmp(argv[2], "ca") == 0) {scid::database::language = 10;}
+      if ( strcmp(argv[2], "fi") == 0) {scid::database::language = 11;}
+      if ( strcmp(argv[2], "gr") == 0) {scid::database::language = 12;}
 
     break;
     default:
@@ -4413,15 +4411,15 @@ sc_info_limit (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     int index = -1;
     int result = 0;
 
-    if (argc == 3) { index = strUniqueMatch (argv[2], options); }
+    if (argc == 3) { index = scid::database::strUniqueMatch (argv[2], options); }
 
     switch (index) {
     case LIM_ELO:
-        result = MAX_ELO;
+        result = scid::database::MAX_ELO;
         break;
 
     case LIM_YEAR:
-        result = YEAR_MAX;
+        result = scid::database::YEAR_MAX;
         break;
 
     case LIM_BASES:
@@ -4429,10 +4427,10 @@ sc_info_limit (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         break;
 
     default:
-        return UI_Result(ti, ERROR_BadArg, "Usage: sc_info limit <elo|year|bases>");
+        return UI_Result(ti, scid::database::ERROR_BadArg, "Usage: sc_info limit <elo|year|bases>");
     }
 
-    return UI_Result(ti, OK, result);
+    return UI_Result(ti, scid::database::OK, result);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -4452,7 +4450,7 @@ sc_move (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
     };
     int index = -1;
 
-    if (argc > 1) { index = strUniqueMatch (argv[1], options); }
+    if (argc > 1) { index = scid::database::strUniqueMatch (argv[1], options); }
 
     switch (index) {
     case MOVE_ADD:
@@ -4469,7 +4467,7 @@ sc_move (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         break;
 
     case MOVE_ENDVAR:
-        while (editor.game().MoveForward() == OK) {
+        while (editor.game().MoveForward() == scid::database::OK) {
         }
         break;
 
@@ -4481,8 +4479,8 @@ sc_move (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case MOVE_PLY:
         if (argc == 3) {
-            editor.game().MoveToPly(strGetUnsigned(argv[2]));
-            return UI_Result(ti, OK);
+            editor.game().MoveToPly(scid::database::strGetUnsigned(argv[2]));
+            return UI_Result(ti, scid::database::OK);
         }
         return errorResult (ti, "Usage: sc_move ply <plynumber>");
 
@@ -4509,28 +4507,28 @@ sc_move_add (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: sc_move add <sq> <sq> <promo>");
     }
 
-    uint sq1 = strGetUnsigned (argv[2]);
-    uint sq2 = strGetUnsigned (argv[3]);
-    uint promo = strGetUnsigned (argv[4]);
-    if (promo == 0) { promo = EMPTY; }
+    scid::database::uint sq1 = scid::database::strGetUnsigned (argv[2]);
+    scid::database::uint sq2 = scid::database::strGetUnsigned (argv[3]);
+    scid::database::uint promo = scid::database::strGetUnsigned (argv[4]);
+    if (promo == 0) { promo = scid::database::EMPTY; }
 
     char s[8];
-    s[0] = square_FyleChar (sq1);
-    s[1] = square_RankChar (sq1);
-    s[2] = square_FyleChar (sq2);
-    s[3] = square_RankChar (sq2);
-    if (promo == EMPTY) {
+    s[0] = scid::database::square_FyleChar (sq1);
+    s[1] = scid::database::square_RankChar (sq1);
+    s[2] = scid::database::square_FyleChar (sq2);
+    s[3] = scid::database::square_RankChar (sq2);
+    if (promo == scid::database::EMPTY) {
         s[4] = 0;
     } else {
-        s[4] = piece_Char(promo);
+        s[4] = scid::database::piece_Char(promo);
         s[5] = 0;
     }
-    simpleMoveT sm;
-    Position * pos = editor.game().GetCurrentPos();
-    errorT err = pos->ReadCoordMove(&sm, s, s[4] == 0 ? 4 : 5, true);
-    if (err == OK) {
+    scid::database::simpleMoveT sm;
+    scid::database::Position * pos = editor.game().GetCurrentPos();
+    scid::database::errorT err = pos->ReadCoordMove(&sm, s, s[4] == 0 ? 4 : 5, true);
+    if (err == scid::database::OK) {
         err = editor.game().AddMove(sm);
-        if (err == OK) {
+        if (err == scid::database::OK) {
             editor.setDirty();
             return TCL_OK;
         }
@@ -4546,13 +4544,13 @@ sc_move_add (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 //    but variations/comments/annotations are parsed and added.
 int sc_move_addSan(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 	auto editor = scidup::app::editor::gameSession(*db);
-	PgnParseLog parser;
+	scid::database::PgnParseLog parser;
 	for (int i = 2; i < argc; ++i) {
 		editor.setDirty();
-		if (!pgnParseGame(argv[i], std::strlen(argv[i]), editor.game(), parser))
-			return UI_Result(ti, ERROR_InvalidMove, argv[i]);
+		if (!scid::database::pgnParseGame(argv[i], std::strlen(argv[i]), editor.game(), parser))
+			return UI_Result(ti, scid::database::ERROR_InvalidMove, argv[i]);
 	}
-	return UI_Result(ti, OK);
+	return UI_Result(ti, scid::database::OK);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -4565,12 +4563,12 @@ sc_move_back (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     int numMovesTakenBack = 0;
     int count = 1;
     if (argc > 2) {
-        count = strGetInteger (argv[2]);
+        count = scid::database::strGetInteger (argv[2]);
         // if (count < 1) { count = 1; }
     }
 
     for (int i = 0; i < count; i++) {
-        if (editor.game().MoveBackup() != OK) { break; }
+        if (editor.game().MoveBackup() != scid::database::OK) { break; }
         numMovesTakenBack++;
     }
 
@@ -4588,13 +4586,13 @@ sc_move_forward (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     int numMovesMade = 0;
     int count = 1;
     if (argc > 2) {
-        count = strGetInteger (argv[2]);
+        count = scid::database::strGetInteger (argv[2]);
         // Do we want to allow moving forward 0 moves? Yes, I think so.
         // if (count < 1) { count = 1; }
     }
 
     for (int i = 0; i < count; i++) {
-        if (editor.game().MoveForward() != OK) { break; }
+        if (editor.game().MoveForward() != scid::database::OK) { break; }
         numMovesMade++;
     }
 
@@ -4605,20 +4603,20 @@ sc_move_forward (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // sc_move_pgn:
 //    Get or set the current board to the position closest to
-//    the specified place in the PGN output (given as a byte count
+//    the specified place in the PGN output (given as a scid::database::byte count
 //    from the start of the output).
 int
 sc_move_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     auto editor = scidup::app::editor::gameSession(*db);
     if (argc == 2)
-        return UI_Result(ti, OK, editor.game().GetLocationInPGN());
+        return UI_Result(ti, scid::database::OK, editor.game().GetLocationInPGN());
 
     if (argc != 3) {
         return errorResult (ti, "Usage: sc_move pgn [offset]");
     }
 
-    uint offset = strGetUnsigned (argv[2]);
+    scid::database::uint offset = scid::database::strGetUnsigned (argv[2]);
     editor.game().MoveToLocationInPGN (offset);
     return TCL_OK;
 }
@@ -4632,7 +4630,7 @@ int
 sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 {
     auto editor = scidup::app::editor::gameSession(*db);
-    Game& g = editor.game();
+    scid::database::Game& g = editor.game();
     static const char * options [] = {
         "addNag", "analyze", "bestSquare", "board", "clearNags",
         "fen", "getComment", "getNags", "hash", "html",
@@ -4652,7 +4650,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     char boardStr[200];
     int index = -1;
-    if (argc > 1) { index = strUniqueMatch (argv[1], options); }
+    if (argc > 1) { index = scid::database::strUniqueMatch (argv[1], options); }
 
     switch (index) {
     case POS_ADDNAG:
@@ -4667,19 +4665,19 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
     case POS_BOARD:
         if (argc == 2) {
             g.currentPos()->MakeLongStr(boardStr);
-            return UI_Result(ti, OK, boardStr);
+            return UI_Result(ti, scid::database::OK, boardStr);
         }
         if (argc == 4) {
-            Position pos;
+            scid::database::Position pos;
             if (auto err = pos.ReadFromFENorUCI(argv[2]))
                 return UI_Result(ti, err);
 
-            auto game = Game();
+            auto game = scid::database::Game();
             game.SetStartPos(pos);
             if (const auto len = std::strlen(argv[3])) {
-                PgnParseLog pgn;
-                if (!pgnParseGame(argv[3], len, game, pgn))
-                    return UI_Result(ti, ERROR_InvalidMove);
+                scid::database::PgnParseLog pgn;
+                if (!scid::database::pgnParseGame(argv[3], len, game, pgn))
+                    return UI_Result(ti, scid::database::ERROR_InvalidMove);
             }
 
             game.MoveToEnd();
@@ -4689,9 +4687,9 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             UI_List result(2);
             result.push_back(boardStr);
             result.push_back(lastmove);
-            return UI_Result(ti, OK, result);
+            return UI_Result(ti, scid::database::OK, result);
         }
-        return UI_Result(ti, ERROR_BadArg, "sc_pos board [startpos moves]");
+        return UI_Result(ti, scid::database::ERROR_BadArg, "sc_pos board [startpos moves]");
 
     case POS_CLEARNAGS:
         g.ClearNags();
@@ -4716,7 +4714,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         UI_List res(2);
         res.push_back(comments.first);
         res.push_back(comments.second);
-        return UI_Result(ti, OK, res);
+        return UI_Result(ti, scid::database::OK, res);
     }
     case POS_GETNAGS:
         return sc_pos_getNags (cd, ti, argc, argv);
@@ -4731,7 +4729,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_pos_isAt (cd, ti, argc, argv);
 
     case POS_ISCHECK:
-        return UI_Result(ti, OK, g.GetCurrentPos()->IsKingInCheck());
+        return UI_Result(ti, scid::database::OK, g.GetCurrentPos()->IsKingInCheck());
 
     case POS_ISLEGAL:
         return sc_pos_isLegal (cd, ti, argc, argv);
@@ -4758,15 +4756,15 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_pos_setComment (cd, ti, argc, argv);
 
     case POS_SIDE:
-        setResult (ti, (g.GetCurrentPos()->GetToMove() == WHITE)
+        setResult (ti, (g.GetCurrentPos()->GetToMove() == scid::database::WHITE)
                    ? "white" : "black");
         break;
 
     case POS_TEX:
         {
             bool flip = false;
-            if (argc > 2  &&  strIsPrefix (argv[2], "flip")) { flip = true; }
-            DString * dstr = new DString;
+            if (argc > 2  &&  scid::database::strIsPrefix (argv[2], "flip")) { flip = true; }
+            scid::database::DString * dstr = new scid::database::DString;
             g.GetCurrentPos()->DumpLatexBoard (dstr, flip);
             AppendResult (ti, dstr->Data(), NULL);
             delete dstr;
@@ -4774,15 +4772,15 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         break;
 
     case LOCATION:
-        return UI_Result(ti, OK, g.GetCurrentPly());
+        return UI_Result(ti, scid::database::OK, g.GetCurrentPly());
 
     case POS_ATTACKS:
         {
-            Position pos(*g.GetCurrentPos());
-            for (colorT c = WHITE; c <= BLACK; c++) {
-                for (uint i = 0; i < pos.GetCount(c); i++) {
-                    squareT sq = pos.GetList(c)[i];
-                    pos.SetToMove(color_Flip(c));
+            scid::database::Position pos(*g.GetCurrentPos());
+            for (scid::database::colorT c = scid::database::WHITE; c <= scid::database::BLACK; c++) {
+                for (scid::database::uint i = 0; i < pos.GetCount(c); i++) {
+                    scid::database::squareT sq = pos.GetList(c)[i];
+                    pos.SetToMove(scid::database::color_Flip(c));
                     int att = pos.TreeCalcAttacks(sq);
                     if (att) {
                       appendUintElement(ti, sq);
@@ -4797,21 +4795,21 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case POS_COORDTOSAN: {
         if (argc != 4)
-            return UI_Result(ti, ERROR_BadArg,
+            return UI_Result(ti, scid::database::ERROR_BadArg,
                              "Usage: sc_pos coordToSAN position moves");
 
-        Position pos;
+        scid::database::Position pos;
         if (auto err = pos.ReadFromFENorUCI(argv[2]))
             return UI_Result(ti, err);
 
         std::string sanMoves;
         auto res = pos.MakeCoordMoves(argv[3], std::strlen(argv[3]), &sanMoves);
-        if (res != OK) { // If MakeCoordMoves failed, try if pgnParseGame works
-            PgnParseLog log;
-            Game game;
-            if (pos.ReadFromFENorUCI(argv[2]) == OK &&
+        if (res != scid::database::OK) { // If MakeCoordMoves failed, try if scid::database::pgnParseGame works
+            scid::database::PgnParseLog log;
+            scid::database::Game game;
+            if (pos.ReadFromFENorUCI(argv[2]) == scid::database::OK &&
                 (game.SetStartPos(pos), true) &&
-                pgnParseGame(argv[3], std::strlen(argv[3]), game, log) &&
+                scid::database::pgnParseGame(argv[3], std::strlen(argv[3]), game, log) &&
                 log.log.empty()) {
                 std::string moves;
                 for (auto m = game.movetree(); !m->endMarker(); m = m->Next()) {
@@ -4822,8 +4820,8 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                     }
                 }
                 std::string str;
-                if (OK == pos.MakeCoordMoves(moves.data(), moves.size(), &str))
-                    return UI_Result(ti, OK, str);
+                if (scid::database::OK == pos.MakeCoordMoves(moves.data(), moves.size(), &str))
+                    return UI_Result(ti, scid::database::OK, str);
             }
         }
         return UI_Result(ti, res, sanMoves);
@@ -4855,9 +4853,9 @@ sc_pos_addNag (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 		editor.game().RemoveNag( false);
 	else
 	{
-		byte nag = game_parseNag({nagStr, nagStr + std::strlen(nagStr)});
+		scid::database::byte nag = scid::database::game_parseNag({nagStr, nagStr + std::strlen(nagStr)});
 		if (nag != 0) {
-			editor.game().AddNag ((byte) nag);
+			editor.game().AddNag ((scid::database::byte) nag);
 		}
 		editor.setDirty();
 	}
@@ -4878,13 +4876,13 @@ sc_pos_analyze (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     auto editor = scidup::app::editor::gameSession(*db);
     const char * usage = "Usage: sc_pos analyze [<option> <value> ...]";
 
-    uint searchTime = 1000;   // Default = 1000 milliseconds
-    uint hashTableKB = 1024;  // Default: one-megabyte hash table.
-    uint pawnTableKB = 32;
+    scid::database::uint searchTime = 1000;   // Default = 1000 milliseconds
+    scid::database::uint hashTableKB = 1024;  // Default: one-megabyte hash table.
+    scid::database::uint pawnTableKB = 32;
     bool postMode = false;
     bool pruning = false;
-    uint mindepth = 4; // will not check time until this depth is reached
-    uint searchdepth = 0;
+    scid::database::uint mindepth = 4; // will not check time until this depth is reached
+    scid::database::uint searchdepth = 0;
 
     static const char * options [] = {
         "-time", "-hashkb", "-pawnkb", "-post", "-pruning", "-mindepth", "-searchdepth", NULL
@@ -4897,15 +4895,15 @@ sc_pos_analyze (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         const char * option = argv[arg];
         const char * value = argv[arg+1];
         arg += 2;
-        int index = strUniqueMatch (option, options);
+        int index = scid::database::strUniqueMatch (option, options);
         switch (index) {
-            case OPT_TIME:     searchTime = strGetUnsigned(value);  break;
-            case OPT_HASH:     hashTableKB = strGetUnsigned(value); break;
-            case OPT_PAWN:     pawnTableKB = strGetUnsigned(value); break;
-            case OPT_POST:     postMode = strGetBoolean(value);     break;
-            case OPT_PRUNING:  pruning = strGetBoolean(value);      break;
-            case OPT_MINDEPTH: mindepth = strGetUnsigned(value);    break;
-            case OPT_SEARCHDEPTH: searchdepth = strGetUnsigned(value);    break;
+            case OPT_TIME:     searchTime = scid::database::strGetUnsigned(value);  break;
+            case OPT_HASH:     hashTableKB = scid::database::strGetUnsigned(value); break;
+            case OPT_PAWN:     pawnTableKB = scid::database::strGetUnsigned(value); break;
+            case OPT_POST:     postMode = scid::database::strGetBoolean(value);     break;
+            case OPT_PRUNING:  pruning = scid::database::strGetBoolean(value);      break;
+            case OPT_MINDEPTH: mindepth = scid::database::strGetUnsigned(value);    break;
+            case OPT_SEARCHDEPTH: searchdepth = scid::database::strGetUnsigned(value);    break;
             default:
                 return InvalidCommand (ti, "sc_pos analyze", options);
         }
@@ -4913,8 +4911,8 @@ sc_pos_analyze (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (arg != argc) { return errorResult (ti, usage); }
 
     // Generate all legal moves:
-    Position * pos = editor.game().GetCurrentPos();
-    MoveList mlist;
+    scid::database::Position * pos = editor.game().GetCurrentPos();
+    scid::database::MoveList mlist;
     pos->GenerateMoves(&mlist);
 
     // Start the engine:
@@ -4934,12 +4932,12 @@ sc_pos_analyze (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     char moveStr[20];
     moveStr[0] = 0;
     if (mlist.Size() > 0) {
-        pos->MakeSANString (mlist.Get(0), moveStr, SAN_MATETEST);
+        pos->MakeSANString (mlist.Get(0), moveStr, scid::database::SAN_MATETEST);
     }
     UI_List res(2);
     res.push_back(score);
     res.push_back(moveStr);
-    return UI_Result(ti, OK, res);
+    return UI_Result(ti, scid::database::OK, res);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -4956,20 +4954,20 @@ sc_pos_bestSquare (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: sc_pos bestSquare <square>");
     }
 
-    Position * pos = editor.game().GetCurrentPos();
+    scid::database::Position * pos = editor.game().GetCurrentPos();
 
     // Try to read the square parameter as algebraic ("h8") or numeric (63):
-    squareT sq = strGetSquare (argv[2]);
-    if (sq == NULL_SQUARE) {
-      int sqInt = strGetInteger (argv[2]);
+    scid::database::squareT sq = scid::database::strGetSquare (argv[2]);
+    if (sq == scid::database::NULL_SQUARE) {
+      int sqInt = scid::database::strGetInteger (argv[2]);
       if (sqInt >= 0  &&  sqInt <= 63) { sq = sqInt; }
     }
-    if (sq == NULL_SQUARE) {
+    if (sq == scid::database::NULL_SQUARE) {
         return errorResult (ti, "Usage: sc_pos bestSquare <square>");
     }
 
     // Generate all legal moves:
-    MoveList mlist;
+    scid::database::MoveList mlist;
     pos->GenerateMoves(&mlist);
 
     // Restrict the list of legal moves to contain only those that
@@ -4995,7 +4993,7 @@ sc_pos_bestSquare (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         scidup::eco::Code bestEco = scidup::eco::ECO_None;
         scidup::eco::Code secondBestEco = scidup::eco::ECO_None;
         if (ecoBook != NULL) {
-            for (uint i=0; i < mlist.Size(); i++) {
+            for (scid::database::uint i=0; i < mlist.Size(); i++) {
                 pos->DoSimpleMove(*mlist.Get(i));
                 scidup::eco::Code eco = ecoBook->findEco(*pos);
                 pos->UndoSimpleMove (*mlist.Get(i));
@@ -5027,9 +5025,9 @@ sc_pos_bestSquare (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // the chess engine search selected it.
     // Find the other square in the best move and return it:
 
-    simpleMoveT * sm = mlist.Get(0);
+    scid::database::simpleMoveT * sm = mlist.Get(0);
     ASSERT (sq == sm->from  ||  sq == sm->to);
-    squareT bestSq = sm->from;
+    scid::database::squareT bestSq = sm->from;
     if (sm->from == sq) { bestSq = sm->to; }
     setUintResult (ti, bestSq);
 
@@ -5043,13 +5041,13 @@ int
 sc_pos_getNags(ClientData, Tcl_Interp* ti, int, const char**)
 {
     auto editor = scidup::app::editor::gameSession(*db);
-    byte * nag = editor.game().GetNags();
+    scid::database::byte * nag = editor.game().GetNags();
     if (nag[0] == 0) {
         return setResult (ti, "0");
     }
     while (*nag) {
         char temp[20];
-        game_printNag (*nag, temp, true, PGN_FORMAT_Plain);
+        game_printNag (*nag, temp, true, scid::database::PGN_FORMAT_Plain);
         AppendResult (ti, temp, " ", NULL);
         nag++;
     }
@@ -5074,8 +5072,8 @@ sc_pos_hash (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             default:  return errorResult (ti, usage);
         }
     }
-    Position * pos = editor.game().GetCurrentPos();
-    uint hash = pos->HashValue();
+    scid::database::Position * pos = editor.game().GetCurrentPos();
+    scid::database::uint hash = pos->HashValue();
     if (pawnHashOnly) {
         hash = pos->PawnHashValue();
     }
@@ -5095,25 +5093,25 @@ sc_pos_html (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     auto editor = scidup::app::editor::gameSession(*db);
     const char * usage = "Usage: sc_pos html [-flip <boolean>] [-path <path>] [<style:0|1>]";
-    uint style = htmlDiagStyle;
+    scid::database::uint style = htmlDiagStyle;
     bool flip = false;
     int arg = 2;
     const char * path = NULL;
 
-    if (argc > arg+1  && strEqual (argv[arg], "-flip")) {
-        flip = strGetBoolean(argv[arg+1]);
+    if (argc > arg+1  && scid::database::strEqual (argv[arg], "-flip")) {
+        flip = scid::database::strGetBoolean(argv[arg+1]);
         arg += 2;
     }
-    if (argc > arg+1  && strEqual (argv[arg], "-path")) {
+    if (argc > arg+1  && scid::database::strEqual (argv[arg], "-path")) {
         path = argv[arg+1];
         arg += 2;
     }
     if (argc < arg ||  argc > arg+1) {
         return errorResult (ti, usage);
     }
-    if (argc == arg+1) { style = strGetUnsigned (argv[arg]); }
+    if (argc == arg+1) { style = scid::database::strGetUnsigned (argv[arg]); }
 
-    DString * dstr = new DString;
+    scid::database::DString * dstr = new scid::database::DString;
     editor.game().GetCurrentPos()->DumpHtmlBoard (dstr, style, path, flip);
     AppendResult (ti, dstr->Data(), NULL);
     delete dstr;
@@ -5137,20 +5135,20 @@ sc_pos_isAt (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         OPT_START, OPT_END, OPT_VSTART, OPT_VEND
     };
     int index = -1;
-    if (argc == 3) { index = strUniqueMatch(argv[2], options); }
+    if (argc == 3) { index = scid::database::strUniqueMatch(argv[2], options); }
 
     switch (index) {
     case OPT_START:
-        return UI_Result(ti, OK, editor.game().AtStart());
+        return UI_Result(ti, scid::database::OK, editor.game().AtStart());
 
     case OPT_END:
-        return UI_Result(ti, OK, editor.game().AtEnd());
+        return UI_Result(ti, scid::database::OK, editor.game().AtEnd());
 
     case OPT_VSTART:
-        return UI_Result(ti, OK, editor.game().AtVarStart());
+        return UI_Result(ti, scid::database::OK, editor.game().AtVarStart());
 
     case OPT_VEND:
-        return UI_Result(ti, OK, editor.game().AtVarEnd());
+        return UI_Result(ti, scid::database::OK, editor.game().AtVarEnd());
 
     default:
         return errorResult (ti, "Usage: sc_pos isAt start|end|vstart|vend");
@@ -5170,15 +5168,15 @@ sc_pos_isPromo (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: sc_pos isPromotion <square> <square>");
     }
 
-    Position * pos = editor.game().GetCurrentPos();
-    int fromSq = strGetInteger (argv[2]);
-    int toSq = strGetInteger (argv[3]);
+    scid::database::Position * pos = editor.game().GetCurrentPos();
+    int fromSq = scid::database::strGetInteger (argv[2]);
+    int toSq = scid::database::strGetInteger (argv[3]);
 
-    if (fromSq < A1  ||  fromSq > H8  ||  toSq < A1  ||  toSq > H8) {
+    if (fromSq < scid::database::A1  ||  fromSq > scid::database::H8  ||  toSq < scid::database::A1  ||  toSq > scid::database::H8) {
         return errorResult (ti, "Usage: sc_pos isPromotion <square> <square>");
     }
 
-    return UI_Result(ti, OK, pos->IsPromoMove ((squareT) fromSq, (squareT) toSq));
+    return UI_Result(ti, scid::database::OK, pos->IsPromoMove ((scid::database::squareT) fromSq, (scid::database::squareT) toSq));
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -5192,18 +5190,18 @@ sc_pos_isLegal (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: sc_pos isLegal <square> <square>");
     }
 
-    int sq1 = strGetInteger (argv[2]);
-    int sq2 = strGetInteger (argv[3]);
+    int sq1 = scid::database::strGetInteger (argv[2]);
+    int sq2 = scid::database::strGetInteger (argv[3]);
     if (sq1 < 0  ||  sq1 > 63  ||  sq2 < 0  ||  sq2 > 63) {
-        return UI_Result(ti, OK, false);
+        return UI_Result(ti, scid::database::OK, false);
     }
 
     auto pos = editor.game().GetCurrentPos();
-    bool legal = pos->IsLegalMove(sq1, sq2, EMPTY) ||
-                 pos->IsLegalMove(sq2, sq1, EMPTY) ||
-                 pos->IsLegalMove(sq1, sq2, QUEEN) ||
-                 pos->IsLegalMove(sq2, sq1, QUEEN);
-    return UI_Result(ti, OK, legal);
+    bool legal = pos->IsLegalMove(sq1, sq2, scid::database::EMPTY) ||
+                 pos->IsLegalMove(sq2, sq1, scid::database::EMPTY) ||
+                 pos->IsLegalMove(sq1, sq2, scid::database::QUEEN) ||
+                 pos->IsLegalMove(sq2, sq1, scid::database::QUEEN);
+    return UI_Result(ti, scid::database::OK, legal);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -5213,23 +5211,23 @@ UI_res_t sc_pos_moves(UI_handle_t ti, int argc, const char** argv) {
     auto editor = scidup::app::editor::gameSession(*db);
     const char* usage = "Usage: sc_pos moves [bIncludeLongNotation]";
     if (argc != 2 && argc != 3)
-        return UI_Result(ti, ERROR_BadArg, usage);
+        return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-    bool coordMoves = argc == 3 && strGetBoolean(argv[2]);
+    bool coordMoves = argc == 3 && scid::database::strGetBoolean(argv[2]);
     auto pos = editor.game().GetCurrentPos();
-    MoveList moves;
+    scid::database::MoveList moves;
     pos->GenerateMoves(&moves);
     UI_List res(moves.Size() * (coordMoves ? 2 : 1));
     for (auto& sm : moves) {
         char buf[64];
-        pos->MakeSANString(&sm, buf, SAN_CHECKTEST);
+        pos->MakeSANString(&sm, buf, scid::database::SAN_CHECKTEST);
         res.push_back(buf);
         if (coordMoves) {
             *sm.toLongNotation(buf) = '\0';
             res.push_back(buf);
         }
     }
-    return UI_Result(ti, OK, res);
+    return UI_Result(ti, scid::database::OK, res);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -5253,7 +5251,7 @@ sc_pos_setComment (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         }
     } else {
         // Only set the comment if it has actually changed:
-        if (oldComment == NULL  ||  !strEqual (str, oldComment)) {
+        if (oldComment == NULL  ||  !scid::database::strEqual (str, oldComment)) {
             editor.game().SetMoveComment (str);
             editor.setDirty();
         }
@@ -5271,10 +5269,10 @@ sc_pos_setComment (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_name_correct (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
-    nameT nt = NAME_INVALID;
-    if (argc == 4) { nt = NameBase::NameTypeFromString (argv[2]); }
+    scid::database::nameT nt = scid::database::NAME_INVALID;
+    if (argc == 4) { nt = scid::database::NameBase::NameTypeFromString (argv[2]); }
 
-    if (! NameBase::IsValidNameType(nt)) {
+    if (! scid::database::NameBase::IsValidNameType(nt)) {
         return errorResult (ti,
                 "Usage: sc_name correct p|e|s|r <corrections>");
     }
@@ -5285,23 +5283,23 @@ sc_name_correct (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     char birth[128];
     char death[128];
     char line [512];
-    uint errorCount = 0;
-    uint correctionCount = 0;
-    uint badDateCount = 0;
+    scid::database::uint errorCount = 0;
+    scid::database::uint correctionCount = 0;
+    scid::database::uint badDateCount = 0;
 
     auto dbase = db;
-    const NameBase* nb = dbase->getNameBase();
-    std::vector<idNumberT> oldIDs;
+    const scid::database::NameBase* nb = dbase->getNameBase();
+    std::vector<scid::database::idNumberT> oldIDs;
     std::vector<std::string> newNames;
     struct Entry {
-        idNumberT new_id;
-        dateT birth;
-        dateT death;
+        scid::database::idNumberT new_id;
+        scid::database::dateT birth;
+        scid::database::dateT death;
     };
-    std::unordered_map<idNumberT, Entry> corrections;
+    std::unordered_map<scid::database::idNumberT, Entry> corrections;
 
     while (*str != 0) {
-        uint length = 0;
+        scid::database::uint length = 0;
         while (*str != 0  &&  *str != '\n') {
             if (length < 511) { line[length++] = *str; }
             str++;
@@ -5322,17 +5320,17 @@ sc_name_correct (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         correctionCount++;
 
-        // Find oldName in the NameBase:
-        idNumberT oldID = 0;
-        if (nb->FindExactName (nt, oldName, &oldID) != OK) {
+        // Find oldName in the scid::database::NameBase:
+        scid::database::idNumberT oldID = 0;
+        if (nb->FindExactName (nt, oldName, &oldID) != scid::database::OK) {
             errorCount++;
             continue;
         }
 
         oldIDs.emplace_back(oldID);
         newNames.emplace_back(newName);
-        corrections[oldID] = {oldID, date_EncodeFromString(birth),
-                              date_EncodeFromString(death)};
+        corrections[oldID] = {oldID, scid::database::date_EncodeFromString(birth),
+                              scid::database::date_EncodeFromString(death)};
     }
 
     auto initNewIDs = [&](auto const& v_ids) {
@@ -5344,15 +5342,15 @@ sc_name_correct (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         }
     };
 
-    auto entry_op = [&](idNumberT oldID, const IndexEntry& ie) {
+    auto entry_op = [&](scid::database::idNumberT oldID, const scid::database::IndexEntry& ie) {
         auto it = corrections.find(oldID);
         if (it == corrections.end())
             return oldID;
 
         auto const& el = it->second;
-        dateT date = ie.GetDate();
-        if (date != ZERO_DATE) {
-            if (date < el.birth || (el.death != ZERO_DATE && date > el.death)) {
+        scid::database::dateT date = ie.GetDate();
+        if (date != scid::database::ZERO_DATE) {
+            if (date < el.birth || (el.death != scid::database::ZERO_DATE && date > el.death)) {
                 ++badDateCount;
                 return oldID;
             }
@@ -5360,7 +5358,7 @@ sc_name_correct (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return el.new_id;
     };
 
-    Progress progress = UI_CreateProgress(ti);
+    scid::database::Progress progress = UI_CreateProgress(ti);
     auto changes = dbase->transformNames(nt, dbase->getFilter("all"), progress,
                                          newNames, initNewIDs, entry_op);
 
@@ -5373,7 +5371,7 @@ sc_name_correct (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// sc_name_edit: edits a name in the NameBase. This requires
+// sc_name_edit: edits a name in the scid::database::NameBase. This requires
 //    writing the entire index file, since the ID number of
 //    the edited name will change.
 //    A rating, date or eventdate can also be edited.
@@ -5395,16 +5393,16 @@ sc_name_edit (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         OPT_DATE, OPT_EVENTDATE
     };
 
-    scidBaseT* dbase = db;
+    scid::database::scidBaseT* dbase = db;
     int option = -1;
-    if (argc > 2) { option = strUniqueMatch (argv[2], options); }
+    if (argc > 2) { option = scid::database::strUniqueMatch (argv[2], options); }
 
-    nameT nt = NAME_PLAYER;
+    scid::database::nameT nt = scid::database::NAME_PLAYER;
     switch (option) {
-    case OPT_PLAYER:  nt = NAME_PLAYER;  break;
-    case OPT_EVENT:   nt = NAME_EVENT;   break;
-    case OPT_SITE:    nt = NAME_SITE;    break;
-    case OPT_ROUND:   nt = NAME_ROUND;   break;
+    case OPT_PLAYER:  nt = scid::database::NAME_PLAYER;  break;
+    case OPT_EVENT:   nt = scid::database::NAME_EVENT;   break;
+    case OPT_SITE:    nt = scid::database::NAME_SITE;    break;
+    case OPT_ROUND:   nt = scid::database::NAME_ROUND;   break;
     case OPT_RATING:  break;
     case OPT_DATE:    break;
     case OPT_EVENTDATE:   break;
@@ -5430,41 +5428,41 @@ sc_name_edit (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     const char * oldName = argv[4];
     const char * newName = argv[5];
-    dateT oldDate = ZERO_DATE;
-    dateT newDate = ZERO_DATE;
-    eloT newRating = 0;
-    byte newRatingType = 0;
+    scid::database::dateT oldDate = scid::database::ZERO_DATE;
+    scid::database::dateT newDate = scid::database::ZERO_DATE;
+    scid::database::eloT newRating = 0;
+    scid::database::byte newRatingType = 0;
     if (option == OPT_RATING) {
-        newRating = strGetUnsigned (argv[5]);
+        newRating = scid::database::strGetUnsigned (argv[5]);
         newRatingType = strGetRatingType (argv[6]);
     }
     if (option == OPT_DATE  ||  option == OPT_EVENTDATE) {
-        oldDate = date_EncodeFromString (argv[4]);
-        newDate = date_EncodeFromString (argv[5]);
+        oldDate = scid::database::date_EncodeFromString (argv[4]);
+        newDate = scid::database::date_EncodeFromString (argv[5]);
     }
 
     // Find the existing name in the namebase:
-    idNumberT newID = 0;
-    idNumberT oldID = 0;
+    scid::database::idNumberT newID = 0;
+    scid::database::idNumberT oldID = 0;
     if (option != OPT_DATE  &&  option != OPT_EVENTDATE) {
-        if (dbase->getNameBase()->FindExactName (nt, oldName, &oldID) != OK)
-            return UI_Result(ti, OK, 0);
+        if (dbase->getNameBase()->FindExactName (nt, oldName, &oldID) != scid::database::OK)
+            return UI_Result(ti, scid::database::OK, 0);
     }
 
     // Set up crosstable game criteria if necessary:
-    idNumberT eventId = 0, siteId = 0;
-    dateT eventDate = 0;
+    scid::database::idNumberT eventId = 0, siteId = 0;
+    scid::database::dateT eventDate = 0;
     if (editSelection == EDIT_CTABLE) {
         auto editor = scidup::app::editor::gameSession(*dbase);
-        Game* g = &editor.game();
+        scid::database::Game* g = &editor.game();
         auto nb = dbase->getNameBase();
-        if (nb->FindExactName(NAME_EVENT, g->GetEventStr(), &eventId) != OK)
-            return UI_Result(ti, OK, 0);
-        if (nb->FindExactName(NAME_SITE, g->GetSiteStr(), &siteId) != OK)
-            return UI_Result(ti, OK, 0);
+        if (nb->FindExactName(scid::database::NAME_EVENT, g->GetEventStr(), &eventId) != scid::database::OK)
+            return UI_Result(ti, scid::database::OK, 0);
+        if (nb->FindExactName(scid::database::NAME_SITE, g->GetSiteStr(), &siteId) != scid::database::OK)
+            return UI_Result(ti, scid::database::OK, 0);
         eventDate = g->GetEventDate();
     }
-    auto inCTable = [&](const IndexEntry& ie) {
+    auto inCTable = [&](const scid::database::IndexEntry& ie) {
         if (editSelection != EDIT_CTABLE)
             return true;
         return isCrosstableGame(&ie, siteId, eventId, eventDate);
@@ -5474,10 +5472,10 @@ sc_name_edit (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         (editSelection == EDIT_FILTER) ? "dbfilter" : dbase->newFilter();
     auto hf = scidup::app::tree::resolveFilter(*dbase, filter);
     auto prg = UI_CreateProgress(ti);
-    std::pair<errorT, size_t> changes;
+    std::pair<scid::database::errorT, size_t> changes;
     switch (option) {
     case OPT_DATE:
-        changes = dbase->transformIndex(hf, prg, [&](IndexEntry& ie) {
+        changes = dbase->transformIndex(hf, prg, [&](scid::database::IndexEntry& ie) {
             if (ie.GetDate() == oldDate && inCTable(ie)) {
                 ie.SetDate(newDate);
                 return true;
@@ -5486,7 +5484,7 @@ sc_name_edit (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         });
         break;
     case OPT_EVENTDATE:
-        changes = dbase->transformIndex(hf, prg, [&](IndexEntry& ie) {
+        changes = dbase->transformIndex(hf, prg, [&](scid::database::IndexEntry& ie) {
             if (ie.GetEventDate() == oldDate && inCTable(ie)) {
                 ie.SetEventDate(newDate);
                 return true;
@@ -5496,7 +5494,7 @@ sc_name_edit (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         break;
 
     case OPT_RATING:
-        changes = dbase->transformIndex(hf, prg, [&](IndexEntry& ie) {
+        changes = dbase->transformIndex(hf, prg, [&](scid::database::IndexEntry& ie) {
             bool bTB = inCTable(ie);
             bool bWH = (ie.GetWhite() == oldID);
             bool bBK = (ie.GetBlack() == oldID);
@@ -5518,10 +5516,10 @@ sc_name_edit (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     default:
         changes = dbase->transformNames(
             nt, hf, prg, std::vector<std::string>(1, newName),
-            [&](const std::vector<idNumberT>& v) {
+            [&](const std::vector<scid::database::idNumberT>& v) {
                 newID = v.front(); // store the newID
             },
-            [&](idNumberT id, const IndexEntry& ie) {
+            [&](scid::database::idNumberT id, const scid::database::IndexEntry& ie) {
                 return (id == oldID && inCTable(ie)) ? newID : id;
             });
     }
@@ -5538,8 +5536,8 @@ UI_res_t sc_name_retrievename (UI_handle_t ti, const scidup::spelling::SpellChec
 {
     const char * usageStr = "Usage: sc_name retrievename <player>";
     if (argc != 3 ) { return errorResult (ti, usageStr); }
-    std::vector<const char*> res = sp.find(NAME_PLAYER, argv[argc-1]);
-    return UI_Result(ti, OK, (res.size() == 1) ? res[0] : "");
+    std::vector<const char*> res = sp.find(scid::database::NAME_PLAYER, argv[argc-1]);
+    return UI_Result(ti, scid::database::OK, (res.size() == 1) ? res[0] : "");
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -5549,16 +5547,16 @@ static UI_res_t sc_name_elo(UI_handle_t ti, const scidup::spelling::SpellChecker
                             const char** argv) {
 	auto usage = "Usage: sc_name elo [year] <player>";
 	if (argc < 3 || argc > 4)
-		return UI_Result(ti, ERROR_BadArg, usage);
+		return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
 	const char* playerName = argv[argc - 1];
-	uint startYear = (argc == 4) ? strGetUnsigned(argv[2]) : 1900;
+	scid::database::uint startYear = (argc == 4) ? scid::database::strGetUnsigned(argv[2]) : 1900;
 
-	UI_List res(YEAR_MAX * 12 * 2);
+	UI_List res(scid::database::YEAR_MAX * 12 * 2);
 	if (auto vElo = sp.getPlayerElo(playerName)) {
-		for (uint year = startYear; year < YEAR_MAX; year++) {
-			for (uint month = 1; month < 13; month++) {
-					if (eloT elo = vElo->getElo(DATE_MAKE(year, month, 15))) {
+		for (scid::database::uint year = startYear; year < scid::database::YEAR_MAX; year++) {
+			for (scid::database::uint month = 1; month < 13; month++) {
+					if (scid::database::eloT elo = vElo->getElo((((year) << scid::database::YEAR_SHIFT) | ((month) << scid::database::MONTH_SHIFT) | (15)))) {
 						char temp[500];
 						std::snprintf(temp, sizeof(temp), "%4u.%02u", year,
 						              (month - 1) * 100 / 12);
@@ -5569,7 +5567,7 @@ static UI_res_t sc_name_elo(UI_handle_t ti, const scidup::spelling::SpellChecker
 			}
 		}
 	}
-	return UI_Result(ti, OK, res);
+	return UI_Result(ti, scid::database::OK, res);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -5587,7 +5585,7 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     bool htextOutput = false;
     bool setFilter = false;   // Set filter to games by this player
     bool setOpponent = false; // Set filter to games vs this opponent
-    bool filter [NUM_COLOR_TYPES][NUM_RESULT_TYPES] =
+    bool filter [scid::database::NUM_COLOR_TYPES][scid::database::NUM_RESULT_TYPES] =
     {
         { false, false, false, false },
         { false, false, false, false }
@@ -5595,7 +5593,7 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     if (argc == 4) {
         const char * opt = argv[2];
-        if (strIsPrefix ("-h", opt)  &&  strIsPrefix (opt, "-htext")) {
+        if (scid::database::strIsPrefix ("-h", opt)  &&  scid::database::strIsPrefix (opt, "-htext")) {
             htextOutput = true;
         } else if (opt[0] == '-'  &&  (opt[1] == 'f' || opt[1] == 'o')) {
             if (opt[1] == 'f') {
@@ -5609,34 +5607,34 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             while (*fopt != 0) {
                 switch (*fopt) {
                 case 'a':  // All White games:
-                    filter [WHITE][RESULT_White] = true;
-                    filter [WHITE][RESULT_Draw] = true;
-                    filter [WHITE][RESULT_Black] = true;
-                    filter [WHITE][RESULT_None] = true;
+                    filter [scid::database::WHITE][scid::database::RESULT_White] = true;
+                    filter [scid::database::WHITE][scid::database::RESULT_Draw] = true;
+                    filter [scid::database::WHITE][scid::database::RESULT_Black] = true;
+                    filter [scid::database::WHITE][scid::database::RESULT_None] = true;
                     break;
                 case 'A':  // All Black games:
-                    filter [BLACK][RESULT_White] = true;
-                    filter [BLACK][RESULT_Draw] = true;
-                    filter [BLACK][RESULT_Black] = true;
-                    filter [BLACK][RESULT_None] = true;
+                    filter [scid::database::BLACK][scid::database::RESULT_White] = true;
+                    filter [scid::database::BLACK][scid::database::RESULT_Draw] = true;
+                    filter [scid::database::BLACK][scid::database::RESULT_Black] = true;
+                    filter [scid::database::BLACK][scid::database::RESULT_None] = true;
                     break;
                 case 'w':  // White wins:
-                    filter [WHITE][RESULT_White] = true;
+                    filter [scid::database::WHITE][scid::database::RESULT_White] = true;
                     break;
                 case 'W':  // Black wins:
-                    filter [BLACK][RESULT_White] = true;
+                    filter [scid::database::BLACK][scid::database::RESULT_White] = true;
                     break;
                 case 'd':  // White draws:
-                    filter [WHITE][RESULT_Draw] = true;
+                    filter [scid::database::WHITE][scid::database::RESULT_Draw] = true;
                     break;
                 case 'D':  // Black draws:
-                    filter [BLACK][RESULT_Draw] = true;
+                    filter [scid::database::BLACK][scid::database::RESULT_Draw] = true;
                     break;
                 case 'l':  // White losses:
-                    filter [WHITE][RESULT_Black] = true;
+                    filter [scid::database::WHITE][scid::database::RESULT_Black] = true;
                     break;
                 case 'L':  // Black losses:
-                    filter [BLACK][RESULT_Black] = true;
+                    filter [scid::database::BLACK][scid::database::RESULT_Black] = true;
                     break;
                 default:
                     return errorResult (ti, usageStr);
@@ -5650,89 +5648,89 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Set up player name:
     const char * playerName = argv[argc-1];
-    if (strEqual (playerName, "")) {
+    if (scid::database::strEqual (playerName, "")) {
         if (lastPlayerName != NULL) { playerName = lastPlayerName; }
     } else {
         if (lastPlayerName != NULL) { delete[] lastPlayerName; }
-        lastPlayerName = strDuplicate (playerName);
+        lastPlayerName = scid::database::strDuplicate (playerName);
     }
 
     // Try to find player name in this database:
-    idNumberT id = 0;
-    if (db->getNameBase()->FindExactName (NAME_PLAYER, playerName, &id) != OK) {
+    scid::database::idNumberT id = 0;
+    if (db->getNameBase()->FindExactName (scid::database::NAME_PLAYER, playerName, &id) != scid::database::OK) {
         AppendResult (ti, "The name \"", playerName,
                           "\" does not exist in this database.", NULL);
         return TCL_OK;
     }
 
     // Try to find opponent in this database:
-    idNumberT opponentId = 0;
+    scid::database::idNumberT opponentId = 0;
     const char * opponent = NULL;
     auto editor = scidup::app::editor::gameSession(*db);
-    if (strEqual (playerName, editor.game().GetWhiteStr())) {
+    if (scid::database::strEqual (playerName, editor.game().GetWhiteStr())) {
         opponent = editor.game().GetBlackStr();
-    } else if (strEqual (playerName, editor.game().GetBlackStr())) {
+    } else if (scid::database::strEqual (playerName, editor.game().GetBlackStr())) {
         opponent = editor.game().GetWhiteStr();
     }
 
     if (opponent != NULL) {
-        if (db->getNameBase()->FindExactName (NAME_PLAYER, opponent, &opponentId) != OK) {
+        if (db->getNameBase()->FindExactName (scid::database::NAME_PLAYER, opponent, &opponentId) != scid::database::OK) {
             opponent = NULL;
         }
     }
 
     enum {STATS_ALL = 0, STATS_FILTER, STATS_OPP};
 
-    uint whitescore [3][NUM_RESULT_TYPES];
-    uint blackscore [3][NUM_RESULT_TYPES];
-    uint bothscore [3][NUM_RESULT_TYPES];
-    uint whitecount[3] = {0};
-    uint blackcount[3] = {0};
-    uint totalcount[3] = {0};
-    for (uint stat=STATS_ALL; stat <= STATS_OPP; stat++) {
-        for (resultT r = 0; r < NUM_RESULT_TYPES; r++) {
+    scid::database::uint whitescore [3][scid::database::NUM_RESULT_TYPES];
+    scid::database::uint blackscore [3][scid::database::NUM_RESULT_TYPES];
+    scid::database::uint bothscore [3][scid::database::NUM_RESULT_TYPES];
+    scid::database::uint whitecount[3] = {0};
+    scid::database::uint blackcount[3] = {0};
+    scid::database::uint totalcount[3] = {0};
+    for (scid::database::uint stat=STATS_ALL; stat <= STATS_OPP; stat++) {
+        for (scid::database::resultT r = 0; r < scid::database::NUM_RESULT_TYPES; r++) {
             whitescore[stat][r] = 0;
             blackscore[stat][r] = 0;
             bothscore[stat][r] = 0;
         }
     }
 
-    uint ecoCount [NUM_COLOR_TYPES] [50];
-    uint ecoScore [NUM_COLOR_TYPES] [50];
-    for (uint ecoGroup=0; ecoGroup < 50; ecoGroup++) {
-        ecoCount[WHITE][ecoGroup] = ecoCount[BLACK][ecoGroup] = 0;
-        ecoScore[WHITE][ecoGroup] = ecoScore[BLACK][ecoGroup] = 0;
+    scid::database::uint ecoCount [scid::database::NUM_COLOR_TYPES] [50];
+    scid::database::uint ecoScore [scid::database::NUM_COLOR_TYPES] [50];
+    for (scid::database::uint ecoGroup=0; ecoGroup < 50; ecoGroup++) {
+        ecoCount[scid::database::WHITE][ecoGroup] = ecoCount[scid::database::BLACK][ecoGroup] = 0;
+        ecoScore[scid::database::WHITE][ecoGroup] = ecoScore[scid::database::BLACK][ecoGroup] = 0;
     }
 
-    dateT firstGameDate = ZERO_DATE;
-    dateT lastGameDate = ZERO_DATE;
+    scid::database::dateT firstGameDate = scid::database::ZERO_DATE;
+    scid::database::dateT lastGameDate = scid::database::ZERO_DATE;
 
     if (setFilter || setOpponent) db->defaultFilterFill(0);
 
-    for (uint i=0, n = db->numGames(); i < n; i++) {
-        const IndexEntry* ie = db->getIndexEntry(i);
-        ecoT ecoCode = ie->GetEcoCode();
+    for (scid::database::uint i=0, n = db->numGames(); i < n; i++) {
+        const scid::database::IndexEntry* ie = db->getIndexEntry(i);
+        scid::database::ecoT ecoCode = ie->GetEcoCode();
         int ecoClass = -1;
-        if (ecoCode != ECO_None) {
-            ecoStringT ecoStr;
-            eco_ToBasicString (ecoCode, ecoStr);
+        if (ecoCode != scid::database::ECO_None) {
+            scid::database::ecoStringT ecoStr;
+            scid::database::eco_ToBasicString (ecoCode, ecoStr);
             if (ecoStr[0] != 0) {
                 ecoClass = ((ecoStr[0] - 'A') * 10) + (ecoStr[1] - '0');
                 if (ecoClass < 0  ||  ecoClass >= 50) { ecoClass = -1; }
             }
         }
 
-        resultT result = ie->GetResult();
-        idNumberT whiteId = ie->GetWhite();
-        idNumberT blackId = ie->GetBlack();
-        dateT date = ZERO_DATE;
+        scid::database::resultT result = ie->GetResult();
+        scid::database::idNumberT whiteId = ie->GetWhite();
+        scid::database::idNumberT blackId = ie->GetBlack();
+        scid::database::dateT date = scid::database::ZERO_DATE;
 
         // Track statistics as white and black:
         if (whiteId == id) {
             date = ie->GetDate();
             if (ecoClass >= 0) {
-                ecoCount[WHITE][ecoClass]++;
-                ecoScore[WHITE][ecoClass] += RESULT_SCORE[result];
+                ecoCount[scid::database::WHITE][ecoClass]++;
+                ecoScore[scid::database::WHITE][ecoClass] += scid::database::RESULT_SCORE[result];
             }
             whitescore[STATS_ALL][result]++;
             bothscore[STATS_ALL][result]++;
@@ -5749,19 +5747,19 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 bothscore[STATS_OPP][result]++;
                 whitecount[STATS_OPP]++;
                 totalcount[STATS_OPP]++;
-                if (setOpponent  &&  filter[WHITE][result]) {
+                if (setOpponent  &&  filter[scid::database::WHITE][result]) {
                     db->defaultFilterSet(i, 1);
                 }
             }
-            if (setFilter  &&  filter[WHITE][result]) {
+            if (setFilter  &&  filter[scid::database::WHITE][result]) {
                 db->defaultFilterSet(i, 1);
             }
         } else if (blackId == id) {
             date = ie->GetDate();
-            result = RESULT_OPPOSITE[result];
+            result = scid::database::RESULT_OPPOSITE[result];
             if (ecoClass >= 0) {
-                ecoCount[BLACK][ecoClass]++;
-                ecoScore[BLACK][ecoClass] += RESULT_SCORE[result];
+                ecoCount[scid::database::BLACK][ecoClass]++;
+                ecoScore[scid::database::BLACK][ecoClass] += scid::database::RESULT_SCORE[result];
             }
             blackscore[STATS_ALL][result]++;
             bothscore[STATS_ALL][result]++;
@@ -5778,38 +5776,38 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 bothscore[STATS_OPP][result]++;
                 blackcount[STATS_OPP]++;
                 totalcount[STATS_OPP]++;
-                if (setOpponent  &&  filter[BLACK][result]) {
+                if (setOpponent  &&  filter[scid::database::BLACK][result]) {
                     db->defaultFilterSet(i, 1);
                 }
             }
-            if (setFilter  &&  filter[BLACK][result]) {
+            if (setFilter  &&  filter[scid::database::BLACK][result]) {
                 db->defaultFilterSet(i, 1);
             }
         }
 
         // Keep track of first and last games by this player:
-        if (date != ZERO_DATE) {
-            if (firstGameDate == ZERO_DATE  ||  date < firstGameDate) {
+        if (date != scid::database::ZERO_DATE) {
+            if (firstGameDate == scid::database::ZERO_DATE  ||  date < firstGameDate) {
                 firstGameDate = date;
             }
-            if (lastGameDate == ZERO_DATE  ||  date > lastGameDate) {
+            if (lastGameDate == scid::database::ZERO_DATE  ||  date > lastGameDate) {
                 lastGameDate = date;
             }
         }
     }
 
     char temp [500];
-    uint score, percent;
-    colorT color;
+    scid::database::uint score, percent;
+    scid::database::colorT color;
     const char * newline = (htextOutput ? "<br>" : "\n");
     const char * startHeading = (htextOutput ? "<darkblue>" : "");
     const char * endHeading = (htextOutput ? "</darkblue>" : "");
     const char * startBold = (htextOutput ? "<b>" : "");
     const char * endBold = (htextOutput ? "</b>" : "");
-    uint wWidth = strLength (translate (ti, "White:"));
-    uint bWidth = strLength (translate (ti, "Black:"));
-    uint tWidth = strLength (translate (ti, "Total:"));
-    uint wbtWidth = wWidth;
+    scid::database::uint wWidth = scid::database::strLength (translate (ti, "White:"));
+    scid::database::uint bWidth = scid::database::strLength (translate (ti, "Black:"));
+    scid::database::uint tWidth = scid::database::strLength (translate (ti, "Total:"));
+    scid::database::uint wbtWidth = wWidth;
     if (bWidth > wbtWidth) { wbtWidth = bWidth; }
     if (tWidth > wbtWidth) { wbtWidth = tWidth; }
     const char * fmt = \
@@ -5832,14 +5830,14 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
              translate (ti, "Filter"),
              totalcount[STATS_FILTER]);
     AppendResult (ti, temp, NULL);
-    if (firstGameDate != ZERO_DATE) {
-        date_DecodeToString (firstGameDate, temp);
-        strTrimDate (temp);
+    if (firstGameDate != scid::database::ZERO_DATE) {
+        scid::database::date_DecodeToString (firstGameDate, temp);
+        scid::database::strTrimDate (temp);
         AppendResult (ti, ", ", temp, NULL);
     }
     if (lastGameDate > firstGameDate) {
-        date_DecodeToString (lastGameDate, temp);
-        strTrimDate (temp);
+        scid::database::date_DecodeToString (lastGameDate, temp);
+        scid::database::strTrimDate (temp);
         AppendResult (ti, "--", temp, NULL);
     }
     AppendResult (ti, newline, NULL);
@@ -5861,16 +5859,16 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
     // Print stats for all games:
 
-    strCopy (temp, translate (ti, "PInfoAll"));
-    if (! htextOutput) { strTrimMarkup (temp); }
+    scid::database::strCopy (temp, translate (ti, "PInfoAll"));
+    if (! htextOutput) { scid::database::strTrimMarkup (temp); }
     AppendResult (ti, newline, startHeading, temp, ":",
                       endHeading, newline, NULL);
 
     score = percent = 0;
     if (whitecount[STATS_ALL] > 0) {
-        score = whitescore[STATS_ALL][RESULT_White] * 2
-            + whitescore[STATS_ALL][RESULT_Draw]
-            + whitescore[STATS_ALL][RESULT_None];
+        score = whitescore[STATS_ALL][scid::database::RESULT_White] * 2
+            + whitescore[STATS_ALL][scid::database::RESULT_Draw]
+            + whitescore[STATS_ALL][scid::database::RESULT_None];
         percent = score * 5000 / whitecount[STATS_ALL];
     }
     std::snprintf(temp, sizeof(temp), fmt,
@@ -5879,13 +5877,13 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
              translate (ti, "White:"),
              percent / 100, decimalPointChar, percent % 100,
              htextOutput ? "<red><run sc_name info -fw {}; ::windows::stats::Refresh>" : "",
-             whitescore[STATS_ALL][RESULT_White],
+             whitescore[STATS_ALL][scid::database::RESULT_White],
              htextOutput ? "</run></red>" : "",
              htextOutput ? "<red><run sc_name info -fd {}; ::windows::stats::Refresh>" : "",
-             whitescore[STATS_ALL][RESULT_Draw],
+             whitescore[STATS_ALL][scid::database::RESULT_Draw],
              htextOutput ? "</run></red>" : "",
              htextOutput ? "<red><run sc_name info -fl {}; ::windows::stats::Refresh>" : "",
-             whitescore[STATS_ALL][RESULT_Black],
+             whitescore[STATS_ALL][scid::database::RESULT_Black],
              htextOutput ? "</run></red>" : "",
              score / 2, decimalPointChar, score % 2 ? '5' : '0',
              htextOutput ? "<red><run sc_name info -fa {}; ::windows::stats::Refresh>" : "",
@@ -5895,9 +5893,9 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     score = percent = 0;
     if (blackcount[STATS_ALL] > 0) {
-        score = blackscore[STATS_ALL][RESULT_White] * 2
-            + blackscore[STATS_ALL][RESULT_Draw]
-            + blackscore[STATS_ALL][RESULT_None];
+        score = blackscore[STATS_ALL][scid::database::RESULT_White] * 2
+            + blackscore[STATS_ALL][scid::database::RESULT_Draw]
+            + blackscore[STATS_ALL][scid::database::RESULT_None];
         percent = score * 5000 / blackcount[STATS_ALL];
     }
     std::snprintf(temp, sizeof(temp), fmt,
@@ -5906,13 +5904,13 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
              translate (ti, "Black:"),
              percent / 100, decimalPointChar, percent % 100,
              htextOutput ? "<red><run sc_name info -fW {}; ::windows::stats::Refresh>" : "",
-             blackscore[STATS_ALL][RESULT_White],
+             blackscore[STATS_ALL][scid::database::RESULT_White],
              htextOutput ? "</run></red>" : "",
              htextOutput ? "<red><run sc_name info -fD {}; ::windows::stats::Refresh>" : "",
-             blackscore[STATS_ALL][RESULT_Draw],
+             blackscore[STATS_ALL][scid::database::RESULT_Draw],
              htextOutput ? "</run></red>" : "",
              htextOutput ? "<red><run sc_name info -fL {}; ::windows::stats::Refresh>" : "",
-             blackscore[STATS_ALL][RESULT_Black],
+             blackscore[STATS_ALL][scid::database::RESULT_Black],
              htextOutput ? "</run></red>" : "",
              score / 2, decimalPointChar, score % 2 ? '5' : '0',
              htextOutput ? "<red><run sc_name info -fA {}; ::windows::stats::Refresh>" : "",
@@ -5922,9 +5920,9 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     score = percent = 0;
     if (totalcount[STATS_ALL] > 0) {
-        score = bothscore[STATS_ALL][RESULT_White] * 2
-            + bothscore[STATS_ALL][RESULT_Draw]
-            + bothscore[STATS_ALL][RESULT_None];
+        score = bothscore[STATS_ALL][scid::database::RESULT_White] * 2
+            + bothscore[STATS_ALL][scid::database::RESULT_Draw]
+            + bothscore[STATS_ALL][scid::database::RESULT_None];
         percent = score * 5000 / totalcount[STATS_ALL];
     }
     std::snprintf(temp, sizeof(temp), fmt,
@@ -5933,13 +5931,13 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
              translate (ti, "Total:"),
              percent / 100, decimalPointChar, percent % 100,
              htextOutput ? "<red><run sc_name info -fwW {}; ::windows::stats::Refresh>" : "",
-             bothscore[STATS_ALL][RESULT_White],
+             bothscore[STATS_ALL][scid::database::RESULT_White],
              htextOutput ? "</run></red>" : "",
              htextOutput ? "<red><run sc_name info -fdD {}; ::windows::stats::Refresh>" : "",
-             bothscore[STATS_ALL][RESULT_Draw],
+             bothscore[STATS_ALL][scid::database::RESULT_Draw],
              htextOutput ? "</run></red>" : "",
              htextOutput ? "<red><run sc_name info -flL {}; ::windows::stats::Refresh>" : "",
-             bothscore[STATS_ALL][RESULT_Black],
+             bothscore[STATS_ALL][scid::database::RESULT_Black],
              htextOutput ? "</run></red>" : "",
              score / 2, decimalPointChar, score % 2 ? '5' : '0',
              htextOutput ? "<red><run sc_name info -faA {}; ::windows::stats::Refresh>" : "",
@@ -5949,15 +5947,15 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Now print stats for games in the filter:
 
-    strCopy (temp, translate (ti, "PInfoFilter"));
-    if (! htextOutput) { strTrimMarkup (temp); }
+    scid::database::strCopy (temp, translate (ti, "PInfoFilter"));
+    if (! htextOutput) { scid::database::strTrimMarkup (temp); }
     AppendResult (ti, newline, startHeading, temp, ":",
                       endHeading, newline, NULL);
     score = percent = 0;
     if (whitecount[STATS_FILTER] > 0) {
-        score = whitescore[STATS_FILTER][RESULT_White] * 2
-            + whitescore[STATS_FILTER][RESULT_Draw]
-            + whitescore[STATS_FILTER][RESULT_None];
+        score = whitescore[STATS_FILTER][scid::database::RESULT_White] * 2
+            + whitescore[STATS_FILTER][scid::database::RESULT_Draw]
+            + whitescore[STATS_FILTER][scid::database::RESULT_None];
         percent = score * 5000 / whitecount[STATS_FILTER];
     }
     std::snprintf(temp, sizeof(temp), fmt,
@@ -5965,9 +5963,9 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
              wbtWidth,
              translate (ti, "White:"),
              percent / 100, decimalPointChar, percent % 100,
-             "", whitescore[STATS_FILTER][RESULT_White], "",
-             "", whitescore[STATS_FILTER][RESULT_Draw], "",
-             "", whitescore[STATS_FILTER][RESULT_Black], "",
+             "", whitescore[STATS_FILTER][scid::database::RESULT_White], "",
+             "", whitescore[STATS_FILTER][scid::database::RESULT_Draw], "",
+             "", whitescore[STATS_FILTER][scid::database::RESULT_Black], "",
              score / 2, decimalPointChar, score % 2 ? '5' : '0',
              "", whitecount[STATS_FILTER],
              htextOutput ? "</tt>" : "");
@@ -5975,9 +5973,9 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     score = percent = 0;
     if (blackcount[STATS_FILTER] > 0) {
-        score = blackscore[STATS_FILTER][RESULT_White] * 2
-            + blackscore[STATS_FILTER][RESULT_Draw]
-            + blackscore[STATS_FILTER][RESULT_None];
+        score = blackscore[STATS_FILTER][scid::database::RESULT_White] * 2
+            + blackscore[STATS_FILTER][scid::database::RESULT_Draw]
+            + blackscore[STATS_FILTER][scid::database::RESULT_None];
         percent = score * 5000 / blackcount[STATS_FILTER];
     }
     std::snprintf(temp, sizeof(temp), fmt,
@@ -5985,9 +5983,9 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
              wbtWidth,
              translate (ti, "Black:"),
              percent / 100, decimalPointChar, percent % 100,
-             "", blackscore[STATS_FILTER][RESULT_White], "",
-             "", blackscore[STATS_FILTER][RESULT_Draw], "",
-             "", blackscore[STATS_FILTER][RESULT_Black], "",
+             "", blackscore[STATS_FILTER][scid::database::RESULT_White], "",
+             "", blackscore[STATS_FILTER][scid::database::RESULT_Draw], "",
+             "", blackscore[STATS_FILTER][scid::database::RESULT_Black], "",
              score / 2, decimalPointChar, score % 2 ? '5' : '0',
              "", blackcount[STATS_FILTER],
              htextOutput ? "</tt>" : "");
@@ -5995,9 +5993,9 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     score = percent = 0;
     if (totalcount[STATS_FILTER] > 0) {
-        score = bothscore[STATS_FILTER][RESULT_White] * 2
-            + bothscore[STATS_FILTER][RESULT_Draw]
-            + bothscore[STATS_FILTER][RESULT_None];
+        score = bothscore[STATS_FILTER][scid::database::RESULT_White] * 2
+            + bothscore[STATS_FILTER][scid::database::RESULT_Draw]
+            + bothscore[STATS_FILTER][scid::database::RESULT_None];
         percent = score * 5000 / totalcount[STATS_FILTER];
     }
     std::snprintf(temp, sizeof(temp), fmt,
@@ -6005,9 +6003,9 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
              wbtWidth,
              translate (ti, "Total:"),
              percent / 100, decimalPointChar, percent % 100,
-             "", bothscore[STATS_FILTER][RESULT_White], "",
-             "", bothscore[STATS_FILTER][RESULT_Draw], "",
-             "", bothscore[STATS_FILTER][RESULT_Black], "",
+             "", bothscore[STATS_FILTER][scid::database::RESULT_White], "",
+             "", bothscore[STATS_FILTER][scid::database::RESULT_Draw], "",
+             "", bothscore[STATS_FILTER][scid::database::RESULT_Black], "",
              score / 2, decimalPointChar, score % 2 ? '5' : '0',
              "", totalcount[STATS_FILTER],
              htextOutput ? "</tt>" : "");
@@ -6023,9 +6021,9 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         score = percent = 0;
         if (whitecount[STATS_OPP] > 0) {
-            score = whitescore[STATS_OPP][RESULT_White] * 2
-            + whitescore[STATS_OPP][RESULT_Draw]
-            + whitescore[STATS_OPP][RESULT_None];
+            score = whitescore[STATS_OPP][scid::database::RESULT_White] * 2
+            + whitescore[STATS_OPP][scid::database::RESULT_Draw]
+            + whitescore[STATS_OPP][scid::database::RESULT_None];
             percent = score * 5000 / whitecount[STATS_OPP];
         }
         std::snprintf(temp, sizeof(temp), fmt,
@@ -6034,13 +6032,13 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                  translate (ti, "White:"),
                  percent / 100, decimalPointChar, percent % 100,
                  htextOutput ? "<red><run sc_name info -ow {}; ::windows::stats::Refresh>" : "",
-                 whitescore[STATS_OPP][RESULT_White],
+                 whitescore[STATS_OPP][scid::database::RESULT_White],
                  htextOutput ? "</run></red>" : "",
                  htextOutput ? "<red><run sc_name info -od {}; ::windows::stats::Refresh>" : "",
-                 whitescore[STATS_OPP][RESULT_Draw],
+                 whitescore[STATS_OPP][scid::database::RESULT_Draw],
                  htextOutput ? "</run></red>" : "",
                  htextOutput ? "<red><run sc_name info -ol {}; ::windows::stats::Refresh>" : "",
-                 whitescore[STATS_OPP][RESULT_Black],
+                 whitescore[STATS_OPP][scid::database::RESULT_Black],
                  htextOutput ? "</run></red>" : "",
                  score / 2, decimalPointChar, score % 2 ? '5' : '0',
                  htextOutput ? "<red><run sc_name info -oa {}; ::windows::stats::Refresh>" : "",
@@ -6050,9 +6048,9 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         score = percent = 0;
         if (blackcount[STATS_OPP] > 0) {
-            score = blackscore[STATS_OPP][RESULT_White] * 2
-                + blackscore[STATS_OPP][RESULT_Draw]
-                + blackscore[STATS_OPP][RESULT_None];
+            score = blackscore[STATS_OPP][scid::database::RESULT_White] * 2
+                + blackscore[STATS_OPP][scid::database::RESULT_Draw]
+                + blackscore[STATS_OPP][scid::database::RESULT_None];
             percent = score * 5000 / blackcount[STATS_OPP];
         }
         std::snprintf(temp, sizeof(temp), fmt,
@@ -6061,13 +6059,13 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                  translate (ti, "Black:"),
                  percent / 100, decimalPointChar, percent % 100,
                  htextOutput ? "<red><run sc_name info -oW {}; ::windows::stats::Refresh>" : "",
-                 blackscore[STATS_OPP][RESULT_White],
+                 blackscore[STATS_OPP][scid::database::RESULT_White],
                  htextOutput ? "</run></red>" : "",
                  htextOutput ? "<red><run sc_name info -oD {}; ::windows::stats::Refresh>" : "",
-                 blackscore[STATS_OPP][RESULT_Draw],
+                 blackscore[STATS_OPP][scid::database::RESULT_Draw],
                  htextOutput ? "</run></red>" : "",
                  htextOutput ? "<red><run sc_name info -oL {}; ::windows::stats::Refresh>" : "",
-                 blackscore[STATS_OPP][RESULT_Black],
+                 blackscore[STATS_OPP][scid::database::RESULT_Black],
                  htextOutput ? "</run></red>" : "",
                  score / 2, decimalPointChar, score % 2 ? '5' : '0',
                  htextOutput ? "<red><run sc_name info -oA {}; ::windows::stats::Refresh>" : "",
@@ -6077,9 +6075,9 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         score = percent = 0;
         if (totalcount[STATS_OPP] > 0) {
-            score = bothscore[STATS_OPP][RESULT_White] * 2
-                + bothscore[STATS_OPP][RESULT_Draw]
-                + bothscore[STATS_OPP][RESULT_None];
+            score = bothscore[STATS_OPP][scid::database::RESULT_White] * 2
+                + bothscore[STATS_OPP][scid::database::RESULT_Draw]
+                + bothscore[STATS_OPP][scid::database::RESULT_None];
             percent = score * 5000 / totalcount[STATS_OPP];
     }
         std::snprintf(temp, sizeof(temp), fmt,
@@ -6088,13 +6086,13 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                  translate (ti, "Total:"),
                  percent / 100, decimalPointChar, percent % 100,
                  htextOutput ? "<red><run sc_name info -owW {}; ::windows::stats::Refresh>" : "",
-                 bothscore[STATS_OPP][RESULT_White],
+                 bothscore[STATS_OPP][scid::database::RESULT_White],
                  htextOutput ? "</run></red>" : "",
                  htextOutput ? "<red><run sc_name info -odD {}; ::windows::stats::Refresh>" : "",
-                 bothscore[STATS_OPP][RESULT_Draw],
+                 bothscore[STATS_OPP][scid::database::RESULT_Draw],
                  htextOutput ? "</run></red>" : "",
                  htextOutput ? "<red><run sc_name info -olL {}; ::windows::stats::Refresh>" : "",
-                 bothscore[STATS_OPP][RESULT_Black],
+                 bothscore[STATS_OPP][scid::database::RESULT_Black],
                  htextOutput ? "</run></red>" : "",
                  score / 2, decimalPointChar, score % 2 ? '5' : '0',
                  htextOutput ? "<red><run sc_name info -oaA {}; ::windows::stats::Refresh>" : "",
@@ -6105,11 +6103,11 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Now print common openings played:
 
-    for (color = WHITE; color <= BLACK; color++) {
-        for (uint count = 0; count < 6; count++) {
+    for (color = scid::database::WHITE; color <= scid::database::BLACK; color++) {
+        for (scid::database::uint count = 0; count < 6; count++) {
             int mostPlayedIdx = -1;
-            uint mostPlayed = 0;
-            for (uint i=0; i < 50; i++) {
+            scid::database::uint mostPlayed = 0;
+            for (scid::database::uint i=0; i < 50; i++) {
                 if (ecoCount[color][i] > mostPlayed) {
                     mostPlayedIdx = i;
                     mostPlayed = ecoCount[color][i];
@@ -6117,7 +6115,7 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             }
             if (mostPlayed > 0) {
                 if (count == 0) {
-                    const char * s = (color == WHITE ? "PInfoMostWhite" :
+                    const char * s = (color == scid::database::WHITE ? "PInfoMostWhite" :
                                       "PInfoMostBlack");
                     AppendResult (ti, newline, startHeading,
                                       translate (ti, s), ":",
@@ -6170,7 +6168,7 @@ sc_name_match (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     int argsleft = argc - 2;
     bool eloMode = false;  // In elo mode, return player peak ratings.
     if (argsleft < 3) { return errorResult (ti, usage); }
-    if (argv[arg][0] == '-'  &&  strIsPrefix (argv[arg], "-elo")) {
+    if (argv[arg][0] == '-'  &&  scid::database::strIsPrefix (argv[arg], "-elo")) {
         eloMode = true;
         arg++;
         argsleft--;
@@ -6179,21 +6177,21 @@ sc_name_match (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, usage);
     }
 
-    nameT nt = NameBase::NameTypeFromString (argv[arg++]);
-    if (nt == NAME_INVALID) {
+    scid::database::nameT nt = scid::database::NameBase::NameTypeFromString (argv[arg++]);
+    if (nt == scid::database::NAME_INVALID) {
         return errorResult (ti, usage);
     }
 
     const char * prefix = argv[arg++];
-    uint maxMatches = strGetUnsigned (argv[arg++]);
+    scid::database::uint maxMatches = scid::database::strGetUnsigned (argv[arg++]);
     if (maxMatches == 0) { return TCL_OK; }
     auto matches = db->getNameBase()->getFirstMatches(nt, prefix, maxMatches);
     for (auto nameID : matches) {
-        uint freq = db->getNameFreq(nt, nameID);
+        scid::database::uint freq = db->getNameFreq(nt, nameID);
         const char * str = db->getNameBase()->GetName (nt, nameID);
         appendUintElement (ti, freq);
         AppendElement (ti, str);
-        if (nt == NAME_PLAYER  &&  eloMode) {
+        if (nt == scid::database::NAME_PLAYER  &&  eloMode) {
             appendUintElement (ti, db->peakElo(nameID));
         }
     }
@@ -6204,27 +6202,27 @@ sc_name_match (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 // sc_name_plist:
 //   Returns a list of play data matching selected criteria.
 struct PlayerActivity {
-    dateT firstDate;
-    dateT lastDate;
+    scid::database::dateT firstDate;
+    scid::database::dateT lastDate;
 
-    PlayerActivity() : firstDate(ZERO_DATE), lastDate(ZERO_DATE) {}
-    void addDate(dateT date) {
-        if (firstDate == ZERO_DATE || date < firstDate) firstDate = date;
+    PlayerActivity() : firstDate(scid::database::ZERO_DATE), lastDate(scid::database::ZERO_DATE) {}
+    void addDate(scid::database::dateT date) {
+        if (firstDate == scid::database::ZERO_DATE || date < firstDate) firstDate = date;
         if (date > lastDate) lastDate = date;
     }
 };
 
 class PListSort{
-    scidBaseT* dbase_;
+    scid::database::scidBaseT* dbase_;
     int sort_;
     const std::vector<PlayerActivity>& activity_;
     enum { SORT_ELO, SORT_GAMES, SORT_OLDEST, SORT_NEWEST, SORT_NAME };
 
 public:
-    PListSort(scidBaseT* dbase, const std::vector<PlayerActivity>& activity, int sortOrder)
+    PListSort(scid::database::scidBaseT* dbase, const std::vector<PlayerActivity>& activity, int sortOrder)
     : dbase_(dbase), sort_(sortOrder), activity_(activity) {
 	}
-    bool operator() (idNumberT p1, idNumberT p2)
+    bool operator() (scid::database::idNumberT p1, scid::database::idNumberT p2)
     {
         int compare = 0;
         switch (sort_) {
@@ -6232,26 +6230,26 @@ public:
             compare = dbase_->peakElo(p2) - dbase_->peakElo(p1);
             break;
         case SORT_GAMES:
-            compare = dbase_->getNameFreq(NAME_PLAYER, p2) - dbase_->getNameFreq(NAME_PLAYER, p1);
+            compare = dbase_->getNameFreq(scid::database::NAME_PLAYER, p2) - dbase_->getNameFreq(scid::database::NAME_PLAYER, p1);
             break;
         case SORT_OLDEST:
              // Sort by oldest game year in ascending order:
-            compare = date_GetYear(activity_[p1].firstDate) - date_GetYear(activity_[p2].firstDate);
+            compare = scid::database::date_GetYear(activity_[p1].firstDate) - scid::database::date_GetYear(activity_[p2].firstDate);
             break;
         case SORT_NEWEST:
              // Sort by newest game date in descending order:
-            compare = date_GetYear(activity_[p2].lastDate) - date_GetYear(activity_[p1].lastDate);
+            compare = scid::database::date_GetYear(activity_[p2].lastDate) - scid::database::date_GetYear(activity_[p1].lastDate);
             break;
         }
 
         // If equal, resolve by comparing names, first case-insensitive and
         // then case-sensitively if still tied:
         if (compare == 0) {
-            const NameBase* nb = dbase_->getNameBase();
-            const char* name1 = nb->GetName (NAME_PLAYER, p1);
-            const char* name2 = nb->GetName (NAME_PLAYER, p2);
-            compare = strCaseCompare (name1, name2);
-            if (compare == 0) { compare = strCompare (name1, name2); }
+            const scid::database::NameBase* nb = dbase_->getNameBase();
+            const char* name1 = nb->GetName (scid::database::NAME_PLAYER, p1);
+            const char* name2 = nb->GetName (scid::database::NAME_PLAYER, p2);
+            compare = scid::database::strCaseCompare (name1, name2);
+            if (compare == 0) { compare = scid::database::strCompare (name1, name2); }
         }
         return compare < 0;
     }
@@ -6264,10 +6262,10 @@ sc_name_plist (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     auto dbase = db;
     const char * namePrefix = "";
-    uint minGames = 0;
-    uint maxGames = dbase->numGames();
-    uint minElo = 0;
-    uint maxElo = MAX_ELO;
+    scid::database::uint minGames = 0;
+    scid::database::uint maxGames = dbase->numGames();
+    scid::database::uint minElo = 0;
+    scid::database::uint maxElo = scid::database::MAX_ELO;
     size_t count = 10;
 
     static const char * options [] = {
@@ -6295,16 +6293,16 @@ sc_name_plist (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         const char * option = argv[arg];
         const char * value = argv[arg+1];
         arg += 2;
-        int index = strUniqueMatch (option, options);
+        int index = scid::database::strUniqueMatch (option, options);
         switch (index) {
             case OPT_NAME:     namePrefix = value;                   break;
-            case OPT_MINELO:   minElo = strGetUnsigned (value);      break;
-            case OPT_MAXELO:   maxElo = strGetUnsigned (value);      break;
-            case OPT_MINGAMES: minGames = strGetUnsigned (value);    break;
-            case OPT_MAXGAMES: maxGames = strGetUnsigned (value);    break;
-            case OPT_SIZE:     count = strGetUnsigned (value); break;
+            case OPT_MINELO:   minElo = scid::database::strGetUnsigned (value);      break;
+            case OPT_MAXELO:   maxElo = scid::database::strGetUnsigned (value);      break;
+            case OPT_MINGAMES: minGames = scid::database::strGetUnsigned (value);    break;
+            case OPT_MAXGAMES: maxGames = scid::database::strGetUnsigned (value);    break;
+            case OPT_SIZE:     count = scid::database::strGetUnsigned (value); break;
             case OPT_SORT:
-               sortMode = strUniqueMatch (value, sortModes);
+               sortMode = scid::database::strUniqueMatch (value, sortModes);
                break;
             default:
                 return InvalidCommand (ti, "sc_name plist", options);
@@ -6315,25 +6313,25 @@ sc_name_plist (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (sortMode == -1) return InvalidCommand (ti, "sc_name plist -sort", sortModes);
 
 
-    const NameBase* nb = dbase->getNameBase();
-    idNumberT nPlayers = nb->GetNumNames(NAME_PLAYER);
+    const scid::database::NameBase* nb = dbase->getNameBase();
+    scid::database::idNumberT nPlayers = nb->GetNumNames(scid::database::NAME_PLAYER);
 
-    std::vector<idNumberT> plist;
-    for (idNumberT id = 0; id < nPlayers; id++) {
-        const char * name = nb->GetName (NAME_PLAYER, id);
-        uint nGames = dbase->getNameFreq(NAME_PLAYER, id);
-        eloT elo = dbase->peakElo(id);
+    std::vector<scid::database::idNumberT> plist;
+    for (scid::database::idNumberT id = 0; id < nPlayers; id++) {
+        const char * name = nb->GetName (scid::database::NAME_PLAYER, id);
+        scid::database::uint nGames = dbase->getNameFreq(scid::database::NAME_PLAYER, id);
+        scid::database::eloT elo = dbase->peakElo(id);
         if (nGames < minGames  ||  nGames > maxGames) { continue; }
         if (elo < minElo  ||  elo > maxElo) { continue; }
-        if (! strIsCasePrefix (namePrefix, name)) { continue; }
+        if (! scid::database::strIsCasePrefix (namePrefix, name)) { continue; }
         plist.push_back(id);
     }
 
     std::vector<PlayerActivity> activity(nPlayers);
-    for (gamenumT gnum=0, n = dbase->numGames(); gnum < n; gnum++) {
-        const IndexEntry* ie = dbase->getIndexEntry(gnum);
-        dateT date = ie->GetDate();
-        if (date_GetYear(date) > 0) {
+    for (scid::database::gamenumT gnum=0, n = dbase->numGames(); gnum < n; gnum++) {
+        const scid::database::IndexEntry* ie = dbase->getIndexEntry(gnum);
+        scid::database::dateT date = ie->GetDate();
+        if (scid::database::date_GetYear(date) > 0) {
             activity[ie->GetWhite()].addDate(date);
             activity[ie->GetBlack()].addDate(date);
         }
@@ -6345,17 +6343,17 @@ sc_name_plist (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     UI_List res(count);
     UI_List info(5);
     for (size_t i=0; i < count; i++) {
-        idNumberT id = plist[i];
+        scid::database::idNumberT id = plist[i];
         info.clear();
-        info.push_back(dbase->getNameFreq(NAME_PLAYER, id));
-        info.push_back(date_GetYear(activity[id].firstDate));
-        info.push_back(date_GetYear(activity[id].lastDate));
+        info.push_back(dbase->getNameFreq(scid::database::NAME_PLAYER, id));
+        info.push_back(scid::database::date_GetYear(activity[id].firstDate));
+        info.push_back(scid::database::date_GetYear(activity[id].lastDate));
         info.push_back(dbase->peakElo(id));
-        info.push_back(nb->GetName(NAME_PLAYER, id));
+        info.push_back(nb->GetName(scid::database::NAME_PLAYER, id));
         res.push_back(info);
     }
 
-    return UI_Result(ti, OK, res);
+    return UI_Result(ti, scid::database::OK, res);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -6379,7 +6377,7 @@ sc_name_plist (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 //
 //   Returns a two-integer list: the number of changed ratings, and
 //   the number of changed games.
-UI_res_t sc_name_ratings (UI_handle_t ti, scidBaseT& dbase, const scidup::spelling::SpellChecker& sp, int argc, const char ** argv)
+UI_res_t sc_name_ratings (UI_handle_t ti, scid::database::scidBaseT& dbase, const scidup::spelling::SpellChecker& sp, int argc, const char ** argv)
 {
     const char * options[] = {
         "-update", "-test", "-change", "-filter" };
@@ -6394,8 +6392,8 @@ UI_res_t sc_name_ratings (UI_handle_t ti, scidBaseT& dbase, const scidup::spelli
 
     int arg = 2;
     while (arg+1 < argc) {
-        int option = strUniqueMatch (argv[arg], options);
-        bool value = strGetBoolean (argv[arg+1]);
+        int option = scid::database::strUniqueMatch (argv[arg], options);
+        bool value = scid::database::strGetBoolean (argv[arg+1]);
         switch (option) {
             case OPT_UPDATE:    updateIndexFile = value;    break;
             case OPT_TEST:      testOnly = value;           break;
@@ -6407,35 +6405,35 @@ UI_res_t sc_name_ratings (UI_handle_t ti, scidBaseT& dbase, const scidup::spelli
     }
 
     if (! sp.hasEloData()) {
-        return UI_Result(ti, ERROR, "The current spellcheck file does not have "
+        return UI_Result(ti, scid::database::ERROR, "The current spellcheck file does not have "
                           "Elo rating information.\n\n"
                           "To use this function, you should load "
                           "\"ratings.ssp\" (available from the Scid website) "
                           "as your spellcheck file first.");
     }
 
-    if (testOnly) { return UI_Result(ti, OK); }
+    if (testOnly) { return UI_Result(ti, scid::database::OK); }
 
-    uint numChangedRatings = 0;
-    uint numChangedGames = 0;
-    const NameBase* nb = dbase.getNameBase();
-    std::vector<bool> cached(nb->GetNumNames(NAME_PLAYER), false);
-    std::vector<const scidup::spelling::PlayerElo*> vElo(nb->namebase_size(NAME_PLAYER), NULL);
+    scid::database::uint numChangedRatings = 0;
+    scid::database::uint numChangedGames = 0;
+    const scid::database::NameBase* nb = dbase.getNameBase();
+    std::vector<bool> cached(nb->GetNumNames(scid::database::NAME_PLAYER), false);
+    std::vector<const scidup::spelling::PlayerElo*> vElo(nb->namebase_size(scid::database::NAME_PLAYER), NULL);
 
-    auto getElo = [&](idNumberT id, dateT date) {
+    auto getElo = [&](scid::database::idNumberT id, scid::database::dateT date) {
         if (!cached[id]) {
             cached[id] = true;
-            vElo[id] = sp.getPlayerElo(nb->GetName(NAME_PLAYER, id));
+            vElo[id] = sp.getPlayerElo(nb->GetName(scid::database::NAME_PLAYER, id));
         }
         return (vElo[id]) ? vElo[id]->getElo(date) : 0;
     };
 
-    auto entry_op = [&](IndexEntry& ie) {
-        dateT date = ie.GetDate();
-        eloT eloWhite = (!overwrite && ie.GetWhiteElo() != 0)
+    auto entry_op = [&](scid::database::IndexEntry& ie) {
+        scid::database::dateT date = ie.GetDate();
+        scid::database::eloT eloWhite = (!overwrite && ie.GetWhiteElo() != 0)
                             ? 0
                             : getElo(ie.GetWhite(), date);
-        eloT eloBlack = (!overwrite && ie.GetBlackElo() != 0)
+        scid::database::eloT eloBlack = (!overwrite && ie.GetBlackElo() != 0)
                             ? 0
                             : getElo(ie.GetBlack(), date);
         unsigned nChanges = (eloWhite != 0) ? 1 : 0;
@@ -6446,11 +6444,11 @@ UI_res_t sc_name_ratings (UI_handle_t ti, scidBaseT& dbase, const scidup::spelli
             if (updateIndexFile) {
                 if (eloWhite != 0) {
                     ie.SetWhiteElo(eloWhite);
-                    ie.SetWhiteRatingType(RATING_Elo);
+                    ie.SetWhiteRatingType(scid::database::RATING_Elo);
                 }
                 if (eloBlack != 0) {
                     ie.SetBlackElo(eloBlack);
-                    ie.SetBlackRatingType(RATING_Elo);
+                    ie.SetBlackRatingType(scid::database::RATING_Elo);
                 }
                 return true;
             }
@@ -6481,36 +6479,36 @@ int
 sc_name_read (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     if (argc > 5) {
-        return UI_Result(ti, ERROR_BadArg, "Usage: sc_name read <spellcheck-file>");
+        return UI_Result(ti, scid::database::ERROR_BadArg, "Usage: sc_name read <spellcheck-file>");
     }
 
     if (argc > 2) {
         const char * filename = argv[2];
-        Progress progress = UI_CreateProgress(ti);
-        std::pair<errorT, std::unique_ptr<scidup::spelling::SpellChecker>> newSpell =
+        scid::database::Progress progress = UI_CreateProgress(ti);
+        std::pair<scid::database::errorT, std::unique_ptr<scidup::spelling::SpellChecker>> newSpell =
             scidup::spelling::SpellChecker::create(filename, progress);
-        if (newSpell.first != OK) {
+        if (newSpell.first != scid::database::OK) {
             return UI_Result(ti, newSpell.first, "Error reading name spellcheck file.");
         }
         spellChk = std::move(newSpell.second);
         progress.report(1, 1);
     }
 
-    UI_List res(NUM_NAME_TYPES);
-    for (nameT i = 0; i < NUM_NAME_TYPES; i++) {
+    UI_List res(scid::database::NUM_NAME_TYPES);
+    for (scid::database::nameT i = 0; i < scid::database::NUM_NAME_TYPES; i++) {
         size_t n = (spellChk == NULL) ? 0 : spellChk->numCorrectNames(i);
         res.push_back(n);
     }
-    return UI_Result(ti, OK, res);
+    return UI_Result(ti, scid::database::OK, res);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // sc_name_spellcheck:
 //   Scan the current database for spelling corrections.
-UI_res_t sc_name_spellcheck (UI_handle_t ti, scidBaseT& dbase, const scidup::spelling::SpellChecker& sp, int argc, const char ** argv)
+UI_res_t sc_name_spellcheck (UI_handle_t ti, scid::database::scidBaseT& dbase, const scidup::spelling::SpellChecker& sp, int argc, const char ** argv)
 {
-    nameT nt = NAME_INVALID;
-    uint maxCorrections = 20000;
+    scid::database::nameT nt = scid::database::NAME_INVALID;
+    scid::database::uint maxCorrections = 20000;
     bool doSurnames = false;
     bool ambiguous = true;
     const char * usage = "Usage: sc_name spellcheck [-max <integer>] [-surnames <boolean>] [-ambiguous <boolean>] players|events|sites|rounds";
@@ -6528,53 +6526,53 @@ UI_res_t sc_name_spellcheck (UI_handle_t ti, scidBaseT& dbase, const scidup::spe
         const char * value = argv[arg+1];
         arg += 2;
         int index = -1;
-        if (option[0] == '-') { index = strUniqueMatch (option, options); }
+        if (option[0] == '-') { index = scid::database::strUniqueMatch (option, options); }
 
         switch (index) {
         case OPT_MAX:
-            maxCorrections = strGetUnsigned (value);
+            maxCorrections = scid::database::strGetUnsigned (value);
             if ( maxCorrections == 0 ) {
-                maxCorrections = (uint)-1;
+                maxCorrections = (scid::database::uint)-1;
             }
             break;
         case OPT_SURNAMES:
-            doSurnames = strGetBoolean (value);
+            doSurnames = scid::database::strGetBoolean (value);
             break;
         case OPT_AMBIGUOUS:
-            ambiguous = strGetBoolean (value);
+            ambiguous = scid::database::strGetBoolean (value);
             break;
         default:
             return InvalidCommand (ti, "sc_name spellcheck", options);
         }
     }
     if (arg+1 != argc) { return errorResult (ti, usage); }
-    nt = NameBase::NameTypeFromString (argv[arg]);
+    nt = scid::database::NameBase::NameTypeFromString (argv[arg]);
 
-    if (! NameBase::IsValidNameType (nt)) {
+    if (! scid::database::NameBase::IsValidNameType (nt)) {
         return errorResult (ti, usage);
     }
 
-    const NameBase* nb = dbase.getNameBase();
+    const scid::database::NameBase* nb = dbase.getNameBase();
     std::vector<std::string> tmpRes;
     char tempStr[1024];
-    uint correctionCount = 0;
+    scid::database::uint correctionCount = 0;
 
-    Progress progress = UI_CreateProgress(ti);
+    scid::database::Progress progress = UI_CreateProgress(ti);
     // Check every name of the specified type:
-    for (idNumberT id=0, n=nb->GetNumNames(nt); id < n; id++) {
+    for (scid::database::idNumberT id=0, n=nb->GetNumNames(nt); id < n; id++) {
         if (correctionCount >= maxCorrections) break;
 
         if ((id % 1000) == 0) {  // Update the percentage done bar:
             if (!progress.report(id, n)) break;
         }
 
-        uint frequency = db->getNameFreq(nt, id);
+        scid::database::uint frequency = db->getNameFreq(nt, id);
         // Do not bother trying to correct unused names:
         if (frequency == 0) continue;
 
         const char* origName = nb->GetName(nt, id);
         // If requested ignore surnames
-        if (nt == NAME_PLAYER  &&  !doSurnames  && strIsSurnameOnly (origName)) continue;
+        if (nt == scid::database::NAME_PLAYER  &&  !doSurnames  && scid::database::strIsSurnameOnly (origName)) continue;
 
         // First, check for a general prefix or suffix correction:
         std::string name = origName;
@@ -6582,7 +6580,7 @@ UI_res_t sc_name_spellcheck (UI_handle_t ti, scidBaseT& dbase, const scidup::spe
 
         // If spellchecking names, remove any country code like " (USA)"
         // in parentheses at the end of the name:
-        if (nt == NAME_PLAYER) {
+        if (nt == scid::database::NAME_PLAYER) {
             size_t country = name.rfind(" (");
             if (country != std::string::npos && (country + 6) == name.length()) {
                 if (*(name.rbegin()) == ')') name.erase(country);
@@ -6615,19 +6613,19 @@ UI_res_t sc_name_spellcheck (UI_handle_t ti, scidBaseT& dbase, const scidup::spe
                               frequency);
             correctCmd += tempStr;
 
-            if (nt == NAME_PLAYER) { // Look for a player birthdate:
+            if (nt == scid::database::NAME_PLAYER) { // Look for a player birthdate:
                 const scidup::spelling::PlayerInfo* pInfo = sp.getPlayerInfo(corrections[i]);
-                dateT birthdate = pInfo->getBirthdate();
-                dateT deathdate = pInfo->getDeathdate();
-                if (birthdate != ZERO_DATE  ||  deathdate != ZERO_DATE) {
+                scid::database::dateT birthdate = pInfo->getBirthdate();
+                scid::database::dateT deathdate = pInfo->getDeathdate();
+                if (birthdate != scid::database::ZERO_DATE  ||  deathdate != scid::database::ZERO_DATE) {
                     correctCmd += "  ";
-                    if (birthdate != ZERO_DATE) {
-                        date_DecodeToString (birthdate, tempStr);
+                    if (birthdate != scid::database::ZERO_DATE) {
+                        scid::database::date_DecodeToString (birthdate, tempStr);
                         correctCmd += tempStr;
                     }
                     correctCmd += "--";
-                    if (deathdate != ZERO_DATE) {
-                        date_DecodeToString (deathdate, tempStr);
+                    if (deathdate != scid::database::ZERO_DATE) {
+                        scid::database::date_DecodeToString (deathdate, tempStr);
                         correctCmd += tempStr;
                     }
                 }
@@ -6646,7 +6644,7 @@ UI_res_t sc_name_spellcheck (UI_handle_t ti, scidBaseT& dbase, const scidup::spe
     static const char* NAME_TYPE_STRING[] = {"player", "event", "site", "round"};
     std::snprintf(tempStr, sizeof(tempStr), "Scid found %u %s name correction%s.\n",
              correctionCount, NAME_TYPE_STRING[nt],
-             strPlural (correctionCount));
+             scid::database::strPlural (correctionCount));
     std::string res = tempStr;
     res +=
         "Edit the list to remove any corrections you do not want.\n"
@@ -6656,7 +6654,7 @@ UI_res_t sc_name_spellcheck (UI_handle_t ti, scidBaseT& dbase, const scidup::spe
         "You can discard a correction you do not want by deleting\n"
         "its line, or simply by adding a space or any other character\n"
         "at the start of the line.\n";
-    if (nt == NAME_PLAYER  &&  ! doSurnames) {
+    if (nt == scid::database::NAME_PLAYER  &&  ! doSurnames) {
         res +=
             "Note: player names with a surname only, such as \"Kramnik\",\n"
             "have not been corrected, since such corrections are often\n"
@@ -6674,7 +6672,7 @@ UI_res_t sc_name_spellcheck (UI_handle_t ti, scidBaseT& dbase, const scidup::spe
         res += "\n";
         res += *it;
     }
-    return UI_Result(ti, OK, res);
+    return UI_Result(ti, scid::database::OK, res);
 }
 
 UI_res_t sc_name(UI_extra_t cd, UI_handle_t ti, int argc, const char** argv) {
@@ -6689,10 +6687,10 @@ UI_res_t sc_name(UI_extra_t cd, UI_handle_t ti, int argc, const char** argv) {
     };
 
     int index = -1;
-    if (argc > 1) { index = strUniqueMatch (argv[1], options); }
+    if (argc > 1) { index = scid::database::strUniqueMatch (argv[1], options); }
 
     if (!db->isOpen()) {
-        return errorResult (ti, ERROR_FileNotOpen, errMsgNotOpen(ti));
+        return errorResult (ti, scid::database::ERROR_FileNotOpen, errMsgNotOpen(ti));
     }
 
     switch (index) {
@@ -6710,7 +6708,7 @@ UI_res_t sc_name(UI_extra_t cd, UI_handle_t ti, int argc, const char** argv) {
     }
 
     if (db->isReadOnly() && index != OPT_RETRIEVENAME) {
-        return errorResult (ti, ERROR_FileReadOnly);
+        return errorResult (ti, scid::database::ERROR_FileReadOnly);
     }
 
     switch (index) {
@@ -6722,7 +6720,7 @@ UI_res_t sc_name(UI_extra_t cd, UI_handle_t ti, int argc, const char** argv) {
     };
 
     if (spellChk == NULL) {
-        return UI_Result(ti, ERROR,
+        return UI_Result(ti, scid::database::ERROR,
             "A spellcheck file has not been loaded.\n\n"
             "You can load one from the Options menu.");
     }
@@ -6750,13 +6748,13 @@ UI_res_t sc_name(UI_extra_t cd, UI_handle_t ti, int argc, const char** argv) {
 //////////////////////////////////////////////////////////////////////
 //  OPENING/PLAYER REPORT functions
 
-static uint
-avgGameLength (resultT result)
+static scid::database::uint
+avgGameLength (scid::database::resultT result)
 {
-    uint sum = 0;
-    uint count = 0;
-    for (gamenumT i=0, n = db->numGames(); i < n; i++) {
-        const IndexEntry* ie = db->getIndexEntry(i);
+    scid::database::uint sum = 0;
+    scid::database::uint count = 0;
+    for (scid::database::gamenumT i=0, n = db->numGames(); i < n; i++) {
+        const scid::database::IndexEntry* ie = db->getIndexEntry(i);
         if (result == ie->GetResult()) {
             count++;
             sum += ((ie->GetNumHalfMoves() + 1) / 2);
@@ -6793,8 +6791,8 @@ sc_report (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             return errorResult (ti, usage);
     }
 
-    DString * dstr = NULL;
-    int index = strUniqueMatch (argv[2], options);
+    scid::database::DString * dstr = NULL;
+    int index = scid::database::strUniqueMatch (argv[2], options);
 
     if (! db->isOpen()) {
         return errorResult (ti, errMsgNotOpen(ti));
@@ -6809,7 +6807,7 @@ sc_report (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         if (argc != 4) {
             return errorResult (ti, "Usage: sc_report player|opening avgLength 1|=|0|*");
         } else {
-            resultT result = strGetResult (argv[3]);
+            scid::database::resultT result = scid::database::strGetResult (argv[3]);
             appendUintElement (ti, report->AvgLength (result));
             appendUintElement (ti, avgGameLength (result));
         }
@@ -6819,8 +6817,8 @@ sc_report (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         if (argc != 5) {
             return errorResult (ti, "Usage: sc_report opening|player best w|b|a|o|n <count>");
         }
-        dstr = new DString;
-        report->BestGames (dstr, strGetUnsigned(argv[4]), argv[3]);
+        dstr = new scid::database::DString;
+        report->BestGames (dstr, scid::database::strGetUnsigned(argv[4]), argv[3]);
         AppendResult (ti, dstr->Data(), NULL);
         break;
 
@@ -6834,8 +6832,8 @@ sc_report (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case OPT_ECO:
         if (argc > 3) {
-            dstr = new DString();
-            report->TopEcoCodes (dstr, strGetUnsigned(argv[3]));
+            dstr = new scid::database::DString();
+            report->TopEcoCodes (dstr, scid::database::strGetUnsigned(argv[3]));
             AppendResult (ti, dstr->Data(), NULL);
         } else {
             AppendResult (ti, report->GetEco(), NULL);
@@ -6846,12 +6844,12 @@ sc_report (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         if (argc != 4) {
             return errorResult (ti, "Usage: sc_report opening|player elo white|black");
         } else {
-            colorT color = WHITE;
-            uint count = 0;
-            uint pct = 0;
-            uint perf = 0;
-            if (argv[3][0] == 'B'  ||  argv[3][0] == 'b') { color = BLACK; }
-            uint avg = report->AvgElo (color, &count, &pct, &perf);
+            scid::database::colorT color = scid::database::WHITE;
+            scid::database::uint count = 0;
+            scid::database::uint pct = 0;
+            scid::database::uint perf = 0;
+            if (argv[3][0] == 'B'  ||  argv[3][0] == 'b') { color = scid::database::BLACK; }
+            scid::database::uint avg = report->AvgElo (color, &count, &pct, &perf);
             appendUintElement (ti, avg);
             appendUintElement (ti, count);
             appendUintElement (ti, pct);
@@ -6860,7 +6858,7 @@ sc_report (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         break;
 
     case OPT_ENDMAT:
-        dstr = new DString;
+        dstr = new scid::database::DString;
         report->EndMaterialReport (dstr,
                        translate (ti, "OprepReportGames", "Report games"),
                        translate (ti, "OprepAllGames", "All games"));
@@ -6878,16 +6876,16 @@ sc_report (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         if (argc != 4) {
             return errorResult (ti, "Usage: sc_report opening|player frequency 1|=|0|*");
         } else {
-            resultT result = strGetResult (argv[3]);
+            scid::database::resultT result = scid::database::strGetResult (argv[3]);
             appendUintElement (ti, report->PercentFreq (result));
-            uint freq = stats.nResults[result] * 1000;
+            scid::database::uint freq = stats.nResults[result] * 1000;
             freq = freq / db->numGames();
             appendUintElement (ti, freq);
         }
         break;
 
     case OPT_LINE:
-        dstr = new DString;
+        dstr = new scid::database::DString;
         report->PrintStemLine (dstr);
         AppendResult (ti, dstr->Data(), NULL);
         break;
@@ -6904,8 +6902,8 @@ sc_report (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         if (argc != 4) {
             return errorResult (ti, "Usage: sc_report opening|player moveOrders <count>");
         }
-        dstr = new DString;
-        report->PopularMoveOrders (dstr, strGetUnsigned(argv[3]));
+        dstr = new scid::database::DString;
+        report->PopularMoveOrders (dstr, scid::database::strGetUnsigned(argv[3]));
         AppendResult (ti, dstr->Data(), NULL);
         break;
 
@@ -6914,13 +6912,13 @@ sc_report (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             return errorResult (ti, "Usage: sc_report opening|player notes <0|1> [numrows]");
         }
         report->ClearNotes ();
-        if (strGetBoolean (argv[3])  &&  report->GetNumLines() > 0) {
+        if (scid::database::strGetBoolean (argv[3])  &&  report->GetNumLines() > 0) {
             report->GuessNumRows ();
             if (argc > 4) {
-                uint nrows = strGetUnsigned (argv[4]);
+                scid::database::uint nrows = scid::database::strGetUnsigned (argv[4]);
                 if (nrows > 0) { report->SetNumRows (nrows); }
             }
-            dstr = new DString;
+            dstr = new scid::database::DString;
             // Print the table just to set up notes, but there is
             // no need to return the result:
             report->PrintTable (dstr, "", "");
@@ -6931,10 +6929,10 @@ sc_report (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         if (argc != 5) {
             return errorResult (ti, "Usage: sc_report opening|player players w|b <count>");
         } else {
-            colorT color = WHITE;
-            if (argv[3][0] == 'B'  ||  argv[3][0] == 'b') { color = BLACK; }
-            dstr = new DString;
-            report->TopPlayers (dstr, color, strGetUnsigned(argv[4]));
+            scid::database::colorT color = scid::database::WHITE;
+            if (argv[3][0] == 'B'  ||  argv[3][0] == 'b') { color = scid::database::BLACK; }
+            dstr = new scid::database::DString;
+            report->TopPlayers (dstr, color, scid::database::strGetUnsigned(argv[4]));
             AppendResult (ti, dstr->Data(), NULL);
         }
         break;
@@ -6945,10 +6943,10 @@ sc_report (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         }
         report->GuessNumRows ();
         if (argc > 3) {
-            uint nrows = strGetUnsigned (argv[3]);
+            scid::database::uint nrows = scid::database::strGetUnsigned (argv[3]);
             if (nrows > 0) { report->SetNumRows (nrows); }
         }
-        dstr = new DString;
+        dstr = new scid::database::DString;
         report->PrintTable (dstr, argc > 4 ? argv[4] : "",
                              argc > 5 ? argv[5] : "");
         AppendResult (ti, dstr->Data(), NULL);
@@ -6957,12 +6955,12 @@ sc_report (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
     case OPT_SCORE:
         appendUintElement (ti, report->PercentScore());
         {
-            uint percent = stats.nResults[RESULT_White] * 2;
-            percent += stats.nResults[RESULT_Draw];
+            scid::database::uint percent = stats.nResults[scid::database::RESULT_White] * 2;
+            percent += stats.nResults[scid::database::RESULT_Draw];
             percent = percent * 500;
-            uint sum = (stats.nResults[RESULT_White] +
-                                 stats.nResults[RESULT_Draw] +
-                                 stats.nResults[RESULT_Black]);
+            scid::database::uint sum = (stats.nResults[scid::database::RESULT_White] +
+                                 stats.nResults[scid::database::RESULT_Draw] +
+                                 stats.nResults[scid::database::RESULT_Black]);
             if (sum != 0)
             	percent = percent / sum;
             	else
@@ -6975,7 +6973,7 @@ sc_report (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_report_select (cd, ti, argc, argv);
 
     case OPT_THEMES:
-        dstr = new DString;
+        dstr = new scid::database::DString;
         report->ThemeReport (dstr, argc - 3, (const char **) argv + 3);
         AppendResult (ti, dstr->Data(), NULL);
         break;
@@ -6998,13 +6996,13 @@ sc_report (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 int
 sc_report_create (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
-    uint maxThemeMoveNumber = 20;
-    uint maxExtraMoves = 1;
-    uint maxLines = OPTABLE_MAX_TABLE_LINES;
+    scid::database::uint maxThemeMoveNumber = 20;
+    scid::database::uint maxExtraMoves = 1;
+    scid::database::uint maxLines = OPTABLE_MAX_TABLE_LINES;
     static const char * usage =
         "Usage: sc_report opening|player create [maxExtraMoves] [maxLines] [excludeMove]";
 
-    uint reportType = 0;
+    scid::database::uint reportType = 0;
     if (argc < 2) {
         return errorResult (ti, usage);
     }
@@ -7017,10 +7015,10 @@ sc_report_create (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     if (argc > 3) {
-        maxExtraMoves = strGetUnsigned (argv[3]);
+        maxExtraMoves = scid::database::strGetUnsigned (argv[3]);
     }
     if (argc > 4) {
-        maxLines = strGetUnsigned (argv[4]);
+        maxLines = scid::database::strGetUnsigned (argv[4]);
         if (maxLines > OPTABLE_MAX_TABLE_LINES) {
             maxLines = OPTABLE_MAX_TABLE_LINES;
         }
@@ -7042,23 +7040,23 @@ sc_report_create (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     report->SetDecimalChar (decimalPointChar);
     report->SetMaxThemeMoveNumber (maxThemeMoveNumber);
 
-    Progress progress = UI_CreateProgress(ti);
+    scid::database::Progress progress = UI_CreateProgress(ti);
 
-    for (uint gnum=0, n = db->numGames(); gnum < n; gnum++) {
+    for (scid::database::uint gnum=0, n = db->numGames(); gnum < n; gnum++) {
         if ((gnum % 2000) == 0) {  // Update the percentage done bar:
             if (!progress.report(gnum, n)) break;
         }
 
-        byte ply = db->defaultFilterGet(gnum);
-        const IndexEntry* ie = db->getIndexEntry(gnum);
+        scid::database::byte ply = db->defaultFilterGet(gnum);
+        const scid::database::IndexEntry* ie = db->getIndexEntry(gnum);
         if (ply != 0) {
-            if (db->getGame(*ie, *scratchGame) != OK) {
+            if (db->getGame(*ie, *scratchGame) != scid::database::OK) {
                 return errorResult (ti, "Error reading game file.");
             }
             scratchGame->MoveToPly (ply - 1);
             if (scratchGame->AtEnd()) ply = 0;
             if (ply != 0) {
-                uint moveOrderID = report->AddMoveOrder (scratchGame);
+                scid::database::uint moveOrderID = report->AddMoveOrder (scratchGame);
                 OpLine * line = new OpLine (scratchGame, ie, gnum+1,
                                             maxExtraMoves, maxThemeMoveNumber);
                 if (report->Add (line)) {
@@ -7097,15 +7095,15 @@ sc_report_select (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     char type = tolower (argv[3][0]);
-    uint number = strGetUnsigned (argv[4]);
+    scid::database::uint number = scid::database::strGetUnsigned (argv[4]);
 
-    uint * matches = report->SelectGames (type, number);
-    uint * match = matches;
+    scid::database::uint * matches = report->SelectGames (type, number);
+    scid::database::uint * match = matches;
     db->defaultFilterFill(0);
     while (*match != 0) {
-        uint gnum = *match - 1;
+        scid::database::uint gnum = *match - 1;
         match++;
-        uint ply = *match + 1;
+        scid::database::uint ply = *match + 1;
         match++;
         db->defaultFilterSet(gnum, ply);
     }
@@ -7129,7 +7127,7 @@ sc_tree (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
     };
 
     int index = -1;
-    if (argc > 1) { index = strUniqueMatch (argv[1], options); }
+    if (argc > 1) { index = scid::database::strUniqueMatch (argv[1], options); }
 
     switch (index) {
     case TREE_STATS:
@@ -7163,35 +7161,35 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     enum moveSortE { SORT_ALPHA, SORT_ECO, SORT_FREQUENCY, SORT_SCORE };
 
     if (argc < 4)
-        return UI_Result(ti, ERROR_BadArg, usage);
+        return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-    scidBaseT* base = DBasePool::getBase(strGetUnsigned(argv[2]));
+    scid::database::scidBaseT* base = DBasePool::getBase(scid::database::strGetUnsigned(argv[2]));
     if (!base)
-        return UI_Result(ti, ERROR_BadArg, usage);
+        return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-    HFilter filter = scidup::app::tree::resolveFilter(*base, argv[3]);
+    scid::database::HFilter filter = scidup::app::tree::resolveFilter(*base, argv[3]);
     if (filter == nullptr)
-        return UI_Result(ti, ERROR_BadArg, usage);
+        return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-    bool hideMoves = (argc > 4) ? strGetBoolean(argv[4]) : false;
-    int sortMethod = (argc > 5) ? strUniqueMatch(argv[5], sortOptions)
+    bool hideMoves = (argc > 4) ? scid::database::strGetBoolean(argv[4]) : false;
+    int sortMethod = (argc > 5) ? scid::database::strUniqueMatch(argv[5], sortOptions)
                                 : SORT_FREQUENCY;
     if (sortMethod < 0)
-        return UI_Result(ti, ERROR_BadArg, usage);
+        return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
     auto editor = scidup::app::editor::gameSession(*db);
-    Position searchPos = *(editor.game().GetCurrentPos());
+    scid::database::Position searchPos = *(editor.game().GetCurrentPos());
     auto tree = base->getTreeStat(filter);
 
     auto calc_eco = [&](auto const& move) {
         scidup::eco::Code eco = scidup::eco::ECO_None;
         if (ecoBook && move) {
-            simpleMoveT sm;
+            scid::database::simpleMoveT sm;
             if (move.isCastle()) {
-                auto side = move.getTo() > move.getFrom() ? KING : QUEEN;
+                auto side = move.getTo() > move.getFrom() ? scid::database::KING : scid::database::QUEEN;
                 searchPos.makeMove(move.getFrom(), move.getFrom(), side, sm);
             } else {
-                auto promo = move.isPromo() ? move.getPromo() : INVALID_PIECE;
+                auto promo = move.isPromo() ? move.getPromo() : scid::database::INVALID_PIECE;
                 searchPos.makeMove(move.getFrom(), move.getTo(), promo, sm);
             }
             searchPos.DoSimpleMove(sm);
@@ -7204,7 +7202,7 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     char tempTrans[10];
     auto calc_san = [&](auto const& move) {
         strcpy(tempTrans, move ? move.getSAN().c_str() : "[end]");
-        transPieces(tempTrans);
+        scid::database::transPieces(tempTrans);
     };
 
     if (sortMethod == SORT_ALPHA) { // icase alphabetical order
@@ -7221,7 +7219,7 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         });
 
     } else if (sortMethod == SORT_SCORE) { // Order by success
-        if (searchPos.GetToMove() == WHITE) {
+        if (searchPos.GetToMove() == scid::database::WHITE) {
             std::sort(tree.begin(), tree.end(),
                       [&](auto const& a, auto const& b) {
                           return a.score() > b.score();
@@ -7276,12 +7274,12 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     };
 
     if (tree.size() > 0) {
-        TreeNode totals({});
+        scid::database::TreeNode totals({});
         for (auto const& node : tree) { // reduce
             totals.freq[0] += node.freq[0];
-            totals.freq[RESULT_White] += node.freq[RESULT_White];
-            totals.freq[RESULT_Black] += node.freq[RESULT_Black];
-            totals.freq[RESULT_Draw] += node.freq[RESULT_Draw];
+            totals.freq[scid::database::RESULT_White] += node.freq[scid::database::RESULT_White];
+            totals.freq[scid::database::RESULT_Black] += node.freq[scid::database::RESULT_Black];
+            totals.freq[scid::database::RESULT_Draw] += node.freq[scid::database::RESULT_Draw];
             totals.eloWhiteSum += node.eloWhiteSum;
             totals.eloBlackSum += node.eloBlackSum;
             totals.eloCount += node.eloCount;
@@ -7293,9 +7291,9 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         unsigned count = 0;
         for (auto const& node : tree) {
             calc_san(node.move);
-            ecoT eco = calc_eco(node.move);
-            ecoStringT ecoStr;
-            eco_ToExtendedString(eco, ecoStr);
+            scid::database::ecoT eco = calc_eco(node.move);
+            scid::database::ecoStringT ecoStr;
+            scid::database::eco_ToExtendedString(eco, ecoStr);
             auto freq = long(1000ll * node.freq[0] / totals.freq[0]);
             std::snprintf(temp, sizeof(temp), "\n%2u: %-6s %-5s %7u:%3ld%c%1ld%%",
                      ++count,
@@ -7318,7 +7316,7 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         format_output(totals, output);
         output.append("\n");
     }
-    return UI_Result(ti, OK, output);
+    return UI_Result(ti, scid::database::OK, output);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -7330,8 +7328,8 @@ sc_tree_cachesize (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
   if (argc != 4) {
     return errorResult (ti, "Usage: sc_tree cachesize <base> <size>");
   }
-  auto base = DBasePool::getBase(strGetInteger(argv[2]));
-  if (base) scidup::app::tree::session(*base).cacheResize(strGetUnsigned(argv[3]));
+  auto base = DBasePool::getBase(scid::database::strGetInteger(argv[2]));
+  if (base) scidup::app::tree::session(*base).cacheResize(scid::database::strGetUnsigned(argv[3]));
   return TCL_OK;
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -7343,11 +7341,11 @@ sc_tree_cacheinfo (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
   if (argc != 3) {
     return errorResult (ti, "Usage: sc_tree cacheinfo <base>");
   }
-  auto base = DBasePool::getBase(strGetInteger(argv[2]));
+  auto base = DBasePool::getBase(scid::database::strGetInteger(argv[2]));
   if (base)
-      return UI_Result(ti, OK, scidup::app::tree::session(*base).cacheSize());
+      return UI_Result(ti, scid::database::OK, scidup::app::tree::session(*base).cacheSize());
 
-  return UI_Result(ti, OK, 0);
+  return UI_Result(ti, scid::database::OK, 0);
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // sc_search:
@@ -7361,7 +7359,7 @@ sc_search (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
     enum { OPT_BOARD, OPT_HEADER, OPT_MATERIAL };
 
     int index = -1;
-    if (argc > 1) { index = strUniqueMatch (argv[1], options); }
+    if (argc > 1) { index = scid::database::strUniqueMatch (argv[1], options); }
     int ret = TCL_OK;
 
     if (!db->isOpen()) {
@@ -7374,7 +7372,7 @@ sc_search (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         break;
 
     case OPT_HEADER: {
-        HFilter filter = db->getFilter("dbfilter");
+        scid::database::HFilter filter = db->getFilter("dbfilter");
         ret = sc_search_header (cd, ti, db, filter, argc, argv);
         break;
     }
@@ -7396,7 +7394,7 @@ sc_search (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 //    Searches for exact match for the current position.
 //    if <base> is present, search for current position in base <base>,
 //    and sets <base> filter accordingly
-int sc_search_board(Tcl_Interp* ti, const scidBaseT* dbase, HFilter filter,
+int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid::database::HFilter filter,
                     int argc, const char** argv) {
 	ASSERT(dbase != nullptr && filter != nullptr);
 
@@ -7406,79 +7404,79 @@ int sc_search_board(Tcl_Interp* ti, const scidBaseT* dbase, HFilter filter,
 	if (argc != 6)
 		return errorResult(ti, usageStr);
 
-    filterOpT filterOp = strGetFilterOp (argv[2]);
+    scid::database::filterOpT filterOp = scid::database::strGetFilterOp (argv[2]);
 
     bool useHpSigSpeedup = false;
-    gameExactMatchT searchType = GAME_EXACT_MATCH_Exact;
+    scid::database::gameExactMatchT searchType = scid::database::GAME_EXACT_MATCH_Exact;
 
     switch (argv[3][0]) {
     case 'E':
-        searchType = GAME_EXACT_MATCH_Exact;
+        searchType = scid::database::GAME_EXACT_MATCH_Exact;
         useHpSigSpeedup = true;
         break;
     case 'P':
-        searchType = GAME_EXACT_MATCH_Pawns;
+        searchType = scid::database::GAME_EXACT_MATCH_Pawns;
         useHpSigSpeedup = true;
         break;
     case 'F':
-        searchType = GAME_EXACT_MATCH_Fyles;
+        searchType = scid::database::GAME_EXACT_MATCH_Fyles;
         break;
     case 'M':
-        searchType = GAME_EXACT_MATCH_Material;
+        searchType = scid::database::GAME_EXACT_MATCH_Material;
         break;
     default:
         return errorResult (ti, usageStr);
     }
 
-    bool searchInVars = strGetBoolean (argv[4]);
+    bool searchInVars = scid::database::strGetBoolean (argv[4]);
     bool flip = false;
-    flip = strGetBoolean (argv[5]);
+    flip = scid::database::strGetBoolean (argv[5]);
 
     auto editor = scidup::app::editor::gameSession(*db);
-    Position * pos = editor.game().GetCurrentPos();
+    scid::database::Position * pos = editor.game().GetCurrentPos();
 
-    Progress progress = UI_CreateProgress(ti);
+    scid::database::Progress progress = UI_CreateProgress(ti);
     Timer timer;  // Start timing this search.
-    Position * posFlip =  NULL;
-    matSigT msig = matsig_Make (pos->GetMaterial());
-    matSigT msigFlip = 0;
-    uint hpSig = pos->GetHPSig();
-    uint hpSigFlip = 0;
+    scid::database::Position * posFlip =  NULL;
+    scid::database::matSigT msig = scid::database::matsig_Make (pos->GetMaterial());
+    scid::database::matSigT msigFlip = 0;
+    scid::database::uint hpSig = pos->GetHPSig();
+    scid::database::uint hpSigFlip = 0;
 
     if (flip) {
-        posFlip = new Position;
+        posFlip = new scid::database::Position;
         posFlip->Clear();
-        for (auto sq = A1; sq <= H8; ++sq) {
+        for (auto sq = scid::database::A1; sq <= scid::database::H8; ++sq) {
             const auto piece = pos->GetPiece(sq);
-            if (piece != EMPTY) {
-                const auto sq_flip = square_Relative(BLACK, sq);
-                posFlip->AddPiece(PIECE_FLIP[piece], sq_flip);
+            if (piece != scid::database::EMPTY) {
+                const auto sq_flip = scid::database::square_Relative(scid::database::BLACK, sq);
+                posFlip->AddPiece(scid::database::PIECE_FLIP[piece], sq_flip);
             }
         }
-        posFlip->SetToMove(color_Flip(pos->GetToMove()));
+        posFlip->SetToMove(scid::database::color_Flip(pos->GetToMove()));
         posFlip->SetEPTarget(pos->GetEPTarget());
         //NOTE: the search ignores the castling flags
         hpSigFlip = posFlip->GetHPSig();
-        msigFlip = matsig_Make (posFlip->GetMaterial());
+        msigFlip = scid::database::matsig_Make (posFlip->GetMaterial());
     }
 
     // If filter operation is to reset the filter, reset it:
-    if (filterOp == FILTEROP_RESET) {
+    if (filterOp == scid::database::FILTEROP_RESET) {
         filter->includeAll();
-        filterOp = FILTEROP_AND;
+        filterOp = scid::database::FILTEROP_AND;
     }
     size_t startFilterCount = filter->size();
 
     // Here is the loop that searches on each game:
-    Game tmpGame;
-    Game* g = &tmpGame;
-    gamenumT gameNum = 0;
-    for (gamenumT n = dbase->numGames(); gameNum < n; gameNum++) {
+    scid::database::Game tmpGame;
+    scid::database::Game* g = &tmpGame;
+    scid::database::gamenumT gameNum = 0;
+    for (scid::database::gamenumT n = dbase->numGames(); gameNum < n; gameNum++) {
         if ((gameNum % 5000) == 0) {  // Update the percentage done bar:
             if (!progress.report(gameNum, n)) break;
         }
         // First, apply the filter operation:
-        if (filterOp == FILTEROP_AND) {  // Skip any games not in the filter:
+        if (filterOp == scid::database::FILTEROP_AND) {  // Skip any games not in the filter:
             if (filter.get(gameNum) == 0) {
                 continue;
             }
@@ -7486,13 +7484,13 @@ int sc_search_board(Tcl_Interp* ti, const scidBaseT* dbase, HFilter filter,
             if (filter.get(gameNum) != 0) {
                 continue;
             } else {
-                // OK, this game is NOT in the filter.
+                // scid::database::OK, this game is NOT in the filter.
                 // Add it so filterCounts are kept up to date:
                 filter.set (gameNum, 1);
             }
         }
 
-        const IndexEntry* ie = dbase->getIndexEntry(gameNum);
+        const scid::database::IndexEntry* ie = dbase->getIndexEntry(gameNum);
         if (ie->GetLength() == 0) {
             // Skip games with no gamefile record:
             filter.set (gameNum, 0);
@@ -7511,12 +7509,12 @@ int sc_search_board(Tcl_Interp* ti, const scidBaseT* dbase, HFilter filter,
             if (! ie->GetStartFlag()) {
                 // Speedups that only apply to standard start games:
                 if (useHpSigSpeedup  &&  hpSig != 0xFFFF) {
-                    const byte * hpData = ie->GetHomePawnData();
-                    if (! hpSig_PossibleMatch (hpSig, hpData)) {
+                    const scid::database::byte * hpData = ie->GetHomePawnData();
+                    if (! scid::database::hpSig_PossibleMatch (hpSig, hpData)) {
                         possibleMatch = false;
                     }
                     if (possibleFlippedMatch) {
-                        if (! hpSig_PossibleMatch (hpSigFlip, hpData)) {
+                        if (! scid::database::hpSig_PossibleMatch (hpSigFlip, hpData)) {
                             possibleFlippedMatch = false;
                         }
                     }
@@ -7526,14 +7524,14 @@ int sc_search_board(Tcl_Interp* ti, const scidBaseT* dbase, HFilter filter,
             // If this game has no promotions, check the material of its final
             // position, since the searched position might be unreachable:
             if (possibleMatch) {
-                if (!matsig_isReachable (msig, ie->GetFinalMatSig(),
+                if (!scid::database::matsig_isReachable (msig, ie->GetFinalMatSig(),
                                          ie->GetPromotionsFlag(),
                                          ie->GetUnderPromoFlag())) {
                         possibleMatch = false;
                     }
             }
             if (possibleFlippedMatch) {
-                if (!matsig_isReachable (msigFlip, ie->GetFinalMatSig(),
+                if (!scid::database::matsig_isReachable (msigFlip, ie->GetFinalMatSig(),
                                          ie->GetPromotionsFlag(),
                                          ie->GetUnderPromoFlag())) {
                         possibleFlippedMatch = false;
@@ -7551,7 +7549,7 @@ int sc_search_board(Tcl_Interp* ti, const scidBaseT* dbase, HFilter filter,
         if (!bbuf) {
             return errorResult (ti, "Error reading game file.");
         }
-        uint ply = 0;
+        scid::database::uint ply = 0;
         if (useVars) {
             g->DecodeMovesOnly(bbuf);
             // Try matching the game without variations first:
@@ -7614,12 +7612,12 @@ int sc_search_board(Tcl_Interp* ti, const scidBaseT* dbase, HFilter filter,
 }
 
 void
-flipPattern (patternT * patt)
+flipPattern (scid::database::patternT * patt)
 {
-    if (patt->rankMatch != NO_RANK) {
-        patt->rankMatch = (RANK_1 + RANK_8) - patt->rankMatch;
+    if (patt->rankMatch != scid::database::NO_RANK) {
+        patt->rankMatch = (scid::database::RANK_1 + scid::database::RANK_8) - patt->rankMatch;
     }
-    patt->pieceMatch = PIECE_FLIP[patt->pieceMatch];
+    patt->pieceMatch = scid::database::PIECE_FLIP[patt->pieceMatch];
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -7627,71 +7625,71 @@ flipPattern (patternT * patt)
 //    Called by sc_search_material to extract the details of
 //    a pattern parameter (e.g "no wp c ?" for no White pawn on
 //    the d file).
-errorT
-parsePattern (const char * str, patternT * patt)
+scid::database::errorT
+parsePattern (const char * str, scid::database::patternT * patt)
 {
     ASSERT (str != NULL  &&  patt != NULL);
 
     // Set up pointers to the four whitespace-separated pattern
     // parameter values in the string:
-    str = strFirstWord (str);
+    str = scid::database::strFirstWord (str);
     const char * flagStr = str;
-    str = strNextWord (str);
+    str = scid::database::strNextWord (str);
     const char * colorPieceStr = str;
-    str = strNextWord (str);
+    str = scid::database::strNextWord (str);
     const char * fyleStr = str;
-    str = strNextWord (str);
+    str = scid::database::strNextWord (str);
     const char * rankStr = str;
 
     // Parse the color parameter: "w", "b", or "?" for no pattern.
     if (*colorPieceStr == '?') {
         // Empty pattern:
-        patt->pieceMatch = EMPTY;
-        return OK;
+        patt->pieceMatch = scid::database::EMPTY;
+        return scid::database::OK;
     }
 
-    colorT color = WHITE;
+    scid::database::colorT color = scid::database::WHITE;
     switch (tolower(*colorPieceStr)) {
-        case 'w': color = WHITE; break;
-        case 'b': color = BLACK; break;
-        default: return ERROR;
+        case 'w': color = scid::database::WHITE; break;
+        case 'b': color = scid::database::BLACK; break;
+        default: return scid::database::ERROR;
     }
 
     // Parse the piece type parameter for this pattern:
-    pieceT p = EMPTY;
+    scid::database::pieceT p = scid::database::EMPTY;
     switch (tolower(colorPieceStr[1])) {
-        case 'k': p = KING; break;
-        case 'q': p = QUEEN; break;
-        case 'r': p = ROOK; break;
-        case 'b': p = BISHOP; break;
-        case 'n': p = KNIGHT; break;
-        case 'p': p = PAWN; break;
-        default: return ERROR;
+        case 'k': p = scid::database::KING; break;
+        case 'q': p = scid::database::QUEEN; break;
+        case 'r': p = scid::database::ROOK; break;
+        case 'b': p = scid::database::BISHOP; break;
+        case 'n': p = scid::database::KNIGHT; break;
+        case 'p': p = scid::database::PAWN; break;
+        default: return scid::database::ERROR;
     }
 
-    patt->pieceMatch = piece_Make (color, p);
-    patt->flag = strGetBoolean (flagStr);
+    patt->pieceMatch = scid::database::piece_Make (color, p);
+    patt->flag = scid::database::strGetBoolean (flagStr);
 
     // Parse the fyle parameter for this pattern:
     char ch = *fyleStr;
     if (ch == '?') {
-        patt->fyleMatch = NO_FYLE;
+        patt->fyleMatch = scid::database::NO_FYLE;
     } else if (ch >= 'a'  &&  ch <= 'h') {
-        patt->fyleMatch = A_FYLE + (ch - 'a');
+        patt->fyleMatch = scid::database::A_FYLE + (ch - 'a');
     } else {
-        return ERROR;
+        return scid::database::ERROR;
     }
 
     // Parse the rank parameter for this pattern:
     ch = *rankStr;
     if (ch == '?') {
-        patt->rankMatch = NO_RANK;
+        patt->rankMatch = scid::database::NO_RANK;
     } else if (ch >= '1'  &&  ch <= '8') {
-        patt->rankMatch = RANK_1 + (ch - '1');
+        patt->rankMatch = scid::database::RANK_1 + (ch - '1');
     } else {
-        return ERROR;
+        return scid::database::ERROR;
     }
-    return OK;
+    return scid::database::OK;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -7704,27 +7702,27 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Not an open database.");
     }
 
-    uint minMoves = 0;
-    uint minPly = 0;
-    uint maxPly = 999;
-    uint matchLength = 1;
-    byte min[MAX_PIECE_TYPES] = {0};
-    byte minFlipped[MAX_PIECE_TYPES] = {0};
-    byte max[MAX_PIECE_TYPES] = {0};
-    byte maxFlipped[MAX_PIECE_TYPES] = {0};
-    max[WM] = max[BM] = 9;
+    scid::database::uint minMoves = 0;
+    scid::database::uint minPly = 0;
+    scid::database::uint maxPly = 999;
+    scid::database::uint matchLength = 1;
+    scid::database::byte min[scid::database::MAX_PIECE_TYPES] = {0};
+    scid::database::byte minFlipped[scid::database::MAX_PIECE_TYPES] = {0};
+    scid::database::byte max[scid::database::MAX_PIECE_TYPES] = {0};
+    scid::database::byte maxFlipped[scid::database::MAX_PIECE_TYPES] = {0};
+    max[scid::database::WM] = max[scid::database::BM] = 9;
     int matDiff[2];
     matDiff[0] = -40;
     matDiff[1] = 40;
-    filterOpT filterOp = FILTEROP_RESET;
+    scid::database::filterOpT filterOp = scid::database::FILTEROP_RESET;
     bool flip = false;
     bool oppBishops = true;
     bool sameBishops = true;
-    uint hpExcludeMask = HPSIG_Empty;
-    uint hpExMaskFlip = HPSIG_Empty;
-    std::vector<patternT> patt;
-    std::vector<patternT> flippedPatt;
-    patternT tempPatt;
+    scid::database::uint hpExcludeMask = scid::database::HPSIG_Empty;
+    scid::database::uint hpExMaskFlip = scid::database::HPSIG_Empty;
+    std::vector<scid::database::patternT> patt;
+    std::vector<scid::database::patternT> flippedPatt;
+    scid::database::patternT tempPatt;
 
     const char * options[] = {
         "wq", "bq", "wr", "br", "wb", "bb", "wn", "bn",
@@ -7744,43 +7742,43 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         arg += 2;
         int index = -1;
         if (option[0] == '-') {
-            index = strUniqueMatch (&(option[1]), options);
+            index = scid::database::strUniqueMatch (&(option[1]), options);
         }
-        uint counts [2] = {0, 0};
+        scid::database::uint counts [2] = {0, 0};
         if (index >= OPT_WQ  &&  index <= OPT_BM) {
-            strGetUnsigneds (value, counts, 2);
+            scid::database::strGetUnsigneds (value, counts, 2);
         }
 
         switch (index) {
 
-        case OPT_WQ:  min[WQ] = counts[0];  max[WQ] = counts[1];  break;
-        case OPT_BQ:  min[BQ] = counts[0];  max[BQ] = counts[1];  break;
-        case OPT_WR:  min[WR] = counts[0];  max[WR] = counts[1];  break;
-        case OPT_BR:  min[BR] = counts[0];  max[BR] = counts[1];  break;
-        case OPT_WB:  min[WB] = counts[0];  max[WB] = counts[1];  break;
-        case OPT_BB:  min[BB] = counts[0];  max[BB] = counts[1];  break;
-        case OPT_WN:  min[WN] = counts[0];  max[WN] = counts[1];  break;
-        case OPT_BN:  min[BN] = counts[0];  max[BN] = counts[1];  break;
-        case OPT_WP:  min[WP] = counts[0];  max[WP] = counts[1];  break;
-        case OPT_BP:  min[BP] = counts[0];  max[BP] = counts[1];  break;
-        case OPT_WM:  min[WM] = counts[0];  max[WM] = counts[1];  break;
-        case OPT_BM:  min[BM] = counts[0];  max[BM] = counts[1];  break;
+        case OPT_WQ:  min[scid::database::WQ] = counts[0];  max[scid::database::WQ] = counts[1];  break;
+        case OPT_BQ:  min[scid::database::BQ] = counts[0];  max[scid::database::BQ] = counts[1];  break;
+        case OPT_WR:  min[scid::database::WR] = counts[0];  max[scid::database::WR] = counts[1];  break;
+        case OPT_BR:  min[scid::database::BR] = counts[0];  max[scid::database::BR] = counts[1];  break;
+        case OPT_WB:  min[scid::database::WB] = counts[0];  max[scid::database::WB] = counts[1];  break;
+        case OPT_BB:  min[scid::database::BB] = counts[0];  max[scid::database::BB] = counts[1];  break;
+        case OPT_WN:  min[scid::database::WN] = counts[0];  max[scid::database::WN] = counts[1];  break;
+        case OPT_BN:  min[scid::database::BN] = counts[0];  max[scid::database::BN] = counts[1];  break;
+        case OPT_WP:  min[scid::database::WP] = counts[0];  max[scid::database::WP] = counts[1];  break;
+        case OPT_BP:  min[scid::database::BP] = counts[0];  max[scid::database::BP] = counts[1];  break;
+        case OPT_WM:  min[scid::database::WM] = counts[0];  max[scid::database::WM] = counts[1];  break;
+        case OPT_BM:  min[scid::database::BM] = counts[0];  max[scid::database::BM] = counts[1];  break;
 
         case OPT_FLIP:
-            flip = strGetBoolean (value);
+            flip = scid::database::strGetBoolean (value);
             break;
 
         case OPT_FILTER:
-            filterOp = strGetFilterOp (value);
+            filterOp = scid::database::strGetFilterOp (value);
             break;
 
         case OPT_RANGE:
-            strGetUnsigneds (value, counts, 2);
+            scid::database::strGetUnsigneds (value, counts, 2);
             minPly = counts[0];  maxPly = counts[1];
             break;
 
         case OPT_LENGTH:
-            matchLength = strGetUnsigned (value);
+            matchLength = scid::database::strGetUnsigned (value);
             if (matchLength < 1) { matchLength = 1; }
             break;
 
@@ -7793,26 +7791,26 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             break;
 
         case OPT_DIFF:
-            strGetIntegers (value, matDiff, 2);
+            scid::database::strGetIntegers (value, matDiff, 2);
             break;
 
         case OPT_PATTERN:
-            if (parsePattern (value, &tempPatt) != OK) {
+            if (parsePattern (value, &tempPatt) != scid::database::OK) {
                 AppendResult (ti, "Invalid pattern: ", value, NULL);
                 return TCL_ERROR;
             }
             // Only add to lists if a pattern was specified:
-            if (tempPatt.pieceMatch == EMPTY) { break; }
+            if (tempPatt.pieceMatch == scid::database::EMPTY) { break; }
             // Update home-pawn exclude masks if appropriate:
             if (!tempPatt.flag
-                &&  piece_Type(tempPatt.pieceMatch) == PAWN
-                &&  tempPatt.rankMatch == NO_RANK
-                &&  tempPatt.fyleMatch != NO_FYLE) {
-                colorT color = piece_Color (tempPatt.pieceMatch);
-                colorT flipColor = (color == WHITE ? BLACK : WHITE);
-                fyleT fyle = tempPatt.fyleMatch;
-                hpExcludeMask = hpSig_AddPawn (hpExcludeMask, color, fyle);
-                hpExMaskFlip = hpSig_AddPawn (hpExMaskFlip, flipColor, fyle);
+                &&  scid::database::piece_Type(tempPatt.pieceMatch) == scid::database::PAWN
+                &&  tempPatt.rankMatch == scid::database::NO_RANK
+                &&  tempPatt.fyleMatch != scid::database::NO_FYLE) {
+                scid::database::colorT color = scid::database::piece_Color (tempPatt.pieceMatch);
+                scid::database::colorT flipColor = (color == scid::database::WHITE ? scid::database::BLACK : scid::database::WHITE);
+                scid::database::fyleT fyle = tempPatt.fyleMatch;
+                hpExcludeMask = scid::database::hpSig_AddPawn (hpExcludeMask, color, fyle);
+                hpExMaskFlip = scid::database::hpSig_AddPawn (hpExMaskFlip, flipColor, fyle);
             }
             // Add the pattern and its flipped equivalent:
             // TODO: why not push_back() ?
@@ -7828,22 +7826,22 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (arg != argc) { return errorResult (ti, "Odd number of parameters."); }
 
     // Sanity check of values:
-    if (max[WQ] < min[WQ]) { max[WQ] = min[WQ]; }
-    if (max[BQ] < min[BQ]) { max[BQ] = min[BQ]; }
-    if (max[WR] < min[WR]) { max[WR] = min[WR]; }
-    if (max[BR] < min[BR]) { max[BR] = min[BR]; }
-    if (max[WB] < min[WB]) { max[WB] = min[WB]; }
-    if (max[BB] < min[BB]) { max[BB] = min[BB]; }
-    if (max[WN] < min[WN]) { max[WN] = min[WN]; }
-    if (max[BN] < min[BN]) { max[BN] = min[BN]; }
-    if (max[WP] < min[WP]) { max[WP] = min[WP]; }
-    if (max[BP] < min[BP]) { max[BP] = min[BP]; }
+    if (max[scid::database::WQ] < min[scid::database::WQ]) { max[scid::database::WQ] = min[scid::database::WQ]; }
+    if (max[scid::database::BQ] < min[scid::database::BQ]) { max[scid::database::BQ] = min[scid::database::BQ]; }
+    if (max[scid::database::WR] < min[scid::database::WR]) { max[scid::database::WR] = min[scid::database::WR]; }
+    if (max[scid::database::BR] < min[scid::database::BR]) { max[scid::database::BR] = min[scid::database::BR]; }
+    if (max[scid::database::WB] < min[scid::database::WB]) { max[scid::database::WB] = min[scid::database::WB]; }
+    if (max[scid::database::BB] < min[scid::database::BB]) { max[scid::database::BB] = min[scid::database::BB]; }
+    if (max[scid::database::WN] < min[scid::database::WN]) { max[scid::database::WN] = min[scid::database::WN]; }
+    if (max[scid::database::BN] < min[scid::database::BN]) { max[scid::database::BN] = min[scid::database::BN]; }
+    if (max[scid::database::WP] < min[scid::database::WP]) { max[scid::database::WP] = min[scid::database::WP]; }
+    if (max[scid::database::BP] < min[scid::database::BP]) { max[scid::database::BP] = min[scid::database::BP]; }
     // Minor piece range should be at least the sum of the Bishop
     // and Knight minimums, and at most the sum of the maximums:
-    if (min[WM] < min[WB]+min[WN]) { min[WM] = min[WB] + min[WN]; }
-    if (min[BM] < max[BB]+min[BN]) { min[BM] = min[BB] + min[BN]; }
-    if (max[WM] > max[WB]+max[WN]) { max[WM] = max[WB] + max[WN]; }
-    if (max[BM] > max[BB]+max[BN]) { max[BM] = max[BB] + max[BN]; }
+    if (min[scid::database::WM] < min[scid::database::WB]+min[scid::database::WN]) { min[scid::database::WM] = min[scid::database::WB] + min[scid::database::WN]; }
+    if (min[scid::database::BM] < max[scid::database::BB]+min[scid::database::BN]) { min[scid::database::BM] = min[scid::database::BB] + min[scid::database::BN]; }
+    if (max[scid::database::WM] > max[scid::database::WB]+max[scid::database::WN]) { max[scid::database::WM] = max[scid::database::WB] + max[scid::database::WN]; }
+    if (max[scid::database::BM] > max[scid::database::BB]+max[scid::database::BN]) { max[scid::database::BM] = max[scid::database::BB] + max[scid::database::BN]; }
 
     // Swap material difference range values if necessary:
     if (matDiff[0] > matDiff[1]) {
@@ -7852,18 +7850,18 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Set up flipped piece counts if necessary:
     if (flip) {
-        minFlipped[WQ] = min[BQ];  maxFlipped[WQ] = max[BQ];
-        minFlipped[WR] = min[BR];  maxFlipped[WR] = max[BR];
-        minFlipped[WB] = min[BB];  maxFlipped[WB] = max[BB];
-        minFlipped[WN] = min[BN];  maxFlipped[WN] = max[BN];
-        minFlipped[WP] = min[BP];  maxFlipped[WP] = max[BP];
-        minFlipped[WM] = min[BM];  maxFlipped[WM] = max[BM];
-        minFlipped[BQ] = min[WQ];  maxFlipped[BQ] = max[WQ];
-        minFlipped[BR] = min[WR];  maxFlipped[BR] = max[WR];
-        minFlipped[BB] = min[WB];  maxFlipped[BB] = max[WB];
-        minFlipped[BN] = min[WN];  maxFlipped[BN] = max[WN];
-        minFlipped[BP] = min[WP];  maxFlipped[BP] = max[WP];
-        minFlipped[BM] = min[WM];  maxFlipped[BM] = max[WM];
+        minFlipped[scid::database::WQ] = min[scid::database::BQ];  maxFlipped[scid::database::WQ] = max[scid::database::BQ];
+        minFlipped[scid::database::WR] = min[scid::database::BR];  maxFlipped[scid::database::WR] = max[scid::database::BR];
+        minFlipped[scid::database::WB] = min[scid::database::BB];  maxFlipped[scid::database::WB] = max[scid::database::BB];
+        minFlipped[scid::database::WN] = min[scid::database::BN];  maxFlipped[scid::database::WN] = max[scid::database::BN];
+        minFlipped[scid::database::WP] = min[scid::database::BP];  maxFlipped[scid::database::WP] = max[scid::database::BP];
+        minFlipped[scid::database::WM] = min[scid::database::BM];  maxFlipped[scid::database::WM] = max[scid::database::BM];
+        minFlipped[scid::database::BQ] = min[scid::database::WQ];  maxFlipped[scid::database::BQ] = max[scid::database::WQ];
+        minFlipped[scid::database::BR] = min[scid::database::WR];  maxFlipped[scid::database::BR] = max[scid::database::WR];
+        minFlipped[scid::database::BB] = min[scid::database::WB];  maxFlipped[scid::database::BB] = max[scid::database::WB];
+        minFlipped[scid::database::BN] = min[scid::database::WN];  maxFlipped[scid::database::BN] = max[scid::database::WN];
+        minFlipped[scid::database::BP] = min[scid::database::WP];  maxFlipped[scid::database::BP] = max[scid::database::WP];
+        minFlipped[scid::database::BM] = min[scid::database::WM];  maxFlipped[scid::database::BM] = max[scid::database::WM];
     }
 
     // Convert move numbers to halfmoves (ply counts):
@@ -7872,38 +7870,38 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     maxPly = maxPly * 2;
 
     // Set up the material Sig: it is the signature of the MAXIMUMs.
-    matSigT msig, msigFlipped;
+    scid::database::matSigT msig, msigFlipped;
     int checkMsig = 1;
-    if (max[WQ] > 3  ||  max[BQ] > 3  ||  max[WR] > 3 ||  max[BR] > 3 ||
-        max[WB] > 3  ||  max[BB] > 3  ||  max[WN] > 3 ||  max[BN] > 3) {
+    if (max[scid::database::WQ] > 3  ||  max[scid::database::BQ] > 3  ||  max[scid::database::WR] > 3 ||  max[scid::database::BR] > 3 ||
+        max[scid::database::WB] > 3  ||  max[scid::database::BB] > 3  ||  max[scid::database::WN] > 3 ||  max[scid::database::BN] > 3) {
         // It is an unusual search, we cannot use material sig!
         checkMsig = 0;
     }
-    msig = matsig_Make (max);
+    msig = scid::database::matsig_Make (max);
     msigFlipped = MATSIG_FlipColor(msig);
 
-    Progress progress = UI_CreateProgress(ti);
+    scid::database::Progress progress = UI_CreateProgress(ti);
     Timer timer;  // Start timing this search.
 
     char temp [250];
-    Game * g = scratchGame;
-    HFilter filter = db->getFilter("dbfilter");
+    scid::database::Game * g = scratchGame;
+    scid::database::HFilter filter = db->getFilter("dbfilter");
 
     // If filter operation is to reset the filter, reset it:
-    if (filterOp == FILTEROP_RESET) {
+    if (filterOp == scid::database::FILTEROP_RESET) {
         filter->includeAll();
-        filterOp = FILTEROP_AND;
+        filterOp = scid::database::FILTEROP_AND;
     }
     size_t startFilterCount = filter->size();
 
     // Here is the loop that searches on each game:
-    gamenumT gameNum = 0, n = db->numGames();
+    scid::database::gamenumT gameNum = 0, n = db->numGames();
     for (; gameNum < n; gameNum++) {
         if ((gameNum % 1000) == 0) {  // Update the percentage done bar:
             if (!progress.report(gameNum, n)) break;
         }
         // First, apply the filter operation:
-        if (filterOp == FILTEROP_AND) {  // Skip any games not in the filter:
+        if (filterOp == scid::database::FILTEROP_AND) {  // Skip any games not in the filter:
             if (filter.get(gameNum) == 0) {
                 continue;
             }
@@ -7911,12 +7909,12 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             if (filter.get(gameNum) != 0) {
                 continue;
             }
-            // OK, this game is NOT in the filter.
+            // scid::database::OK, this game is NOT in the filter.
             // Add it so filterCounts are kept up to date:
             filter.set (gameNum, 1);
         }
 
-        const IndexEntry* ie = db->getIndexEntry(gameNum);
+        const scid::database::IndexEntry* ie = db->getIndexEntry(gameNum);
         if (ie->GetLength() == 0) {  // Skip games with no gamefile record
             filter.set (gameNum, 0);
             continue;
@@ -7934,14 +7932,14 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         // First, eliminate games that cannot match from their final
         // material signature:
-        if (checkMsig  &&  !matsig_isReachable (msig, ie->GetFinalMatSig(),
+        if (checkMsig  &&  !scid::database::matsig_isReachable (msig, ie->GetFinalMatSig(),
                                                 ie->GetPromotionsFlag(),
                                                 ie->GetUnderPromoFlag()))
         {
             possibleMatch = false;
         }
         if (flip  &&  checkMsig
-                &&  !matsig_isReachable (msigFlipped, ie->GetFinalMatSig(),
+                &&  !scid::database::matsig_isReachable (msigFlipped, ie->GetFinalMatSig(),
                                          ie->GetPromotionsFlag(),
                                          ie->GetUnderPromoFlag()))
         {
@@ -7953,15 +7951,15 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         // white c or e pawns, so any game that ends with a c2 or e2 pawn
         // at home need not be loaded:
 
-        if (possibleMatch  &&  hpExcludeMask != HPSIG_Empty) {
-            uint gameFinalHP = hpSig_Final (ie->GetHomePawnData());
+        if (possibleMatch  &&  hpExcludeMask != scid::database::HPSIG_Empty) {
+            scid::database::uint gameFinalHP = scid::database::hpSig_Final (ie->GetHomePawnData());
             // If any bit is set in both, this game cannot match:
             if ((gameFinalHP & hpExcludeMask) != 0) {
                 possibleMatch = false;
             }
         }
-        if (possibleFlippedMatch  &&  hpExMaskFlip != HPSIG_Empty) {
-            uint gameFinalHP = hpSig_Final (ie->GetHomePawnData());
+        if (possibleFlippedMatch  &&  hpExMaskFlip != scid::database::HPSIG_Empty) {
+            scid::database::uint gameFinalHP = scid::database::hpSig_Final (ie->GetHomePawnData());
             // If any bit is set in both, this game cannot match:
             if ((gameFinalHP & hpExMaskFlip) != 0) {
                 possibleFlippedMatch = false;
@@ -7998,8 +7996,8 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         if (result) {
             // update the filter value to the current ply:
-            uint plyOfMatch = g->GetCurrentPly() + 1 - matchLength;
-            byte b = (byte) (plyOfMatch + 1);
+            scid::database::uint plyOfMatch = g->GetCurrentPly() + 1 - matchLength;
+            scid::database::byte b = (scid::database::byte) (plyOfMatch + 1);
             if (b == 0) { b = 1; }
             filter.set (gameNum, b);
         } else {
@@ -8024,7 +8022,7 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 }
 
 
-const uint NUM_TITLES = 8;
+const scid::database::uint NUM_TITLES = 8;
 enum {
     TITLE_GM, TITLE_IM, TITLE_FM,
     TITLE_WGM, TITLE_WIM, TITLE_WFM,
@@ -8047,17 +8045,17 @@ parseTitles (const char * str)
 {
     bool * titles = new bool [NUM_TITLES];
 
-    for (uint t=0; t < NUM_TITLES; t++) { titles[t] = false; }
+    for (scid::database::uint t=0; t < NUM_TITLES; t++) { titles[t] = false; }
 
-    str = strFirstWord (str);
+    str = scid::database::strFirstWord (str);
     while (*str != 0) {
-        for (uint i=0; i < NUM_TITLES; i++) {
-            if (strIsCasePrefix (titleStr[i], str)) {
+        for (scid::database::uint i=0; i < NUM_TITLES; i++) {
+            if (scid::database::strIsCasePrefix (titleStr[i], str)) {
                 titles[i] = true;
                 break;
             }
         }
-        str = strNextWord (str);
+        str = scid::database::strNextWord (str);
     }
     return titles;
 }
@@ -8067,12 +8065,12 @@ parseTitles (const char * str)
 // sc_search_header:
 //    Searches by header information.
 int
-sc_search_header (ClientData, Tcl_Interp * ti, scidBaseT* base, HFilter& filter, int argc, const char ** argv)
+sc_search_header (ClientData, Tcl_Interp * ti, scid::database::scidBaseT* base, scid::database::HFilter& filter, int argc, const char ** argv)
 {
     ASSERT(argc >= 2);
-    Progress progress = UI_CreateProgress(ti);
-    errorT res = search_index(base, filter, argc -2, argv +2, progress);
-    if (res != OK) return UI_Result(ti, res);
+    scid::database::Progress progress = UI_CreateProgress(ti);
+    scid::database::errorT res = search_index(base, filter, argc -2, argv +2, progress);
+    if (res != scid::database::OK) return UI_Result(ti, res);
 
     //TODO: the old options that follows do not work with FILTEROP_OR
     //      at the moment there is no tcl code that use them with FILTEROP_OR
@@ -8108,7 +8106,7 @@ sc_search_header (ClientData, Tcl_Interp * ti, scidBaseT* base, HFilter& filter,
         arg += 2;
         int index = -1;
         if (option[0] == '-') {
-            index = strUniqueMatch (&(option[1]), options);
+            index = scid::database::strUniqueMatch (&(option[1]), options);
         }
 
         switch (index) {
@@ -8124,11 +8122,11 @@ sc_search_header (ClientData, Tcl_Interp * ti, scidBaseT* base, HFilter& filter,
 
         case OPT_TOMOVE:
             wToMove = false;
-            if (strFirstChar (value, 'w')  || strFirstChar (value, 'W')) {
+            if (scid::database::strFirstChar (value, 'w')  || scid::database::strFirstChar (value, 'W')) {
                 wToMove = true;
             }
             bToMove = false;
-            if (strFirstChar (value, 'b')  || strFirstChar (value, 'B')) {
+            if (scid::database::strFirstChar (value, 'b')  || scid::database::strFirstChar (value, 'B')) {
                 bToMove = true;
             }
             break;
@@ -8149,28 +8147,28 @@ sc_search_header (ClientData, Tcl_Interp * ti, scidBaseT* base, HFilter& filter,
     std::vector<bool> mWhite;
     if (wTitles != NULL  &&  spellChk != NULL) {
         bool allTitlesOn = true;
-        for (uint t=0; t < NUM_TITLES; t++) {
+        for (scid::database::uint t=0; t < NUM_TITLES; t++) {
             if (! wTitles[t]) { allTitlesOn = false; break; }
         }
         if (! allTitlesOn) {
-            idNumberT i;
-            idNumberT numNames = base->getNameBase()->GetNumNames(NAME_PLAYER);
+            scid::database::idNumberT i;
+            scid::database::idNumberT numNames = base->getNameBase()->GetNumNames(scid::database::NAME_PLAYER);
             mWhite.resize(numNames, true);
             for (i=0; i < numNames; i++) {
-                const char * name = base->getNameBase()->GetName (NAME_PLAYER, i);
+                const char * name = base->getNameBase()->GetName (scid::database::NAME_PLAYER, i);
                 const scidup::spelling::PlayerInfo* pInfo = spellChk->getPlayerInfo(name);
                 const char * title = (pInfo) ? pInfo->getTitle() : "";
-                if ((!wTitles[TITLE_GM]  &&  strEqual(title, "gm"))
-                    || (!wTitles[TITLE_GM]  &&  strEqual(title, "hgm"))
-                    || (!wTitles[TITLE_IM]  &&  strEqual(title, "im"))
-                    || (!wTitles[TITLE_FM]  &&  strEqual(title, "fm"))
-                    || (!wTitles[TITLE_WGM]  &&  strEqual(title, "wgm"))
-                    || (!wTitles[TITLE_WIM]  &&  strEqual(title, "wim"))
-                    || (!wTitles[TITLE_WFM]  &&  strEqual(title, "wfm"))
-                    || (!wTitles[TITLE_W]  &&  strEqual(title, "w"))
-                    || (!wTitles[TITLE_NONE]  &&  strEqual(title, ""))
-                    || (!wTitles[TITLE_NONE]  &&  strEqual(title, "cgm"))
-                    || (!wTitles[TITLE_NONE]  &&  strEqual(title, "cim"))) {
+                if ((!wTitles[TITLE_GM]  &&  scid::database::strEqual(title, "gm"))
+                    || (!wTitles[TITLE_GM]  &&  scid::database::strEqual(title, "hgm"))
+                    || (!wTitles[TITLE_IM]  &&  scid::database::strEqual(title, "im"))
+                    || (!wTitles[TITLE_FM]  &&  scid::database::strEqual(title, "fm"))
+                    || (!wTitles[TITLE_WGM]  &&  scid::database::strEqual(title, "wgm"))
+                    || (!wTitles[TITLE_WIM]  &&  scid::database::strEqual(title, "wim"))
+                    || (!wTitles[TITLE_WFM]  &&  scid::database::strEqual(title, "wfm"))
+                    || (!wTitles[TITLE_W]  &&  scid::database::strEqual(title, "w"))
+                    || (!wTitles[TITLE_NONE]  &&  scid::database::strEqual(title, ""))
+                    || (!wTitles[TITLE_NONE]  &&  scid::database::strEqual(title, "cgm"))
+                    || (!wTitles[TITLE_NONE]  &&  scid::database::strEqual(title, "cim"))) {
                     mWhite[i] = false;
                 }
             }
@@ -8181,28 +8179,28 @@ sc_search_header (ClientData, Tcl_Interp * ti, scidBaseT* base, HFilter& filter,
     std::vector<bool> mBlack;
     if (bTitles != NULL  &&  spellChk != NULL) {
         bool allTitlesOn = true;
-        for (uint t=0; t < NUM_TITLES; t++) {
+        for (scid::database::uint t=0; t < NUM_TITLES; t++) {
             if (!bTitles[t]) { allTitlesOn = false; break; }
         }
         if (! allTitlesOn) {
-            idNumberT i;
-            idNumberT numNames = base->getNameBase()->GetNumNames(NAME_PLAYER);
+            scid::database::idNumberT i;
+            scid::database::idNumberT numNames = base->getNameBase()->GetNumNames(scid::database::NAME_PLAYER);
             mBlack.resize(numNames, true);
             for (i=0; i < numNames; i++) {
-                const char * name = base->getNameBase()->GetName (NAME_PLAYER, i);
+                const char * name = base->getNameBase()->GetName (scid::database::NAME_PLAYER, i);
                 const scidup::spelling::PlayerInfo* pInfo = spellChk->getPlayerInfo(name);
                 const char * title = (pInfo) ? pInfo->getTitle() : "";
-                if ((!bTitles[TITLE_GM]  &&  strEqual(title, "gm"))
-                    || (!bTitles[TITLE_GM]  &&  strEqual(title, "hgm"))
-                    || (!bTitles[TITLE_IM]  &&  strEqual(title, "im"))
-                    || (!bTitles[TITLE_FM]  &&  strEqual(title, "fm"))
-                    || (!bTitles[TITLE_WGM]  &&  strEqual(title, "wgm"))
-                    || (!bTitles[TITLE_WIM]  &&  strEqual(title, "wim"))
-                    || (!bTitles[TITLE_WFM]  &&  strEqual(title, "wfm"))
-                    || (!bTitles[TITLE_W]  &&  strEqual(title, "w"))
-                    || (!bTitles[TITLE_NONE]  &&  strEqual(title, ""))
-                    || (!bTitles[TITLE_NONE]  &&  strEqual(title, "cgm"))
-                    || (!bTitles[TITLE_NONE]  &&  strEqual(title, "cim"))) {
+                if ((!bTitles[TITLE_GM]  &&  scid::database::strEqual(title, "gm"))
+                    || (!bTitles[TITLE_GM]  &&  scid::database::strEqual(title, "hgm"))
+                    || (!bTitles[TITLE_IM]  &&  scid::database::strEqual(title, "im"))
+                    || (!bTitles[TITLE_FM]  &&  scid::database::strEqual(title, "fm"))
+                    || (!bTitles[TITLE_WGM]  &&  scid::database::strEqual(title, "wgm"))
+                    || (!bTitles[TITLE_WIM]  &&  scid::database::strEqual(title, "wim"))
+                    || (!bTitles[TITLE_WFM]  &&  scid::database::strEqual(title, "wfm"))
+                    || (!bTitles[TITLE_W]  &&  scid::database::strEqual(title, "w"))
+                    || (!bTitles[TITLE_NONE]  &&  scid::database::strEqual(title, ""))
+                    || (!bTitles[TITLE_NONE]  &&  scid::database::strEqual(title, "cgm"))
+                    || (!bTitles[TITLE_NONE]  &&  scid::database::strEqual(title, "cim"))) {
                     mBlack[i] = false;
                 }
             }
@@ -8217,23 +8215,23 @@ sc_search_header (ClientData, Tcl_Interp * ti, scidBaseT* base, HFilter& filter,
     }
 
     // Here is the loop that searches on each game:
-    errorT result = OK;
+    scid::database::errorT result = scid::database::OK;
     if (!skipSearch)
-    for (uint i=0, n = base->numGames(); i < n; i++) {
+    for (scid::database::uint i=0, n = base->numGames(); i < n; i++) {
         if ((i % 5000) == 0) {  // Update the percentage done bar:
             if (!progress.report(i,n)) {
-                result = ERROR_UserCancel;
+                result = scid::database::ERROR_UserCancel;
                 break;
             }
         }
         // Skip any games not in the filter:
         if (filter.get(i) == 0) continue;
 
-        const IndexEntry* ie = base->getIndexEntry(i);
+        const scid::database::IndexEntry* ie = base->getIndexEntry(i);
 
 		auto matchGameHeader = [&]() {
 			//TODO: this trick does not work if there is a custom start position
-			uint halfmoves = ie->GetNumHalfMoves();
+			scid::database::uint halfmoves = ie->GetNumHalfMoves();
 			if ((halfmoves % 2) == 0) { // This game ends with White to move
 				if (!wToMove) {
 					return false;
@@ -8264,7 +8262,7 @@ sc_search_header (ClientData, Tcl_Interp * ti, scidBaseT* base, HFilter& filter,
         // generating the PGN representation of each game.
 
 		if (match && pgnTextCount > 0) {
-			if (base->getGame(*ie, *scratchGame) != OK) {
+			if (base->getGame(*ie, *scratchGame) != scid::database::OK) {
 				match = false;
 			} else {
 				scratchGame->ResetPgnStyle();
@@ -8272,11 +8270,11 @@ sc_search_header (ClientData, Tcl_Interp * ti, scidBaseT* base, HFilter& filter,
 				scratchGame->AddPgnStyle(PGN_STYLE_COMMENTS);
 				scratchGame->AddPgnStyle(PGN_STYLE_VARS);
 				scratchGame->AddPgnStyle(PGN_STYLE_SYMBOLS);
-				scratchGame->SetPgnFormat(PGN_FORMAT_Plain);
+				scratchGame->SetPgnFormat(scid::database::PGN_FORMAT_Plain);
 				const char* buf = scratchGame->WriteToPGN().first;
 					for (scid_tcl_size m = 0; m < pgnTextCount; m++) {
 						if (match) {
-							match = strContains(buf, sPgnText[m]);
+							match = scid::database::strContains(buf, sPgnText[m]);
 						}
 					}
 			}
@@ -8306,7 +8304,7 @@ int
 sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 {
     auto editor = scidup::app::editor::gameSession(*db);
-    Game& game = editor.game();
+    scid::database::Game& game = editor.game();
     static const char * options [] = {
         "count", "number", "create", "delete", "enter", "exit", "first",
         "level", "list", "moveInto", "promote", NULL
@@ -8317,7 +8315,7 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
     };
     int index = -1;
 
-    if (argc > 1) { index = strUniqueMatch (argv[1], options); }
+    if (argc > 1) { index = scid::database::strUniqueMatch (argv[1], options); }
 
     switch (index) {
     case VAR_COUNT:
@@ -8373,7 +8371,7 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 int sc_var_delete(ClientData, Tcl_Interp* ti, int, const char**) {
 	auto editor = scidup::app::editor::gameSession(*db);
 	auto err = editor.game().DeleteVariation();
-	if (err != ERROR_NoVariation)
+	if (err != scid::database::ERROR_NoVariation)
 		editor.setDirty();
 	return UI_Result(ti, err);
 }
@@ -8384,7 +8382,7 @@ int sc_var_delete(ClientData, Tcl_Interp* ti, int, const char**) {
 int sc_var_first(ClientData, Tcl_Interp* ti, int, const char**) {
 	auto editor = scidup::app::editor::gameSession(*db);
 	auto err = editor.game().FirstVariation();
-	if (err != ERROR_NoVariation)
+	if (err != scid::database::ERROR_NoVariation)
 		editor.setDirty();
 	return UI_Result(ti, err);
 }
@@ -8396,15 +8394,15 @@ int
 sc_var_list (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     auto editor = scidup::app::editor::gameSession(*db);
-    Game& game = editor.game();
-    bool uci = (argc > 2) && ! strCompare("UCI", argv[2]);
-    uint varCount = game.GetNumVariations();
+    scid::database::Game& game = editor.game();
+    bool uci = (argc > 2) && ! scid::database::strCompare("UCI", argv[2]);
+    scid::database::uint varCount = game.GetNumVariations();
     char s[100];
-    for (uint varNumber = 0; varNumber < varCount; varNumber++) {
+    for (scid::database::uint varNumber = 0; varNumber < varCount; varNumber++) {
         game.MoveIntoVariation (varNumber);
         if (uci) game.GetNextMoveUCI (s);
         else game.GetSAN (s);
-        // if (s[0] == 0) { strCopy (s, "(empty)"); }
+        // if (s[0] == 0) { scid::database::strCopy (s, "(empty)"); }
         AppendElement (ti, s);
         game.MoveExitVariation ();
     }
@@ -8418,12 +8416,12 @@ int
 sc_var_enter (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     auto editor = scidup::app::editor::gameSession(*db);
-    Game& game = editor.game();
+    scid::database::Game& game = editor.game();
     if (argc != 3) {
         return errorResult (ti, "Usage: sc_var enter <number>");
     }
 
-    uint varNumber = strGetUnsigned (argv[2]);
+    scid::database::uint varNumber = scid::database::strGetUnsigned (argv[2]);
     if (varNumber >= game.GetNumVariations()) {
         return errorResult (ti, "No such variation!");
     }
@@ -8452,7 +8450,7 @@ sc_book (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
     };
     int index = -1;
 
-    if (argc > 1) { index = strUniqueMatch (argv[1], options);}
+    if (argc > 1) { index = scid::database::strUniqueMatch (argv[1], options);}
 
     switch (index) {
     case BOOK_LOAD:
@@ -8490,7 +8488,7 @@ sc_book_load (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: sc_book load bookfile slot");
     }
 
-    uint slot = strGetUnsigned (argv[3]);
+    scid::database::uint slot = scid::database::strGetUnsigned (argv[3]);
 
 	 int bookstate = polyglot_open(argv[2], slot);
 
@@ -8518,7 +8516,7 @@ sc_book_close (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (argc != 3) {
         return errorResult (ti, "Usage: sc_book close slot");
     }
-    uint slot = strGetUnsigned (argv[2]);
+    scid::database::uint slot = scid::database::strGetUnsigned (argv[2]);
     if (polyglot_close(slot) == -1 ) {
 			return errorResult (ti, "Error closing book");
 		}
@@ -8533,7 +8531,7 @@ sc_book_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (argc != 3) {
         return errorResult (ti, "Usage: sc_book moves slot");
     }
-    uint slot = strGetUnsigned (argv[2]);
+    scid::database::uint slot = scid::database::strGetUnsigned (argv[2]);
     char boardStr[100];
     auto editor = scidup::app::editor::gameSession(*db);
     editor.game().GetCurrentPos()->PrintFEN(boardStr, sizeof(boardStr));
@@ -8551,7 +8549,7 @@ sc_book_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     UI_List res(2);
     res.push_back(moves);
     res.push_back(extra_list);
-    return UI_Result(ti, OK, res);
+    return UI_Result(ti, scid::database::OK, res);
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // sc_positions:
@@ -8564,7 +8562,7 @@ sc_book_positions (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (argc != 3) {
         return errorResult (ti, "Usage: sc_book positions slot");
     }
-	    uint slot = strGetUnsigned (argv[2]);
+	    scid::database::uint slot = scid::database::strGetUnsigned (argv[2]);
 			auto editor = scidup::app::editor::gameSession(*db);
 			editor.game().GetCurrentPos()->PrintFEN(boardStr, sizeof(boardStr));
 			polyglot_positions(moves, (const char *) boardStr, slot);
@@ -8580,7 +8578,7 @@ sc_book_update (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (argc != 4) {
         return errorResult (ti, "Usage: sc_book update <probs> slot");
     }
-    uint slot = strGetUnsigned (argv[3]);
+    scid::database::uint slot = scid::database::strGetUnsigned (argv[3]);
 		scid_book_update( (char*) argv[2], slot );
     return TCL_OK;
 }
@@ -8593,7 +8591,7 @@ sc_book_movesupdate (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (argc != 6) {
         return errorResult (ti, "Usage: sc_book movesupdate <moves> <probs> slot tempfile");
     }
-    uint slot = strGetUnsigned (argv[4]);
+    scid::database::uint slot = scid::database::strGetUnsigned (argv[4]);
     scid_book_movesupdate( (char*) argv[2], (char*) argv[3], slot, (char*) argv[5] );
     return TCL_OK;
 }
