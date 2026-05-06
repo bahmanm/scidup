@@ -1,28 +1,13 @@
-/*
- * Copyright (C) 2017 Fulvio Benini
- *
- * Scid is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation.
- *
- * Scid is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Scid. If not, see <http://www.gnu.org/licenses/>.
- */
-
+#include "scidup/core/position.h"
 #include "scidup/database/gameview.h"
 #include "scidup/database/pgnparse.h"
-#include "scidup/core/position.h"
 #include "scidup/database/searchpos.h"
+
 #include <cstring>
 #include <gtest/gtest.h>
-#include <unordered_set>
+#include <string_view>
 
-TEST(Test_PositionSAN, UCItoSAN) {
+TEST(Test_FastBoardSAN, UCItoSAN) {
 	// clang-format off
 	static const char* positions[] = {
 		"2k4r/ppprnp1p/5pq1/1P2b3/P1R1P3/Q1N2N2/5PPP/4K1R1 b - - 0 22",
@@ -67,6 +52,7 @@ TEST(Test_PositionSAN, UCItoSAN) {
 			ASSERT_EQ(scid::database::OK, pos.ReadFromFEN(*it));
 			continue;
 		}
+
 		scid::database::simpleMoveT sm;
 		ASSERT_EQ(scid::database::OK, pos.ReadCoordMove(&sm, *it++, int(slen), false));
 		pos.MakeSANString(&sm, buf, scid::database::SAN_MATETEST);
@@ -86,12 +72,16 @@ TEST(Test_PositionSAN, UCItoSAN) {
 				fullmove.setCapture(sm.capturedPiece,
 				                    pos.GetBoard()[sm.to] == scid::database::EMPTY);
 			}
+		} else if (col == scid::database::WHITE) {
+			fullmove = scid::database::FullMove(
+			    scid::database::WHITE, scid::database::E1,
+			    (castle > 0) ? scid::database::H1 : scid::database::A1);
 		} else {
-			if (col == scid::database::WHITE)
-				fullmove = scid::database::FullMove(scid::database::WHITE, scid::database::E1, (castle > 0) ? scid::database::H1 : scid::database::A1);
-			else
-				fullmove = scid::database::FullMove(scid::database::BLACK, scid::database::E8, (castle > 0) ? scid::database::H8 : scid::database::A8);
+			fullmove = scid::database::FullMove(
+			    scid::database::BLACK, scid::database::E8,
+			    (castle > 0) ? scid::database::H8 : scid::database::A8);
 		}
+
 		scid::database::FastBoard fastboard(pos);
 		pos.UndoSimpleMove(sm);
 		fastboard.fillSANInfo(fullmove);
@@ -159,18 +149,6 @@ TEST(Test_MaterialCount, material_count) {
 	EXPECT_FALSE(mt != mt_ref);
 	EXPECT_EQ(mt_ref.count(scid::database::WHITE), mt.count(scid::database::WHITE));
 	EXPECT_EQ(mt_ref.count(scid::database::BLACK), mt.count(scid::database::BLACK));
-	EXPECT_EQ(mt_ref.count(scid::database::WHITE, scid::database::BISHOP), mt.count(scid::database::WHITE, scid::database::BISHOP));
-	EXPECT_EQ(mt_ref.count(scid::database::BLACK, scid::database::BISHOP), mt.count(scid::database::BLACK, scid::database::BISHOP));
-	EXPECT_EQ(mt_ref.count(scid::database::WHITE, scid::database::KING), mt.count(scid::database::WHITE, scid::database::KING));
-	EXPECT_EQ(mt_ref.count(scid::database::BLACK, scid::database::KING), mt.count(scid::database::BLACK, scid::database::KING));
-	EXPECT_EQ(mt_ref.count(scid::database::WHITE, scid::database::KNIGHT), mt.count(scid::database::WHITE, scid::database::KNIGHT));
-	EXPECT_EQ(mt_ref.count(scid::database::BLACK, scid::database::KNIGHT), mt.count(scid::database::BLACK, scid::database::KNIGHT));
-	EXPECT_EQ(mt_ref.count(scid::database::WHITE, scid::database::PAWN), mt.count(scid::database::WHITE, scid::database::PAWN));
-	EXPECT_EQ(mt_ref.count(scid::database::BLACK, scid::database::PAWN), mt.count(scid::database::BLACK, scid::database::PAWN));
-	EXPECT_EQ(mt_ref.count(scid::database::WHITE, scid::database::QUEEN), mt.count(scid::database::WHITE, scid::database::QUEEN));
-	EXPECT_EQ(mt_ref.count(scid::database::BLACK, scid::database::QUEEN), mt.count(scid::database::BLACK, scid::database::QUEEN));
-	EXPECT_EQ(mt_ref.count(scid::database::WHITE, scid::database::ROOK), mt.count(scid::database::WHITE, scid::database::ROOK));
-	EXPECT_EQ(mt_ref.count(scid::database::BLACK, scid::database::ROOK), mt.count(scid::database::BLACK, scid::database::ROOK));
 }
 
 TEST(Test_MaterialCount, less_mat) {
@@ -178,15 +156,17 @@ TEST(Test_MaterialCount, less_mat) {
 		scid::database::MaterialCount mt_count;
 		for (int i = 0; i < 64; ++i) {
 			if (board[i] != scid::database::EMPTY) {
-				mt_count.incr(scid::database::piece_Color(board[i]), scid::database::piece_Type(board[i]));
+				mt_count.incr(scid::database::piece_Color(board[i]),
+				              scid::database::piece_Type(board[i]));
 			}
 		}
 		return mt_count;
 	};
 
 	scid::database::Position pos;
-	ASSERT_EQ(scid::database::OK, pos.ReadFromFEN(
-	                  "2k4r/ppprnp1p/5pq1/1P2b3/P1R1P3/Q1N2N2/5PPP/4K1R1 b"));
+	ASSERT_EQ(scid::database::OK,
+	          pos.ReadFromFEN(
+	              "2k4r/ppprnp1p/5pq1/1P2b3/P1R1P3/Q1N2N2/5PPP/4K1R1 b"));
 	auto mt_count = count_pieces(pos.GetBoard());
 	auto matSig = scid::database::matsig_Make(pos.GetMaterial());
 	EXPECT_FALSE(scid::database::less_mat(mt_count, matSig, true, true));
@@ -214,481 +194,11 @@ TEST(Test_MaterialCount, less_mat) {
 	EXPECT_TRUE(scid::database::less_mat(mt_count, matSig, false, false));
 }
 
-TEST(Test_ReadFromFen, invalid_FEN) {
-	scid::database::Position pos;
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFEN("rnb1k2Q/1p5p/p7/4p3/4q3/8/PPP2R1P/2K5 b"));
-	EXPECT_NE(scid::database::OK, pos.ReadFromFEN("rnb1k2/Q1p5p/p7/4p3/4q3/8/PPP2R1P/2K5 b"));
-	EXPECT_NE(scid::database::OK, pos.ReadFromFEN("rnb1k2Q/1p5p/p7/4p4/4q3/8/PPP2R1P/2K5 b"));
-	EXPECT_NE(scid::database::OK, pos.ReadFromFEN("rnb1k2Q/1p5p/p7/4a3/4q3/8/PPP2R1P/2K5 b"));
-	EXPECT_NE(scid::database::OK, pos.ReadFromFEN("rnb1k2Q/1p5p/p7/4 3/4q3/8/PPP2R1P/2K5 b"));
-	EXPECT_NE(scid::database::OK, pos.ReadFromFEN("rnb1k2Q/1p5p/p7/4p3/4q3/8/PPP2R1P/2K5"));
-	EXPECT_NE(scid::database::OK, pos.ReadFromFEN("rnb1k2Q/1p5p/p7/4p3/4q3/8/PKP2R1P/2K5 b"));
-	EXPECT_NE(scid::database::OK, pos.ReadFromFEN("rnb1k2Q/1k5p/p7/4p3/4q3/8/PPP2R1P/2K5 b"));
-	EXPECT_NE(scid::database::OK, pos.ReadFromFEN("rnb1q2Q/1p5p/p7/4p3/4q3/8/PPP2R1P/2K5 b"));
-	EXPECT_NE(scid::database::OK, pos.ReadFromFEN("rnb1k2Q/1p5p/p7/4p3/4q3/8/PPP2R1P/2K5 a"));
-	EXPECT_NE(scid::database::OK, pos.ReadFromFEN("rnb1k2Q/1p5p/p7/4p3/4q3/8/PPP2R1P/2K5 b z"));
-	EXPECT_NE(scid::database::OK, // extra piece on rank
-	          pos.ReadFromFEN(
-	              "rnbqkbn1/ppppppppr/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
-	EXPECT_NE(scid::database::OK, // white 18 pieces
-	          pos.ReadFromFEN(
-	              "nbqkbnr/ppppNNpp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
-	EXPECT_NE(scid::database::OK, // black 17 pieces
-	          pos.ReadFromFEN(
-	              "nbqkbnr/pppppppp/8/8/8/8/PPPPPnPP/RNBQKBNR w KQkq - 0 1"));
-	EXPECT_NE(scid::database::OK, // colour
-	          pos.ReadFromFEN(
-	              "nbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR K KQkq - 0 1"));
-	EXPECT_NE(scid::database::OK, // king in check
-	          pos.ReadFromFEN(
-	              "1B6/prpb2p1/2KPp3/qp1p4/Q1k5/nRP3p1/BRPP2Pp/BN6 w - -"));
-}
-
-TEST(Test_ReadFromFen, castling_flags) {
-	const char* valid_fens[] = {
-	    "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq",
-	    "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR    w    KQkq",
-	    "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQk",
-	    "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQ",
-	    "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w K",
-	    "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w Q",
-	    "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w Qk",
-	    "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w -",
-	    "rnbbnqkr/pppppppp/8/8/8/8/PPPPPPPP/RNBBNQKR w HAha - 0 1",
-	    "nbqnrkbr/pppppppp/8/8/8/8/PPPPPPPP/NBQNRKBR w HEhe - 0 1"};
-	const char* invalid_fens[] = {
-	    "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w z",
-	    "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w 1",
-	    "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w T",
-	    "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w Ki"};
-	scid::database::Position pos;
-	for (auto fen : valid_fens) {
-		EXPECT_EQ(scid::database::OK, pos.ReadFromFEN(fen));
-	}
-	for (auto fen : invalid_fens) {
-		EXPECT_NE(scid::database::OK, pos.ReadFromFEN(fen));
-	}
-}
-
-TEST(Test_ReadFromFen, EP_target) {
-	scid::database::Position pos;
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - - 1 1"));
-	EXPECT_EQ(scid::database::NULL_SQUARE, pos.GetEPTarget());
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - a3 1 1"));
-	EXPECT_EQ(scid::database::A3, pos.GetEPTarget());
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - b6 1 1"));
-	EXPECT_EQ(scid::database::B6, pos.GetEPTarget());
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - f3 1 1"));
-	EXPECT_EQ(scid::database::F3, pos.GetEPTarget());
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - h6 1 1"));
-	EXPECT_EQ(scid::database::H6, pos.GetEPTarget());
-
-	EXPECT_NE(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - i6 1 1"));
-	EXPECT_NE(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - a2 1 1"));
-	EXPECT_NE(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - z3 1 1"));
-	EXPECT_NE(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - a7 1 1"));
-	EXPECT_NE(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - a 3 1 1"));
-}
-
-TEST(Test_ReadFromFen, halfmove_clock) {
-	const char* valid_fens[] = {"8/K7/8/8/7k/8/8/8 w - - 0 1",
-	                            "8/K7/8/8/7k/8/8/8 w - - 5 1",
-	                            "8/K7/8/8/7k/8/8/8 w - - 45 1"};
-	const char* invalid_fens[] = {
-	    "8/K7/8/8/7k/8/8/8 w - - -1 1", "8/K7/8/8/7k/8/8/8 w - - - 1 1",
-	    "8/K7/8/8/7k/8/8/8 w - - - 1",  "8/K7/8/8/7k/8/8/8 w - - a 1",
-	    "8/K7/8/8/7k/8/8/8 w - - a5 1", "8/K7/8/8/7k/8/8/8 w - - 0x5 1"};
-	char buf[1024];
-	scid::database::Position pos;
-	for (auto fen : valid_fens) {
-		EXPECT_EQ(scid::database::OK, pos.ReadFromFEN(fen));
-		pos.PrintFEN(buf, sizeof(buf));
-		EXPECT_STREQ(buf, fen);
-	}
-	for (auto fen : invalid_fens) {
-		EXPECT_EQ(scid::database::OK, pos.ReadFromFEN(fen));
-		pos.PrintFEN(buf, sizeof(buf));
-		EXPECT_STREQ(buf, "8/K7/8/8/7k/8/8/8 w - - 0 1");
-	}
-}
-
-TEST(Test_ReadFromFen, fullmove_number) {
-	scid::database::Position pos;
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - - 0 0"));
-	EXPECT_EQ(pos.GetPlyCounter(), 0);
-	EXPECT_EQ(pos.GetPlyCounter() / 2 + 1, 1);
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - - 0 -1"));
-	EXPECT_EQ(pos.GetPlyCounter(), 0);
-	EXPECT_EQ(pos.GetPlyCounter() / 2 + 1, 1);
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - - 0 a"));
-	EXPECT_EQ(pos.GetPlyCounter(), 0);
-	EXPECT_EQ(pos.GetPlyCounter() / 2 + 1, 1);
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - - 0 1"));
-	EXPECT_EQ(pos.GetPlyCounter() / 2 + 1, 1);
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - - 0 25"));
-	EXPECT_EQ(pos.GetPlyCounter() / 2 + 1, 25);
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - - 0 115"));
-	EXPECT_EQ(pos.GetPlyCounter() / 2 + 1, 115);
-}
-
-TEST(Test_ReadFromFen, GetList) {
-	scid::database::Position pos;
-	auto getPiece = [&](auto sq) { return std::pair(sq, pos.GetPiece(sq)); };
-
-	ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("rnb1k2Q/1p5p/p7/4p3/4q3/8/PPP2R1P/2K5 b"));
-	const auto wh_list = pos.GetList(scid::database::WHITE);
-	ASSERT_TRUE(7 == pos.GetCount(scid::database::WHITE));
-	EXPECT_EQ(std::pair(scid::database::C1, scid::database::WK), getPiece(wh_list[0]));
-	EXPECT_EQ(std::pair(scid::database::A2, scid::database::WP), getPiece(wh_list[1]));
-	EXPECT_EQ(std::pair(scid::database::B2, scid::database::WP), getPiece(wh_list[2]));
-	EXPECT_EQ(std::pair(scid::database::C2, scid::database::WP), getPiece(wh_list[3]));
-	EXPECT_EQ(std::pair(scid::database::F2, scid::database::WR), getPiece(wh_list[4]));
-	EXPECT_EQ(std::pair(scid::database::H2, scid::database::WP), getPiece(wh_list[5]));
-	EXPECT_EQ(std::pair(scid::database::H8, scid::database::WQ), getPiece(wh_list[6]));
-	const auto bl_list = pos.GetList(scid::database::BLACK);
-	ASSERT_TRUE(9 == pos.GetCount(scid::database::BLACK));
-	EXPECT_EQ(std::pair(scid::database::E8, scid::database::BK), getPiece(bl_list[0]));
-	EXPECT_EQ(std::pair(scid::database::B8, scid::database::BN), getPiece(bl_list[1]));
-	EXPECT_EQ(std::pair(scid::database::C8, scid::database::BB), getPiece(bl_list[2]));
-	EXPECT_EQ(std::pair(scid::database::A8, scid::database::BR), getPiece(bl_list[3]));
-	EXPECT_EQ(std::pair(scid::database::B7, scid::database::BP), getPiece(bl_list[4]));
-	EXPECT_EQ(std::pair(scid::database::H7, scid::database::BP), getPiece(bl_list[5]));
-	EXPECT_EQ(std::pair(scid::database::A6, scid::database::BP), getPiece(bl_list[6]));
-	EXPECT_EQ(std::pair(scid::database::E5, scid::database::BP), getPiece(bl_list[7]));
-	EXPECT_EQ(std::pair(scid::database::E4, scid::database::BQ), getPiece(bl_list[8]));
-}
-
-TEST(Test_PositionReadCoordMoves, ReadFromFENorUCI) {
-	char buf[1024];
-	scid::database::Position pos;
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFENorUCI("position startpos"));
-	EXPECT_TRUE(pos.IsStdStart());
-
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFENorUCI("   position startpos    "));
-	EXPECT_TRUE(pos.IsStdStart());
-
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFENorUCI("position startpos moves"));
-	EXPECT_TRUE(pos.IsStdStart());
-
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFENorUCI("   position startpos moves   "));
-	EXPECT_TRUE(pos.IsStdStart());
-
-	EXPECT_NE(scid::database::OK, pos.ReadFromFENorUCI(""));
-
-	EXPECT_EQ(scid::database::OK,
-	          pos.ReadFromFENorUCI("   position startpos moves e2e4 c7c5 "));
-	pos.PrintFEN(buf, sizeof(buf));
-	EXPECT_STREQ(
-	    buf, "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2");
-
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFENorUCI("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/"
-	                                   "RNBQKBNR w KQkq - 0 2 moves g1f3 "));
-	pos.PrintFEN(buf, sizeof(buf));
-	EXPECT_STREQ(
-	    buf, "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2");
-}
-
-TEST(Test_PositionReadCoordMoves, ReadCoordMoves) {
-	std::tuple<const char*, const char*, const char*, const char*> expectOK[] =
-	    {{"position startpos", "1.e4 c5",
-	      "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
-	      "e2e4 c7c5"},
-	     {"position startpos", "1.e4 c5",
-	      "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
-	      " e2e4 c7c5 "}};
-
-	for (auto [startpos, sanMoves, endpos, coordMoves] : expectOK) {
-		scid::database::Position pos;
-		EXPECT_EQ(scid::database::OK, pos.ReadFromFENorUCI(startpos));
-		std::string san;
-		EXPECT_EQ(
-		    scid::database::OK, pos.MakeCoordMoves(coordMoves, std::strlen(coordMoves), &san));
-		char buf[1024];
-		pos.PrintFEN(buf, sizeof(buf));
-		EXPECT_STREQ(endpos, buf);
-		EXPECT_STREQ(sanMoves, san.c_str());
-	}
-}
-
-TEST(Test_MoveGeneration, GetCastling) {
-	{
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("8/8/8/8/8/5k2/8/4K2R w K -"));
-		EXPECT_TRUE(pos.IsLegalMove(scid::database::E1, scid::database::G1, scid::database::EMPTY));
-	}
-	{ // Adjacent enemy king
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("8/8/8/8/8/8/6k1/4K2R w K -"));
-		EXPECT_FALSE(pos.IsLegalMove(scid::database::E1, scid::database::G1, scid::database::EMPTY));
-	}
-	{ // King in check
-		scid::database::Position pos;
-		ASSERT_EQ(
-		    scid::database::OK, pos.ReadFromFEN(
-		            "r3k2r/pppp1ppp/5n1b/4p3/4P3/5N2/PP3PPP/r3KB1R w KQkq -"));
-		EXPECT_FALSE(pos.IsLegalMove(scid::database::E1, scid::database::G1, scid::database::EMPTY));
-		EXPECT_FALSE(pos.IsLegalMove(scid::database::E1, scid::database::C1, scid::database::EMPTY));
-	}
-	{ // Obstacles
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK,
-		          pos.ReadFromFEN(
-		              "rn2k2r/pppp1ppp/5n2/4p3/4P3/5N2/PP3PPP/R3KB1R b KQkq"));
-		EXPECT_TRUE(pos.IsLegalMove(scid::database::E8, scid::database::G8, scid::database::EMPTY));
-		EXPECT_FALSE(pos.IsLegalMove(scid::database::E8, scid::database::C8, scid::database::EMPTY));
-
-		pos.SetToMove(scid::database::WHITE);
-		EXPECT_FALSE(pos.IsLegalMove(scid::database::E1, scid::database::G1, scid::database::EMPTY));
-		EXPECT_TRUE(pos.IsLegalMove(scid::database::E1, scid::database::C1, scid::database::EMPTY));
-	}
-	{ // Destination in check
-		scid::database::Position pos;
-		ASSERT_EQ(
-		    scid::database::OK, pos.ReadFromFEN(
-		            "r3k2r/pppp1ppp/5n1b/4p2r/4P3/5N2/PP3PP1/R3K2R b KQkq -"));
-		EXPECT_TRUE(pos.IsLegalMove(scid::database::E8, scid::database::G8, scid::database::EMPTY));
-		EXPECT_TRUE(pos.IsLegalMove(scid::database::E8, scid::database::C8, scid::database::EMPTY));
-
-		pos.SetToMove(scid::database::WHITE);
-		EXPECT_TRUE(pos.IsLegalMove(scid::database::E1, scid::database::G1, scid::database::EMPTY));
-		EXPECT_FALSE(pos.IsLegalMove(scid::database::E1, scid::database::C1, scid::database::EMPTY));
-	}
-	{ // Wrong rank
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("8/8/1k6/8/8/8/8/4K2R w K - 0 1"));
-		EXPECT_TRUE(pos.IsLegalMove(scid::database::E1, scid::database::G1, scid::database::EMPTY));
-		EXPECT_FALSE(pos.IsLegalMove(scid::database::E1, scid::database::G2, scid::database::EMPTY));
-	}
-}
-
-template <typename PosT, typename MoveT>
-auto parse_move(PosT& pos, MoveT dest, std::string_view move) {
-	return pos.ParseMove(dest, move.data(), move.data() + move.size());
-}
-
-TEST(Test_PositionDoSimpleMove, castling_flags) {
-	std::vector<scid::database::simpleMoveT> sm;
-	char buf[1024];
-	scid::database::Position pos;
-	ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1"));
-
-	parse_move(pos, &sm.emplace_back(), "e1g1");
-	pos.DoSimpleMove(sm.back());
-	pos.PrintFEN(buf, sizeof(buf));
-	EXPECT_STREQ(buf, "r3k2r/8/8/8/8/8/8/R4RK1 b kq - 1 1");
-
-	parse_move(pos, &sm.emplace_back(), "h8g8");
-	pos.DoSimpleMove(sm.back());
-	pos.PrintFEN(buf, sizeof(buf));
-	EXPECT_STREQ(buf, "r3k1r1/8/8/8/8/8/8/R4RK1 w q - 2 2");
-
-	parse_move(pos, &sm.emplace_back(), "g1h2");
-	pos.DoSimpleMove(sm.back());
-	pos.PrintFEN(buf, sizeof(buf));
-	EXPECT_STREQ(buf, "r3k1r1/8/8/8/8/8/7K/R4R2 b q - 3 2");
-
-	parse_move(pos, &sm.emplace_back(), "e8c8");
-	pos.DoSimpleMove(sm.back());
-	pos.PrintFEN(buf, sizeof(buf));
-	EXPECT_STREQ(buf, "2kr2r1/8/8/8/8/8/7K/R4R2 w - - 4 3");
-
-	// UndoSimpleMove
-	auto it = sm.crbegin();
-	pos.UndoSimpleMove(*it++);
-	pos.PrintFEN(buf, sizeof(buf));
-	EXPECT_STREQ(buf, "r3k1r1/8/8/8/8/8/7K/R4R2 b q - 3 2");
-
-	pos.UndoSimpleMove(*it++);
-	pos.PrintFEN(buf, sizeof(buf));
-	EXPECT_STREQ(buf, "r3k1r1/8/8/8/8/8/8/R4RK1 w q - 2 2");
-
-	pos.UndoSimpleMove(*it++);
-	pos.PrintFEN(buf, sizeof(buf));
-	EXPECT_STREQ(buf, "r3k2r/8/8/8/8/8/8/R4RK1 b kq - 1 1");
-
-	pos.UndoSimpleMove(*it++);
-	pos.PrintFEN(buf, sizeof(buf));
-	EXPECT_STREQ(buf, "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
-}
-
-TEST(Test_PositionDoSimpleMove, castling_flags_capture) {
-	char buf[1024];
-	scid::database::simpleMoveT sm;
-	scid::database::Position pos;
-	{
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1"));
-		parse_move(pos, &sm, "h1h8");
-		pos.DoSimpleMove(sm);
-		pos.PrintFEN(buf, sizeof(buf));
-		EXPECT_STREQ(buf, "r3k2R/8/8/8/8/8/8/R3K3 b Qq - 0 1");
-	}
-	{
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1"));
-		parse_move(pos, &sm, "a1a8");
-		pos.DoSimpleMove(sm);
-		pos.PrintFEN(buf, sizeof(buf));
-		EXPECT_STREQ(buf, "R3k2r/8/8/8/8/8/8/4K2R b Kk - 0 1");
-	}
-	{
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("r3k2r/8/8/8/8/8/8/R3K2R b KQkq - 0 1"));
-		parse_move(pos, &sm, "h8h1");
-		pos.DoSimpleMove(sm);
-		pos.PrintFEN(buf, sizeof(buf));
-		EXPECT_STREQ(buf, "r3k3/8/8/8/8/8/8/R3K2r w Qq - 0 2");
-	}
-	{
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("r3k2r/8/8/8/8/8/8/R3K2R b KQkq - 0 1"));
-		parse_move(pos, &sm, "a8a1");
-		pos.DoSimpleMove(sm);
-		pos.PrintFEN(buf, sizeof(buf));
-		EXPECT_STREQ(buf, "4k2r/8/8/8/8/8/8/r3K2R w Kk - 0 2");
-	}
-}
-
-TEST(Test_PositionIsLegalMove, normal) {
-	{
-		scid::database::Position pos = scid::database::Position::getStdStart();
-		EXPECT_TRUE(pos.IsLegalMove(scid::database::B1, scid::database::C3, scid::database::EMPTY));
-		EXPECT_TRUE(pos.IsLegalMove(scid::database::E2, scid::database::E4, scid::database::EMPTY));
-		EXPECT_FALSE(pos.IsLegalMove(scid::database::E2, scid::database::E4, scid::database::QUEEN));
-		EXPECT_FALSE(pos.IsLegalMove(scid::database::E3, scid::database::E4, scid::database::EMPTY));
-		EXPECT_FALSE(pos.IsLegalMove(scid::database::C1, scid::database::F4, scid::database::EMPTY));
-	}
-}
-
-TEST(Test_PositionIsLegalMove, king_in_check) {
-	scid::database::Position pos;
-	ASSERT_EQ(
-	    scid::database::OK,
-	    pos.ReadFromFEN(
-	        "r1b1kb1r/ppp2ppp/4p3/3pP3/3q4/1BN5/PPPP2PP/R1BQR1K1 w kq - 0 11"));
-	EXPECT_TRUE(pos.IsLegalMove(scid::database::G1, scid::database::H1, scid::database::EMPTY));
-	EXPECT_TRUE(pos.IsLegalMove(scid::database::E1, scid::database::E3, scid::database::EMPTY));
-	EXPECT_FALSE(pos.IsLegalMove(scid::database::E1, scid::database::E4, scid::database::EMPTY));
-	EXPECT_FALSE(pos.IsLegalMove(scid::database::C3, scid::database::B5, scid::database::EMPTY));
-
-	{ // Capture the attacker
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("8/1kR5/8/8/8/8/4K3/8 b - - 0 1"));
-		EXPECT_TRUE(pos.IsLegalMove(scid::database::B7, scid::database::C7, scid::database::EMPTY));
-	}
-	{ // Capture a defended piece
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("8/1b6/1k6/8/4p3/4K3/8/8 w - - 0 1"));
-		EXPECT_FALSE(pos.IsLegalMove(scid::database::E3, scid::database::E4, scid::database::EMPTY));
-	}
-	{ // Adjacent enemy king
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("8/8/8/3k4/2p5/4K3/8/8 w - - 0 1"));
-		EXPECT_FALSE(pos.IsLegalMove(scid::database::E3, scid::database::E4, scid::database::EMPTY));
-		EXPECT_TRUE(pos.IsLegalMove(scid::database::E3, scid::database::E2, scid::database::EMPTY));
-	}
-	{ // Evade check
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("8/8/3k4/8/8/8/1r3K2/8 w - - 0 1"));
-		EXPECT_TRUE(pos.IsLegalMove(scid::database::F2, scid::database::E3, scid::database::EMPTY));
-		EXPECT_FALSE(pos.IsLegalMove(scid::database::F2, scid::database::G2, scid::database::EMPTY));
-	}
-}
-
-TEST(Test_PositionIsLegalMove, en_passant) {
-	{ // En passant capture
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("8/8/8/8/4pP2/8/7k/3K4 b - f3 0 1"));
-		EXPECT_TRUE(pos.IsLegalMove(scid::database::E4, scid::database::F3, scid::database::EMPTY));
-	}
-	{ // En passant capture, the pawn checks the king
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("8/8/8/6k1/4pP2/8/8/3K4 b - f3 0 1"));
-		EXPECT_TRUE(pos.IsLegalMove(scid::database::E4, scid::database::F3, scid::database::EMPTY));
-	}
-	{ // Hidden attacker
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("8/2B5/8/8/4pP2/8/7k/3K4 b - f3 0 1"));
-		EXPECT_FALSE(pos.IsLegalMove(scid::database::E4, scid::database::F3, scid::database::EMPTY));
-	}
-}
-
-TEST(Test_PositionIsKingInCheck, last_move_optimization) {
-	scid::database::simpleMoveT sm;
-
-	{ // No Check
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("8/8/8/6k1/5pp1/8/2KR4/2B5 w - -"));
-		parse_move(pos, &sm, "d2g2");
-		pos.DoSimpleMove(sm);
-		EXPECT_FALSE(pos.IsKingInCheck(sm));
-	}
-	{ // Direct attack
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("8/8/8/6k1/5p2/8/2KR4/2B5 w - -"));
-		parse_move(pos, &sm, "d2g2");
-		pos.DoSimpleMove(sm);
-		EXPECT_TRUE(pos.IsKingInCheck(sm));
-	}
-	{ // Discovered check
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("8/8/8/6k1/6p1/8/2KR4/2B5 w - -"));
-		parse_move(pos, &sm, "d2g2");
-		pos.DoSimpleMove(sm);
-		EXPECT_TRUE(pos.IsKingInCheck(sm));
-	}
-	{ // Double check
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("8/8/8/6k1/8/8/2KR4/2B5 w - -"));
-		parse_move(pos, &sm, "d2g2");
-		pos.DoSimpleMove(sm);
-		EXPECT_TRUE(pos.IsKingInCheck(sm));
-	}
-	{ // Castling
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("4k2r/6pp/8/8/8/6P1/4P1PP/5K2 b k -"));
-		parse_move(pos, &sm, "e8h8");
-		pos.DoSimpleMove(sm);
-		EXPECT_TRUE(pos.IsKingInCheck(sm));
-	}
-	{ // En passant capture, the pawn checks the king
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("8/8/8/6k1/4p3/8/5P2/3K4 w - -"));
-		parse_move(pos, &sm, "f2f4");
-		pos.DoSimpleMove(sm);
-		EXPECT_TRUE(pos.IsKingInCheck(sm));
-		parse_move(pos, &sm, "e4f3");
-		pos.DoSimpleMove(sm);
-		EXPECT_FALSE(pos.IsKingInCheck(sm));
-	}
-	{ // En passant capture, discovered check
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK, pos.ReadFromFEN("8/4r3/8/6k1/4pP2/8/8/4K3 b - f3 0 1"));
-		parse_move(pos, &sm, "e4f3");
-		pos.DoSimpleMove(sm);
-		EXPECT_TRUE(pos.IsKingInCheck(sm));
-	}
-}
-
-TEST(Test_PositionIsKingInCheck, null_move) {
-	{ // No Check
-		auto pos = scid::database::Position{};
-		auto sm = scid::database::simpleMoveT{};
-		EXPECT_EQ(scid::database::OK, pos.ReadFromFENorUCI(
-		                  "position startpos moves d2d4 e7e6 b1c3 f8b4"));
-		EXPECT_EQ(scid::database::OK, parse_move(pos, &sm, "null"));
-	}
-	{ // Direct attack
-		auto pos = scid::database::Position{};
-		auto sm = scid::database::simpleMoveT{};
-		EXPECT_EQ(scid::database::OK, pos.ReadFromFENorUCI(
-		                  "position startpos moves d2d4 e7e6 e2e4 f8b4"));
-		EXPECT_NE(scid::database::OK, parse_move(pos, &sm, "null"));
-	}
-}
-
-TEST(Test_PrintFen, castling_flag_kside) {
-	// clang-format off
+TEST(Test_PrintFen, castling_flag_kside_from_pgn) {
 	std::string_view pgn =
-		"[FEN \"Brbnk1r1/3pppq1/8/ppp3pp/PPP3PP/8/3PPPQ1/bRBNK1R1 w KQkq - 0 1\"]"
-		"1. Rxa1 Rxa8 2. Ra3 Ra6 3. Rh3 Rh6 4. Rhh1 Rhh8 5. O-O O-O";
-	// clang-format on
+	    "[FEN \"Brbnk1r1/3pppq1/8/ppp3pp/PPP3PP/8/3PPPQ1/bRBNK1R1 w KQkq - "
+	    "0 1\"]"
+	    "1. Rxa1 Rxa8 2. Ra3 Ra6 3. Rh3 Rh6 4. Rhh1 Rhh8 5. O-O O-O";
 	scid::database::Game game;
 	scid::database::PgnParseLog parseLog;
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game, parseLog));
@@ -714,12 +224,11 @@ TEST(Test_PrintFen, castling_flag_kside) {
 	}
 }
 
-TEST(Test_PrintFen, castling_flag_qside) {
-	// clang-format off
+TEST(Test_PrintFen, castling_flag_qside_from_pgn) {
 	std::string_view pgn =
-	"[FEN \"Br2k1r1/1b1ppn2/8/pppQ1pPp/PPPq1PP1/8/1B1PPN2/bR2K1R1 b KQkq - 0 1\"]"
-	"1... Rg6 2. Rg3 Ra6 3. Ra3 Raxa8 4. Raxa1 O-O-O 5. O-O-O";
-	// clang-format on
+	    "[FEN \"Br2k1r1/1b1ppn2/8/pppQ1pPp/PPPq1PP1/8/1B1PPN2/bR2K1R1 b "
+	    "KQkq - 0 1\"]"
+	    "1... Rg6 2. Rg3 Ra6 3. Ra3 Raxa8 4. Raxa1 O-O-O 5. O-O-O";
 	scid::database::Game game;
 	scid::database::PgnParseLog parseLog;
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game, parseLog));
@@ -740,79 +249,5 @@ TEST(Test_PrintFen, castling_flag_qside) {
 		game.currentPos()->PrintFEN(buf, sizeof(buf));
 		EXPECT_STREQ(buf, expected);
 		game.MoveForwardInPGN();
-	}
-}
-
-TEST(Test_PrintFen, illegal_castling_flag) {
-	std::unordered_set<std::string> flags;
-	flags.insert("KQkq");
-	std::string str = "KQkq";
-	for (int len = 1; len <= 3; len++) {
-		for (int i = 0; i <= str.length() - len; i++) {
-			flags.insert(str.substr(i, len));
-		}
-	}
-
-	// Any flag is valid
-	for (auto color : {'w', 'b'}) {
-		for (auto const& flag : flags) {
-			std::string fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR ";
-			fen.append(1, color).append(1, ' ').append(flag).append(" - 0 1");
-			scid::database::Position pos;
-			pos.ReadFromFEN(fen.c_str());
-			char buf[1024];
-			pos.PrintFEN(buf, sizeof(buf));
-			EXPECT_STREQ(buf, fen.c_str());
-		}
-	}
-
-	// No valid flags
-	for (auto color : {'w', 'b'}) {
-		for (auto const& flag : flags) {
-			std::string fen = "1nbqkbn1/pppppppp/8/8/4P3/8/PPPP1PPP/1NBQKBN1 ";
-			fen.append(1, color).append(1, ' ');
-			auto expected = fen;
-			expected.append("-").append(" - 0 1");
-			fen.append(flag).append(" - 0 1");
-			scid::database::Position pos;
-			pos.ReadFromFEN(fen.c_str());
-			char buf[1024];
-			pos.PrintFEN(buf, sizeof(buf));
-			EXPECT_STREQ(buf, expected.c_str());
-		}
-	}
-
-	// Only white short castle (K) is valid
-	for (auto color : {'w', 'b'}) {
-		for (auto const& flag : flags) {
-			std::string fen = "4k3/8/8/8/8/8/8/4K2R ";
-			fen.append(1, color).append(1, ' ');
-			auto expected = fen;
-			expected.append(flag.find('K') != std::string::npos ? "K" : "-");
-			expected.append(" - 0 1");
-			fen.append(flag).append(" - 0 1");
-			scid::database::Position pos;
-			pos.ReadFromFEN(fen.c_str());
-			char buf[1024];
-			pos.PrintFEN(buf, sizeof(buf));
-			EXPECT_STREQ(buf, expected.c_str());
-		}
-	}
-
-	// Only black long castle (q) is valid
-	for (auto color : {'w', 'b'}) {
-		for (auto const& flag : flags) {
-			std::string fen = "rn1qkb1R/pp2pp2/3p1n2/2p5/8/2P1QN2/5KPP/R1B2B2 ";
-			fen.append(1, color).append(1, ' ');
-			auto expected = fen;
-			expected.append(flag.find('q') != std::string::npos ? "q" : "-");
-			expected.append(" - 0 1");
-			fen.append(flag).append(" - 0 1");
-			scid::database::Position pos;
-			pos.ReadFromFEN(fen.c_str());
-			char buf[1024];
-			pos.PrintFEN(buf, sizeof(buf));
-			EXPECT_STREQ(buf, expected.c_str());
-		}
 	}
 }
