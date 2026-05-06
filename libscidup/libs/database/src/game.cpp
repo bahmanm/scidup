@@ -1734,7 +1734,7 @@ Game::WriteComment (TextBuffer * tb, const char * preStr,
 //
 errorT Game::WriteMoveList(TextBuffer* tb, moveT* oldCurrentMove,
                            bool printMoveNum, bool inComment) {
-    char tempTrans[10];
+    sanStringT tempTrans;
     const char * preCommentStr = "{";
     const char * postCommentStr = "}";
     const char * startTable = "\n";

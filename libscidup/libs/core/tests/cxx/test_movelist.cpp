@@ -1,4 +1,5 @@
 #include "scidup/core/movelist.h"
+#include "scidup/core/notation.h"
 
 #include <algorithm>
 #include <gtest/gtest.h>
@@ -10,7 +11,7 @@ namespace {
 using namespace scid::database;
 
 std::string longNotation(simpleMoveT const& move) {
-	char buf[8] = {};
+	char buf[UCI_MOVE_STRING_SIZE] = {};
 	char* end = move.toLongNotation(buf);
 	return {buf, end};
 }

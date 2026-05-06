@@ -27,6 +27,7 @@
 
 #include "crosstab.h"
 #include "scidup/core/dstring.h"
+#include "scidup/core/notation.h"
 #include "engine.h"
 #include "scidup/database/game.h"
 #include "optable.h"
@@ -2083,7 +2084,7 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             if (auto err = pos->ParseMove(&sm, argv[2], end))
                 return UI_Result(ti, err);
 
-            char buf[16] = {};
+            char buf[scid::database::UCI_MOVE_STRING_SIZE] = {};
             sm.toLongNotation(buf);
             return UI_Result(ti, scid::database::OK, buf);
         }
@@ -4510,7 +4511,7 @@ sc_move_add (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::uint promo = scid::database::strGetUnsigned (argv[4]);
     if (promo == 0) { promo = scid::database::EMPTY; }
 
-    char s[8];
+    char s[scid::database::UCI_MOVE_STRING_SIZE];
     s[0] = scid::database::square_FyleChar (sq1);
     s[1] = scid::database::square_RankChar (sq1);
     s[2] = scid::database::square_FyleChar (sq2);
@@ -4680,7 +4681,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
             game.MoveToEnd();
             game.currentPos()->MakeLongStr(boardStr);
-            char lastmove[8] = {};
+            char lastmove[scid::database::UCI_MOVE_STRING_SIZE] = {};
             game.GetPrevMoveUCI(lastmove);
             UI_List result(2);
             result.push_back(boardStr);
@@ -4811,7 +4812,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                 log.log.empty()) {
                 std::string moves;
                 game.viewMainlineMoves([&](const scid::database::simpleMoveT& move) {
-                    char buf[8] = {' '};
+                    char buf[scid::database::UCI_MOVE_STRING_SIZE + 1] = {' '};
                     auto end = move.toLongNotation(buf + 1);
                     moves.append(buf, end);
                 });
@@ -7195,7 +7196,7 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return eco;
     };
 
-    char tempTrans[10];
+    scid::database::sanStringT tempTrans;
     auto calc_san = [&](auto const& move) {
         strcpy(tempTrans, move ? move.getSAN().c_str() : "[end]");
         scid::database::transPieces(tempTrans);

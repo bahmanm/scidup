@@ -13,6 +13,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "scidup/core/attacks.h"
+#include "scidup/core/notation.h"
 #include "scidup/core/square_collections.h"
 #include "scidup/core/square_moves.h"
 #include "engine.h"
@@ -2214,7 +2215,7 @@ Engine::PrintPV (scid::database::uint depth, int score, const char * note)
         if (Pos.GetToMove() == scid::database::WHITE) {
             Output  ("%u.", Pos.GetFullMoveCount());
         }
-        char s[10];
+        scid::database::sanStringT s;
         Pos.MakeSANString (sm, s, scid::database::SAN_MATETEST);
         Output ("%s", s);
         Pos.DoSimpleMove (sm);

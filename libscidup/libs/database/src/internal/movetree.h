@@ -26,6 +26,7 @@
 
 #include "scidup/database/common.h"
 #include "scidup/core/movelist.h"
+#include "scidup/core/notation.h"
 #include <string>
 
 namespace scid::database {
@@ -66,7 +67,7 @@ struct moveT {
 	moveT* next;
 	moveT* varChild;
 	simpleMoveT moveData; // piece moving, target square etc
-	char san[10];   // SAN representation of move
+	sanStringT san; // SAN representation of move
 	markerT marker; // can be NO_MARKER, START_MARKER or END_MARKER
 	byte numVariations;
 	byte nagCount;

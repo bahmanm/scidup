@@ -16,6 +16,7 @@
 #define SCID_OPTABLE_H
 
 #include "scidup/core/game_result.h"
+#include "scidup/core/notation.h"
 #include "scidup/database/common.h"
 #include "scidup/database/game.h"
 #include "scidup/database/indexentry.h"

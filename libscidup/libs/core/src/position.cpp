@@ -1861,7 +1861,7 @@ errorT Position::MakeCoordMoves(const char* moves, size_t moveslen,
         moves = std::find_if_not(moves + len, end, is_space);
 
         if (toSAN) {
-            char san[8];
+            sanStringT san;
             MakeSANString(&sm, san,
                           moves != end ? SAN_CHECKTEST : SAN_MATETEST);
             if (WhiteToMove()) {

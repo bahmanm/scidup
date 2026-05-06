@@ -55,7 +55,7 @@ struct simpleMoveT
 		return 0;
 	}
 
-	/// Converts the move to long algebraic notation.
+	/// Converts the move to UCI coordinate notation.
 	/// @return a pointer one past the last char written.
 	template <typename OutputIt> OutputIt toLongNotation(OutputIt dest) const {
 		if (from == to) {
