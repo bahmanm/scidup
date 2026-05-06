@@ -20,11 +20,12 @@
 #include "scidup/database/date.h"
 #include "scidup/database/indexentry.h"
 #include "scidup/database/matsig.h"
-#include "scidup/database/movetree.h"
 #include "scidup/database/namebase.h"
 #include "scidup/core/position.h"
 #include <forward_list>
+#include <functional>
 #include <memory>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -32,6 +33,11 @@ namespace scid::database {
 
 class ByteBuffer;
 class TextBuffer;
+struct moveT;
+enum markerT : byte;
+struct MoveChunkDeleter {
+    void operator()(moveT* ptr) const;
+};
 
 void transPieces(char *s);
 char transPiecesChar(char c);
@@ -138,6 +144,21 @@ enum gameFormatT {
     PGN_FORMAT_Color = 3    // PGN, with color tags <red> etc
 };
 
+enum class GameMoveViewKind {
+    InitialComment,
+    VariationStart,
+    VariationEnd,
+    Move
+};
+
+struct GameMoveView {
+    GameMoveViewKind kind;
+    simpleMoveT move;
+    std::string_view san;
+    std::string_view comment;
+    std::span<const byte> nags;
+};
+
 #define PGN_STYLE_TAGS             1
 #define PGN_STYLE_COMMENTS         2
 #define PGN_STYLE_VARS             4
@@ -179,7 +200,7 @@ class Game {
 
     // Position and moves
     byte        moveChunkUsed_;
-    std::forward_list<std::unique_ptr<moveT[]> > moveChunks_;
+    std::forward_list<std::unique_ptr<moveT[], MoveChunkDeleter> > moveChunks_;
     std::unique_ptr<Position> StartPos;
     std::unique_ptr<Position> CurrentPos{new Position};
     moveT*      FirstMove;
@@ -202,6 +223,8 @@ private:
     static errorT decodeMove(ByteBuffer* buf, simpleMoveT* sm, byte val,
                              const Position* pos);
     errorT WritePGN(TextBuffer* tb);
+    errorT WriteMoveList(TextBuffer* tb, moveT* oldCurrentMove,
+                         bool printMoveNum, bool inComment);
     std::string* find_std_tag(std::string_view tag) {
         if (tag.size() == 5) {
             if (tag == "Event")
@@ -231,6 +254,7 @@ private:
 
 public:
     Game() { Clear(); }
+    ~Game();
     void Clear();
     void strip(bool variations, bool comments, bool NAGs);
 
@@ -325,14 +349,12 @@ public:
     }
     /// @return an "UCI position" string that leads to the current position
     std::string currentPosUCI() const;
-    simpleMoveT* GetCurrentMove() { // Deprecated
-        return CurrentMove->endMarker() ? nullptr : &CurrentMove->moveData;
-    }
+    simpleMoveT* GetCurrentMove();
     ushort GetCurrentPly() const {
         auto ply = CurrentPos->GetPlyCounter();
         return StartPos ? ply - StartPos->GetPlyCounter() : ply;
     }
-    uint GetNumVariations() const { return CurrentMove->numVariations; }
+    uint GetNumVariations() const;
 
     // Each variation has a "level" and a "number".
     // - "level" is the number of times that is necessary to call
@@ -341,27 +363,16 @@ public:
     // current root position (first variation is number 0).
     // The main line is 0,0.
     uint GetVarLevel() const { return VarDepth; }
-    uint GetVarNumber() const {
-        if (VarDepth != 0) {
-            uint varNumber = 0;
-            auto moves = CurrentMove->getParent();
-            for (auto parent = moves.first; parent; varNumber++) {
-                parent = parent->varChild;
-                if (parent == moves.second)
-                    return varNumber;
-            }
-        }
-        return 0; // returns 0 if in main line
-    }
+    uint GetVarNumber() const;
 
     unsigned GetLocationInPGN() const;
     unsigned GetPgnOffset() const;
 
-    bool AtVarStart() const { return CurrentMove->prev->startMarker(); }
-    bool AtVarEnd() const { return CurrentMove->endMarker(); }
-    bool AtStart() const { return (VarDepth == 0 && AtVarStart()); }
-    bool AtEnd() const { return (VarDepth == 0 && AtVarEnd()); }
-    bool AtEmptyVar() const { return VarDepth != 0 && AtVarStart() && AtVarEnd(); }
+    bool AtVarStart() const;
+    bool AtVarEnd() const;
+    bool AtStart() const;
+    bool AtEnd() const;
+    bool AtEmptyVar() const;
 
     //////////////////////////////////////////////////////////////
     // Functions that get/set information about the last/next move.
@@ -370,33 +381,15 @@ public:
     //
     errorT AddNag(byte nag);
     errorT RemoveNag(bool isMoveNag);
-    void ClearNags() {
-        CurrentMove->prev->nagCount = 0;
-        CurrentMove->prev->nags[0] = 0;
-    }
-    byte* GetNags() const { return CurrentMove->prev->nags; }
-    byte* GetNextNags() const { return CurrentMove->nags; }
+    void ClearNags();
+    byte* GetNags() const;
+    byte* GetNextNags() const;
 
     /// Return the comments of the previous 2 moves (useful to compute clocks).
     /// If there are no previous moves, return an empty comment.
-    std::pair<const char*, const char*> previousComments() const {
-        std::pair<const char*, const char*> res = {"", ""};
-        auto move = CurrentMove->getPrevMove();
-        if (move)
-            move = move->getPrevMove();
-        if (move) {
-            res.first = move->comment.c_str();
-            move = move->getPrevMove();
-        }
-        if (move)
-            res.second = move->comment.c_str();
-
-        return res;
-    }
-    const char* GetMoveComment() const {
-        return CurrentMove->prev->comment.c_str();
-    }
-    std::string& accessMoveComment() { return CurrentMove->prev->comment; }
+    std::pair<const char*, const char*> previousComments() const;
+    const char* GetMoveComment() const;
+    std::string& accessMoveComment();
     void SetMoveComment(const char* comment);
 
     const char* GetNextSAN();
@@ -405,7 +398,10 @@ public:
     void GetPrevMoveUCI(char* str) const;
     void GetNextMoveUCI(char* str);
 
-    const moveT* movetree() const { return FirstMove; }
+    void viewMainlineMoves(
+        const std::function<void(const simpleMoveT&)>& visitor) const;
+    void viewMovetext(
+        const std::function<void(const GameMoveView&)>& visitor) const;
 
     //////////////////////////////////////////////////////////////
     // Functions that get/set the tag pairs:
@@ -484,8 +480,6 @@ public:
     // PGN conversion
     void      WriteComment (TextBuffer * tb, const char * preStr,
                             const char * comment, const char * postStr);
-    errorT    WriteMoveList(TextBuffer* tb, moveT* oldCurrentMove,
-                            bool printMoveNum, bool inComment);
     std::pair<const char*, unsigned> WriteToPGN (uint lineWidth = 0,
                                                  bool NewLineAtEnd = false,
                                                  bool newLineToSpaces = true);

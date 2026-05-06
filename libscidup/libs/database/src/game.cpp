@@ -16,6 +16,7 @@
 #include "scidup/database/bytebuf.h"
 #include "scidup/database/common.h"
 #include "scidup/core/dstring.h"
+#include "movetree.h"
 #include "naglatex.h"
 #include "nagtext.h"
 #include "scidup/core/position.h"
@@ -37,6 +38,119 @@ const char * langPieces[] = { "",
 "PPKRQDRTBFNC", "PPKRQDRTBANC", "PBKKQDRTBLNS", 
 "PPKRQDRTBANC", "PpKKQDRTBLNP", "PPKKQDRVBSNJ",
 "PGKKQVRBBFNH", "PBKKQDRTBLNS", "PBKKQDRTBLNS", "PPKRQDRTBANC", "PSKKQDRTBLNR", "" };
+
+void MoveChunkDeleter::operator()(moveT* ptr) const {
+	delete[] ptr;
+}
+
+Game::~Game() = default;
+
+simpleMoveT* Game::GetCurrentMove() {
+	return CurrentMove->endMarker() ? nullptr : &CurrentMove->moveData;
+}
+
+uint Game::GetNumVariations() const {
+	return CurrentMove->numVariations;
+}
+
+uint Game::GetVarNumber() const {
+	if (VarDepth != 0) {
+		uint varNumber = 0;
+		auto moves = CurrentMove->getParent();
+		for (auto parent = moves.first; parent; varNumber++) {
+			parent = parent->varChild;
+			if (parent == moves.second)
+				return varNumber;
+		}
+	}
+	return 0;
+}
+
+bool Game::AtVarStart() const {
+	return CurrentMove->prev->startMarker();
+}
+
+bool Game::AtVarEnd() const {
+	return CurrentMove->endMarker();
+}
+
+bool Game::AtStart() const {
+	return VarDepth == 0 && AtVarStart();
+}
+
+bool Game::AtEnd() const {
+	return VarDepth == 0 && AtVarEnd();
+}
+
+bool Game::AtEmptyVar() const {
+	return VarDepth != 0 && AtVarStart() && AtVarEnd();
+}
+
+void Game::ClearNags() {
+	CurrentMove->prev->nagCount = 0;
+	CurrentMove->prev->nags[0] = 0;
+}
+
+byte* Game::GetNags() const {
+	return CurrentMove->prev->nags;
+}
+
+byte* Game::GetNextNags() const {
+	return CurrentMove->nags;
+}
+
+std::pair<const char*, const char*> Game::previousComments() const {
+	std::pair<const char*, const char*> res = {"", ""};
+	auto move = CurrentMove->getPrevMove();
+	if (move)
+		move = move->getPrevMove();
+	if (move) {
+		res.first = move->comment.c_str();
+		move = move->getPrevMove();
+	}
+	if (move)
+		res.second = move->comment.c_str();
+
+	return res;
+}
+
+const char* Game::GetMoveComment() const {
+	return CurrentMove->prev->comment.c_str();
+}
+
+std::string& Game::accessMoveComment() {
+	return CurrentMove->prev->comment;
+}
+
+void Game::viewMainlineMoves(
+    const std::function<void(const simpleMoveT&)>& visitor) const {
+	for (const auto* m = FirstMove; !m->endMarker(); m = m->Next()) {
+		if (!m->startMarker()) {
+			visitor(m->move());
+		}
+	}
+}
+
+void Game::viewMovetext(
+    const std::function<void(const GameMoveView&)>& visitor) const {
+	if (!FirstMove->comment.empty()) {
+		visitor({GameMoveViewKind::InitialComment, {}, {},
+		         FirstMove->comment, {}});
+	}
+
+	for (auto m = FirstMove; (m = m->nextMoveInPGN());) {
+		if (m->startMarker()) {
+			visitor({GameMoveViewKind::VariationStart, {}, {}, m->comment, {}});
+		} else if (m->endMarker()) {
+			if (m->nextMoveInPGN()) {
+				visitor({GameMoveViewKind::VariationEnd, {}, {}, {}, {}});
+			}
+		} else {
+			visitor({GameMoveViewKind::Move, m->moveData, m->san, m->comment,
+			         {m->nags, m->nagCount}});
+		}
+	}
+}
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // transPieces():

@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include "scidup/database/game.h"
+
 #include <algorithm>
 #include <string>
 #include <string_view>
@@ -192,57 +194,61 @@ static void encode_comment(std::string_view comment, TCont& dest) {
 // @param initial_ply: the ply of the initial position.
 //                     Should be even if it is white turn to move.
 // @param dest: the container where movetext section will be appended.
-template <int hard_len = 0, typename Iter, typename TCont>
-void encode_movetext(Iter m, long long initial_ply, TCont& dest) {
+template <int hard_len = 0, typename TGame, typename TCont>
+void encode_movetext(TGame const& game, TCont& dest) {
+	const auto initial_ply = game.initialPlyCounter();
 	std::vector<long long> ply = {initial_ply};
 	auto move_end = dest.size();
 	dest.push_back('\n');
 
-	// Check if there is a pre-game comment
-	if (!m->comment.empty())
-		encode_comment<hard_len>(m->comment, dest);
+	game.viewMovetext([&](const GameMoveView& entry) {
+		switch (entry.kind) {
+		case GameMoveViewKind::InitialComment:
+			if (!entry.comment.empty())
+				encode_comment<hard_len>(entry.comment, dest);
+			break;
 
-	while ((m = m->nextMoveInPGN())) {
-		if (m->startMarker()) {
+		case GameMoveViewKind::VariationStart:
 			ply.push_back(ply.back() - 1);
 			dest.push_back('(');
-			if (!m->comment.empty())
-				encode_comment<hard_len>(m->comment, dest);
+			if (!entry.comment.empty())
+				encode_comment<hard_len>(entry.comment, dest);
+			break;
 
-		} else if (m->endMarker()) {
-			if (m->nextMoveInPGN()) {
-				ply.pop_back();
-				if (dest.back() == '\0') {
-					dest.back() = ')';
-				} else {
-					dest.push_back(')');
-				}
-				dest.push_back('\0');
+		case GameMoveViewKind::VariationEnd:
+			ply.pop_back();
+			if (dest.back() == '\0') {
+				dest.back() = ')';
+			} else {
+				dest.push_back(')');
 			}
+			dest.push_back('\0');
+			break;
 
-		} else {
+		case GameMoveViewKind::Move: {
 			auto white_to_move = (ply.back() % 2) == 0;
 			if (white_to_move || move_end != dest.size()) {
 				auto move_number = std::to_string(ply.back() / 2 + 1);
 				move_number.append(white_to_move ? 1 : 3, '.');
 				dest.insert(dest.end(), move_number.begin(), move_number.end());
 			}
-			std::string_view san = m->san;
-			dest.insert(dest.end(), san.begin(), san.end());
+			dest.insert(dest.end(), entry.san.begin(), entry.san.end());
 			dest.push_back('\0');
 			move_end = dest.size();
 			ply.back()++;
 
-			for (int i = 0, n = m->nagCount; i < n; ++i) {
+			for (auto nag : entry.nags) {
 				dest.push_back('$');
-				auto nag_str = std::to_string(m->nags[i]);
+				auto nag_str = std::to_string(nag);
 				dest.insert(dest.end(), nag_str.begin(), nag_str.end());
 				dest.push_back('\0');
 			}
-			if (!m->comment.empty())
-				encode_comment<hard_len>(m->comment, dest);
+			if (!entry.comment.empty())
+				encode_comment<hard_len>(entry.comment, dest);
+			break;
 		}
-	}
+		}
+	});
 
 	if (dest.back() == '\0')
 		dest.back() = '\n';
@@ -256,7 +262,7 @@ void encode_game(TGame const& game, TCont& dest) {
 	game.viewTagPairs(
 	    [&](auto tag, auto value) { encode_tag_pair(tag, value, dest); });
 
-	encode_movetext<hard_len>(game.movetree(), game.initialPlyCounter(), dest);
+	encode_movetext<hard_len>(game, dest);
 
 	auto result = game.GetResultStr();
 	dest.insert(dest.end(), result.begin(), result.end());

@@ -36,7 +36,6 @@ workflows:
 - `game.h`: editable game model, PGN writing, tags, comments, variations and
   encoded game conversion
 - `gameview.h`: lightweight read-only cursor over encoded moves
-- `movetree.h`: move-tree storage for editable games
 
 Use `Game` when you need mutation. Use `GameView` when you need fast read-only
 inspection of encoded moves. Use `scidup/core/position.h` for standalone board
