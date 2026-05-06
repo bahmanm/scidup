@@ -19,21 +19,22 @@
  */
 
 #include "scidup/eco/book.h"
-#include "scidup/database/misc.h"
 #include "scidup/core/position.h"
 #include <algorithm>
+#include <cctype>
+#include <cstring>
 #include <fstream>
 
 namespace {
 
 std::string_view
-epd_findOpcode (const char * epdStr, const char * opcode)
+epd_findOpcode (const char * epdStr, std::string_view opcode)
 {
     const char * s = epdStr;
     while (*s != 0) {
         while (*s == ' '  ||  *s == '\n') { s++; }
-        if (scid::database::strIsPrefix (opcode, s)) {
-            const char *codeEnd = s + scid::database::strLength(opcode);
+        if (std::strncmp(s, opcode.data(), opcode.size()) == 0) {
+            const char *codeEnd = s + opcode.size();
             if (*codeEnd == ' ') {
                 return codeEnd + 1;
             }
@@ -41,6 +42,20 @@ epd_findOpcode (const char * epdStr, const char * opcode)
         while (*s != '\n'  &&  *s != 0) { s++; }
     }
     return {};
+}
+
+const char* trim_left(const char* str) {
+	while (*str == ' ' || *str == '\t' || *str == '\r' || *str == '\n') {
+		str++;
+	}
+	return str;
+}
+
+char* duplicate_cstring(std::string_view str) {
+	char* copy = new char[str.size() + 1];
+	std::copy(str.begin(), str.end(), copy);
+	copy[str.size()] = '\0';
+	return copy;
 }
 
 
@@ -51,14 +66,14 @@ epd_findOpcode (const char * epdStr, const char * opcode)
 //
 scid::database::errorT ReadLine(scid::database::Position& pos, const char* s) {
 	while (true) {
-		while (!isalpha(static_cast<unsigned char>(*s)) && *s != 0) {
+		while (!std::isalpha(static_cast<unsigned char>(*s)) && *s != 0) {
 			s++;
 		}
 		if (*s == '\0')
 			return scid::database::OK;
 
 		const char* begin = s;
-		while (!isspace(static_cast<unsigned char>(*s)) && *s != '\0') {
+		while (!std::isspace(static_cast<unsigned char>(*s)) && *s != '\0') {
 			s++;
 		}
 
@@ -224,13 +239,13 @@ Book::load(const std::filesystem::path& path) {
         err = ReadLine(pos, moves.c_str());
         if (err != scid::database::OK) { goto corrupt; }
         text.append("moves ");
-        text.append(scid::database::strTrimLeft(moves.c_str()));
+        text.append(trim_left(moves.c_str()));
         text.push_back('\n');
 
         char* cboard = new char[36];
         pos.PrintCompactStr(cboard);
         auto it = book.pos_.emplace(
-            pos.HashValue(), BookData{cboard, scid::database::strDuplicate(text.c_str())});
+            pos.HashValue(), BookData{cboard, duplicate_cstring(text)});
         book.comments_.push_back(it->second.comment.get());
         book.leastMaterial_ = std::min(book.leastMaterial_, pos.TotalMaterial());
     }
