@@ -22,7 +22,6 @@ set(
 
 set(
     SCIDUP_DATABASE_PUBLIC_HEADERS
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/attacks.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/bytebuf.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/codec.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/common.h"

@@ -6,6 +6,7 @@ project(
 
 set(
     SCIDUP_CORE_PUBLIC_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/attacks.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/primitives.h" )
 
 add_library(
