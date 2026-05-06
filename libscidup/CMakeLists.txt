@@ -11,6 +11,7 @@ if( PROJECT_IS_TOP_LEVEL )
     include( CTest )
 endif()
 
+add_subdirectory( libs/core )
 add_subdirectory( libs/database )
 add_subdirectory( libs/eco )
 add_subdirectory( libs/spelling )
