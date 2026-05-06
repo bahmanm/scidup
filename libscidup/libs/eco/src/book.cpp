@@ -60,17 +60,17 @@ char* duplicate_cstring(std::string_view str) {
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// scid::database::Position::ReadLine():
+// Position::ReadLine():
 //      Parse a sequence of moves separated by whitespace and
 //      move numbers, e.g. "1.e4 e5 2.Nf3" or "e4 e5 Nf3".
 //
-scid::database::errorT ReadLine(scid::database::Position& pos, const char* s) {
+scidup::eco::Error ReadLine(scidup::eco::Position& pos, const char* s) {
 	while (true) {
 		while (!std::isalpha(static_cast<unsigned char>(*s)) && *s != 0) {
 			s++;
 		}
 		if (*s == '\0')
-			return scid::database::OK;
+			return scidup::eco::OK;
 
 		const char* begin = s;
 		while (!std::isspace(static_cast<unsigned char>(*s)) && *s != '\0') {
@@ -78,8 +78,8 @@ scid::database::errorT ReadLine(scid::database::Position& pos, const char* s) {
 		}
 
 		scid::database::simpleMoveT sm;
-		scid::database::errorT err = pos.ParseMove(&sm, begin, s);
-		if (err != scid::database::OK)
+		scidup::eco::Error err = pos.ParseMove(&sm, begin, s);
+		if (err != scidup::eco::OK)
 			return err;
 
 		pos.DoSimpleMove(sm);
@@ -92,7 +92,7 @@ scid::database::errorT ReadLine(scid::database::Position& pos, const char* s) {
 
 namespace scidup::eco {
 
-std::string_view Book::findEcoString(const scid::database::Position& position) const {
+std::string_view Book::findEcoString(const Position& position) const {
 	auto [it, end] = pos_.equal_range(position.HashValue());
 	if (it == end)
 		return {};
@@ -109,7 +109,7 @@ std::string_view Book::findEcoString(const scid::database::Position& position) c
 	return res.substr(0, res.find('\n'));
 }
 
-Code Book::findEco(const scid::database::Position& position) const {
+Code Book::findEco(const Position& position) const {
 	auto it = findEcoString(position);
 	if (it.empty())
 		return ECO_None;
@@ -154,14 +154,14 @@ Book::load(const std::filesystem::path& path) {
 
     Book book;
     book.lineCount_ = 1;
-    scid::database::Position std_start;
+    Position std_start;
     std_start.StdStart();
     std::string text;
     std::string moves;
     String ecoStr;
     Code ecoCode;
     int ch;
-    Error err = scid::database::OK;
+    Error err = OK;
     bool done = false;
 
     // Loop to read in and add all positions:
@@ -235,9 +235,9 @@ Book::load(const std::filesystem::path& path) {
             }
             prev = ch;
         }
-        scid::database::Position pos (std_start);
+        Position pos(std_start);
         err = ReadLine(pos, moves.c_str());
-        if (err != scid::database::OK) { goto corrupt; }
+        if (err != OK) { goto corrupt; }
         text.append("moves ");
         text.append(trim_left(moves.c_str()));
         text.push_back('\n');
@@ -249,7 +249,7 @@ Book::load(const std::filesystem::path& path) {
         book.comments_.push_back(it->second.comment.get());
         book.leastMaterial_ = std::min(book.leastMaterial_, pos.TotalMaterial());
     }
-    return std::pair<Error, Book>(scid::database::OK, std::move(book));
+    return std::pair<Error, Book>(OK, std::move(book));
 
 corrupt:
     return std::make_pair(ERROR_Corrupt, Book{});

@@ -36,6 +36,7 @@ class Position;
 
 namespace scidup::eco {
 
+// These are core APIs that still live in the legacy scid::database namespace.
 using Error = scid::database::errorT;
 using Position = scid::database::Position;
 
