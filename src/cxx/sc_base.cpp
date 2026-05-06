@@ -533,12 +533,9 @@ UI_res_t sc_base_import(scid::database::scidBaseT* dbase, UI_handle_t ti, int ar
 	    std::filesystem::path((const char8_t*)argv[3]).string();
 	const auto filename = tcl_strings_are_utf8.c_str();
 
-	// if (pgn)
-	auto codec = scid::database::ICodecDatabase::PGN;
-
 	auto nImported = dbase->numGames();
 	std::string errorMsg;
-	if (auto err = dbase->importGames(codec, filename, UI_CreateProgress(ti),
+	if (auto err = dbase->importGames("PGN", filename, UI_CreateProgress(ti),
 	                                  errorMsg))
 		return UI_Result(ti, err);
 

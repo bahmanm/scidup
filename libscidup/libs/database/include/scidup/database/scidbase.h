@@ -20,7 +20,6 @@
 #define SCIDBASE_H
 
 #include "scidup/database/bytebuf.h"
-#include "scidup/database/codec.h"
 #include "scidup/database/containers.h"
 #include "scidup/database/game.h"
 #include "scidup/database/gameview.h"
@@ -37,6 +36,8 @@
 
 namespace scid::database {
 
+class ICodecDatabase;
+class Progress;
 class SortCache;
 
 const gamenumT INVALID_GAMEID = 0xffffffff;
@@ -77,20 +78,8 @@ struct scidBaseT {
 	scidBaseT();
 	~scidBaseT();
 
-	errorT open(std::string_view dbType, fileModeT fMode, const char* filename,
-	            const Progress& progress = {}) {
-		auto codec = ICodecDatabase::SCID5;
-		if (dbType == "PGN") {
-			codec = ICodecDatabase::PGN;
-		} else if (dbType == "MEMORY") {
-			codec = ICodecDatabase::MEMORY;
-		} else if (dbType == "SCID4") {
-			codec = ICodecDatabase::SCID4;
-		} else if (dbType != "SCID5") {
-			return ERROR_BadArg;
-		}
-		return openHelper(codec, fMode, filename, progress);
-	}
+		errorT open(std::string_view dbType, fileModeT fMode, const char* filename,
+		            const Progress& progress = {});
 
 	void Close();
 
@@ -101,18 +90,10 @@ struct scidBaseT {
 
 	/// Returns a vector of tag pairs containing extra information about the
 	/// database (type, description, autoload, etc..)
-	std::vector<std::pair<const char*, std::string>> getExtraInfo() const {
-		return codec_->getExtraInfo();
-	}
+		std::vector<std::pair<const char*, std::string>> getExtraInfo() const;
 
 	/// Store an extra information about the database (type, description, etc..)
-	errorT setExtraInfo(const char* tagname, const char* new_value) {
-		if (isReadOnly())
-			return ERROR_FileReadOnly;
-
-		const auto res = codec_->setExtraInfo(tagname, new_value);
-		return (res != OK) ? res : codec_->flush();
-	}
+		errorT setExtraInfo(const char* tagname, const char* new_value);
 
 	const IndexEntry* getIndexEntry(gamenumT g) const {
 		assert(g < numGames());
@@ -147,26 +128,8 @@ struct scidBaseT {
 		return peakEloCache_[playerID];
 	}
 
-	GameView getGame(const IndexEntry* ie) const {
-		auto data = codec_->getGameMoves(*ie);
-		if (data) {
-			auto [errPos, fen] = data.decodeStartBoard();
-			if (errPos == OK) {
-				if (fen) {
-					Position startPos;
-					if (startPos.ReadFromFEN(fen) == OK) {
-						return GameView(data, startPos);
-					}
-				} else {
-					return GameView(data);
-				}
-			}
-		}
-		return GameView({nullptr, 0});
-	}
-	ByteBuffer getGame(const IndexEntry& ie) const {
-		return codec_->getGameData(ie.GetOffset(), ie.GetLength());
-	}
+		GameView getGame(const IndexEntry* ie) const;
+		ByteBuffer getGame(const IndexEntry& ie) const;
 	errorT getGame(const IndexEntry& ie, Game& dest) const {
 		return dest.Decode(ie, tagRoster(ie), getGame(ie));
 	}
@@ -174,8 +137,8 @@ struct scidBaseT {
 
 	errorT importGames(const scidBaseT* srcBase, const HFilter& filter,
 	                   const Progress& progress);
-	errorT importGames(ICodecDatabase::Codec dbtype, const char* filename,
-	                   const Progress& progress, std::string& errorMsg);
+		errorT importGames(std::string_view dbType, const char* filename,
+		                   const Progress& progress, std::string& errorMsg);
 
 	/**
 	 * Add or replace a game into the database.
@@ -388,8 +351,8 @@ struct scidBaseT {
 			encodeTags(tagsBuf, encodeBuf);
 			encodeBuf.insert(encodeBuf.end(), gamedata.data(),
 			                 gamedata.data() + gamedata.size());
-			err = codec_->saveGame(ie, tagRoster(ie),
-			                       {encodeBuf.data(), encodeBuf.size()}, gnum);
+				err = saveGameData(ie, tagRoster(ie),
+				                   {encodeBuf.data(), encodeBuf.size()}, gnum);
 			if (err != OK)
 				break;
 
@@ -430,8 +393,8 @@ private:
 	uint64_t cacheInvalidationToken_ = 0;
 
 private:
-	errorT openHelper(ICodecDatabase::Codec dbtype, fileModeT mode,
-	                  const char* filename, const Progress& progress = {});
+		errorT openHelper(std::string_view dbType, fileModeT mode,
+		                  const char* filename, const Progress& progress = {});
 
 	void clear();
 
@@ -447,9 +410,13 @@ private:
 	/// @returns OK if successful or an error code.
 	errorT endTransaction(gamenumT gameId = INVALID_GAMEID);
 
-	errorT importGameHelper(const scidBaseT* sourceBase, uint gNum);
+		errorT importGameHelper(const scidBaseT* sourceBase, uint gNum);
+		errorT saveGameData(IndexEntry const& ie, TagRoster const& tags,
+		                     ByteBuffer const& data, gamenumT replaced);
+		errorT saveIndexEntry(IndexEntry const& ie, gamenumT replaced);
+		std::pair<errorT, idNumberT> addName(nameT nt, const char* name);
 
-	SortCache* getSortCache(const char* criteria);
+		SortCache* getSortCache(const char* criteria);
 
 	/**
 	 * Apply a transform operator to games' IndexEntry included in @e hfilter.
@@ -475,7 +442,7 @@ private:
 			if (!entry_op(newIE))
 				continue;
 
-			auto err = codec_->saveIndexEntry(newIE, gnum);
+				auto err = saveIndexEntry(newIE, gnum);
 			if (err != OK)
 				return std::make_pair(err, nCorrections);
 
@@ -496,7 +463,7 @@ scidBaseT::transformNames(nameT nt, HFilter hfilter, const Progress& progress,
 	std::vector<idNumberT> nameIDs(newNames.size());
 	auto it = nameIDs.begin();
 	for (auto& name : newNames) {
-		auto id = codec_->addName(nt, name.c_str());
+			auto id = addName(nt, name.c_str());
 		if (id.first != OK) {
 			endTransaction();
 			return std::make_pair(id.first, size_t(0));

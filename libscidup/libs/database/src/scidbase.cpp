@@ -29,6 +29,41 @@
 
 namespace scid::database {
 
+namespace {
+
+std::pair<ICodecDatabase::Codec, errorT> parseCodec(std::string_view dbType) {
+	if (dbType == "PGN") {
+		return {ICodecDatabase::PGN, OK};
+	}
+	if (dbType == "MEMORY") {
+		return {ICodecDatabase::MEMORY, OK};
+	}
+	if (dbType == "SCID4") {
+		return {ICodecDatabase::SCID4, OK};
+	}
+	if (dbType == "SCID5") {
+		return {ICodecDatabase::SCID5, OK};
+	}
+	return {ICodecDatabase::SCID5, ERROR_BadArg};
+}
+
+std::string_view codecName(ICodecDatabase::Codec codec) {
+	switch (codec) {
+	case ICodecDatabase::MEMORY:
+		return "MEMORY";
+	case ICodecDatabase::PGN:
+		return "PGN";
+	case ICodecDatabase::SCID4:
+		return "SCID4";
+	case ICodecDatabase::SCID5:
+		return "SCID5";
+	}
+	ASSERT(false);
+	return {};
+}
+
+} // namespace
+
 std::pair<ICodecDatabase*, errorT>
 ICodecDatabase::open(Codec codec, fileModeT fMode, const char* filename,
                      const Progress& progress, Index* idx, NameBase* nb) {
@@ -75,12 +110,21 @@ scidBaseT::~scidBaseT() {
 	delete dbFilter;
 }
 
-errorT scidBaseT::openHelper(ICodecDatabase::Codec dbtype, fileModeT fMode,
+errorT scidBaseT::open(std::string_view dbType, fileModeT fMode,
+                       const char* filename, const Progress& progress) {
+	return openHelper(dbType, fMode, filename, progress);
+}
+
+errorT scidBaseT::openHelper(std::string_view dbType, fileModeT fMode,
                              const char* filename, const Progress& progress) {
 	assert(filename);
 
 	if (inUse)
 		return ERROR_FileInUse;
+
+	auto [dbtype, parseErr] = parseCodec(dbType);
+	if (parseErr != OK)
+		return parseErr;
 
 	auto [db, err] = ICodecDatabase::open(dbtype, fMode, filename, progress,
 	                                      idx, nb_);
@@ -100,6 +144,18 @@ errorT scidBaseT::openHelper(ICodecDatabase::Codec dbtype, fileModeT fMode,
 	}
 
 	return err;
+}
+
+std::vector<std::pair<const char*, std::string>> scidBaseT::getExtraInfo() const {
+	return codec_->getExtraInfo();
+}
+
+errorT scidBaseT::setExtraInfo(const char* tagname, const char* new_value) {
+	if (isReadOnly())
+		return ERROR_FileReadOnly;
+
+	const auto res = codec_->setExtraInfo(tagname, new_value);
+	return (res != OK) ? res : codec_->flush();
 }
 
 void scidBaseT::Close() {
@@ -185,6 +241,28 @@ errorT scidBaseT::loadGame(gamenumT gNum, Game& dest) const {
 	return getGame(*ie, dest);
 }
 
+GameView scidBaseT::getGame(const IndexEntry* ie) const {
+	auto data = codec_->getGameMoves(*ie);
+	if (data) {
+		auto [errPos, fen] = data.decodeStartBoard();
+		if (errPos == OK) {
+			if (fen) {
+				Position startPos;
+				if (startPos.ReadFromFEN(fen) == OK) {
+					return GameView(data, startPos);
+				}
+			} else {
+				return GameView(data);
+			}
+		}
+	}
+	return GameView({nullptr, 0});
+}
+
+ByteBuffer scidBaseT::getGame(const IndexEntry& ie) const {
+	return codec_->getGameData(ie.GetOffset(), ie.GetLength());
+}
+
 errorT scidBaseT::saveGame(Game* game, gamenumT replacedGameId) {
 	return saveGame(*game, replacedGameId);
 }
@@ -240,10 +318,27 @@ errorT scidBaseT::importGameHelper(const scidBaseT* srcBase, gamenumT gNum) {
 	return ERROR_FileRead;
 }
 
-errorT scidBaseT::importGames(ICodecDatabase::Codec dbtype,
+errorT scidBaseT::saveGameData(IndexEntry const& ie, TagRoster const& tags,
+                               ByteBuffer const& data, gamenumT replaced) {
+	return codec_->saveGame(ie, tags, data, replaced);
+}
+
+errorT scidBaseT::saveIndexEntry(IndexEntry const& ie, gamenumT replaced) {
+	return codec_->saveIndexEntry(ie, replaced);
+}
+
+std::pair<errorT, idNumberT> scidBaseT::addName(nameT nt, const char* name) {
+	return codec_->addName(nt, name);
+}
+
+errorT scidBaseT::importGames(std::string_view dbType,
                               const char* filename, const Progress& progress,
                               std::string& errorMsg) {
-	ASSERT(dbtype == ICodecDatabase::PGN);
+	auto [dbtype, parseErr] = parseCodec(dbType);
+	if (parseErr != OK)
+		return parseErr;
+	if (dbtype != ICodecDatabase::PGN)
+		return ERROR_BadArg;
 
 	if (auto errModify = beginTransaction())
 		return errModify;
@@ -621,7 +716,7 @@ errorT scidBaseT::compact(const Progress& progress) {
 	tmp_filename.replace_filename(tmp_filename.stem().u8string() +
 	                              u8"__COMPACT__" +
 	                              tmp_filename.extension().u8string());
-	if (auto err_Create = tmp.openHelper(dbtype, FMODE_Create,
+	if (auto err_Create = tmp.openHelper(codecName(dbtype), FMODE_Create,
 	                                     tmp_filename.string().c_str()))
 		return err_Create;
 
@@ -736,7 +831,7 @@ errorT scidBaseT::compact(const Progress& progress) {
 		const char* s2 = filenames[i].c_str();
 		std::rename(s1, s2);
 	}
-	errorT res = openHelper(dbtype, FMODE_Both, filenames[0].c_str());
+	errorT res = openHelper(codecName(dbtype), FMODE_Both, filenames[0].c_str());
 
 	// 10) Re-create filters and SortCaches
 	if (res == OK || res == ERROR_NameDataLoss) {
