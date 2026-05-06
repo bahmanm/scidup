@@ -12,7 +12,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "scidup/database/attacks.h"
+#include "scidup/core/attacks.h"
 #include "engine.h"
 #include "scidup/database/sqmove.h"
 #include <algorithm>

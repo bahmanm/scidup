@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "scidup/database/position.h"
-#include "scidup/database/attacks.h"
+#include "scidup/core/attacks.h"
 #include "scidup/database/common.h"
 #include "scidup/database/dstring.h"
 #include "scidup/database/hash.h"

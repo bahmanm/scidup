@@ -92,12 +92,12 @@ but they should be treated as lower-level building blocks:
 - `containers.h`: custom containers used by game and database storage
 - `dstring.h`: string helpers
 - `hash.h`: hashing helpers
-- `attacks.h`: attack tables
 - `common.h`: shared primitive types and constants
 - `error.h`: `errorT` definitions
 - `misc.h`: assorted utility functions
 
-Board constants and primitive chess types live in `scidup/core/primitives.h`.
+Board constants, primitive chess types, and attack tables live in core headers:
+`scidup/core/primitives.h` and `scidup/core/attacks.h`.
 
 These headers are useful when extending the library, but they are not the best
 starting point for application code.
