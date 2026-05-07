@@ -12,6 +12,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/filter.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/legacy_pgn.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/move_tree.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/notation.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/search.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/storage.cpp"
