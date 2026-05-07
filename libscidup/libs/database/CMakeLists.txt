@@ -28,6 +28,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/common.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_id.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_TEMP/legacy_pgn.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_TEMP/pgn_encode.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_TEMP/pgnparse.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_TEMP/positions.h"
