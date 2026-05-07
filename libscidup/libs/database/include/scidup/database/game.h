@@ -21,6 +21,7 @@
 #include "scidup/core/date.h"
 #include "scidup/eco/code.h"
 #include "scidup/database/game_TEMP/legacy_pgn.h"
+#include "scidup/database/game_TEMP/nags.h"
 #include "scidup/database/indexentry.h"
 #include "scidup/database/namebase.h"
 #include "scidup/core/position.h"
@@ -41,78 +42,6 @@ enum markerT : byte;
 struct MoveChunkDeleter {
     void operator()(moveT* ptr) const;
 };
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//  Game: Constants
-
-// Common NAG Annotation symbol values:
-const byte
-    NAG_GoodMove = 1,
-    NAG_PoorMove = 2,
-    NAG_ExcellentMove = 3,
-    NAG_Blunder = 4,
-    NAG_InterestingMove = 5,
-    NAG_DubiousMove = 6,
-    NAG_OnlyMove = 8, // new
-    NAG_Equal = 10,
-    NAG_Unclear = 13,
-    NAG_WhiteSlight = 14,
-    NAG_BlackSlight = 15,
-    NAG_WhiteClear = 16,
-    NAG_BlackClear = 17,
-    NAG_WhiteDecisive = 18,
-    NAG_BlackDecisive = 19,
-    NAG_WhiteCrushing = 20,
-    NAG_BlackCrushing = 21,
-    NAG_ZugZwang = 22, // new
-    NAG_BlackZugZwang = 23, // new
-    NAG_MoreRoom = 26, // new
-    NAG_DevelopmentAdvantage = 35,  // new
-    NAG_WithInitiative = 36, //new
-    NAG_WithAttack = 40, // new
-    NAG_WithBlackAttack = 41, // new
-    NAG_Compensation = 44,      // from Whites perspective
-    NAG_SlightCentre = 48,      // from Whites perspective
-    NAG_Centre = 50,            // new
-    NAG_SlightKingSide = 54,    // from Whites perspective
-    NAG_ModerateKingSide = 56,  // from Whites perspective
-    NAG_KingSide = 58,          // from Whites perspective
-    NAG_SlightQueenSide = 60,   // from Whites perspective
-    NAG_ModerateQueenSide = 62, // from Whites perspective
-    NAG_QueenSide = 64,         // from Whites perspective
-    NAG_SlightCounterPlay = 130, // new
-    NAG_CounterPlay = 132, // new
-    NAG_DecisiveCounterPlay = 134, // new
-    NAG_BlackSlightCounterPlay = 131, // new
-    NAG_BlackCounterPlay = 133, // new
-    NAG_BlackDecisiveCounterPlay = 135, // new
-    NAG_TimeLimit = 136, // new
-    NAG_WithIdea = 140, // new
-    NAG_BetterIs = 142, // new
-    NAG_VariousMoves = 144, // new
-    NAG_Comment = 145, // new
-    NAG_Novelty = 146,
-    NAG_WeakPoint = 147, // new
-    NAG_Ending = 148, // new
-    NAG_File = 149, // new
-    NAG_Diagonal = 150, // new
-    NAG_BishopPair = 151, // new
-    NAG_OppositeBishops = 153, // new
-    NAG_SameBishops = 154, // new
-    NAG_Etc = 190, // new
-    NAG_DoublePawns = 191, // new
-    NAG_SeparatedPawns = 192, // new
-    NAG_UnitedPawns = 193, // new
-    NAG_Diagram = 201,  // Scid-specific NAGs start at 201.
-    NAG_See = 210,  // new
-    NAG_Mate = 211, // new
-    NAG_PassedPawn = 212, // new
-    NAG_MorePawns = 213, //new
-    NAG_With = 214, // new
-    NAG_Without = 215;
-
-// MAX_NAGS: Maximum id of NAG codes
-const byte MAX_NAGS_ARRAY = 215;
 
 // patternT structure: a pattern filter for material searches.
 //    It can specify, for example, a white Pawn on the f-fyle, or
