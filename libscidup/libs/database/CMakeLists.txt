@@ -17,6 +17,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/move_tree.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/notation.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/search.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/state.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/storage.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/index.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/matsig.cpp"
