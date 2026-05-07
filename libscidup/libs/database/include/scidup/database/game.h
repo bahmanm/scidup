@@ -195,22 +195,7 @@ private:
     errorT WritePGN(TextBuffer* tb);
     errorT WriteMoveList(TextBuffer* tb, moveT* oldCurrentMove,
                          bool printMoveNum, bool inComment);
-    std::string* find_std_tag(std::string_view tag) {
-        if (tag.size() == 5) {
-            if (tag == "Event")
-                return &EventStr;
-            if (tag == "Round")
-                return &RoundStr;
-            if (tag == "White")
-                return &WhiteStr;
-            if (tag == "Black")
-                return &BlackStr;
-        } else if (tag.size() == 4) {
-            if (tag == "Site")
-                return &SiteStr;
-        }
-        return nullptr;
-    }
+    std::string* find_std_tag(std::string_view tag);
 
     /**
      * Contains the information of the current position in the game, so that
@@ -343,12 +328,7 @@ public:
     // Add a tag.
     // For the tags that cannot be duplicated (like Event or White), the
     // previous value will be overwritten.
-    std::string& addTag(std::string_view tag, std::string_view value) {
-        if (auto overwrite = find_std_tag(tag))
-            return overwrite->assign(value);
-
-        return extraTags_.emplace_back(tag, value).second;
-    }
+    std::string& addTag(std::string_view tag, std::string_view value);
 
     // Change the value of a tag (add the tag if it wasn't present).
     template <typename... Args>
@@ -367,44 +347,42 @@ public:
         return value->assign(std::forward<Args>(args)...);
     }
 
-    const decltype(extraTags_)& GetExtraTags() const { return extraTags_; }
+    const std::vector<std::pair<std::string, std::string>>& GetExtraTags() const;
     const char* FindExtraTag(const char* tag) const;
-    void ClearExtraTags() { extraTags_.clear(); }
-    void RemoveExtraTag(std::string_view tag) {
-        std::erase_if(extraTags_, [&](auto elem) { return elem.first == tag; });
-    }
+    void ClearExtraTags();
+    void RemoveExtraTag(std::string_view tag);
 
     void LoadStandardTags(IndexEntry const& ie, TagRoster const& tags);
 
-    void     SetEventStr (const char * str) { EventStr = str; }
-    void     SetSiteStr  (const char * str) { SiteStr  = str; }
-    void     SetWhiteStr (const char * str) { WhiteStr = str; }
-    void     SetBlackStr (const char * str) { BlackStr = str; }
-    void     SetRoundStr (const char * str) { RoundStr = str; }
-    void     SetDate (dateT date)    { Date = date; }
-    void     SetEventDate (dateT date)  { EventDate = date; }
-    void     SetResult (resultT res) { Result = res; }
-    void     SetWhiteElo (ratingT elo)  { WhiteElo = elo; }
-    void     SetBlackElo (ratingT elo)  { BlackElo = elo; }
-    void     SetWhiteRatingType (ratingTypeT b) { WhiteRatingType = b > 7 ? 0 : b; }
-    void     SetBlackRatingType (ratingTypeT b) { BlackRatingType = b > 7 ? 0 : b; }
+    void     SetEventStr (const char * str);
+    void     SetSiteStr  (const char * str);
+    void     SetWhiteStr (const char * str);
+    void     SetBlackStr (const char * str);
+    void     SetRoundStr (const char * str);
+    void     SetDate (dateT date);
+    void     SetEventDate (dateT date);
+    void     SetResult (resultT res);
+    void     SetWhiteElo (ratingT elo);
+    void     SetBlackElo (ratingT elo);
+    void     SetWhiteRatingType (ratingTypeT b);
+    void     SetBlackRatingType (ratingTypeT b);
     int setRating(colorT col, const char* ratingType, size_t ratingTypeLen,
                   std::pair<const char*, const char*> rating);
-    void     SetEco (scidup::eco::Code eco) { EcoCode = eco; }
-    const char* GetEventStr () const { return EventStr.c_str(); }
-    const char* GetSiteStr ()  const { return SiteStr.c_str();  }
-    const char* GetWhiteStr () const { return WhiteStr.c_str(); }
-    const char* GetBlackStr () const { return BlackStr.c_str(); }
-    const char* GetRoundStr () const { return RoundStr.c_str(); }
-    dateT    GetDate ()        const { return Date; }
-    dateT    GetEventDate ()   const { return EventDate; }
-    resultT  GetResult ()      const { return Result; }
+    void     SetEco (scidup::eco::Code eco);
+    const char* GetEventStr () const;
+    const char* GetSiteStr ()  const;
+    const char* GetWhiteStr () const;
+    const char* GetBlackStr () const;
+    const char* GetRoundStr () const;
+    dateT    GetDate ()        const;
+    dateT    GetEventDate ()   const;
+    resultT  GetResult ()      const;
     std::string_view GetResultStr() const;
-    ratingT     GetWhiteElo ()    const { return WhiteElo; }
-    ratingT     GetBlackElo ()    const { return BlackElo; }
-    ratingTypeT GetWhiteRatingType () const { return WhiteRatingType; }
-    ratingTypeT GetBlackRatingType () const { return BlackRatingType; }
-    scidup::eco::Code GetEco() const { return EcoCode; }
+    ratingT     GetWhiteElo ()    const;
+    ratingT     GetBlackElo ()    const;
+    ratingTypeT GetWhiteRatingType () const;
+    ratingTypeT GetBlackRatingType () const;
+    scidup::eco::Code GetEco() const;
     ratingT     GetAverageElo ();
 
     // PGN conversion
