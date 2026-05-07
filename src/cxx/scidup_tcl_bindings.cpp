@@ -33,6 +33,7 @@
 #include "scidup/database/game_id.h"
 #include "scidup/database/game.h"
 #include "scidup/database/game_TEMP/legacy_pgn.h"
+#include "scidup/database/game_TEMP/nag_format.h"
 #include "optable.h"
 #include "scidup/eco/book.h"
 #include "scidup/database/game_TEMP/pgnparse.h"

@@ -15,6 +15,8 @@
  */
 
 #include "scidup/database/game.h"
+#include "scidup/core/nags.h"
+#include "scidup/database/game_TEMP/nag_format.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
 #include "scidup/database/scidbase.h"
 #include "pgnparse_impl.h"
@@ -24,6 +26,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <random>
+#include <string_view>
 
 namespace {
 
@@ -110,6 +113,27 @@ TEST(Test_Game, LegacyGameEncodeOptionsFormatFromString) {
 	EXPECT_FALSE(
 	    scid::database::LegacyGameEncodeOptions::legacyFormatFromString(
 	        "unknown", &format));
+}
+
+TEST(Test_Game, LegacyNagFormatParsePrint) {
+	auto parseNag = [](std::string_view nag) {
+		return scid::database::game_parseNag(
+		    {nag.data(), nag.data() + nag.size()});
+	};
+
+	EXPECT_EQ(scid::core::NAG_ExcellentMove,
+	          parseNag("!!"));
+	EXPECT_EQ(scid::core::NAG_Diagram, parseNag("D"));
+	EXPECT_EQ(scid::core::NAG_Comment, parseNag("$145"));
+
+	char nagText[20] = {};
+	scid::database::game_printNag(scid::core::NAG_Diagram, nagText, true,
+	                              scid::database::PGN_FORMAT_Plain);
+	EXPECT_STREQ("D", nagText);
+
+	scid::database::game_printNag(scid::core::NAG_GoodMove, nagText, false,
+	                              scid::database::PGN_FORMAT_Plain);
+	EXPECT_STREQ("$1", nagText);
 }
 
 TEST(Test_Game, locationInPGN) {
