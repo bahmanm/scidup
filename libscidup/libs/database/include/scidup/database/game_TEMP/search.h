@@ -2,7 +2,13 @@
 
 #include "scidup/core/board.h"
 
+#include <cstddef>
+
 namespace scid::database {
+
+class ByteBuffer;
+class Game;
+class Position;
 
 // Pattern filter for material searches.
 // It can specify, for example, a white pawn on the f-file, or a black bishop
@@ -20,5 +26,17 @@ enum gameExactMatchT {
 	GAME_EXACT_MATCH_Fyles,
 	GAME_EXACT_MATCH_Material
 };
+
+namespace game_search {
+
+bool materialMatch(Game& game, bool promotionsFlag, ByteBuffer& buf, byte* min,
+                   byte* max, patternT* ptn, std::size_t ptnSize, int minPly,
+                   int maxPly, int matchLength, bool oppBishops,
+                   bool sameBishops, int minDiff, int maxDiff);
+bool exactMatch(Game& game, Position* pos, ByteBuffer* buf,
+                gameExactMatchT searchType);
+bool varExactMatch(Game& game, Position* pos, gameExactMatchT searchType);
+
+} // namespace game_search
 
 } // namespace scid::database

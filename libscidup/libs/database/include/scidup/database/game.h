@@ -105,6 +105,14 @@ private:
     errorT DecodeNextMove(ByteBuffer* buf, simpleMoveT& sm);
     errorT Decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf);
     errorT DecodeMovesOnly(ByteBuffer& buf);
+    // TODO [Game]: Move these database search operations out of Game once the
+    // database wrapper around the future core Game exists.
+    bool MaterialMatch(bool PromotionsFlag, ByteBuffer& buf, byte* min,
+                       byte* max, patternT* ptn, size_t ptn_size, int minPly,
+                       int maxPly, int matchLength, bool oppBishops,
+                       bool sameBishops, int minDiff, int maxDiff);
+    bool ExactMatch(Position* pos, ByteBuffer* buf, gameExactMatchT searchType);
+    bool VarExactMatch(Position* searchPos, gameExactMatchT searchType);
     std::string* find_std_tag(std::string_view tag);
     std::string& find_or_create_tag(std::string_view tag);
     void viewTagPairsImpl(
@@ -121,6 +129,16 @@ private:
     friend errorT game_storage::decodeSkipTags(Game& game, ByteBuffer* buf);
     friend errorT game_storage::decodeNextMove(Game& game, ByteBuffer* buf,
                                                simpleMoveT& sm);
+    friend bool game_search::materialMatch(
+        Game& game, bool promotionsFlag, ByteBuffer& buf, byte* min, byte* max,
+        patternT* ptn, std::size_t ptnSize, int minPly, int maxPly,
+        int matchLength, bool oppBishops, bool sameBishops, int minDiff,
+        int maxDiff);
+    friend bool game_search::exactMatch(Game& game, Position* pos,
+                                        ByteBuffer* buf,
+                                        gameExactMatchT searchType);
+    friend bool game_search::varExactMatch(Game& game, Position* pos,
+                                           gameExactMatchT searchType);
     friend struct LegacyGamePgnEncoder;
 
     /**
@@ -323,14 +341,6 @@ public:
     uint      GetHtmlStyle ();
 
     errorT    GetPartialMoveList (DString * str, uint plyCount);
-
-    bool MaterialMatch(bool PromotionsFlag, ByteBuffer& buf, byte* min,
-                       byte* max, patternT* ptn, size_t ptn_size, int minPly,
-                       int maxPly, int matchLength, bool oppBishops,
-                       bool sameBishops, int minDiff, int maxDiff);
-    bool      ExactMatch (Position * pos, ByteBuffer * buf,
-                          gameExactMatchT searchType);
-    bool      VarExactMatch (Position * searchPos, gameExactMatchT searchType);
 
     Game* clone();
 };

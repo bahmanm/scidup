@@ -476,4 +476,25 @@ Game::VarExactMatch (Position * searchPos, gameExactMatchT searchType)
     return false;
 }
 
+bool game_search::materialMatch(Game& game, bool promotionsFlag,
+                                ByteBuffer& buf, byte* min, byte* max,
+                                patternT* ptn, std::size_t ptnSize,
+                                int minPly, int maxPly, int matchLength,
+                                bool oppBishops, bool sameBishops, int minDiff,
+                                int maxDiff) {
+    return game.MaterialMatch(promotionsFlag, buf, min, max, ptn, ptnSize,
+                              minPly, maxPly, matchLength, oppBishops,
+                              sameBishops, minDiff, maxDiff);
+}
+
+bool game_search::exactMatch(Game& game, Position* pos, ByteBuffer* buf,
+                             gameExactMatchT searchType) {
+    return game.ExactMatch(pos, buf, searchType);
+}
+
+bool game_search::varExactMatch(Game& game, Position* pos,
+                                gameExactMatchT searchType) {
+    return game.VarExactMatch(pos, searchType);
+}
+
 } // namespace scid::database
