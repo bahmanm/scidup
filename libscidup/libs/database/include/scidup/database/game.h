@@ -73,7 +73,6 @@ class Game {
     ushort      NumHalfMoves; // Total half moves in the main line.
 
     // TODO: The following variables should not be part of this class.
-    uint        NumMovesPrinted; // Used in recursive WriteMoveList method.
     uint        PgnStyle;        // see PGN_STYLE macros above.
     gameFormatT PgnFormat;       // see PGN_FORMAT macros above.
     uint        HtmlStyle;       // HTML diagram style, see DumpHtmlBoard method in position.cpp.
@@ -88,7 +87,8 @@ private:
                              const Position* pos);
     errorT WritePGN(TextBuffer* tb);
     errorT WriteMoveList(TextBuffer* tb, moveT* oldCurrentMove,
-                         bool printMoveNum, bool inComment);
+                         bool printMoveNum, bool inComment,
+                         uint& numMovesPrinted);
     std::string* find_std_tag(std::string_view tag);
     std::string& find_or_create_tag(std::string_view tag);
     void viewTagPairsImpl(
@@ -272,8 +272,6 @@ public:
     ratingT     GetAverageElo ();
 
     // PGN conversion
-    void      WriteComment (TextBuffer * tb, const char * preStr,
-                            const char * comment, const char * postStr);
     std::pair<const char*, unsigned> WriteToPGN (uint lineWidth = 0,
                                                  bool NewLineAtEnd = false,
                                                  bool newLineToSpaces = true);

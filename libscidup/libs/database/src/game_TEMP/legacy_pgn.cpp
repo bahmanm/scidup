@@ -487,20 +487,19 @@ uint Game::GetHtmlStyle() {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // writeComment:
 //    Called by WriteMoveList to write a single comment.
-void
-Game::WriteComment (TextBuffer * tb, const char * preStr,
-              const char * comment, const char * postStr)
-{
+static void writeComment(TextBuffer* tb, const char* preStr,
+                         const char* comment, const char* postStr,
+                         bool colorFormat, uint numMovesPrinted) {
     const char* s = comment;
     if (s[0] != '\0') {
 
-        if (IsColorFormat()) {
+        if (colorFormat) {
             tb->PrintString ("<c_");
-            tb->PrintInt (NumMovesPrinted);
+            tb->PrintInt (numMovesPrinted);
             tb->PrintChar ('>');
         }
 
-        if (IsColorFormat()) {
+        if (colorFormat) {
             // Translate "<", ">" in comments:
             tb->AddTranslation ('<', "<lt>");
             tb->AddTranslation ('>', "<gt>");
@@ -515,7 +514,7 @@ Game::WriteComment (TextBuffer * tb, const char * preStr,
             tb->PrintString (postStr);
         }
 
-        if (IsColorFormat()) { tb->PrintString ("</c>"); }
+        if (colorFormat) { tb->PrintString ("</c>"); }
     }
 }
 
@@ -525,7 +524,8 @@ Game::WriteComment (TextBuffer * tb, const char * preStr,
 //      Recursive; calls itself to write variations.
 //
 errorT Game::WriteMoveList(TextBuffer* tb, moveT* oldCurrentMove,
-                           bool printMoveNum, bool inComment) {
+                           bool printMoveNum, bool inComment,
+                           uint& numMovesPrinted) {
     sanStringT tempTrans;
     const char * preCommentStr = "{";
     const char * postCommentStr = "}";
@@ -592,7 +592,8 @@ errorT Game::WriteMoveList(TextBuffer* tb, moveT* oldCurrentMove,
             comment = strippedComment.data();
         }
         if (*comment) {
-            WriteComment(tb, preCommentStr, comment, postCommentStr);
+            writeComment(tb, preCommentStr, comment, postCommentStr,
+                         IsColorFormat(), numMovesPrinted);
             tb->PrintSpace();
             if (!VarDepth) {
                 tb->ClearTranslation ('\n');
@@ -638,13 +639,13 @@ errorT Game::WriteMoveList(TextBuffer* tb, moveT* oldCurrentMove,
             }
         }
         int colWidth = 6;
-        NumMovesPrinted++;
+        numMovesPrinted++;
 
         if (printThisMove) {
         // Print the move number and following dots if necessary:
         if (IsColorFormat()) {
             tb->PrintString ("<m_");
-            tb->PrintInt (NumMovesPrinted);
+            tb->PrintInt (numMovesPrinted);
             tb->PrintChar ('>');
         }
         if (printMoveNum  ||  (CurrentPos->GetToMove() == WHITE)) {
@@ -850,7 +851,8 @@ errorT Game::WriteMoveList(TextBuffer* tb, moveT* oldCurrentMove,
                     }
                 }
 
-                WriteComment(tb, preCommentStr, comment, postCommentStr);
+                writeComment(tb, preCommentStr, comment, postCommentStr,
+                             IsColorFormat(), numMovesPrinted);
 
                 if ((PgnStyle & PGN_STYLE_INDENT_COMMENTS) && VarDepth == 0) {
                     if (IsColorFormat()) {
@@ -944,11 +946,12 @@ errorT Game::WriteMoveList(TextBuffer* tb, moveT* oldCurrentMove,
                 }
 
                 MoveIntoVariation (i);
-                NumMovesPrinted++;
+                numMovesPrinted++;
                 tb->PrintSpace();
 
                 // Recursively print the variation:
-                WriteMoveList (tb, oldCurrentMove, true, inComment);
+                WriteMoveList(tb, oldCurrentMove, true, inComment,
+                              numMovesPrinted);
 
                 MoveExitVariation();
                 if (!IsLatexFormat()  ||  VarDepth != 0) {
@@ -1039,7 +1042,7 @@ errorT Game::WritePGN(TextBuffer* tb) {
 //            strTrimMarkCodes (s);
 //        }
 //        if (IsColorFormat()) {
-//            sprintf (temp, "<c_%u>", NumMovesPrinted);
+//            sprintf (temp, "<c_%u>", numMovesPrinted);
 //            tb->PrintString (temp);
 //            tb->AddTranslation ('<', "<lt>");
 //            tb->AddTranslation ('>', "<gt>");
@@ -1239,8 +1242,8 @@ errorT Game::WritePGN(TextBuffer* tb) {
     MoveToStart();
 
     if (IsHtmlFormat()) { tb->PrintString ("<p>"); }
-    NumMovesPrinted = 1;
-    WriteMoveList(tb, CurrentMove, true, false);
+    uint numMovesPrinted = 1;
+    WriteMoveList(tb, CurrentMove, true, false, numMovesPrinted);
     if (IsHtmlFormat()) { tb->PrintString ("<b>"); }
     if (IsLatexFormat()) { tb->PrintString ("\n}\\end{chess}\n{\\bf "); }
     if (IsColorFormat()) { tb->PrintString ("<tag>"); }

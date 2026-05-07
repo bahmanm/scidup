@@ -99,7 +99,6 @@ Game::Game(const Game& obj) {
 		StartPos = std::make_unique<Position>(*obj.StartPos);
 
 	NumHalfMoves = obj.NumHalfMoves;
-	NumMovesPrinted = obj.NumMovesPrinted;
 	PgnStyle = obj.PgnStyle;
 	PgnFormat = obj.PgnFormat;
 	HtmlStyle = obj.HtmlStyle;
@@ -172,7 +171,6 @@ void Game::Clear() {
 	Result = RESULT_None;
 	ScidFlags[0] = 0;
 
-	NumMovesPrinted = 0;
 	PgnStyle = PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS;
 	PgnFormat = PGN_FORMAT_Plain;
 	HtmlStyle = 0;
