@@ -21,7 +21,7 @@
  */
 
 #include "scidup/database/game.h"
-#include "scidup/database/game_TEMP/pgn_encode.h"
+#include "scidup/core/pgn/encode.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
 #include "pgnparse_impl.h"
 #include <gtest/gtest.h>
@@ -39,14 +39,14 @@ TEST(Test_PgnEncode, break_lines) {
 		    "1. e4 e5\n{ very long comment, with space at the beginning should remain unaltered, even if it is longer than 80 chars}\n"sv
 		    "2. Nf3 Nf6"sv;
 		auto text = std::string(pgn);
-		scid::database::pgn::break_lines(text.begin(), text.end());
+		scid::core::pgn::break_lines(text.begin(), text.end());
 		EXPECT_EQ(text, expected);
 
 		auto expected_hard_len =
 		    "1. e4 e5\n{ very long comment, with space at the beginning should remain unaltered, even\n"sv
 		    "if it is longer than 80 chars} 2. Nf3 Nf6"sv;
 		auto hard = std::string(pgn);
-		scid::database::pgn::break_lines<80, '\0', 80>(hard.begin(), hard.end());
+		scid::core::pgn::break_lines<80, '\0', 80>(hard.begin(), hard.end());
 		EXPECT_EQ(hard, expected_hard_len);
 	}
 	{
@@ -58,19 +58,19 @@ TEST(Test_PgnEncode, break_lines) {
 		auto expected =
 		    "1. e4 e5 {normal comment, not very long, should be inline} 2. Nf3 Nf6 (2... Nc6)\n3. Bb5 Nxe4"sv;
 		auto text = std::string(pgn);
-		scid::database::pgn::break_lines(text.begin(), text.end());
+		scid::core::pgn::break_lines(text.begin(), text.end());
 		EXPECT_EQ(text, expected);
 
 		auto expected79 =
 		    "1. e4 e5 {normal comment, not very long, should be inline} 2. Nf3 Nf6\n(2... Nc6) 3. Bb5 Nxe4"sv;
 		text = std::string(pgn);
-		scid::database::pgn::break_lines<79>(text.begin(), text.end());
+		scid::core::pgn::break_lines<79>(text.begin(), text.end());
 		EXPECT_EQ(text, expected79);
 
 		auto expected58 =
 		    "1. e4 e5 {normal comment, not very long, should be inline}\n2. Nf3 Nf6 (2... Nc6) 3. Bb5 Nxe4"sv;
 		text = std::string(pgn);
-		scid::database::pgn::break_lines<58>(text.begin(), text.end());
+		scid::core::pgn::break_lines<58>(text.begin(), text.end());
 		EXPECT_EQ(text, expected58);
 	}
 }
@@ -80,13 +80,13 @@ TEST(Test_PgnEncode, escape_string) {
 	{
 		auto text = std::string(R"(escape \ test \\ "White "Sen\pai"")");
 		auto expected = R"(escape \\ test \\\\ \"White \"Sen\\pai\"\")"sv;
-		scid::database::pgn::escape_string(text, 0);
+		scid::core::pgn::escape_string(text, 0);
 		EXPECT_EQ(text, expected);
 	}
 	{
 		auto text = std::string(R"(escape \ test \\ "White "Sen\pai"")");
 		auto expected = R"(escape \ test \\\\ \"White \"Sen\\pai\"\")"sv;
-		scid::database::pgn::escape_string(text, 8);
+		scid::core::pgn::escape_string(text, 8);
 		EXPECT_EQ(text, expected);
 	}
 }
@@ -95,30 +95,30 @@ TEST(Test_PgnEncode, encode_tag_pair) {
 	using namespace std::literals;
 	{
 		std::string text;
-		scid::database::pgn::encode_tag_pair("White", "Senpai e kohai", text);
+		scid::core::pgn::encode_tag_pair("White", "Senpai e kohai", text);
 		EXPECT_EQ("[White\0\"Senpai e kohai\"]\n"sv, text);
-		scid::database::pgn::break_lines(text.begin(), text.end());
+		scid::core::pgn::break_lines(text.begin(), text.end());
 		EXPECT_STREQ("[White \"Senpai e kohai\"]\n", text.c_str());
 	}
 	{
 		std::string text;
-		scid::database::pgn::encode_tag_pair<true>("Event", "", text);
+		scid::core::pgn::encode_tag_pair<true>("Event", "", text);
 		EXPECT_EQ("[Event\0\"?\"]\n"sv, text);
-		scid::database::pgn::break_lines(text.begin(), text.end());
+		scid::core::pgn::break_lines(text.begin(), text.end());
 		EXPECT_STREQ("[Event \"?\"]\n", text.c_str());
 	}
 	{
 		std::string text;
-		scid::database::pgn::encode_tag_pair("Event", "", text);
+		scid::core::pgn::encode_tag_pair("Event", "", text);
 		EXPECT_EQ("[Event\0\"\"]\n"sv, text);
-		scid::database::pgn::break_lines(text.begin(), text.end());
+		scid::core::pgn::break_lines(text.begin(), text.end());
 		EXPECT_STREQ("[Event \"\"]\n", text.c_str());
 	}
 	{
 		std::string text;
-		scid::database::pgn::encode_tag_pair("empty", "", text);
+		scid::core::pgn::encode_tag_pair("empty", "", text);
 		EXPECT_EQ("[empty\0\"\"]\n"sv, text);
-		scid::database::pgn::break_lines(text.begin(), text.end());
+		scid::core::pgn::break_lines(text.begin(), text.end());
 		EXPECT_STREQ("[empty \"\"]\n", text.c_str());
 	}
 }
@@ -127,24 +127,24 @@ TEST(Test_PgnEncode, encode_comment_rest_of_line) {
 	{
 		std::string text;
 		EXPECT_TRUE(
-		    scid::database::pgn::encode_comment_rest_of_line("rest of line comment", text));
+		    scid::core::pgn::encode_comment_rest_of_line("rest of line comment", text));
 		EXPECT_STREQ(text.c_str(), ";rest of line comment\n");
 	}
 	{
 		std::string text = "1.e4";
 		EXPECT_TRUE(
-		    scid::database::pgn::encode_comment_rest_of_line("rest of line comment", text));
+		    scid::core::pgn::encode_comment_rest_of_line("rest of line comment", text));
 		EXPECT_STREQ(text.c_str(), "1.e4\0;rest of line comment\n");
 	}
 	{
 		std::string text = "1.e4\0";
 		EXPECT_TRUE(
-		    scid::database::pgn::encode_comment_rest_of_line("rest of line comment", text));
+		    scid::core::pgn::encode_comment_rest_of_line("rest of line comment", text));
 		EXPECT_STREQ(text.c_str(), "1.e4\0;rest of line comment\n");
 	}
 	{
 		std::string text;
-		EXPECT_FALSE(scid::database::pgn::encode_comment_rest_of_line("no\nnewline", text));
+		EXPECT_FALSE(scid::core::pgn::encode_comment_rest_of_line("no\nnewline", text));
 		EXPECT_EQ(0, text.size());
 	}
 }
@@ -153,22 +153,22 @@ TEST(Test_PgnEncode, encode_comment) {
 	using namespace std::literals;
 	{
 		std::string text;
-		scid::database::pgn::encode_comment("normal comment", text);
+		scid::core::pgn::encode_comment("normal comment", text);
 		EXPECT_EQ(text, "{normal comment}\0"sv);
 	}
 	{
 		std::string text;
-		scid::database::pgn::encode_comment("comment with curly } brace", text);
+		scid::core::pgn::encode_comment("comment with curly } brace", text);
 		EXPECT_STREQ(text.c_str(), ";comment with curly } brace\n");
 	}
 	{
 		std::string text;
-		scid::database::pgn::encode_comment("comment with\nnewline", text);
+		scid::core::pgn::encode_comment("comment with\nnewline", text);
 		EXPECT_EQ(text, "{comment with\nnewline}\0"sv);
 	}
 	{
 		std::string text;
-		scid::database::pgn::encode_comment("both curly { and newline\n", text);
+		scid::core::pgn::encode_comment("both curly { and newline\n", text);
 		EXPECT_EQ(text, "{both curly \xEF\xBD\x9B and newline\n}\0"sv);
 	}
 }
@@ -195,7 +195,7 @@ TEST(Test_PgnEncode, encode_game) {
 		                "[Result\0\"*\"]\n"sv
 		                "\n*\n"sv;
 		std::string pgn;
-		scid::database::pgn::encode_game(empty, pgn);
+		scid::core::pgn::encode_game(empty, pgn);
 		EXPECT_EQ(pgn, expected);
 	}
 	{
@@ -218,7 +218,7 @@ TEST(Test_PgnEncode, encode_game) {
 		                "1.e4\0{after the move}\n"sv
 		                "*\n"sv;
 		std::string pgn;
-		scid::database::pgn::encode_game(game, pgn);
+		scid::core::pgn::encode_game(game, pgn);
 		EXPECT_EQ(pgn, expected);
 	}
 }
@@ -235,7 +235,7 @@ TEST(Test_PgnEncode, encode) {
 		                "[Result \"*\"]\n"
 		                "\n*\n";
 		std::string pgn;
-		scid::database::pgn::encode(empty, pgn);
+		scid::core::pgn::encode(empty, pgn);
 		EXPECT_STREQ(pgn.c_str(), expected);
 	}
 	{
@@ -257,7 +257,7 @@ TEST(Test_PgnEncode, encode) {
 		                "{before the move} 1.e4 {after the move}\n"
 		                "*\n";
 		std::string pgn;
-		scid::database::pgn::encode(game, pgn);
+		scid::core::pgn::encode(game, pgn);
 		EXPECT_STREQ(pgn.c_str(), expected);
 	}
 	{
@@ -281,7 +281,7 @@ TEST(Test_PgnEncode, encode) {
 		    "$1 {nag}\n(1...c5 $2) 2.Nf3 {last}\n"
 		    "*\n";
 		std::string pgn;
-		scid::database::pgn::encode(game, pgn);
+		scid::core::pgn::encode(game, pgn);
 		EXPECT_STREQ(pgn.c_str(), expected);
 	}
 }

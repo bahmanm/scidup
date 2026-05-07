@@ -26,15 +26,13 @@
 
 #pragma once
 
-#include "scidup/database/game.h"
-
 #include <algorithm>
 #include <string>
 #include <string_view>
+#include <type_traits>
+#include <vector>
 
-namespace scid::database {
-
-namespace pgn {
+namespace scid::core::pgn {
 
 // We want to split the PGN text in lines to make it more readable, but we do
 // not want to insert extra newline chars inside comments or tag values.
@@ -201,21 +199,22 @@ void encode_movetext(TGame const& game, TCont& dest) {
 	auto move_end = dest.size();
 	dest.push_back('\n');
 
-	game.viewMovetext([&](const GameMoveView& entry) {
+	game.viewMovetext([&](const auto& entry) {
+		using EntryKind = std::decay_t<decltype(entry.kind)>;
 		switch (entry.kind) {
-		case GameMoveViewKind::InitialComment:
+		case EntryKind::InitialComment:
 			if (!entry.comment.empty())
 				encode_comment<hard_len>(entry.comment, dest);
 			break;
 
-		case GameMoveViewKind::VariationStart:
+		case EntryKind::VariationStart:
 			ply.push_back(ply.back() - 1);
 			dest.push_back('(');
 			if (!entry.comment.empty())
 				encode_comment<hard_len>(entry.comment, dest);
 			break;
 
-		case GameMoveViewKind::VariationEnd:
+		case EntryKind::VariationEnd:
 			ply.pop_back();
 			if (dest.back() == '\0') {
 				dest.back() = ')';
@@ -225,7 +224,7 @@ void encode_movetext(TGame const& game, TCont& dest) {
 			dest.push_back('\0');
 			break;
 
-		case GameMoveViewKind::Move: {
+		case EntryKind::Move: {
 			auto white_to_move = (ply.back() % 2) == 0;
 			if (white_to_move || move_end != dest.size()) {
 				auto move_number = std::to_string(ply.back() / 2 + 1);
@@ -280,6 +279,4 @@ void encode(TGame const& game, TCont& dest) {
 	break_lines<desired_len>(dest.begin() + begin, dest.end());
 }
 
-} // namespace pgn
-
-} // namespace scid::database
+} // namespace scid::core::pgn

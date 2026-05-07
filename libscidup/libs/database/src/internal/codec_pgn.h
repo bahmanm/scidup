@@ -28,7 +28,7 @@
 #include "codec_proxy.h"
 #include "pgnparse_impl.h"
 #include "filebuf.h"
-#include "scidup/database/game_TEMP/pgn_encode.h"
+#include "scidup/core/pgn/encode.h"
 #include <algorithm>
 #include <cstring>
 #include <vector>
@@ -152,7 +152,7 @@ public:
 		} while (game->MoveForwardInPGN() == OK);
 
 		buf_.clear();
-		pgn::encode(*game, buf_);
+		scid::core::pgn::encode(*game, buf_);
 		buf_.push_back('\n');
 		return file_.append(buf_.data(), buf_.size());
 	}
