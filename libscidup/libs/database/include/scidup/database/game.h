@@ -21,6 +21,7 @@
 #include "scidup/core/date.h"
 #include "scidup/eco/code.h"
 #include "scidup/database/game_TEMP/legacy_pgn.h"
+#include "scidup/database/game_TEMP/move_view.h"
 #include "scidup/database/game_TEMP/nags.h"
 #include "scidup/database/game_TEMP/search.h"
 #include "scidup/database/indexentry.h"
@@ -29,7 +30,6 @@
 #include <forward_list>
 #include <functional>
 #include <memory>
-#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -42,21 +42,6 @@ struct moveT;
 enum markerT : byte;
 struct MoveChunkDeleter {
     void operator()(moveT* ptr) const;
-};
-
-enum class GameMoveViewKind {
-    InitialComment,
-    VariationStart,
-    VariationEnd,
-    Move
-};
-
-struct GameMoveView {
-    GameMoveViewKind kind;
-    simpleMoveT move;
-    std::string_view san;
-    std::string_view comment;
-    std::span<const byte> nags;
 };
 
 //////////////////////////////////////////////////////////////////////
