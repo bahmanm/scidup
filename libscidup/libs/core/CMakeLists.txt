@@ -20,6 +20,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/hash.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/movelist.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/move_predicates.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/nags.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/notation.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/pgn/encode.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/position.h"

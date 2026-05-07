@@ -21,7 +21,7 @@
 #include "scidup/core/date.h"
 #include "scidup/eco/code.h"
 #include "scidup/database/game_TEMP/move_view.h"
-#include "scidup/database/game_TEMP/nags.h"
+#include "scidup/core/nags.h"
 #include "scidup/database/game_TEMP/pgn_style.h"
 #include "scidup/database/game_TEMP/search.h"
 #include "scidup/database/indexentry.h"

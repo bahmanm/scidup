@@ -1,11 +1,13 @@
 #pragma once
 
-#include "scidup/core/primitives.h"
+#include <cstdint>
 
-namespace scid::database {
+namespace scid::core {
 
 // Common NAG annotation symbol values.
-const byte
+// TODO [Game]: Replace these loose constants with a scoped Nag enum once the
+// Move metadata shape is settled.
+const std::uint8_t
     NAG_GoodMove = 1,
     NAG_PoorMove = 2,
     NAG_ExcellentMove = 3,
@@ -70,6 +72,6 @@ const byte
     NAG_With = 214,
     NAG_Without = 215;
 
-const byte MAX_NAGS_ARRAY = 215;
+const std::uint8_t MAX_NAGS_ARRAY = 215;
 
-} // namespace scid::database
+} // namespace scid::core

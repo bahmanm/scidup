@@ -27,6 +27,7 @@
 
 #include "crosstab.h"
 #include "scidup/core/dstring.h"
+#include "scidup/core/nags.h"
 #include "scidup/core/notation.h"
 #include "engine.h"
 #include "scidup/database/game_id.h"
@@ -2974,7 +2975,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             }
             AppendResult (ti, temp, NULL);
             scid::database::byte * firstNag = g.GetNextNags();
-            if (*firstNag >= scid::database::NAG_GoodMove  &&  *firstNag <= scid::database::NAG_DubiousMove) {
+            if (*firstNag >= scid::core::NAG_GoodMove  &&  *firstNag <= scid::core::NAG_DubiousMove) {
                 game_printNag (*firstNag, s, true, scid::database::PGN_FORMAT_Plain);
                 AppendResult (ti, "<red>", s, "</red>", NULL);
             }

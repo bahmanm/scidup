@@ -4,6 +4,7 @@
 #include "scidup/database/game.h"
 #include "scidup/database/misc.h"
 #include "scidup/core/dstring.h"
+#include "scidup/core/nags.h"
 #include "scidup/core/notation.h"
 #include "movetree.h"
 #include "naglatex.h"
@@ -89,7 +90,7 @@ void game_printNag(byte nag, char* str, bool asSymbol, gameFormatT format) {
 		} else {
 			strcpy(str, evalNagsRegular[nag]);
 		}
-		if (nag == NAG_Diagram) {
+		if (nag == scid::core::NAG_Diagram) {
 			if (format == PGN_FORMAT_LaTeX) {
 				strcpy(str, evalNagsLatex[nag]);
 			} else if (format == PGN_FORMAT_HTML) {
@@ -126,13 +127,13 @@ byte game_parseNag(std::pair<const char*, const char*> strview) {
 	if (*str == '!') {
 		str++;
 		if (*str == 0) {
-			return NAG_GoodMove;
+			return scid::core::NAG_GoodMove;
 		}
 		if (*str == '!') {
-			return NAG_ExcellentMove;
+			return scid::core::NAG_ExcellentMove;
 		}
 		if (*str == '?') {
-			return NAG_InterestingMove;
+			return scid::core::NAG_InterestingMove;
 		}
 		return 0;
 	}
@@ -140,13 +141,13 @@ byte game_parseNag(std::pair<const char*, const char*> strview) {
 	if (*str == '?') {
 		str++;
 		if (*str == 0) {
-			return NAG_PoorMove;
+			return scid::core::NAG_PoorMove;
 		}
 		if (*str == '?') {
-			return NAG_Blunder;
+			return scid::core::NAG_Blunder;
 		}
 		if (*str == '!') {
-			return NAG_DubiousMove;
+			return scid::core::NAG_DubiousMove;
 		}
 		return 0;
 	}
@@ -154,22 +155,22 @@ byte game_parseNag(std::pair<const char*, const char*> strview) {
 	if (*str == '+') {
 		str++;
 		if (*str == '=') {
-			return NAG_WhiteSlight;
+			return scid::core::NAG_WhiteSlight;
 		}
 		if (*str == '-' && str[1] == 0) {
-			return NAG_WhiteDecisive;
+			return scid::core::NAG_WhiteDecisive;
 		}
 		if (*str == '>') {
-			return NAG_WithAttack;
+			return scid::core::NAG_WithAttack;
 		}
 		if (*str == '/' && str[1] == '-') {
-			return NAG_WhiteClear;
+			return scid::core::NAG_WhiteClear;
 		}
 		if (*str == '/' && str[1] == '=') {
-			return NAG_WhiteSlight;
+			return scid::core::NAG_WhiteSlight;
 		}
 		if (*str == '-' && str[1] == '-') {
-			return NAG_WhiteCrushing;
+			return scid::core::NAG_WhiteCrushing;
 		}
 		return 0;
 	}
@@ -177,16 +178,16 @@ byte game_parseNag(std::pair<const char*, const char*> strview) {
 	if (*str == '=') {
 		str++;
 		if (*str == 0) {
-			return NAG_Equal;
+			return scid::core::NAG_Equal;
 		}
 		if (*str == '+') {
-			return NAG_BlackSlight;
+			return scid::core::NAG_BlackSlight;
 		}
 		if (*str == '/' && str[1] == '+') {
-			return NAG_BlackSlight;
+			return scid::core::NAG_BlackSlight;
 		}
 		if (*str == '/' && str[1] == '&') {
-			return NAG_Compensation;
+			return scid::core::NAG_Compensation;
 		}
 		return 0;
 	}
@@ -194,19 +195,19 @@ byte game_parseNag(std::pair<const char*, const char*> strview) {
 	if (*str == '-') {
 		str++;
 		if (*str == '+') {
-			return NAG_BlackDecisive;
+			return scid::core::NAG_BlackDecisive;
 		}
 		if (*str == '>') {
-			return NAG_WithBlackAttack;
+			return scid::core::NAG_WithBlackAttack;
 		}
 		if (*str == '/' && str[1] == '+') {
-			return NAG_BlackClear;
+			return scid::core::NAG_BlackClear;
 		}
 		if (*str == '-' && str[1] == '+') {
-			return NAG_BlackCrushing;
+			return scid::core::NAG_BlackCrushing;
 		}
 		if (*str == '-' && str[1] == 0) {
-			return NAG_See;
+			return scid::core::NAG_See;
 		}
 		return 0;
 	}
@@ -214,10 +215,10 @@ byte game_parseNag(std::pair<const char*, const char*> strview) {
 	if (*str == '/') {
 		str++;
 		if (*str == 0) {
-			return NAG_Diagonal;
+			return scid::core::NAG_Diagonal;
 		}
 		if (*str == '\\') {
-			return NAG_WithIdea;
+			return scid::core::NAG_WithIdea;
 		}
 		return 0;
 	}
@@ -225,10 +226,10 @@ byte game_parseNag(std::pair<const char*, const char*> strview) {
 	if (*str == 'R') {
 		str++;
 		if (*str == 0) {
-			return NAG_VariousMoves;
+			return scid::core::NAG_VariousMoves;
 		}
 		if (*str == 'R') {
-			return NAG_Comment;
+			return scid::core::NAG_Comment;
 		}
 		return 0;
 	}
@@ -236,14 +237,14 @@ byte game_parseNag(std::pair<const char*, const char*> strview) {
 	if (*str == 'z') {
 		str++;
 		if (*str == 'z') {
-			return NAG_BlackZugZwang;
+			return scid::core::NAG_BlackZugZwang;
 		}
 		return 0;
 	}
 	if (*str == 'Z') {
 		str++;
 		if (*str == 'Z') {
-			return NAG_ZugZwang;
+			return scid::core::NAG_ZugZwang;
 		}
 		return 0;
 	}
@@ -251,10 +252,10 @@ byte game_parseNag(std::pair<const char*, const char*> strview) {
 	if (*str == 'B') {
 		str++;
 		if (*str == 'B') {
-			return NAG_BishopPair;
+			return scid::core::NAG_BishopPair;
 		}
 		if (*str == 'b') {
-			return NAG_OppositeBishops;
+			return scid::core::NAG_OppositeBishops;
 		}
 		return 0;
 	}
@@ -262,13 +263,13 @@ byte game_parseNag(std::pair<const char*, const char*> strview) {
 	if (*str == 'o') {
 		str++;
 		if (*str == '-' && str[1] == 'o') {
-			return NAG_SeparatedPawns;
+			return scid::core::NAG_SeparatedPawns;
 		}
 		if (*str == 'o' && str[1] == 0) {
-			return NAG_UnitedPawns;
+			return scid::core::NAG_UnitedPawns;
 		}
 		if (*str == '^' && str[1] == 0) {
-			return NAG_PassedPawn;
+			return scid::core::NAG_PassedPawn;
 		}
 		return 0;
 	}
@@ -276,7 +277,7 @@ byte game_parseNag(std::pair<const char*, const char*> strview) {
 	if (*str == '(') {
 		str++;
 		if (*str == '_' && str[1] == ')') {
-			return NAG_BetterIs;
+			return scid::core::NAG_BetterIs;
 		}
 		return 0;
 	}
@@ -284,13 +285,13 @@ byte game_parseNag(std::pair<const char*, const char*> strview) {
 	if (*str == '[') {
 		str++;
 		if (*str == ']' && str[1] == 0) {
-			return NAG_OnlyMove;
+			return scid::core::NAG_OnlyMove;
 		}
 		if (*str == '+' && str[1] == ']') {
-			return NAG_SlightCentre;
+			return scid::core::NAG_SlightCentre;
 		}
 		if (*str == '+' && str[1] == '+' && str[2] == ']') {
-			return NAG_Centre;
+			return scid::core::NAG_Centre;
 		}
 		return 0;
 	}
@@ -298,10 +299,10 @@ byte game_parseNag(std::pair<const char*, const char*> strview) {
 	if (*str == '_') {
 		str++;
 		if (*str == '|' && str[1] == '_') {
-			return NAG_Ending;
+			return scid::core::NAG_Ending;
 		}
 		if (*str == '|' && str[1] == 0) {
-			return NAG_Without;
+			return scid::core::NAG_Without;
 		}
 		return 0;
 	}
@@ -309,10 +310,10 @@ byte game_parseNag(std::pair<const char*, const char*> strview) {
 	if (*str == '|') {
 		str++;
 		if (*str == '|') {
-			return NAG_Etc;
+			return scid::core::NAG_Etc;
 		}
 		if (*str == '_') {
-			return NAG_With;
+			return scid::core::NAG_With;
 		}
 		return 0;
 	}
@@ -320,13 +321,13 @@ byte game_parseNag(std::pair<const char*, const char*> strview) {
 	if (*str == '>') {
 		str++;
 		if (*str == 0) {
-			return NAG_SlightKingSide;
+			return scid::core::NAG_SlightKingSide;
 		}
 		if (*str == '>' && str[1] == 0) {
-			return NAG_ModerateKingSide;
+			return scid::core::NAG_ModerateKingSide;
 		}
 		if (*str == '>' && str[1] == '>') {
-			return NAG_KingSide;
+			return scid::core::NAG_KingSide;
 		}
 		return 0;
 	}
@@ -334,60 +335,60 @@ byte game_parseNag(std::pair<const char*, const char*> strview) {
 	if (*str == '<') {
 		str++;
 		if (*str == 0) {
-			return NAG_SlightQueenSide;
+			return scid::core::NAG_SlightQueenSide;
 		}
 		if (*str == '<' && str[1] == 0) {
-			return NAG_ModerateQueenSide;
+			return scid::core::NAG_ModerateQueenSide;
 		}
 		if (*str == '<' && str[1] == '<' && str[2] == 0) {
-			return NAG_QueenSide;
+			return scid::core::NAG_QueenSide;
 		}
 		if (*str == '=' && str[1] == '>' && str[2] == 0) {
-			return NAG_File;
+			return scid::core::NAG_File;
 		}
 		if (*str == '+' && str[1] == '>' && str[2] == 0) {
-			return NAG_SlightCounterPlay;
+			return scid::core::NAG_SlightCounterPlay;
 		}
 		if (*str == '-' && str[1] == '>' && str[2] == 0) {
-			return NAG_BlackSlightCounterPlay;
+			return scid::core::NAG_BlackSlightCounterPlay;
 		}
 		if (*str == '+' && str[1] == '+' && str[2] == '>' &&
 		    str[3] == 0) {
-			return NAG_CounterPlay;
+			return scid::core::NAG_CounterPlay;
 		}
 		if (*str == '-' && str[1] == '-' && str[2] == '>' &&
 		    str[3] == 0) {
-			return NAG_BlackCounterPlay;
+			return scid::core::NAG_BlackCounterPlay;
 		}
 		if (*str == '+' && str[1] == '+' && str[2] == '+' &&
 		    str[3] == '>') {
-			return NAG_DecisiveCounterPlay;
+			return scid::core::NAG_DecisiveCounterPlay;
 		}
 		if (*str == '-' && str[1] == '-' && str[2] == '-' &&
 		    str[3] == '>') {
-			return NAG_BlackDecisiveCounterPlay;
+			return scid::core::NAG_BlackDecisiveCounterPlay;
 		}
 		return 0;
 	}
 
 	if (*str == '~' && *(str + 1) == '=') {
-		return NAG_Compensation;
+		return scid::core::NAG_Compensation;
 	}
 
 	if (*str == '~') {
-		return NAG_Unclear;
+		return scid::core::NAG_Unclear;
 	}
 
 	if (*str == 'x') {
-		return NAG_WeakPoint;
+		return scid::core::NAG_WeakPoint;
 	}
 
 	if (str[0] == 'N' && str[1] == 0) {
-		return NAG_Novelty;
+		return scid::core::NAG_Novelty;
 	}
 
 	if (str[0] == 'D' && str[1] == 0) {
-		return NAG_Diagram;
+		return scid::core::NAG_Diagram;
 	}
 	return 0;
 }
@@ -768,7 +769,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                     tb->PrintSpace();
                     colWidth--;
                 }
-                if (printDiagrams  &&  m->nags[i] == NAG_Diagram) {
+                if (printDiagrams  &&  m->nags[i] == scid::core::NAG_Diagram) {
                     printDiagramHere = true;
                 }
                 tb->PrintWord (temp);
