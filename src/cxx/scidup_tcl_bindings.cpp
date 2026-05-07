@@ -33,7 +33,7 @@
 #include "scidup/database/game.h"
 #include "optable.h"
 #include "scidup/eco/book.h"
-#include "scidup/database/pgnparse.h"
+#include "scidup/database/game_TEMP/pgnparse.h"
 #include "polyglot.h"
 #include "scidup/core/position.h"
 #include "scidup/database/scidbase.h"

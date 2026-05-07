@@ -1,4 +1,4 @@
-#include "scidup/database/pgnparse.h"
+#include "scidup/database/game_TEMP/pgnparse.h"
 
 #include <gtest/gtest.h>
 #include <string_view>
