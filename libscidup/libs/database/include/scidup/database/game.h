@@ -22,6 +22,7 @@
 #include "scidup/eco/code.h"
 #include "scidup/database/game_TEMP/legacy_pgn.h"
 #include "scidup/database/game_TEMP/nags.h"
+#include "scidup/database/game_TEMP/search.h"
 #include "scidup/database/indexentry.h"
 #include "scidup/database/namebase.h"
 #include "scidup/core/position.h"
@@ -41,24 +42,6 @@ struct moveT;
 enum markerT : byte;
 struct MoveChunkDeleter {
     void operator()(moveT* ptr) const;
-};
-
-// patternT structure: a pattern filter for material searches.
-//    It can specify, for example, a white Pawn on the f-fyle, or
-//    a black Bishop on f2 and white King on e1.
-struct patternT
-{
-    pieceT     pieceMatch;  // EMPTY, WK, BK, etc...
-    rankT      rankMatch;   // RANK_1 .. RANK_8 or NO_RANK
-    fyleT      fyleMatch;   // A_FYLE .. H_FYLE or NO_FYLE
-    byte       flag;        // 0 means this pattern must NOT occur.
-};
-
-enum gameExactMatchT {
-    GAME_EXACT_MATCH_Exact = 0,
-    GAME_EXACT_MATCH_Pawns,
-    GAME_EXACT_MATCH_Fyles,
-    GAME_EXACT_MATCH_Material
 };
 
 enum class GameMoveViewKind {
