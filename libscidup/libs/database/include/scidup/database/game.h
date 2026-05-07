@@ -85,14 +85,12 @@ private:
     errorT DecodeVariation(ByteBuffer& buf, std::vector<moveT*>& comment_marks);
     static errorT decodeMove(ByteBuffer* buf, simpleMoveT* sm, byte val,
                              const Position* pos);
-    errorT WritePGN(TextBuffer* tb, LegacyGameEncodeOptions options);
-    errorT WriteMoveList(TextBuffer* tb, bool printMoveNum, bool inComment,
-                         uint& numMovesPrinted,
-                         const LegacyGameEncodeOptions& options);
     std::string* find_std_tag(std::string_view tag);
     std::string& find_or_create_tag(std::string_view tag);
     void viewTagPairsImpl(
         const std::function<void(const char*, const char*)>& visitor) const;
+
+    friend struct LegacyGamePgnEncoder;
 
     /**
      * Contains the information of the current position in the game, so that

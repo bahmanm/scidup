@@ -520,14 +520,38 @@ static void writeComment(TextBuffer* tb, const char* preStr,
     }
 }
 
+struct LegacyGamePgnEncoder {
+	Game& game;
+	TextBuffer* tb;
+	LegacyGameEncodeOptions options;
+	uint numMovesPrinted = 1;
+
+	static std::pair<const char*, unsigned>
+	encodeToPgnText(Game& game, LegacyGameEncodeOptions options,
+	                uint lineWidth, bool newLineAtEnd,
+	                bool newLineToSpaces);
+
+	errorT encode();
+	errorT writeMoveList(bool printMoveNum, bool inComment);
+};
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::WriteMoveList():
+// LegacyGamePgnEncoder::writeMoveList():
 //      Write the moves, variations and comments in PGN notation.
 //      Recursive; calls itself to write variations.
 //
-errorT Game::WriteMoveList(TextBuffer* tb, bool printMoveNum, bool inComment,
-                           uint& numMovesPrinted,
-                           const LegacyGameEncodeOptions& options) {
+errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
+    auto& CurrentMove = game.CurrentMove;
+    auto& CurrentPos = game.CurrentPos;
+    auto& FirstMove = game.FirstMove;
+    auto& VarDepth = game.VarDepth;
+    auto MoveBackup = [&] { return game.MoveBackup(); };
+    auto MoveExitVariation = [&] { return game.MoveExitVariation(); };
+    auto MoveForward = [&] { return game.MoveForward(); };
+    auto MoveIntoVariation = [&](uint varNumber) {
+        return game.MoveIntoVariation(varNumber);
+    };
+
     sanStringT tempTrans;
     const char * preCommentStr = "{";
     const char * postCommentStr = "}";
@@ -952,8 +976,7 @@ errorT Game::WriteMoveList(TextBuffer* tb, bool printMoveNum, bool inComment,
                 tb->PrintSpace();
 
                 // Recursively print the variation:
-                WriteMoveList(tb, true, inComment,
-                              numMovesPrinted, options);
+                writeMoveList(true, inComment);
 
                 MoveExitVariation();
                 if (!options.isLatexFormat()  ||  VarDepth != 0) {
@@ -1005,10 +1028,33 @@ errorT Game::WriteMoveList(TextBuffer* tb, bool printMoveNum, bool inComment,
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::WritePGN():
+// LegacyGamePgnEncoder::encode():
 //      Write a game in PGN to a textbuffer.
 //
-errorT Game::WritePGN(TextBuffer* tb, LegacyGameEncodeOptions options) {
+errorT LegacyGamePgnEncoder::encode() {
+    auto& BlackElo = game.BlackElo;
+    auto& BlackRatingType = game.BlackRatingType;
+    auto& Date = game.Date;
+    auto& EcoCode = game.EcoCode;
+    auto& EventDate = game.EventDate;
+    auto& Result = game.Result;
+    auto& RoundStr = game.RoundStr;
+    auto& ScidFlags = game.ScidFlags;
+    auto& SiteStr = game.SiteStr;
+    auto& StartPos = game.StartPos;
+    auto& WhiteElo = game.WhiteElo;
+    auto& WhiteRatingType = game.WhiteRatingType;
+    auto& extraTags_ = game.extraTags_;
+    auto FindExtraTag = [&](const char* tag) {
+        return game.FindExtraTag(tag);
+    };
+    auto GetBlackStr = [&] { return game.GetBlackStr(); };
+    auto GetEventStr = [&] { return game.GetEventStr(); };
+    auto GetRoundStr = [&] { return game.GetRoundStr(); };
+    auto GetSiteStr = [&] { return game.GetSiteStr(); };
+    auto GetWhiteStr = [&] { return game.GetWhiteStr(); };
+    auto MoveToStart = [&] { game.MoveToStart(); };
+
     char temp[256];
     char dateStr [20];
     const char * newline = "\n";
@@ -1244,8 +1290,8 @@ errorT Game::WritePGN(TextBuffer* tb, LegacyGameEncodeOptions options) {
     MoveToStart();
 
     if (options.isHtmlFormat()) { tb->PrintString ("<p>"); }
-    uint numMovesPrinted = 1;
-    WriteMoveList(tb, true, false, numMovesPrinted, options);
+    numMovesPrinted = 1;
+    writeMoveList(true, false);
     if (options.isHtmlFormat()) { tb->PrintString ("<b>"); }
     if (options.isLatexFormat()) { tb->PrintString ("\n}\\end{chess}\n{\\bf "); }
     if (options.isColorFormat()) { tb->PrintString ("<tag>"); }
@@ -1260,6 +1306,24 @@ errorT Game::WritePGN(TextBuffer* tb, LegacyGameEncodeOptions options) {
     return OK;
 }
 
+std::pair<const char*, unsigned> LegacyGamePgnEncoder::encodeToPgnText(
+    Game& game, LegacyGameEncodeOptions options, uint lineWidth,
+    bool newLineAtEnd, bool newLineToSpaces) {
+    static TextBuffer tbuf;
+
+    auto location = game.currentLocation();
+    tbuf.Empty();
+    tbuf.SetWrapColumn(lineWidth ? lineWidth : tbuf.GetBufferSize());
+    tbuf.NewlinesToSpaces(newLineToSpaces);
+    LegacyGamePgnEncoder{game, &tbuf, options}.encode();
+    if (newLineAtEnd) {
+        tbuf.NewLine();
+    }
+    game.restoreLocation(location);
+
+    return std::make_pair(tbuf.GetBuffer(), tbuf.GetByteCount());
+}
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Game::WriteToPGN():
 //      Print the entire game.
@@ -1267,16 +1331,9 @@ errorT Game::WritePGN(TextBuffer* tb, LegacyGameEncodeOptions options) {
 std::pair<const char*, unsigned>
 Game::WriteToPGN(uint lineWidth, bool NewLineAtEnd, bool newLineToSpaces)
 {
-    static TextBuffer tbuf;
-
-    auto location = currentLocation();
-    tbuf.Empty();
-    tbuf.SetWrapColumn(lineWidth ? lineWidth : tbuf.GetBufferSize());
-    tbuf.NewlinesToSpaces(newLineToSpaces);
-    WritePGN(&tbuf, {PgnStyle, PgnFormat, HtmlStyle});
-    if (NewLineAtEnd) tbuf.NewLine();
-    restoreLocation(location);
-    return std::make_pair(tbuf.GetBuffer(), tbuf.GetByteCount());
+    return LegacyGamePgnEncoder::encodeToPgnText(
+        *this, {PgnStyle, PgnFormat, HtmlStyle}, lineWidth, NewLineAtEnd,
+        newLineToSpaces);
 }
 
 } // namespace scid::database
