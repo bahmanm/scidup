@@ -85,10 +85,10 @@ private:
     errorT DecodeVariation(ByteBuffer& buf, std::vector<moveT*>& comment_marks);
     static errorT decodeMove(ByteBuffer* buf, simpleMoveT* sm, byte val,
                              const Position* pos);
-    errorT WritePGN(TextBuffer* tb, GameEncodeOptions options);
+    errorT WritePGN(TextBuffer* tb, LegacyGameEncodeOptions options);
     errorT WriteMoveList(TextBuffer* tb, bool printMoveNum, bool inComment,
                          uint& numMovesPrinted,
-                         const GameEncodeOptions& options);
+                         const LegacyGameEncodeOptions& options);
     std::string* find_std_tag(std::string_view tag);
     std::string& find_or_create_tag(std::string_view tag);
     void viewTagPairsImpl(

@@ -85,6 +85,33 @@ TEST(Test_Game, WriteToPGNDoesNotMutatePgnStyle) {
 	EXPECT_EQ(pgnStyle, game.GetPgnStyle());
 }
 
+TEST(Test_Game, LegacyGameEncodeOptionsFormatFromString) {
+	scid::database::gameFormatT format = scid::database::PGN_FORMAT_Color;
+
+	ASSERT_TRUE(
+	    scid::database::LegacyGameEncodeOptions::legacyFormatFromString(
+	        "pgn", &format));
+	EXPECT_TRUE(
+	    (scid::database::LegacyGameEncodeOptions{0, format, 0}
+	         .isPlainFormat()));
+
+	ASSERT_TRUE(
+	    scid::database::LegacyGameEncodeOptions::legacyFormatFromString(
+	        "html", &format));
+	EXPECT_TRUE(
+	    (scid::database::LegacyGameEncodeOptions{0, format, 0}.isHtmlFormat()));
+
+	ASSERT_TRUE(
+	    scid::database::LegacyGameEncodeOptions::legacyFormatFromString(
+	        "latex", &format));
+	const auto options = scid::database::LegacyGameEncodeOptions{0, format, 0};
+	EXPECT_TRUE(options.isLatexFormat());
+
+	EXPECT_FALSE(
+	    scid::database::LegacyGameEncodeOptions::legacyFormatFromString(
+	        "unknown", &format));
+}
+
 TEST(Test_Game, locationInPGN) {
 	for (auto filename : {gameUTF8, gameLatin1, gameLatin1Conv}) {
 

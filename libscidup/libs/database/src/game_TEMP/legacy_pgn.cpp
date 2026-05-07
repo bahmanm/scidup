@@ -392,12 +392,24 @@ byte game_parseNag(std::pair<const char*, const char*> strview) {
 	return 0;
 }
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::PgnFormatFromString():
-//      Converts a string to a gameFormatT, returning true on success
-//      or false on error.
-//      The string should be a case-insensitive unique prefix of
-//      "plain" (or "pgn"), "HTML", "LaTeX" or "Color".
+bool LegacyGameEncodeOptions::legacyFormatFromString(const char* str,
+                                                     gameFormatT* fmt) {
+	if (strIsCasePrefix(str, "Plain")) {
+		*fmt = PGN_FORMAT_Plain;
+	} else if (strIsCasePrefix(str, "PGN")) {
+		*fmt = PGN_FORMAT_Plain;
+	} else if (strIsCasePrefix(str, "HTML")) {
+		*fmt = PGN_FORMAT_HTML;
+	} else if (strIsCasePrefix(str, "LaTeX")) {
+		*fmt = PGN_FORMAT_LaTeX;
+	} else if (strIsCasePrefix(str, "Color")) {
+		*fmt = PGN_FORMAT_Color;
+	} else {
+		return false;
+	}
+	return true;
+}
+
 void Game::ResetPgnStyle(void) {
 	PgnStyle = 0;
 }
@@ -430,23 +442,9 @@ void Game::SetPgnFormat(gameFormatT gf) {
 	PgnFormat = gf;
 }
 
-bool
-Game::PgnFormatFromString (const char * str, gameFormatT * fmt)
-{
-    if (strIsCasePrefix (str, "Plain")) {
-        *fmt = PGN_FORMAT_Plain;
-    } else if (strIsCasePrefix (str, "PGN")) {
-        *fmt = PGN_FORMAT_Plain;
-    } else if (strIsCasePrefix (str, "HTML")) {
-        *fmt = PGN_FORMAT_HTML;
-    } else if (strIsCasePrefix (str, "LaTeX")) {
-        *fmt = PGN_FORMAT_LaTeX;
-    } else if (strIsCasePrefix (str, "Color")) {
-        *fmt = PGN_FORMAT_Color;
-    } else {
-        return false;
-    }
-    return true;
+// Compatibility wrapper for encode format parsing.
+bool Game::PgnFormatFromString(const char* str, gameFormatT* fmt) {
+	return LegacyGameEncodeOptions::legacyFormatFromString(str, fmt);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -456,23 +454,27 @@ Game::PgnFormatFromString (const char * str, gameFormatT * fmt)
 bool
 Game::SetPgnFormatFromString (const char * str)
 {
-    return PgnFormatFromString (str, &PgnFormat);
+	return LegacyGameEncodeOptions::legacyFormatFromString(str, &PgnFormat);
 }
 
 bool Game::IsPlainFormat() {
-	return PgnFormat == PGN_FORMAT_Plain;
+	return LegacyGameEncodeOptions{PgnStyle, PgnFormat, HtmlStyle}
+	    .isPlainFormat();
 }
 
 bool Game::IsHtmlFormat() {
-	return PgnFormat == PGN_FORMAT_HTML;
+	return LegacyGameEncodeOptions{PgnStyle, PgnFormat, HtmlStyle}
+	    .isHtmlFormat();
 }
 
 bool Game::IsLatexFormat() {
-	return PgnFormat == PGN_FORMAT_LaTeX;
+	return LegacyGameEncodeOptions{PgnStyle, PgnFormat, HtmlStyle}
+	    .isLatexFormat();
 }
 
 bool Game::IsColorFormat() {
-	return PgnFormat == PGN_FORMAT_Color;
+	return LegacyGameEncodeOptions{PgnStyle, PgnFormat, HtmlStyle}
+	    .isColorFormat();
 }
 
 void Game::SetHtmlStyle(uint style) {
@@ -525,7 +527,7 @@ static void writeComment(TextBuffer* tb, const char* preStr,
 //
 errorT Game::WriteMoveList(TextBuffer* tb, bool printMoveNum, bool inComment,
                            uint& numMovesPrinted,
-                           const GameEncodeOptions& options) {
+                           const LegacyGameEncodeOptions& options) {
     sanStringT tempTrans;
     const char * preCommentStr = "{";
     const char * postCommentStr = "}";
@@ -732,7 +734,7 @@ errorT Game::WriteMoveList(TextBuffer* tb, bool printMoveNum, bool inComment,
             for (uint i = 0; i < (uint) m->nagCount; i++) {
                 char temp[20];
                 game_printNag (m->nags[i], temp, options.style & PGN_STYLE_SYMBOLS,
-                               options.format);
+                               options.legacyFormat);
 
                 // Do not print a space before the Nag if it is the
                 // first nag and starts with "!" or "?" -- those symbols
@@ -1006,7 +1008,7 @@ errorT Game::WriteMoveList(TextBuffer* tb, bool printMoveNum, bool inComment,
 // Game::WritePGN():
 //      Write a game in PGN to a textbuffer.
 //
-errorT Game::WritePGN(TextBuffer* tb, GameEncodeOptions options) {
+errorT Game::WritePGN(TextBuffer* tb, LegacyGameEncodeOptions options) {
     char temp[256];
     char dateStr [20];
     const char * newline = "\n";
@@ -1072,13 +1074,13 @@ errorT Game::WritePGN(TextBuffer* tb, GameEncodeOptions options) {
 
         //if (options.isHtmlFormat()) { tb->PrintString ("<font size=+1>"); }
         if (options.isLatexFormat()) { tb->PrintString ("$\\circ$ "); }
-        if (options.format==PGN_FORMAT_Color) {tb->PrintString ("<tag>"); }
+        if (options.legacyFormat==PGN_FORMAT_Color) {tb->PrintString ("<tag>"); }
         tb->PrintString (GetWhiteStr());
         if (WhiteElo > 0) {
             std::snprintf(temp, sizeof(temp), "  (%u)", WhiteElo);
             tb->PrintString (temp);
         }
-        switch (options.format) {
+        switch (options.legacyFormat) {
         case PGN_FORMAT_HTML:
             tb->PrintString (" &nbsp;&nbsp; -- &nbsp;&nbsp; ");
             break;
@@ -1134,7 +1136,7 @@ errorT Game::WritePGN(TextBuffer* tb, GameEncodeOptions options) {
         }
 
         tb->PrintString (newline);
-        if (options.format==PGN_FORMAT_Color) {tb->PrintString ("</tag>"); }
+        if (options.legacyFormat==PGN_FORMAT_Color) {tb->PrintString ("</tag>"); }
 
         // Print FEN if non-standard start:
         if (StartPos) {

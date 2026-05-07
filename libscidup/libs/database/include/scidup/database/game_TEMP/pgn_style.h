@@ -9,15 +9,17 @@ enum gameFormatT {
 	PGN_FORMAT_Color = 3  // PGN, with color tags <red> etc
 };
 
-struct GameEncodeOptions {
+struct LegacyGameEncodeOptions {
 	unsigned style;
-	gameFormatT format;
+	gameFormatT legacyFormat;
 	unsigned htmlStyle;
 
-	bool isPlainFormat() const { return format == PGN_FORMAT_Plain; }
-	bool isHtmlFormat() const { return format == PGN_FORMAT_HTML; }
-	bool isLatexFormat() const { return format == PGN_FORMAT_LaTeX; }
-	bool isColorFormat() const { return format == PGN_FORMAT_Color; }
+	static bool legacyFormatFromString(const char* str, gameFormatT* fmt);
+
+	bool isPlainFormat() const { return legacyFormat == PGN_FORMAT_Plain; }
+	bool isHtmlFormat() const { return legacyFormat == PGN_FORMAT_HTML; }
+	bool isLatexFormat() const { return legacyFormat == PGN_FORMAT_LaTeX; }
+	bool isColorFormat() const { return legacyFormat == PGN_FORMAT_Color; }
 	bool hasStyle(unsigned mask) const { return (style & mask) != 0; }
 	void addStyle(unsigned mask) { style |= mask; }
 };
