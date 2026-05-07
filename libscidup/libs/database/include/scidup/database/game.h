@@ -22,7 +22,6 @@
 #include "scidup/eco/code.h"
 #include "scidup/database/game_TEMP/legacy_pgn.h"
 #include "scidup/database/indexentry.h"
-#include "scidup/database/matsig.h"
 #include "scidup/database/namebase.h"
 #include "scidup/core/position.h"
 #include <forward_list>
