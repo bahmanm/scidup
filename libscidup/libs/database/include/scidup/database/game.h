@@ -271,34 +271,19 @@ public:
     void MoveToStart();
     /// Move to the end of the main line.
     void MoveToEnd();
-    void MoveToPly(int hmNumber) { // Move to a specified
-        MoveToStart();             // mainline ply in the game.
-        for (int i = 0; i < hmNumber; ++i)
-            MoveForward();
-    }
-    GameSavedPos currentLocation() const {
-        return GameSavedPos{*CurrentPos, CurrentMove, VarDepth};
-    }
-    void restoreLocation(const GameSavedPos& savedPos) {
-        *CurrentPos = savedPos.pos;
-        CurrentMove = savedPos.move;
-        VarDepth = savedPos.varDepth;
-    }
+    void MoveToPly(int hmNumber);
+    GameSavedPos currentLocation() const;
+    void restoreLocation(const GameSavedPos& savedPos);
 
     //////////////////////////////////////////////////////////////
     // Functions that get information about the current location.
     //
-    const Position* currentPos() const { return CurrentPos.get(); }
-    Position* GetCurrentPos() { // Deprecated, use the const version
-        return CurrentPos.get();
-    }
+    const Position* currentPos() const;
+    Position* GetCurrentPos(); // Deprecated, use the const version
     /// @return an "UCI position" string that leads to the current position
     std::string currentPosUCI() const;
     simpleMoveT* GetCurrentMove();
-    ushort GetCurrentPly() const {
-        auto ply = CurrentPos->GetPlyCounter();
-        return StartPos ? ply - StartPos->GetPlyCounter() : ply;
-    }
+    ushort GetCurrentPly() const;
     uint GetNumVariations() const;
 
     // Each variation has a "level" and a "number".
@@ -307,7 +292,7 @@ public:
     // - "number" is the ordered position in the list of variations for the
     // current root position (first variation is number 0).
     // The main line is 0,0.
-    uint GetVarLevel() const { return VarDepth; }
+    uint GetVarLevel() const;
     uint GetVarNumber() const;
 
     unsigned GetLocationInPGN() const;

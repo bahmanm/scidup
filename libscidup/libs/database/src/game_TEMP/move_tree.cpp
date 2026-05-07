@@ -117,6 +117,12 @@ void Game::MoveToEnd() {
 	}
 }
 
+void Game::MoveToPly(int hmNumber) {
+	MoveToStart();
+	for (int i = 0; i < hmNumber; ++i)
+		MoveForward();
+}
+
 errorT Game::MoveForwardInPGN() {
 	if (CurrentMove->prev->varChild && MoveBackup() == OK)
 		return MoveIntoVariation(0);

@@ -4,12 +4,39 @@
 
 namespace scid::database {
 
+Game::GameSavedPos Game::currentLocation() const {
+	return GameSavedPos{*CurrentPos, CurrentMove, VarDepth};
+}
+
+void Game::restoreLocation(const GameSavedPos& savedPos) {
+	*CurrentPos = savedPos.pos;
+	CurrentMove = savedPos.move;
+	VarDepth = savedPos.varDepth;
+}
+
+const Position* Game::currentPos() const {
+	return CurrentPos.get();
+}
+
+Position* Game::GetCurrentPos() {
+	return CurrentPos.get();
+}
+
 simpleMoveT* Game::GetCurrentMove() {
 	return CurrentMove->endMarker() ? nullptr : &CurrentMove->moveData;
 }
 
+ushort Game::GetCurrentPly() const {
+	auto ply = CurrentPos->GetPlyCounter();
+	return StartPos ? ply - StartPos->GetPlyCounter() : ply;
+}
+
 uint Game::GetNumVariations() const {
 	return CurrentMove->numVariations;
+}
+
+uint Game::GetVarLevel() const {
+	return VarDepth;
 }
 
 uint Game::GetVarNumber() const {
