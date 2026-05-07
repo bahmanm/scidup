@@ -10,10 +10,6 @@
 
 namespace scid::database {
 
-void MoveChunkDeleter::operator()(moveT* ptr) const {
-	delete[] ptr;
-}
-
 Game::~Game() = default;
 
 constexpr int MOVE_CHUNKSIZE = 128;
