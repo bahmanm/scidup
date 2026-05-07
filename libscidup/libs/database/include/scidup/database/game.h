@@ -31,6 +31,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 namespace scid::database {
 
@@ -196,6 +197,7 @@ private:
     errorT WriteMoveList(TextBuffer* tb, moveT* oldCurrentMove,
                          bool printMoveNum, bool inComment);
     std::string* find_std_tag(std::string_view tag);
+    std::string& find_or_create_tag(std::string_view tag);
 
     /**
      * Contains the information of the current position in the game, so that
@@ -333,18 +335,7 @@ public:
     // Change the value of a tag (add the tag if it wasn't present).
     template <typename... Args>
     std::string& assignTagValue(std::string_view tag, Args&&... args) {
-        auto value = find_std_tag(tag);
-        if (!value) {
-            auto it = std::find_if(
-                extraTags_.begin(), extraTags_.end(),
-                [&](auto const& elem) { return elem.first == tag; });
-            if (it != extraTags_.end()) {
-                value = &it->second;
-            } else {
-                value = &extraTags_.emplace_back(tag, std::string()).second;
-            }
-        }
-        return value->assign(std::forward<Args>(args)...);
+        return find_or_create_tag(tag).assign(std::forward<Args>(args)...);
     }
 
     const std::vector<std::pair<std::string, std::string>>& GetExtraTags() const;

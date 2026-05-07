@@ -34,6 +34,18 @@ std::string& Game::addTag(std::string_view tag, std::string_view value) {
 	return extraTags_.emplace_back(tag, value).second;
 }
 
+std::string& Game::find_or_create_tag(std::string_view tag) {
+	if (auto value = find_std_tag(tag))
+		return *value;
+
+	auto it = std::find_if(extraTags_.begin(), extraTags_.end(),
+	                       [&](auto const& elem) { return elem.first == tag; });
+	if (it != extraTags_.end())
+		return it->second;
+
+	return extraTags_.emplace_back(tag, std::string()).second;
+}
+
 const std::vector<std::pair<std::string, std::string>>& Game::GetExtraTags()
     const {
 	return extraTags_;
