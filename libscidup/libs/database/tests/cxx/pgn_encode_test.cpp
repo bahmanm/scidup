@@ -21,7 +21,7 @@
  */
 
 #include "scidup/database/game.h"
-#include "scidup/database/pgn_encode.h"
+#include "scidup/database/game_TEMP/pgn_encode.h"
 #include "scidup/database/pgnparse.h"
 #include "pgnparse_impl.h"
 #include <gtest/gtest.h>

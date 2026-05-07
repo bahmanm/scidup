@@ -28,7 +28,7 @@
 #include "codec_proxy.h"
 #include "pgnparse_impl.h"
 #include "filebuf.h"
-#include "scidup/database/pgn_encode.h"
+#include "scidup/database/game_TEMP/pgn_encode.h"
 #include <algorithm>
 #include <cstring>
 #include <vector>
