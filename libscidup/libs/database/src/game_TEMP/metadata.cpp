@@ -1,34 +1,18 @@
-//////////////////////////////////////////////////////////////////////
-//
-//  FILE:       game.cpp
-//              Game class methods
-//
-//  Part of:    Scid (Shane's Chess Information Database)
-//  Version:    3.5
-//
-//  Notice:     Copyright (c) 2000-2003  Shane Hudson.  All rights reserved.
-//
-//  Author:     Shane Hudson (sgh@users.sourceforge.net)
-//
-//////////////////////////////////////////////////////////////////////
-
 #include "scidup/database/game.h"
-#include "scidup/database/common.h"
+
+#include "scidup/database/misc.h"
+
 #include <algorithm>
 #include <cstring>
 
 namespace scid::database {
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::FindExtraTag():
-//   Finds and returns an extra PGN tag if it
-//   exists, or NULL if it does not exist.
 const char* Game::FindExtraTag(const char* tag) const {
-    for (auto& e : extraTags_) {
-        if (e.first == tag)
-            return e.second.c_str();
-    }
-    return NULL;
+	for (auto& e : extraTags_) {
+		if (e.first == tag)
+			return e.second.c_str();
+	}
+	return NULL;
 }
 
 std::string_view Game::GetResultStr() const {
@@ -65,15 +49,10 @@ int Game::setRating(colorT col, const char* ratingType, size_t ratingTypeLen,
 	return res;
 }
 
-ratingT
-Game::GetAverageElo () {
+ratingT Game::GetAverageElo() {
 	auto white = WhiteElo;
 	auto black = BlackElo;
 	return (white == 0 || black == 0) ? 0 : (white + black) / 2;
 }
-
-//////////////////////////////////////////////////////////////////////
-//  EOF:    game.cpp
-//////////////////////////////////////////////////////////////////////
 
 } // namespace scid::database
