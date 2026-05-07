@@ -11,6 +11,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/codec_scid4.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/filter.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/legacy_pgn.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/index.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/matsig.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/misc.cpp"
