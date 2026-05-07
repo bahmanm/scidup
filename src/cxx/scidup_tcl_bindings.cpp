@@ -34,6 +34,7 @@
 #include "scidup/database/game.h"
 #include "scidup/database/game_TEMP/legacy_pgn.h"
 #include "scidup/database/game_TEMP/nag_format.h"
+#include "scidup/database/game_TEMP/storage.h"
 #include "optable.h"
 #include "scidup/eco/book.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
@@ -1223,7 +1224,8 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         auto bbuf = dbase.getGame(ie);
         scid::database::Game* g = scratchGame;
-        if (g->DecodeSkipTags(&bbuf) != scid::database::OK)
+        if (scid::database::game_storage::decodeSkipTags(*g, &bbuf) !=
+            scid::database::OK)
             return false;
 
         scidup::eco::Code ecoCode = scidup::eco::ECO_None;
@@ -1238,7 +1240,8 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             }
 
             scid::database::simpleMoveT sm;
-            if (g->DecodeNextMove(&bbuf, sm) != scid::database::OK)
+            if (scid::database::game_storage::decodeNextMove(*g, &bbuf, sm) !=
+                scid::database::OK)
                 break;
 
             g->GetCurrentPos()->DoSimpleMove(sm);
@@ -3123,7 +3126,8 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     const scid::database::IndexEntry* ie = base->getIndexEntry(gnum);
     auto bbuf = base->getGame(*ie);
     scid::database::Game * merge = scratchGame;
-    if (merge->DecodeMovesOnly(bbuf) != scid::database::OK) {
+    if (scid::database::game_storage::decodeMovesOnly(*merge, bbuf) !=
+        scid::database::OK) {
         return errorResult (ti, "Error decoding game.");
     }
     if (merge->HasNonStandardStart()) {
@@ -4026,7 +4030,8 @@ sc_game_tags_reload(ClientData, Tcl_Interp*, int, const char**)
     if (!db->isOpen()) { return TCL_OK; }
     const auto ie = editor.loadedIndexEntry();
     if (!ie) { return TCL_OK; }
-    editor.game().LoadStandardTags(*ie, db->tagRoster(*ie));
+    scid::database::game_storage::loadStandardTags(editor.game(), *ie,
+                                                   db->tagRoster(*ie));
     return TCL_OK;
 }
 
@@ -7552,7 +7557,7 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
         }
         scid::database::uint ply = 0;
         if (useVars) {
-            g->DecodeMovesOnly(bbuf);
+            scid::database::game_storage::decodeMovesOnly(*g, bbuf);
             // Try matching the game without variations first:
             if (ply == 0  &&  possibleMatch) {
                 if (g->ExactMatch (pos, NULL, searchType)) {

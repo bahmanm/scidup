@@ -18,6 +18,7 @@
 #include "scidup/core/nags.h"
 #include "scidup/database/game_TEMP/nag_format.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
+#include "scidup/database/game_TEMP/storage.h"
 #include "scidup/database/scidbase.h"
 #include "pgnparse_impl.h"
 #include <algorithm>
@@ -146,7 +147,8 @@ TEST(Test_Game, locationInPGN) {
 		scid::database::Game game;
 		auto bufGame = dbase.getGame(*dbase.getIndexEntry(0));
 		ASSERT_TRUE(bufGame);
-		ASSERT_EQ(scid::database::OK, game.DecodeMovesOnly(bufGame));
+		ASSERT_EQ(scid::database::OK,
+		          scid::database::game_storage::decodeMovesOnly(game, bufGame));
 
 		unsigned location = 1;
 		game.MoveToStart();
@@ -279,7 +281,7 @@ TEST(Test_Game, empty_tag_name) {
 		game.addTag("Annotator", "common tag");
 		EXPECT_EQ(game.GetExtraTags().size(), 3);
 
-		game.Encode(encodedGame);
+		scid::database::game_storage::encode(game, encodedGame);
 	}
 
 	scid::database::ByteBuffer bbuf(encodedGame.data(), encodedGame.size());
@@ -303,12 +305,12 @@ TEST(Test_Game, encodeFEN) {
 	{
 		scid::database::Game game;
 		game.SetStartFen(kiwipete);
-		game.Encode(encodedGame);
+		scid::database::game_storage::encode(game, encodedGame);
 	}
 	{
 		scid::database::ByteBuffer bbuf(encodedGame.data(), encodedGame.size());
 		scid::database::Game game;
-		game.DecodeMovesOnly(bbuf);
+		scid::database::game_storage::decodeMovesOnly(game, bbuf);
 		game.MoveToStart();
 		char str[1024];
 		game.currentPos()->PrintFEN(str, sizeof(str));
@@ -408,7 +410,7 @@ auto make_invalid(unsigned char movecode, std::string_view pgn) {
 	scid::database::Game g;
 	scid::database::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()},
 	                                scid::database::PgnVisitor{g});
-	g.Encode(data);
+	scid::database::game_storage::encode(g, data);
 	auto comment_tag = std::find(data.begin(), data.end(), 12);
 	if (comment_tag != data.end())
 		*++comment_tag = movecode;
@@ -429,7 +431,7 @@ template <typename DataT> std::string decode_gameview(DataT const& data) {
 template <typename DataT> std::string decode_game(DataT const& data) {
 	auto bbuf = scid::database::ByteBuffer{data.data(), data.size()};
 	scid::database::Game game;
-	game.DecodeMovesOnly(bbuf);
+	scid::database::game_storage::decodeMovesOnly(game, bbuf);
 	game.MoveToStart();
 	std::string moves;
 	do {

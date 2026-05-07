@@ -2,6 +2,7 @@
 
 #include "scidup/database/bytebuf.h"
 #include "scidup/database/common.h"
+#include "scidup/database/game_TEMP/storage.h"
 #include "scidup/database/indexentry.h"
 #include "scidup/database/matsig.h"
 #include "scidup/database/namebase.h"
@@ -654,6 +655,34 @@ errorT Game::Decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf)
         err = decodeComments(buf, FirstMove, comment_marks);
 
     return err;
+}
+
+std::pair<IndexEntry, TagRoster> game_storage::encode(
+    const Game& game, std::vector<byte>& dest) {
+	return game.Encode(dest);
+}
+
+void game_storage::loadStandardTags(Game& game, IndexEntry const& ie,
+                                    TagRoster const& tags) {
+	game.LoadStandardTags(ie, tags);
+}
+
+errorT game_storage::decode(Game& game, IndexEntry const& ie,
+                            TagRoster const& tags, ByteBuffer buf) {
+	return game.Decode(ie, tags, buf);
+}
+
+errorT game_storage::decodeMovesOnly(Game& game, ByteBuffer& buf) {
+	return game.DecodeMovesOnly(buf);
+}
+
+errorT game_storage::decodeSkipTags(Game& game, ByteBuffer* buf) {
+	return game.DecodeSkipTags(buf);
+}
+
+errorT game_storage::decodeNextMove(Game& game, ByteBuffer* buf,
+                                    simpleMoveT& sm) {
+	return game.DecodeNextMove(buf, sm);
 }
 
 } // namespace scid::database

@@ -23,6 +23,7 @@
 #include "scidup/database/bytebuf.h"
 #include "scidup/database/game.h"
 #include "scidup/database/game_id.h"
+#include "scidup/database/game_TEMP/storage.h"
 #include "scidup/database/gameview.h"
 #include "scidup/database/hfilter.h"
 #include "scidup/database/index.h"
@@ -129,7 +130,7 @@ struct scidBaseT {
 		GameView getGame(const IndexEntry* ie) const;
 		ByteBuffer getGame(const IndexEntry& ie) const;
 	errorT getGame(const IndexEntry& ie, Game& dest) const {
-		return dest.Decode(ie, tagRoster(ie), getGame(ie));
+		return game_storage::decode(dest, ie, tagRoster(ie), getGame(ie));
 	}
 	errorT loadGame(gamenumT gNum, Game& dest) const;
 

@@ -15,6 +15,7 @@
 */
 
 #include "scidup/database/bytebuf.h"
+#include "scidup/database/game_TEMP/storage.h"
 #include "codec.h"
 #include "scidup/database/game.h"
 #include "scidup/database/index.h"
@@ -110,7 +111,7 @@ public:
 private:
 	void encodeGames() {
 		for (auto& game : v_) {
-			game->Encode(encoded_.emplace_back());
+			scid::database::game_storage::encode(*game, encoded_.emplace_back());
 		}
 	}
 

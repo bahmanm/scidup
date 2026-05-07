@@ -29,6 +29,7 @@
 #include "codec_memory.h"
 #include "scidup/database/game_id.h"
 #include "scidup/database/game.h"
+#include "scidup/database/game_TEMP/storage.h"
 
 #include <atomic>
 #include <thread>
@@ -107,7 +108,7 @@ private:
 	errorT saveGame(IndexEntry const& ie, TagRoster const& tags,
 	                ByteBuffer const& data, gamenumT replaced) final {
 		Game game;
-		if (errorT err = game.Decode(ie, tags, data))
+		if (errorT err = game_storage::decode(game, ie, tags, data))
 			return err;
 
 		if (errorT err = getDerived()->gameSave(&game, replaced))
@@ -119,7 +120,7 @@ private:
 	errorT addGame(IndexEntry const& ie, TagRoster const& tags,
 	               ByteBuffer const& data) final {
 		Game game;
-		if (errorT err = game.Decode(ie, tags, data))
+		if (errorT err = game_storage::decode(game, ie, tags, data))
 			return err;
 
 		if (errorT err = getDerived()->gameAdd(&game))
@@ -165,13 +166,13 @@ private:
 				auto gnum = std::strtoul(replace_game, NULL, 10);
 				if (gnum < CodecMemory::numGames()) {
 					game.RemoveExtraTag(special_replace_tag);
-					auto [ie, tags] = game.Encode(buf);
+					auto [ie, tags] = game_storage::encode(game, buf);
 					return CodecMemory::saveGame(
 					    ie, tags, {buf.data(), buf.size()}, gnum);
 				}
 			}
 
-			auto [ie, tags] = game.Encode(buf);
+			auto [ie, tags] = game_storage::encode(game, buf);
 			return CodecMemory::addGame(ie, tags, {buf.data(), buf.size()});
 		});
 	}

@@ -23,6 +23,7 @@
 #include "codec_scid5.h"
 #include "scidup/database/common.h"
 #include "scidup/database/game_id.h"
+#include "scidup/database/game_TEMP/storage.h"
 #include "sortcache.h"
 #include "stored.h"
 #include <algorithm>
@@ -277,7 +278,7 @@ errorT scidBaseT::saveGame(Game const& game, gamenumT replacedGameId) {
 		return errModify;
 
 	std::vector<byte> buf;
-	auto [ie, tags] = game.Encode(buf);
+	auto [ie, tags] = game_storage::encode(game, buf);
 	auto gamedata = ByteBuffer(buf.data(), buf.size());
 
 	errorT err = (replacedGameId < numGames())
@@ -355,7 +356,7 @@ errorT scidBaseT::importGames(std::string_view dbType,
 		std::vector<byte> buf;
 		res = CodecPgn::parseGames(progress, pgn, [&](Game& game) {
 			buf.clear();
-			auto [ie, tags] = game.Encode(buf);
+			auto [ie, tags] = game_storage::encode(game, buf);
 			auto err = storage_->codec->addGame(ie, tags, {buf.data(), buf.size()});
 			if (err == ERROR_CodecChess960) {
 				++nChess960Errors;

@@ -1,5 +1,6 @@
 #include "scidup/database/bytebuf.h"
 #include "scidup/database/game.h"
+#include "scidup/database/game_TEMP/storage.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
 
 #include <gtest/gtest.h>
@@ -16,11 +17,12 @@ void expect_roundtrip(std::string_view pgn) {
 	                                         parseLog));
 
 	std::vector<scid::database::byte> encoded;
-	original.Encode(encoded);
+	scid::database::game_storage::encode(original, encoded);
 
 	scid::database::ByteBuffer bbuf(encoded.data(), encoded.size());
 	scid::database::Game decoded;
-	ASSERT_EQ(scid::database::OK, decoded.DecodeMovesOnly(bbuf));
+	ASSERT_EQ(scid::database::OK,
+	          scid::database::game_storage::decodeMovesOnly(decoded, bbuf));
 
 	original.MoveToStart();
 	decoded.MoveToStart();

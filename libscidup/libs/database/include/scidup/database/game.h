@@ -37,9 +37,21 @@
 namespace scid::database {
 
 class ByteBuffer;
+class Game;
 class TextBuffer;
 struct moveT;
 enum markerT : byte;
+
+namespace game_storage {
+std::pair<IndexEntry, TagRoster> encode(const Game& game,
+                                        std::vector<byte>& dest);
+void loadStandardTags(Game& game, IndexEntry const& ie, TagRoster const& tags);
+errorT decode(Game& game, IndexEntry const& ie, TagRoster const& tags,
+              ByteBuffer buf);
+errorT decodeMovesOnly(Game& game, ByteBuffer& buf);
+errorT decodeSkipTags(Game& game, ByteBuffer* buf);
+errorT decodeNextMove(Game& game, ByteBuffer* buf, simpleMoveT& sm);
+} // namespace game_storage
 
 //////////////////////////////////////////////////////////////////////
 //  Game:  Class Definition
@@ -85,11 +97,30 @@ private:
     errorT DecodeVariation(ByteBuffer& buf, std::vector<moveT*>& comment_marks);
     static errorT decodeMove(ByteBuffer* buf, simpleMoveT* sm, byte val,
                              const Position* pos);
+    // TODO [Game]: Move these database storage-codec operations out of Game
+    // once the database wrapper around the future core Game exists.
+    void LoadStandardTags(IndexEntry const& ie, TagRoster const& tags);
+    std::pair<IndexEntry, TagRoster> Encode(std::vector<byte>& dest) const;
+    errorT DecodeSkipTags(ByteBuffer* buf);
+    errorT DecodeNextMove(ByteBuffer* buf, simpleMoveT& sm);
+    errorT Decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf);
+    errorT DecodeMovesOnly(ByteBuffer& buf);
     std::string* find_std_tag(std::string_view tag);
     std::string& find_or_create_tag(std::string_view tag);
     void viewTagPairsImpl(
         const std::function<void(const char*, const char*)>& visitor) const;
 
+    friend std::pair<IndexEntry, TagRoster> game_storage::encode(
+        const Game& game, std::vector<byte>& dest);
+    friend void game_storage::loadStandardTags(Game& game,
+                                               IndexEntry const& ie,
+                                               TagRoster const& tags);
+    friend errorT game_storage::decode(Game& game, IndexEntry const& ie,
+                                       TagRoster const& tags, ByteBuffer buf);
+    friend errorT game_storage::decodeMovesOnly(Game& game, ByteBuffer& buf);
+    friend errorT game_storage::decodeSkipTags(Game& game, ByteBuffer* buf);
+    friend errorT game_storage::decodeNextMove(Game& game, ByteBuffer* buf,
+                                               simpleMoveT& sm);
     friend struct LegacyGamePgnEncoder;
 
     /**
@@ -236,8 +267,6 @@ public:
     void ClearExtraTags();
     void RemoveExtraTag(std::string_view tag);
 
-    void LoadStandardTags(IndexEntry const& ie, TagRoster const& tags);
-
     void     SetEventStr (const char * str);
     void     SetSiteStr  (const char * str);
     void     SetWhiteStr (const char * str);
@@ -302,12 +331,6 @@ public:
     bool      ExactMatch (Position * pos, ByteBuffer * buf,
                           gameExactMatchT searchType);
     bool      VarExactMatch (Position * searchPos, gameExactMatchT searchType);
-
-    std::pair<IndexEntry, TagRoster> Encode(std::vector<byte>& dest) const;
-    errorT    DecodeSkipTags(ByteBuffer* buf);
-    errorT    DecodeNextMove (ByteBuffer * buf, simpleMoveT& sm);
-    errorT    Decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf);
-    errorT    DecodeMovesOnly(ByteBuffer& buf);
 
     Game* clone();
 };
