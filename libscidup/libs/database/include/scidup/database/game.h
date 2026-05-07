@@ -223,54 +223,29 @@ private:
     };
 
 public:
-    Game() { Clear(); }
+    Game();
     ~Game();
     void Clear();
     void strip(bool variations, bool comments, bool NAGs);
 
-    bool HasNonStandardStart(char* outFEN = nullptr, size_t outFENLen = 0) const {
-        if (!StartPos)
-            return false;
-        if (outFEN && outFENLen)
-            StartPos->PrintFEN(outFEN, outFENLen);
-        return true;
-    }
+    bool HasNonStandardStart(char* outFEN = nullptr, size_t outFENLen = 0) const;
 
     // The last field of the initial FEN is the number of the full moves.
     // @return  2 * full move - 2; +1 if it is black to move.
-    long long initialPlyCounter() const {
-        return StartPos ? StartPos->GetPlyCounter() : 0;
-    }
+    long long initialPlyCounter() const;
 
     /// Setup the start position from a FEN string and remove all the moves.
     /// If the FEN is invalid the game is not changed.
-    errorT SetStartFen(const char* fenStr) {
-        auto pos = std::make_unique<Position>();
-        if (auto err = pos->ReadFromFEN(fenStr))
-            return err;
-
-        SetStartPos(std::move(pos));
-        return OK;
-    }
+    errorT SetStartFen(const char* fenStr);
 
     /// Set a new start position and remove all the moves.
-    void SetStartPos(Position const& pos) {
-        return SetStartPos(std::make_unique<Position>(pos));
-    }
-    void SetStartPos(std::unique_ptr<Position> pos) {
-        ClearMoves();
-        StartPos = std::move(pos);
-        *CurrentPos = *StartPos;
-    }
+    void SetStartPos(Position const& pos);
+    void SetStartPos(std::unique_ptr<Position> pos);
 
-    void SetScidFlags(const char* s, size_t len) {
-        constexpr size_t size = sizeof(ScidFlags) / sizeof(*ScidFlags);
-        std::fill_n(ScidFlags, size, 0);
-        std::copy_n(s, std::min(size - 1, len), ScidFlags);
-    }
-    void SetScidFlags(const char* s) { SetScidFlags(s, std::strlen(s)); }
+    void SetScidFlags(const char* s, size_t len);
+    void SetScidFlags(const char* s);
 
-    ushort GetNumHalfMoves() { return NumHalfMoves; }
+    ushort GetNumHalfMoves();
 
     //////////////////////////////////////////////////////////////
     // Functions to add or delete moves:

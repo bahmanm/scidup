@@ -4,6 +4,9 @@
 #include "scidup/core/position.h"
 
 #include <algorithm>
+#include <cstring>
+#include <memory>
+#include <utility>
 
 namespace scid::database {
 
@@ -14,6 +17,55 @@ void MoveChunkDeleter::operator()(moveT* ptr) const {
 Game::~Game() = default;
 
 constexpr int MOVE_CHUNKSIZE = 128;
+
+Game::Game() {
+	Clear();
+}
+
+bool Game::HasNonStandardStart(char* outFEN, size_t outFENLen) const {
+	if (!StartPos)
+		return false;
+	if (outFEN && outFENLen)
+		StartPos->PrintFEN(outFEN, outFENLen);
+	return true;
+}
+
+long long Game::initialPlyCounter() const {
+	return StartPos ? StartPos->GetPlyCounter() : 0;
+}
+
+errorT Game::SetStartFen(const char* fenStr) {
+	auto pos = std::make_unique<Position>();
+	if (auto err = pos->ReadFromFEN(fenStr))
+		return err;
+
+	SetStartPos(std::move(pos));
+	return OK;
+}
+
+void Game::SetStartPos(Position const& pos) {
+	return SetStartPos(std::make_unique<Position>(pos));
+}
+
+void Game::SetStartPos(std::unique_ptr<Position> pos) {
+	ClearMoves();
+	StartPos = std::move(pos);
+	*CurrentPos = *StartPos;
+}
+
+void Game::SetScidFlags(const char* s, size_t len) {
+	constexpr size_t size = sizeof(ScidFlags) / sizeof(*ScidFlags);
+	std::fill_n(ScidFlags, size, 0);
+	std::copy_n(s, std::min(size - 1, len), ScidFlags);
+}
+
+void Game::SetScidFlags(const char* s) {
+	SetScidFlags(s, std::strlen(s));
+}
+
+ushort Game::GetNumHalfMoves() {
+	return NumHalfMoves;
+}
 
 moveT* Game::allocMove() {
 	if (moveChunkUsed_ == MOVE_CHUNKSIZE) {
