@@ -1,0 +1,479 @@
+#include "scidup/database/game.h"
+
+#include "scidup/database/bytebuf.h"
+#include "scidup/database/common.h"
+#include "movetree.h"
+
+namespace scid::database {
+
+namespace {
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// calcHomePawnMask():
+//      Computes the homePawn mask for a position.
+//
+int calcHomePawnMask (pieceT pawn, const pieceT* board)
+{
+    ASSERT (pawn == WP  ||  pawn == BP);
+    const pieceT* bd = &(board[ (pawn == WP ? H2 : H7) ]);
+    int result = 0;
+    if (*bd == pawn) { result |= 128; }  bd--;   // H-fyle pawn
+    if (*bd == pawn) { result |=  64; }  bd--;   // G-fyle pawn
+    if (*bd == pawn) { result |=  32; }  bd--;   // F-fyle pawn
+    if (*bd == pawn) { result |=  16; }  bd--;   // E-fyle pawn
+    if (*bd == pawn) { result |=   8; }  bd--;   // D-fyle pawn
+    if (*bd == pawn) { result |=   4; }  bd--;   // C-fyle pawn
+    if (*bd == pawn) { result |=   2; }  bd--;   // B-fyle pawn
+    if (*bd == pawn) { result |=   1; }          // A-fyle pawn
+    return result;
+}
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// patternsMatch():
+//      Used by Game::MaterialMatch() to test patterns.
+//      Returns 1 if all the patterns in the list match, 0 otherwise.
+//
+int patternsMatch(const Position* pos, patternT* ptn, size_t ptn_size) {
+    const pieceT* board = pos->GetBoard();
+    for (auto ptn_end = ptn + ptn_size; ptn != ptn_end; ++ptn) {
+        if (ptn->rankMatch == NO_RANK) {
+
+            if (ptn->fyleMatch == NO_FYLE) { // Nothing to test!
+            } else {  // Test this fyle:
+                squareT sq = square_Make (ptn->fyleMatch, RANK_1);
+                int found = 0;
+                for (uint i=0; i < 8; i++, sq += 8) {
+                    if (board[sq] == ptn->pieceMatch) { found = 1; break; }
+                }
+                if (found != ptn->flag) { return 0; }
+            }
+
+        } else { // rankMatch is a rank from 1 to 8:
+
+            if (ptn->fyleMatch == NO_FYLE) { // Test the whole rank:
+                int found = 0;
+                squareT sq = square_Make (A_FYLE, ptn->rankMatch);
+                for (uint i=0; i < 8; i++, sq++) {
+                    if (board[sq] == ptn->pieceMatch) { found = 1; break; }
+                }
+                if (found != ptn->flag) { return 0; }
+            } else {  // Just test one square:
+                squareT sq = square_Make(ptn->fyleMatch, ptn->rankMatch);
+                int found = 0;
+                if (board[sq] == ptn->pieceMatch) { found = 1; }
+                if (found != ptn->flag) { return 0; }
+            }
+        }
+    }
+
+    // If we reach here, all patterns matched:
+    return 1;
+}
+} // end of anonymous namespace
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Game::MaterialMatch(): Material search test.
+//      The parameters min and max should each be an array of 15
+//      counts, to specify the maximum and minimum number of counts
+//      of each type of piece.
+//
+bool Game::MaterialMatch(bool PromotionsFlag, ByteBuffer& buf, byte* min,
+                         byte* max, patternT* patterns, size_t ptn_size,
+                         int minPly, int maxPly, int matchLength,
+                         bool oppBishops, bool sameBishops, int minDiff,
+                         int maxDiff) {
+    ASSERT (matchLength >= 1);
+
+    int matchesNeeded = matchLength;
+    int matDiff;
+    uint plyCount = 0;
+    errorT err = DecodeSkipTags(&buf);
+    while (err == OK) {
+        bool foundMatch = false;
+        byte wMinor, bMinor;
+
+        // If current pos has LESS than the minimum of pawns, this
+        // game can never match so return false;
+        if (CurrentPos->PieceCount(WP) < min[WP]) { return false; }
+        if (CurrentPos->PieceCount(BP) < min[BP]) { return false; }
+
+        // If not in the valid move range, go to the next move or return:
+        if ((int)plyCount > maxPly) { return false; }
+        if ((int)plyCount < minPly) { goto Next_Move; }
+
+// For these comparisons, we really could only do half of them each move,
+// according to which side just moved.
+        // For non-pawns, the count could be increased by promotions:
+        if (CurrentPos->PieceCount(WQ) < min[WQ]) { goto Check_Promotions; }
+        if (CurrentPos->PieceCount(BQ) < min[BQ]) { goto Check_Promotions; }
+        if (CurrentPos->PieceCount(WR) < min[WR]) { goto Check_Promotions; }
+        if (CurrentPos->PieceCount(BR) < min[BR]) { goto Check_Promotions; }
+        if (CurrentPos->PieceCount(WB) < min[WB]) { goto Check_Promotions; }
+        if (CurrentPos->PieceCount(BB) < min[BB]) { goto Check_Promotions; }
+        if (CurrentPos->PieceCount(WN) < min[WN]) { goto Check_Promotions; }
+        if (CurrentPos->PieceCount(BN) < min[BN]) { goto Check_Promotions; }
+        wMinor = CurrentPos->PieceCount(WB) + CurrentPos->PieceCount(WN);
+        bMinor = CurrentPos->PieceCount(BB) + CurrentPos->PieceCount(BN);
+        if (wMinor < min[WM]) { goto Check_Promotions; }
+        if (bMinor < min[BM]) { goto Check_Promotions; }
+
+        // Now test maximum counts:
+        if (CurrentPos->PieceCount(WQ) > max[WQ]) { goto Next_Move; }
+        if (CurrentPos->PieceCount(BQ) > max[BQ]) { goto Next_Move; }
+        if (CurrentPos->PieceCount(WR) > max[WR]) { goto Next_Move; }
+        if (CurrentPos->PieceCount(BR) > max[BR]) { goto Next_Move; }
+        if (CurrentPos->PieceCount(WB) > max[WB]) { goto Next_Move; }
+        if (CurrentPos->PieceCount(BB) > max[BB]) { goto Next_Move; }
+        if (CurrentPos->PieceCount(WN) > max[WN]) { goto Next_Move; }
+        if (CurrentPos->PieceCount(BN) > max[BN]) { goto Next_Move; }
+        if (CurrentPos->PieceCount(WP) > max[WP]) { goto Next_Move; }
+        if (CurrentPos->PieceCount(BP) > max[BP]) { goto Next_Move; }
+        if (wMinor > max[WM]) { goto Next_Move; }
+        if (bMinor > max[BM]) { goto Next_Move; }
+
+        // If both sides have ONE bishop, we need to check if the search
+        // was restricted to same-color or opposite-color bishops:
+        if (CurrentPos->PieceCount(WB) == 1
+                && CurrentPos->PieceCount(BB) == 1) {
+            if (!oppBishops  ||  !sameBishops) { // Check the restriction:
+                colorT whiteBishCol = NOCOLOR;
+                colorT blackBishCol = NOCOLOR;
+
+                // Search for the white and black bishop, to find their
+                // square color:
+                const pieceT* bd = CurrentPos->GetBoard();
+                for (squareT sq = A1; sq <= H8; sq++) {
+                    if (bd[sq] == WB) {
+                        whiteBishCol = BOARD_SQUARECOLOR [sq];
+                    } else if (bd[sq] == BB) {
+                        blackBishCol = BOARD_SQUARECOLOR [sq];
+                    }
+                }
+                // They should be valid colors:
+                ASSERT (blackBishCol != NOCOLOR  &&  whiteBishCol != NOCOLOR);
+
+                // If the square colors do not match the restriction,
+                // then this game cannot match:
+                if (oppBishops  &&  blackBishCol == whiteBishCol) {
+                    return false;
+                }
+                if (sameBishops  &&  blackBishCol != whiteBishCol) {
+                    return false;
+                }
+            }
+        }
+
+        // Now check if the material difference is in-range:
+        matDiff = (int)CurrentPos->MaterialValue(WHITE) -
+                  (int)CurrentPos->MaterialValue(BLACK);
+        if (matDiff < minDiff  ||  matDiff > maxDiff) { goto Next_Move; }
+
+        // At this point, the Material matches; do the patterns match?
+        if (ptn_size == 0 || patternsMatch(currentPos(), patterns, ptn_size)) {
+            foundMatch = true;
+            matchesNeeded--;
+            if (matchesNeeded <= 0) { return true; }
+        }
+        // No? well, keep trying...
+        goto Next_Move;
+
+      Check_Promotions:
+        // We only continue if this game has promotion moves:
+        if (! PromotionsFlag) { return false; }
+
+      Next_Move:
+        {
+            simpleMoveT sm;
+            err = DecodeNextMove(&buf, sm);
+            if (err == OK) {
+                CurrentPos->DoSimpleMove(sm);
+            }
+        }
+        plyCount++;
+        if (! foundMatch) { matchesNeeded = matchLength; }
+    }
+
+    // End of game reached, and no match:
+    return false;
+}
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Game::ExactMatch():
+//      Exact position search test.
+//      If sm is not NULL, its from, to, promote etc will be filled with
+//      the next move at the matching position, if there is one.
+//      If neverMatch is non-NULL, the boolean it points to is set to
+//      true if the game could never match even with extra moves.
+//
+bool
+Game::ExactMatch (Position * searchPos, ByteBuffer * buf,
+                  gameExactMatchT searchType)
+{
+    // If buf is NULL, the game is in memory. Otherwise, Decode only
+    // the necessary moves:
+    errorT err = OK;
+
+    if (buf == NULL) {
+        MoveToStart();
+    } else {
+        err = DecodeSkipTags(buf);
+    }
+
+    uint search_whiteHPawns = 0;
+    uint search_blackHPawns = 0;
+    bool check_pawnMaskWhite, check_pawnMaskBlack;
+    bool doHomePawnChecks = false;
+
+    uint wpawnFyle [8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint bpawnFyle [8] = {0, 0, 0, 0, 0, 0, 0, 0};;
+
+    if (searchType == GAME_EXACT_MATCH_Fyles) {
+        const pieceT* board = searchPos->GetBoard();
+        uint fyle = 0;
+        for (squareT sq = A1; sq <= H8; sq++, board++) {
+            if (*board == WP) {
+                wpawnFyle[fyle]++;
+            } else if (*board == BP) {
+                bpawnFyle[fyle]++;
+            }
+            fyle = (fyle + 1) & 7;
+        }
+    }
+
+    if (searchType == GAME_EXACT_MATCH_Exact  ||
+        searchType == GAME_EXACT_MATCH_Pawns) {
+        doHomePawnChecks = true;
+        search_whiteHPawns = calcHomePawnMask (WP, searchPos->GetBoard());
+        search_blackHPawns = calcHomePawnMask (BP, searchPos->GetBoard());
+    }
+    check_pawnMaskWhite = check_pawnMaskBlack = false;
+
+    while (err == OK) {
+        const pieceT* currentBoard = CurrentPos->GetBoard();
+        const pieceT* board = searchPos->GetBoard();
+        const pieceT* b1 = currentBoard;
+        const pieceT* b2 = board;
+
+        // If NO_SPEEDUPS is defined, a slower search is done without
+        // optimisations that detect insufficient material.
+#ifndef NO_SPEEDUPS
+        // Insufficient material optimisation:
+        if (searchPos->GetCount(WHITE) > CurrentPos->GetCount(WHITE)  ||
+            searchPos->GetCount(BLACK) > CurrentPos->GetCount(BLACK)) {
+            return false;
+        }
+        // Insufficient pawns optimisation:
+        if (searchPos->PieceCount(WP) > CurrentPos->PieceCount(WP)  ||
+            searchPos->PieceCount(BP) > CurrentPos->PieceCount(BP)) {
+            return false;
+        }
+
+        // HomePawn mask optimisation:
+        // If current pos doesn't have a pawn on home rank where
+        // the search pos has one, it can never match.
+        // This happens when (current_xxHPawns & search_xxHPawns) is
+        // not equal to search_xxHPawns.
+        // We do not do this optimisation for a pawn files search,
+        // because the exact pawn squares are not important there.
+            if (check_pawnMaskWhite) {
+                auto current_whiteHPawns = calcHomePawnMask (WP, currentBoard);
+                if ((current_whiteHPawns & search_whiteHPawns)
+                        != search_whiteHPawns) {
+                    return false;
+                }
+                check_pawnMaskWhite = false;
+            }
+            if (check_pawnMaskBlack) {
+                auto current_blackHPawns = calcHomePawnMask (BP, currentBoard);
+                if ((current_blackHPawns & search_blackHPawns)
+                        != search_blackHPawns) {
+                    return false;
+                }
+                check_pawnMaskBlack = false;
+            }
+#endif  // #ifndef NO_SPEEDUPS
+        bool found = true;
+
+        // Not correct color: skip to next move
+        if (searchPos->GetToMove() != CurrentPos->GetToMove()) {
+            //skip++;
+            goto Move_Forward;
+        }
+
+        // Extra material: skip to next move
+        if (searchPos->GetCount(WHITE) < CurrentPos->GetCount(WHITE)  ||
+            searchPos->GetCount(BLACK) < CurrentPos->GetCount(BLACK)) {
+            //skip++;
+            goto Move_Forward;
+        }
+        // Extra pawns/pieces: skip to next move
+        if (searchPos->PieceCount(WP) != CurrentPos->PieceCount(WP)  ||
+            searchPos->PieceCount(BP) != CurrentPos->PieceCount(BP)  ||
+            searchPos->PieceCount(WN) != CurrentPos->PieceCount(WN)  ||
+            searchPos->PieceCount(BN) != CurrentPos->PieceCount(BN)  ||
+            searchPos->PieceCount(WB) != CurrentPos->PieceCount(WB)  ||
+            searchPos->PieceCount(BB) != CurrentPos->PieceCount(BB)  ||
+            searchPos->PieceCount(WR) != CurrentPos->PieceCount(WR)  ||
+            searchPos->PieceCount(BR) != CurrentPos->PieceCount(BR)  ||
+            searchPos->PieceCount(WQ) != CurrentPos->PieceCount(WQ)  ||
+            searchPos->PieceCount(BQ) != CurrentPos->PieceCount(BQ)) {
+            //skip++;
+            goto Move_Forward;
+        }
+
+        // NOW, compare the actual boards piece-by-piece.
+        if (searchType == GAME_EXACT_MATCH_Exact) {
+            if (searchPos->HashValue() == CurrentPos->HashValue()) {
+                for (squareT sq = A1;  sq <= H8;  sq++, b1++, b2++) {
+                    if (*b1 != *b2) { found = false; break; }
+                }
+            } else {
+                found = false;
+            }
+        } else if (searchType == GAME_EXACT_MATCH_Pawns) {
+            if (searchPos->PawnHashValue() == CurrentPos->PawnHashValue()) {
+                for (squareT sq = A1;  sq <= H8;  sq++, b1++, b2++) {
+                    if (*b1 != *b2  &&  (*b1 == WP  ||  *b1 == BP)) {
+                        found = false;
+                        break;
+                    }
+                }
+            } else {
+                found = false;
+            }
+        } else if (searchType == GAME_EXACT_MATCH_Fyles) {
+            for (fyleT f = A_FYLE; f <= H_FYLE; f++) {
+                if (searchPos->FyleCount(WP,f) != CurrentPos->FyleCount(WP,f)
+                      || searchPos->FyleCount(BP,f) != CurrentPos->FyleCount(BP,f)) {
+                    found = false;
+                    break;
+                }
+            }
+        } else {
+            // searchType == GAME_EXACT_Match_Material, so do nothing.
+        }
+
+        if (found) {
+            return true;
+        }
+
+    Move_Forward:
+        if (buf == NULL) {
+            err = MoveForward();
+        } else {
+            simpleMoveT nextMove;
+            err = DecodeNextMove(buf, nextMove);
+            if (err == OK) {
+                CurrentPos->DoSimpleMove(nextMove);
+                if (doHomePawnChecks) {
+                    rankT rTo = square_Rank (nextMove.to);
+                    rankT rFrom = square_Rank (nextMove.from);
+                    // We only re-check the home pawn masks when something moves
+                    // to or from the 2nd/7th rank:
+                    if (rTo == RANK_2  ||  rFrom == RANK_2) {
+                        check_pawnMaskWhite = true;
+                    }
+                    if (rTo == RANK_7  ||  rFrom == RANK_7) {
+                        check_pawnMaskBlack = true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Game::VarExactMatch():
+//    Like ExactMatch(), but also searches in variations.
+//    This is much slower than ExactMatch(), since it will
+//    search every position until a match is found.
+bool
+Game::VarExactMatch (Position * searchPos, gameExactMatchT searchType)
+{
+    uint wpawnFyle [8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint bpawnFyle [8] = {0, 0, 0, 0, 0, 0, 0, 0};;
+
+    if (searchType == GAME_EXACT_MATCH_Fyles) {
+        const pieceT* board = searchPos->GetBoard();
+        uint fyle = 0;
+        for (squareT sq = A1; sq <= H8; sq++, board++) {
+            if (*board == WP) {
+                wpawnFyle[fyle]++;
+            } else if (*board == BP) {
+                bpawnFyle[fyle]++;
+            }
+            fyle = (fyle + 1) & 7;
+        }
+    }
+
+    errorT err = OK;
+    while (err == OK) {
+        // Check if this position matches:
+        bool match = false;
+        if (searchPos->GetToMove() == CurrentPos->GetToMove()
+            &&  searchPos->GetCount(WHITE) == CurrentPos->GetCount(WHITE)
+            &&  searchPos->GetCount(BLACK) == CurrentPos->GetCount(BLACK)
+            &&  searchPos->PieceCount(WP) == CurrentPos->PieceCount(WP)
+            &&  searchPos->PieceCount(BP) == CurrentPos->PieceCount(BP)
+            &&  searchPos->PieceCount(WN) == CurrentPos->PieceCount(WN)
+            &&  searchPos->PieceCount(BN) == CurrentPos->PieceCount(BN)
+            &&  searchPos->PieceCount(WB) == CurrentPos->PieceCount(WB)
+            &&  searchPos->PieceCount(BB) == CurrentPos->PieceCount(BB)
+            &&  searchPos->PieceCount(WR) == CurrentPos->PieceCount(WR)
+            &&  searchPos->PieceCount(BR) == CurrentPos->PieceCount(BR)
+            &&  searchPos->PieceCount(WQ) == CurrentPos->PieceCount(WQ)
+            &&  searchPos->PieceCount(BQ) == CurrentPos->PieceCount(BQ)) {
+            match = true;
+            const pieceT* b1 = CurrentPos->GetBoard();
+            const pieceT* b2 = searchPos->GetBoard();
+            if (searchType == GAME_EXACT_MATCH_Pawns) {
+                for (squareT sq = A1;  sq <= H8;  sq++, b1++, b2++) {
+                    if (*b1 != *b2  &&  (*b1 == WP  ||  *b1 == BP)) {
+                        match = false; break;
+                    }
+                }
+            } else if (searchType == GAME_EXACT_MATCH_Fyles) {
+                uint wpf[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+                uint bpf[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+                uint fyle = 0;
+                for (squareT sq = A1;  sq <= H8;  sq++, b1++) {
+                    if (*b1 == WP) {
+                        wpf[fyle]++;
+                        if (wpf[fyle] > wpawnFyle[fyle]) { match = false; break; }
+                    } else if (*b1 == BP) {
+                        bpf[fyle]++;
+                        if (bpf[fyle] > bpawnFyle[fyle]) { match = false; break; }
+                    }
+                    fyle = (fyle + 1) & 7;
+                }
+            } else if (searchType == GAME_EXACT_MATCH_Exact) {
+                if (searchPos->HashValue() == CurrentPos->HashValue()) {
+                    for (squareT sq = A1;  sq <= H8;  sq++, b1++, b2++) {
+                        if (*b1 != *b2) { match = false; break; }
+                    }
+                } else {
+                    match = false;
+                }
+            } else {
+                // searchType == GAME_EXACT_MATCH_Material, so do nothing.
+            }
+        }
+        if (match) { return true; }
+
+        // Now try searching each variation in turn:
+        for (uint i=0; i < CurrentMove->numVariations; i++) {
+            MoveIntoVariation (i);
+            match = VarExactMatch (searchPos, searchType);
+            MoveExitVariation();
+            if (match) { return true; }
+        }
+        // Continue down this variation:
+        MoveForward();
+        if (CurrentMove->marker == END_MARKER) {
+            err = ERROR_EndOfMoveList;
+        }
+    }
+    return false;
+}
+
+} // namespace scid::database
