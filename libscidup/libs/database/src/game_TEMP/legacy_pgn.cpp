@@ -398,6 +398,38 @@ byte game_parseNag(std::pair<const char*, const char*> strview) {
 //      or false on error.
 //      The string should be a case-insensitive unique prefix of
 //      "plain" (or "pgn"), "HTML", "LaTeX" or "Color".
+void Game::ResetPgnStyle(void) {
+	PgnStyle = 0;
+}
+
+void Game::ResetPgnStyle(uint flag) {
+	PgnStyle = flag;
+}
+
+uint Game::GetPgnStyle() {
+	return PgnStyle;
+}
+
+void Game::SetPgnStyle(uint mask, bool setting) {
+	if (setting) {
+		AddPgnStyle(mask);
+	} else {
+		RemovePgnStyle(mask);
+	}
+}
+
+void Game::AddPgnStyle(uint mask) {
+	PgnStyle |= mask;
+}
+
+void Game::RemovePgnStyle(uint mask) {
+	PgnStyle &= ~mask;
+}
+
+void Game::SetPgnFormat(gameFormatT gf) {
+	PgnFormat = gf;
+}
+
 bool
 Game::PgnFormatFromString (const char * str, gameFormatT * fmt)
 {
@@ -425,6 +457,30 @@ bool
 Game::SetPgnFormatFromString (const char * str)
 {
     return PgnFormatFromString (str, &PgnFormat);
+}
+
+bool Game::IsPlainFormat() {
+	return PgnFormat == PGN_FORMAT_Plain;
+}
+
+bool Game::IsHtmlFormat() {
+	return PgnFormat == PGN_FORMAT_HTML;
+}
+
+bool Game::IsLatexFormat() {
+	return PgnFormat == PGN_FORMAT_LaTeX;
+}
+
+bool Game::IsColorFormat() {
+	return PgnFormat == PGN_FORMAT_Color;
+}
+
+void Game::SetHtmlStyle(uint style) {
+	HtmlStyle = style;
+}
+
+uint Game::GetHtmlStyle() {
+	return HtmlStyle;
 }
 
 

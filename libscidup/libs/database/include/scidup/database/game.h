@@ -392,26 +392,24 @@ public:
                                                  bool NewLineAtEnd = false,
                                                  bool newLineToSpaces = true);
 
-    void      ResetPgnStyle (void) { PgnStyle = 0; }
-    void      ResetPgnStyle (uint flag) { PgnStyle = flag; }
+    void      ResetPgnStyle (void);
+    void      ResetPgnStyle (uint flag);
 
-    uint      GetPgnStyle () { return PgnStyle; }
-    void      SetPgnStyle (uint mask, bool setting) {
-        if (setting) { AddPgnStyle (mask); } else { RemovePgnStyle (mask); }
-    }
-    void      AddPgnStyle (uint mask) { PgnStyle |= mask; }
-    void      RemovePgnStyle (uint mask) { PgnStyle &= ~mask; }
+    uint      GetPgnStyle ();
+    void      SetPgnStyle (uint mask, bool setting);
+    void      AddPgnStyle (uint mask);
+    void      RemovePgnStyle (uint mask);
 
-    void      SetPgnFormat (gameFormatT gf) { PgnFormat = gf; }
+    void      SetPgnFormat (gameFormatT gf);
     bool      SetPgnFormatFromString (const char * str);
     static bool PgnFormatFromString (const char * str, gameFormatT * fmt);
-    bool      IsPlainFormat () { return (PgnFormat == PGN_FORMAT_Plain); }
-    bool      IsHtmlFormat  () { return (PgnFormat == PGN_FORMAT_HTML); }
-    bool      IsLatexFormat () { return (PgnFormat == PGN_FORMAT_LaTeX); }
-    bool      IsColorFormat () { return (PgnFormat == PGN_FORMAT_Color); }
+    bool      IsPlainFormat ();
+    bool      IsHtmlFormat  ();
+    bool      IsLatexFormat ();
+    bool      IsColorFormat ();
 
-    void      SetHtmlStyle (uint style) { HtmlStyle = style; }
-    uint      GetHtmlStyle () { return HtmlStyle; }
+    void      SetHtmlStyle (uint style);
+    uint      GetHtmlStyle ();
 
     errorT    GetPartialMoveList (DString * str, uint plyCount);
 
