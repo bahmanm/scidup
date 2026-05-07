@@ -41,6 +41,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_TEMP/nags.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_TEMP/pgn_encode.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_TEMP/pgnparse.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_TEMP/pgn_style.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_TEMP/positions.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_TEMP/search.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_TEMP/staging.h"
