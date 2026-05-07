@@ -46,6 +46,50 @@ std::string& Game::find_or_create_tag(std::string_view tag) {
 	return extraTags_.emplace_back(tag, std::string()).second;
 }
 
+void Game::viewTagPairsImpl(
+    const std::function<void(const char*, const char*)>& visitor) const {
+	char strBuf[256];
+	visitor("Event", GetEventStr());
+	visitor("Site", GetSiteStr());
+	date_DecodeToString(GetDate(), strBuf);
+	visitor("Date", strBuf);
+	visitor("Round", GetRoundStr());
+	visitor("White", GetWhiteStr());
+	visitor("Black", GetBlackStr());
+	visitor("Result", RESULT_LONGSTR[GetResult()]);
+
+	if (auto elo = GetWhiteElo()) {
+		std::string rType = "White";
+		std::string eloStr = std::to_string(elo);
+		rType.append(ratingTypeNames[GetWhiteRatingType()]);
+		visitor(rType.c_str(), eloStr.c_str());
+	}
+	if (auto elo = GetBlackElo()) {
+		std::string rType = "Black";
+		std::string eloStr = std::to_string(elo);
+		rType.append(ratingTypeNames[GetBlackRatingType()]);
+		visitor(rType.c_str(), eloStr.c_str());
+	}
+	if (GetEco() != scidup::eco::ECO_None) {
+		scidup::eco::toExtendedString(GetEco(), strBuf);
+		visitor("ECO", strBuf);
+	}
+	if (GetEventDate() != ZERO_DATE) {
+		date_DecodeToString(GetEventDate(), strBuf);
+		visitor("EventDate", strBuf);
+	}
+	// TODO?
+	// if (*ScidFlags)
+	//     visitor("ScidFlags", ScidFlags);
+
+	for (auto& e : GetExtraTags()) {
+		visitor(e.first.c_str(), e.second.c_str());
+	}
+	if (HasNonStandardStart(strBuf, sizeof(strBuf))) {
+		visitor("FEN", strBuf);
+	}
+}
+
 const std::vector<std::pair<std::string, std::string>>& Game::GetExtraTags()
     const {
 	return extraTags_;
