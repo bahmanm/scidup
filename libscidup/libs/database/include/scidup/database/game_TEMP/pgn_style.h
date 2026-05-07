@@ -9,6 +9,19 @@ enum gameFormatT {
 	PGN_FORMAT_Color = 3  // PGN, with color tags <red> etc
 };
 
+struct GameEncodeOptions {
+	unsigned style;
+	gameFormatT format;
+	unsigned htmlStyle;
+
+	bool isPlainFormat() const { return format == PGN_FORMAT_Plain; }
+	bool isHtmlFormat() const { return format == PGN_FORMAT_HTML; }
+	bool isLatexFormat() const { return format == PGN_FORMAT_LaTeX; }
+	bool isColorFormat() const { return format == PGN_FORMAT_Color; }
+	bool hasStyle(unsigned mask) const { return (style & mask) != 0; }
+	void addStyle(unsigned mask) { style |= mask; }
+};
+
 } // namespace scid::database
 
 #define PGN_STYLE_TAGS 1

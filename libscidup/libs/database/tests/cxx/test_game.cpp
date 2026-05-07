@@ -75,6 +75,16 @@ TEST(Test_Game, clone) {
 	}
 }
 
+TEST(Test_Game, WriteToPGNDoesNotMutatePgnStyle) {
+	scid::database::Game game;
+	game.ResetPgnStyle(PGN_STYLE_TAGS | PGN_STYLE_COLUMN);
+	const auto pgnStyle = game.GetPgnStyle();
+
+	game.WriteToPGN(75, true);
+
+	EXPECT_EQ(pgnStyle, game.GetPgnStyle());
+}
+
 TEST(Test_Game, locationInPGN) {
 	for (auto filename : {gameUTF8, gameLatin1, gameLatin1Conv}) {
 
