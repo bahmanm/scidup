@@ -59,7 +59,7 @@ errorT decodeNextMove(Game& game, ByteBuffer* buf, simpleMoveT& sm);
 
 class Game {
     // Header data: tag pairs
-    scid::core::GameHeader header_;
+    scid::core::Game coreGame_;
     scidup::eco::Code EcoCode;
     // TODO [Game]: Keep Scid flags out of the core metadata model until there
     // is a domain reason for them outside database/app compatibility.
@@ -105,7 +105,6 @@ private:
                        bool sameBishops, int minDiff, int maxDiff);
     bool ExactMatch(Position* pos, ByteBuffer* buf, gameExactMatchT searchType);
     bool VarExactMatch(Position* searchPos, gameExactMatchT searchType);
-    std::string* find_std_tag(std::string_view tag);
     std::string& find_or_create_tag(std::string_view tag);
     void viewTagPairsImpl(
         const std::function<void(const char*, const char*)>& visitor) const;

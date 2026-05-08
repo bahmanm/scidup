@@ -48,6 +48,18 @@ TEST(CoreGameTest, StandardTagsMapToMetadataAndExtraTagsStaySeparate) {
 	EXPECT_TRUE(game.extraTags().empty());
 }
 
+TEST(CoreGameTest, FindOrCreateTagReusesExistingValue) {
+	scid::core::Game game;
+	game.findOrCreateTag("White") = "Player A";
+	game.findOrCreateTag("Annotator") = "Example";
+	game.findOrCreateTag("Annotator").append(" 2");
+
+	EXPECT_EQ("Player A", game.white().name);
+	ASSERT_EQ(1U, game.extraTags().size());
+	EXPECT_EQ("Annotator", game.extraTags()[0].first);
+	EXPECT_EQ("Example 2", game.extraTags()[0].second);
+}
+
 TEST(CoreGameTest, StoresRatingsDatesAndResult) {
 	scid::core::Game game;
 	scid::core::Player white;

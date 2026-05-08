@@ -108,6 +108,18 @@ std::string& Game::addTag(std::string_view tag, std::string_view value) {
 	return header_.tags.emplace_back(std::string(tag), std::string(value)).second;
 }
 
+std::string& Game::findOrCreateTag(std::string_view tag) {
+	if (auto standard = findStandardTag(tag))
+		return *standard;
+
+	auto it = std::find_if(header_.tags.begin(), header_.tags.end(),
+	                       [&](auto const& entry) { return entry.first == tag; });
+	if (it != header_.tags.end())
+		return it->second;
+
+	return header_.tags.emplace_back(std::string(tag), std::string()).second;
+}
+
 const std::vector<TagPair>& Game::extraTags() const {
 	return header_.tags;
 }

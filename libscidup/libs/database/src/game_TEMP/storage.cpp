@@ -525,14 +525,15 @@ std::pair<IndexEntry, TagRoster> Game::Encode(std::vector<byte>& dest) const {
 
     auto ie = IndexEntry();
     // Set the fields in the IndexEntry:
-    ie.SetDate(header_.event.date);
-    ie.SetEventDate(header_.event.eventDate);
-    ie.SetResult(header_.result);
+    auto const& header = coreGame_.header();
+    ie.SetDate(header.event.date);
+    ie.SetEventDate(header.event.eventDate);
+    ie.SetResult(header.result);
     ie.SetEcoCode(EcoCode);
-    ie.SetWhiteElo(header_.white.rating.value);
-    ie.SetBlackElo(header_.black.rating.value);
-    ie.SetWhiteRatingType(header_.white.rating.type);
-    ie.SetBlackRatingType(header_.black.rating.type);
+    ie.SetWhiteElo(header.white.rating.value);
+    ie.SetBlackElo(header.black.rating.value);
+    ie.SetWhiteRatingType(header.white.rating.type);
+    ie.SetBlackRatingType(header.black.rating.type);
     if (HasNonStandardStart()) {
         ie.SetStartFlag(true);
         if (StartPos->isChess960()) {

@@ -88,7 +88,7 @@ Game::Game(const Game& obj) {
 	// TODO [Game]: Revisit clone/copy after GameCursor exists. This currently
 	// copies aggregate data, legacy export state, and restores PGN-order cursor
 	// location in one compatibility operation.
-	header_ = obj.header_;
+	coreGame_ = obj.coreGame_;
 	EcoCode = obj.EcoCode;
 	std::copy_n(obj.ScidFlags, sizeof(obj.ScidFlags), ScidFlags);
 
@@ -161,7 +161,7 @@ void Game::ClearMoves() {
 void Game::Clear() {
 	// TODO [Game]: Split this reset across core Game metadata/moves, database
 	// compatibility flags, and legacy export defaults.
-	header_ = {};
+	coreGame_.clear();
 	EcoCode = 0;
 	ScidFlags[0] = 0;
 

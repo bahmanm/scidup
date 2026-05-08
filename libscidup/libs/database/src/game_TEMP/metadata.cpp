@@ -10,40 +10,12 @@
 
 namespace scid::database {
 
-std::string* Game::find_std_tag(std::string_view tag) {
-	if (tag.size() == 5) {
-		if (tag == "Event")
-			return &header_.event.name;
-		if (tag == "Round")
-			return &header_.event.round;
-		if (tag == "White")
-			return &header_.white.name;
-		if (tag == "Black")
-			return &header_.black.name;
-	} else if (tag.size() == 4) {
-		if (tag == "Site")
-			return &header_.event.site;
-	}
-	return nullptr;
-}
-
 std::string& Game::addTag(std::string_view tag, std::string_view value) {
-	if (auto overwrite = find_std_tag(tag))
-		return overwrite->assign(value);
-
-	return header_.tags.emplace_back(tag, value).second;
+	return coreGame_.addTag(tag, value);
 }
 
 std::string& Game::find_or_create_tag(std::string_view tag) {
-	if (auto value = find_std_tag(tag))
-		return *value;
-
-	auto it = std::find_if(header_.tags.begin(), header_.tags.end(),
-	                       [&](auto const& elem) { return elem.first == tag; });
-	if (it != header_.tags.end())
-		return it->second;
-
-	return header_.tags.emplace_back(tag, std::string()).second;
+	return coreGame_.findOrCreateTag(tag);
 }
 
 void Game::viewTagPairsImpl(
@@ -95,71 +67,76 @@ void Game::viewTagPairsImpl(
 
 const std::vector<std::pair<std::string, std::string>>& Game::GetExtraTags()
     const {
-	return header_.tags;
+	return coreGame_.extraTags();
 }
 
 const char* Game::FindExtraTag(const char* tag) const {
-	for (auto& e : header_.tags) {
-		if (e.first == tag)
-			return e.second.c_str();
-	}
-	return NULL;
+	auto value = coreGame_.findExtraTag(tag);
+	return value ? value->c_str() : NULL;
 }
 
 void Game::ClearExtraTags() {
-	header_.tags.clear();
+	coreGame_.clearExtraTags();
 }
 
 void Game::RemoveExtraTag(std::string_view tag) {
-	std::erase_if(header_.tags, [&](auto elem) { return elem.first == tag; });
+	coreGame_.removeExtraTag(tag);
 }
 
 void Game::SetEventStr(const char* str) {
-	header_.event.name = str;
+	coreGame_.setEvent(str);
 }
 
 void Game::SetSiteStr(const char* str) {
-	header_.event.site = str;
+	coreGame_.setSite(str);
 }
 
 void Game::SetWhiteStr(const char* str) {
-	header_.white.name = str;
+	coreGame_.addTag("White", str);
 }
 
 void Game::SetBlackStr(const char* str) {
-	header_.black.name = str;
+	coreGame_.addTag("Black", str);
 }
 
 void Game::SetRoundStr(const char* str) {
-	header_.event.round = str;
+	coreGame_.setRound(str);
 }
 
 void Game::SetDate(dateT date) {
-	header_.event.date = date;
+	coreGame_.setDate(date);
 }
 
 void Game::SetEventDate(dateT date) {
-	header_.event.eventDate = date;
+	coreGame_.setEventDate(date);
 }
 
 void Game::SetResult(resultT res) {
-	header_.result = res;
+	coreGame_.setResult(res);
 }
 
 void Game::SetWhiteElo(ratingT elo) {
-	header_.white.rating.value = elo;
+	auto player = coreGame_.white();
+	player.rating.value = elo;
+	coreGame_.setWhite(std::move(player));
 }
 
 void Game::SetBlackElo(ratingT elo) {
-	header_.black.rating.value = elo;
+	auto player = coreGame_.black();
+	player.rating.value = elo;
+	coreGame_.setBlack(std::move(player));
 }
 
 void Game::SetWhiteRatingType(ratingTypeT b) {
-	header_.white.rating.type = b > 7 ? 0 : b;
+	auto player = coreGame_.white();
+	player.rating.type = b > 7 ? 0 : b;
+	coreGame_.setWhite(std::move(player));
 }
 
 void Game::SetBlackRatingType(ratingTypeT b) {
-	header_.black.rating.type = b > 7 ? 0 : b;
+	auto player = coreGame_.black();
+	player.rating.type = b > 7 ? 0 : b;
+	coreGame_.setBlack(std::move(player));
 }
 
 void Game::SetEco(scidup::eco::Code eco) {
@@ -167,41 +144,41 @@ void Game::SetEco(scidup::eco::Code eco) {
 }
 
 const char* Game::GetEventStr() const {
-	return header_.event.name.c_str();
+	return coreGame_.event().c_str();
 }
 
 const char* Game::GetSiteStr() const {
-	return header_.event.site.c_str();
+	return coreGame_.site().c_str();
 }
 
 const char* Game::GetWhiteStr() const {
-	return header_.white.name.c_str();
+	return coreGame_.white().name.c_str();
 }
 
 const char* Game::GetBlackStr() const {
-	return header_.black.name.c_str();
+	return coreGame_.black().name.c_str();
 }
 
 const char* Game::GetRoundStr() const {
-	return header_.event.round.c_str();
+	return coreGame_.round().c_str();
 }
 
 dateT Game::GetDate() const {
-	return header_.event.date;
+	return coreGame_.date();
 }
 
 dateT Game::GetEventDate() const {
-	return header_.event.eventDate;
+	return coreGame_.eventDate();
 }
 
 resultT Game::GetResult() const {
-	return header_.result;
+	return coreGame_.result();
 }
 
 std::string_view Game::GetResultStr() const {
 	using namespace std::literals;
 	static std::string_view res[] = {"*"sv, "1-0"sv, "0-1"sv, "1/2-1/2"sv};
-	return res[header_.result];
+	return res[coreGame_.result()];
 }
 
 int Game::setRating(colorT col, const char* ratingType, size_t ratingTypeLen,
@@ -235,19 +212,19 @@ int Game::setRating(colorT col, const char* ratingType, size_t ratingTypeLen,
 }
 
 ratingT Game::GetWhiteElo() const {
-	return header_.white.rating.value;
+	return coreGame_.white().rating.value;
 }
 
 ratingT Game::GetBlackElo() const {
-	return header_.black.rating.value;
+	return coreGame_.black().rating.value;
 }
 
 ratingTypeT Game::GetWhiteRatingType() const {
-	return header_.white.rating.type;
+	return coreGame_.white().rating.type;
 }
 
 ratingTypeT Game::GetBlackRatingType() const {
-	return header_.black.rating.type;
+	return coreGame_.black().rating.type;
 }
 
 scidup::eco::Code Game::GetEco() const {
@@ -255,8 +232,8 @@ scidup::eco::Code Game::GetEco() const {
 }
 
 ratingT Game::GetAverageElo() {
-	auto white = header_.white.rating.value;
-	auto black = header_.black.rating.value;
+	auto white = coreGame_.white().rating.value;
+	auto black = coreGame_.black().rating.value;
 	return (white == 0 || black == 0) ? 0 : (white + black) / 2;
 }
 

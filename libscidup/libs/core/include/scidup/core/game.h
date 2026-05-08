@@ -69,6 +69,7 @@ public:
 	void setResult(scid::database::resultT value);
 
 	std::string& addTag(std::string_view tag, std::string_view value);
+	std::string& findOrCreateTag(std::string_view tag);
 	const std::vector<TagPair>& extraTags() const;
 	const std::string* findExtraTag(std::string_view tag) const;
 	void clearExtraTags();

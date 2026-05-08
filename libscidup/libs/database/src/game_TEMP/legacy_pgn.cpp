@@ -658,19 +658,19 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
 //      Write a game in PGN to a textbuffer.
 //
 errorT LegacyGamePgnEncoder::encode() {
-    auto& BlackElo = game.header_.black.rating.value;
-    auto& BlackRatingType = game.header_.black.rating.type;
-    auto& Date = game.header_.event.date;
+    const auto& BlackElo = game.coreGame_.black().rating.value;
+    const auto& BlackRatingType = game.coreGame_.black().rating.type;
+    const auto& Date = game.coreGame_.date();
     auto& EcoCode = game.EcoCode;
-    auto& EventDate = game.header_.event.eventDate;
-    auto& Result = game.header_.result;
-    auto& RoundStr = game.header_.event.round;
+    const auto& EventDate = game.coreGame_.eventDate();
+    const auto& Result = game.coreGame_.result();
+    const auto& RoundStr = game.coreGame_.round();
     auto& ScidFlags = game.ScidFlags;
-    auto& SiteStr = game.header_.event.site;
+    const auto& SiteStr = game.coreGame_.site();
     auto& StartPos = game.StartPos;
-    auto& WhiteElo = game.header_.white.rating.value;
-    auto& WhiteRatingType = game.header_.white.rating.type;
-    auto& extraTags_ = game.header_.tags;
+    const auto& WhiteElo = game.coreGame_.white().rating.value;
+    const auto& WhiteRatingType = game.coreGame_.white().rating.type;
+    const auto& extraTags_ = game.coreGame_.extraTags();
     auto FindExtraTag = [&](const char* tag) {
         return game.FindExtraTag(tag);
     };
