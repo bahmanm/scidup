@@ -16,6 +16,7 @@
 #ifndef SCID_GAME_H
 #define SCID_GAME_H
 
+#include "scidup/core/game.h"
 #include "scidup/core/game_result.h"
 #include "scidup/database/common.h"
 #include "scidup/core/date.h"
@@ -58,20 +59,8 @@ errorT decodeNextMove(Game& game, ByteBuffer* buf, simpleMoveT& sm);
 
 class Game {
     // Header data: tag pairs
-    std::vector<std::pair<std::string, std::string> > extraTags_;
-    std::string WhiteStr;
-    std::string BlackStr;
-    std::string EventStr;
-    std::string SiteStr;
-    std::string RoundStr;
-    dateT       Date;
-    dateT       EventDate;
+    scid::core::GameHeader header_;
     scidup::eco::Code EcoCode;
-    ratingT     WhiteElo;
-    ratingT     BlackElo;
-    ratingTypeT WhiteRatingType;
-    ratingTypeT BlackRatingType;
-    resultT     Result;
     // TODO [Game]: Keep Scid flags out of the core metadata model until there
     // is a domain reason for them outside database/app compatibility.
     char        ScidFlags[22];

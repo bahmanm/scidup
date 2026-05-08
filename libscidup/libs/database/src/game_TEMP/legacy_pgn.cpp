@@ -658,19 +658,19 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
 //      Write a game in PGN to a textbuffer.
 //
 errorT LegacyGamePgnEncoder::encode() {
-    auto& BlackElo = game.BlackElo;
-    auto& BlackRatingType = game.BlackRatingType;
-    auto& Date = game.Date;
+    auto& BlackElo = game.header_.black.rating.value;
+    auto& BlackRatingType = game.header_.black.rating.type;
+    auto& Date = game.header_.event.date;
     auto& EcoCode = game.EcoCode;
-    auto& EventDate = game.EventDate;
-    auto& Result = game.Result;
-    auto& RoundStr = game.RoundStr;
+    auto& EventDate = game.header_.event.eventDate;
+    auto& Result = game.header_.result;
+    auto& RoundStr = game.header_.event.round;
     auto& ScidFlags = game.ScidFlags;
-    auto& SiteStr = game.SiteStr;
+    auto& SiteStr = game.header_.event.site;
     auto& StartPos = game.StartPos;
-    auto& WhiteElo = game.WhiteElo;
-    auto& WhiteRatingType = game.WhiteRatingType;
-    auto& extraTags_ = game.extraTags_;
+    auto& WhiteElo = game.header_.white.rating.value;
+    auto& WhiteRatingType = game.header_.white.rating.type;
+    auto& extraTags_ = game.header_.tags;
     auto FindExtraTag = [&](const char* tag) {
         return game.FindExtraTag(tag);
     };

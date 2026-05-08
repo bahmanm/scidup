@@ -88,20 +88,8 @@ Game::Game(const Game& obj) {
 	// TODO [Game]: Revisit clone/copy after GameCursor exists. This currently
 	// copies aggregate data, legacy export state, and restores PGN-order cursor
 	// location in one compatibility operation.
-	extraTags_ = obj.extraTags_;
-	WhiteStr = obj.WhiteStr;
-	BlackStr = obj.BlackStr;
-	EventStr = obj.EventStr;
-	SiteStr = obj.SiteStr;
-	RoundStr = obj.RoundStr;
-	Date = obj.Date;
-	EventDate = obj.EventDate;
+	header_ = obj.header_;
 	EcoCode = obj.EcoCode;
-	WhiteElo = obj.WhiteElo;
-	BlackElo = obj.BlackElo;
-	WhiteRatingType = obj.WhiteRatingType;
-	BlackRatingType = obj.BlackRatingType;
-	Result = obj.Result;
 	std::copy_n(obj.ScidFlags, sizeof(obj.ScidFlags), ScidFlags);
 
 	if (obj.StartPos)
@@ -173,18 +161,8 @@ void Game::ClearMoves() {
 void Game::Clear() {
 	// TODO [Game]: Split this reset across core Game metadata/moves, database
 	// compatibility flags, and legacy export defaults.
-	extraTags_.clear();
-	WhiteStr.clear();
-	BlackStr.clear();
-	EventStr.clear();
-	SiteStr.clear();
-	RoundStr.clear();
-	Date = ZERO_DATE;
-	EventDate = ZERO_DATE;
+	header_ = {};
 	EcoCode = 0;
-	WhiteElo = BlackElo = 0;
-	WhiteRatingType = BlackRatingType = RATING_Elo;
-	Result = RESULT_None;
 	ScidFlags[0] = 0;
 
 	PgnStyle = PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS;
