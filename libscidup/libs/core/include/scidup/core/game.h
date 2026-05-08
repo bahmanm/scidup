@@ -15,10 +15,32 @@
 
 namespace scid::core {
 
+using TagPair = std::pair<std::string, std::string>;
+
+struct Rating {
+	scid::database::ratingT value = 0;
+	scid::database::ratingTypeT type = scid::database::RATING_Elo;
+};
+
 struct Player {
 	std::string name;
-	scid::database::ratingT rating = 0;
-	scid::database::ratingTypeT ratingType = scid::database::RATING_Elo;
+	Rating rating;
+};
+
+struct EventInfo {
+	std::string name;
+	std::string site;
+	std::string round;
+	scid::database::dateT date = scid::database::ZERO_DATE;
+	scid::database::dateT eventDate = scid::database::ZERO_DATE;
+};
+
+struct GameHeader {
+	EventInfo event;
+	Player white;
+	Player black;
+	scid::database::resultT result = scid::database::RESULT_None;
+	std::vector<TagPair> tags;
 };
 
 class Game {
@@ -27,6 +49,7 @@ public:
 
 	void clear();
 
+	const GameHeader& header() const;
 	const std::string& event() const;
 	const std::string& site() const;
 	const std::string& round() const;
@@ -46,7 +69,7 @@ public:
 	void setResult(scid::database::resultT value);
 
 	std::string& addTag(std::string_view tag, std::string_view value);
-	const std::vector<std::pair<std::string, std::string>>& extraTags() const;
+	const std::vector<TagPair>& extraTags() const;
 	const std::string* findExtraTag(std::string_view tag) const;
 	void clearExtraTags();
 	void removeExtraTag(std::string_view tag);
@@ -62,15 +85,7 @@ public:
 private:
 	std::string* findStandardTag(std::string_view tag);
 
-	std::string event_;
-	std::string site_;
-	std::string round_;
-	Player white_;
-	Player black_;
-	scid::database::dateT date_ = scid::database::ZERO_DATE;
-	scid::database::dateT eventDate_ = scid::database::ZERO_DATE;
-	scid::database::resultT result_ = scid::database::RESULT_None;
-	std::vector<std::pair<std::string, std::string>> extraTags_;
+	GameHeader header_;
 	std::optional<scid::database::Position> startPosition_;
 };
 

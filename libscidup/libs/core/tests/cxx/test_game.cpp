@@ -52,11 +52,11 @@ TEST(CoreGameTest, StoresRatingsDatesAndResult) {
 	scid::core::Game game;
 	scid::core::Player white;
 	white.name = "Player A";
-	white.rating = 2800;
-	white.ratingType = scid::database::RATING_Rapid;
+	white.rating.value = 2800;
+	white.rating.type = scid::database::RATING_Rapid;
 	scid::core::Player black;
 	black.name = "Player B";
-	black.rating = 2650;
+	black.rating.value = 2650;
 
 	game.setWhite(white);
 	game.setBlack(black);
@@ -65,14 +65,16 @@ TEST(CoreGameTest, StoresRatingsDatesAndResult) {
 	game.setResult(scid::database::RESULT_White);
 
 	EXPECT_EQ("Player A", game.white().name);
-	EXPECT_EQ(2800, game.white().rating);
-	EXPECT_EQ(scid::database::RATING_Rapid, game.white().ratingType);
+	EXPECT_EQ(2800, game.white().rating.value);
+	EXPECT_EQ(scid::database::RATING_Rapid, game.white().rating.type);
 	EXPECT_EQ("Player B", game.black().name);
-	EXPECT_EQ(2650, game.black().rating);
+	EXPECT_EQ(2650, game.black().rating.value);
 	EXPECT_EQ(scid::database::date_parsePGNTag("2018.06.11", 10), game.date());
 	EXPECT_EQ(scid::database::date_parsePGNTag("2018.06.01", 10),
 	          game.eventDate());
 	EXPECT_EQ(scid::database::RESULT_White, game.result());
+	EXPECT_EQ(game.date(), game.header().event.date);
+	EXPECT_EQ(game.white().rating.value, game.header().white.rating.value);
 }
 
 TEST(CoreGameTest, SetStartFenStoresNonStandardStartPosition) {

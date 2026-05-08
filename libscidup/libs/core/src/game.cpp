@@ -10,95 +10,91 @@ Game::Game() {
 }
 
 void Game::clear() {
-	event_.clear();
-	site_.clear();
-	round_.clear();
-	white_ = {};
-	black_ = {};
-	date_ = scid::database::ZERO_DATE;
-	eventDate_ = scid::database::ZERO_DATE;
-	result_ = scid::database::RESULT_None;
-	extraTags_.clear();
+	header_ = {};
 	startPosition_.reset();
 }
 
+const GameHeader& Game::header() const {
+	return header_;
+}
+
 const std::string& Game::event() const {
-	return event_;
+	return header_.event.name;
 }
 
 const std::string& Game::site() const {
-	return site_;
+	return header_.event.site;
 }
 
 const std::string& Game::round() const {
-	return round_;
+	return header_.event.round;
 }
 
 const Player& Game::white() const {
-	return white_;
+	return header_.white;
 }
 
 const Player& Game::black() const {
-	return black_;
+	return header_.black;
 }
 
 scid::database::dateT Game::date() const {
-	return date_;
+	return header_.event.date;
 }
 
 scid::database::dateT Game::eventDate() const {
-	return eventDate_;
+	return header_.event.eventDate;
 }
 
 scid::database::resultT Game::result() const {
-	return result_;
+	return header_.result;
 }
 
 void Game::setEvent(std::string_view value) {
-	event_.assign(value.begin(), value.end());
+	header_.event.name.assign(value.begin(), value.end());
 }
 
 void Game::setSite(std::string_view value) {
-	site_.assign(value.begin(), value.end());
+	header_.event.site.assign(value.begin(), value.end());
 }
 
 void Game::setRound(std::string_view value) {
-	round_.assign(value.begin(), value.end());
+	header_.event.round.assign(value.begin(), value.end());
 }
 
 void Game::setWhite(Player value) {
-	white_ = std::move(value);
+	header_.white = std::move(value);
 }
 
 void Game::setBlack(Player value) {
-	black_ = std::move(value);
+	header_.black = std::move(value);
 }
 
 void Game::setDate(scid::database::dateT value) {
-	date_ = value;
+	header_.event.date = value;
 }
 
 void Game::setEventDate(scid::database::dateT value) {
-	eventDate_ = value;
+	header_.event.eventDate = value;
 }
 
 void Game::setResult(scid::database::resultT value) {
-	result_ = value;
+	header_.result = value;
 }
 
 std::string* Game::findStandardTag(std::string_view tag) {
 	if (tag.size() == 5) {
 		if (tag == "Event")
-			return &event_;
+			return &header_.event.name;
 		if (tag == "Round")
-			return &round_;
+			return &header_.event.round;
 		if (tag == "White")
-			return &white_.name;
+			return &header_.white.name;
 		if (tag == "Black")
-			return &black_.name;
+			return &header_.black.name;
 	} else if (tag.size() == 4) {
 		if (tag == "Site")
-			return &site_;
+			return &header_.event.site;
 	}
 	return nullptr;
 }
@@ -109,15 +105,15 @@ std::string& Game::addTag(std::string_view tag, std::string_view value) {
 		return *standard;
 	}
 
-	return extraTags_.emplace_back(std::string(tag), std::string(value)).second;
+	return header_.tags.emplace_back(std::string(tag), std::string(value)).second;
 }
 
-const std::vector<std::pair<std::string, std::string>>& Game::extraTags() const {
-	return extraTags_;
+const std::vector<TagPair>& Game::extraTags() const {
+	return header_.tags;
 }
 
 const std::string* Game::findExtraTag(std::string_view tag) const {
-	for (auto const& entry : extraTags_) {
+	for (auto const& entry : header_.tags) {
 		if (entry.first == tag)
 			return &entry.second;
 	}
@@ -125,14 +121,14 @@ const std::string* Game::findExtraTag(std::string_view tag) const {
 }
 
 void Game::clearExtraTags() {
-	extraTags_.clear();
+	header_.tags.clear();
 }
 
 void Game::removeExtraTag(std::string_view tag) {
-	extraTags_.erase(
-	    std::remove_if(extraTags_.begin(), extraTags_.end(),
+	header_.tags.erase(
+	    std::remove_if(header_.tags.begin(), header_.tags.end(),
 	                   [&](auto const& entry) { return entry.first == tag; }),
-	    extraTags_.end());
+	    header_.tags.end());
 }
 
 bool Game::hasNonStandardStart() const {
