@@ -4821,11 +4821,11 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                 scid::database::pgnParseGame(argv[3], std::strlen(argv[3]), game, log) &&
                 log.log.empty()) {
                 std::string moves;
-                game.viewMainlineMoves([&](const scid::database::simpleMoveT& move) {
-                    char buf[scid::database::UCI_MOVE_STRING_SIZE + 1] = {' '};
-                    auto end = move.toLongNotation(buf + 1);
-                    moves.append(buf, end);
-                });
+                for (auto const& move :
+                     game.coreGame().movetext().mainline.moves) {
+                    moves.push_back(' ');
+                    moves.append(move.action.longNotation());
+                }
                 std::string str;
                 if (scid::database::OK == pos.MakeCoordMoves(moves.data(), moves.size(), &str))
                     return UI_Result(ti, scid::database::OK, str);

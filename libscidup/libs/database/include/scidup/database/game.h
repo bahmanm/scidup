@@ -255,8 +255,6 @@ public:
     void GetPrevMoveUCI(char* str) const;
     void GetNextMoveUCI(char* str);
 
-    void viewMainlineMoves(
-        const std::function<void(const simpleMoveT&)>& visitor) const;
     void viewMovetext(
         const std::function<void(const scid::core::pgn::MovetextEntry&)>&
             visitor) const;

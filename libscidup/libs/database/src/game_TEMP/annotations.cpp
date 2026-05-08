@@ -94,17 +94,6 @@ std::string& Game::accessMoveComment() {
 	return CurrentMove->prev->comment;
 }
 
-void Game::viewMainlineMoves(
-    const std::function<void(const simpleMoveT&)>& visitor) const {
-	// TODO [Game]: Rebuild this on core Game/GameCursor traversal and the
-	// future MoveAction type instead of exposing legacy simpleMoveT directly.
-	for (const auto* m = FirstMove; !m->endMarker(); m = m->Next()) {
-		if (!m->startMarker()) {
-			visitor(m->move());
-		}
-	}
-}
-
 void Game::viewMovetext(
     const std::function<void(const scid::core::pgn::MovetextEntry&)>&
         visitor) const {
