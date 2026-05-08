@@ -12,11 +12,16 @@ Game::Game() {
 
 void Game::clear() {
 	header_ = {};
+	movetext_ = {};
 	startPosition_.reset();
 }
 
 const GameHeader& Game::header() const {
 	return header_;
+}
+
+const Movetext& Game::movetext() const {
+	return movetext_;
 }
 
 const std::string& Game::event() const {
@@ -212,6 +217,16 @@ void Game::clearStartPosition() {
 
 long long Game::initialPlyCounter() const {
 	return startPosition_ ? startPosition_->GetPlyCounter() : 0;
+}
+
+Move& Game::appendMainlineMove(MoveAction action) {
+	auto& move = movetext_.mainline.moves.emplace_back();
+	move.action = action;
+	return move;
+}
+
+void Game::clearMovetext() {
+	movetext_ = {};
 }
 
 } // namespace scid::core

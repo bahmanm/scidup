@@ -133,4 +133,49 @@ TEST(CoreGameTest, InvalidStartFenLeavesExistingStartPositionUnchanged) {
 	EXPECT_STREQ(fen, printed);
 }
 
+TEST(CoreGameTest, AppendsMainlineMovesWithMetadataAndVariations) {
+	scid::core::Game game;
+
+	auto& move = game.appendMainlineMove(
+	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
+	move.san = "e4";
+	move.metadata.comment = "Best by test";
+	move.metadata.nags.push_back(scid::core::NAG_GoodMove);
+	auto& childLine = move.childVariations.emplace_back().line.moves;
+	childLine.push_back(
+	    {{scid::database::D2, scid::database::D4, scid::database::EMPTY},
+	     "d4",
+	     {},
+	     {}});
+
+	ASSERT_EQ(1U, game.movetext().mainline.moves.size());
+	auto const& savedMove = game.movetext().mainline.moves[0];
+	EXPECT_EQ(scid::database::E2, savedMove.action.from);
+	EXPECT_EQ(scid::database::E4, savedMove.action.to);
+	EXPECT_EQ(scid::database::EMPTY, savedMove.action.promotion);
+	EXPECT_EQ("e4", savedMove.san);
+	EXPECT_EQ("Best by test", savedMove.metadata.comment);
+	ASSERT_EQ(1U, savedMove.metadata.nags.size());
+	EXPECT_EQ(scid::core::NAG_GoodMove, savedMove.metadata.nags[0]);
+	ASSERT_EQ(1U, savedMove.childVariations.size());
+	ASSERT_EQ(1U, savedMove.childVariations[0].line.moves.size());
+	EXPECT_EQ(scid::database::D4,
+	          savedMove.childVariations[0].line.moves[0].action.to);
+}
+
+TEST(CoreGameTest, ClearMovetextLeavesHeaderAndStartPositionIntact) {
+	scid::core::Game game;
+	game.setEvent("Candidates");
+	ASSERT_EQ(scid::database::OK,
+	          game.setStartFen("8/K7/8/8/7k/8/8/8 w - - 45 25"));
+	game.appendMainlineMove(
+	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
+
+	game.clearMovetext();
+
+	EXPECT_EQ("Candidates", game.event());
+	EXPECT_TRUE(game.hasNonStandardStart());
+	EXPECT_TRUE(game.movetext().mainline.moves.empty());
+}
+
 } // namespace

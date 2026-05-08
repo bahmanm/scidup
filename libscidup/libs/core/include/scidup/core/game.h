@@ -3,10 +3,13 @@
 #include "scidup/core/date.h"
 #include "scidup/core/error.h"
 #include "scidup/core/game_result.h"
+#include "scidup/core/nags.h"
+#include "scidup/core/notation.h"
 #include "scidup/core/position.h"
 #include "scidup/core/rating.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -43,6 +46,38 @@ struct GameHeader {
 	std::vector<TagPair> tags;
 };
 
+struct MoveAction {
+	scid::database::squareT from = scid::database::NULL_SQUARE;
+	scid::database::squareT to = scid::database::NULL_SQUARE;
+	scid::database::pieceT promotion = scid::database::EMPTY;
+};
+
+struct MoveMetadata {
+	std::vector<std::uint8_t> nags;
+	std::string comment;
+};
+
+struct Variation;
+
+struct Move {
+	MoveAction action;
+	std::string san;
+	MoveMetadata metadata;
+	std::vector<Variation> childVariations;
+};
+
+struct MoveSequence {
+	std::vector<Move> moves;
+};
+
+struct Variation {
+	MoveSequence line;
+};
+
+struct Movetext {
+	MoveSequence mainline;
+};
+
 class Game {
 public:
 	Game();
@@ -50,6 +85,7 @@ public:
 	void clear();
 
 	const GameHeader& header() const;
+	const Movetext& movetext() const;
 	const std::string& event() const;
 	const std::string& site() const;
 	const std::string& round() const;
@@ -90,10 +126,14 @@ public:
 	void clearStartPosition();
 	long long initialPlyCounter() const;
 
+	Move& appendMainlineMove(MoveAction action);
+	void clearMovetext();
+
 private:
 	std::string* findStandardTag(std::string_view tag);
 
 	GameHeader header_;
+	Movetext movetext_;
 	std::optional<scid::database::Position> startPosition_;
 };
 
