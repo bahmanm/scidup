@@ -376,6 +376,7 @@ TEST(Test_Game, coreGameMovetextMirrorsLegacyMoveTree) {
 	ASSERT_EQ(1U, mainline[0].metadata.nags.size());
 	EXPECT_EQ(scid::core::NAG_GoodMove, mainline[0].metadata.nags[0]);
 	EXPECT_EQ("Best by test", mainline[0].metadata.comment);
+	EXPECT_TRUE(mainline[0].san.empty());
 
 	ASSERT_EQ(2U, mainline[0].childVariations.size());
 	auto const& firstVariation = mainline[0].childVariations[0].line.moves;
@@ -396,6 +397,10 @@ TEST(Test_Game, coreGameMovetextMirrorsLegacyMoveTree) {
 	ASSERT_EQ(1U, secondVariation.size());
 	EXPECT_EQ(scid::database::C2, secondVariation[0].action.from);
 	EXPECT_EQ(scid::database::C4, secondVariation[0].action.to);
+
+	game.MoveToStart();
+	EXPECT_STREQ("d4", game.GetNextSAN());
+	EXPECT_EQ("d4", game.coreGame().movetext().mainline.moves[0].san);
 }
 
 TEST(Test_Game, currentPosUCI_fen) {

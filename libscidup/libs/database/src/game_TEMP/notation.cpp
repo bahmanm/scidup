@@ -79,6 +79,7 @@ Game::GetPartialMoveList (DString * outStr, uint plyCount)
         if (m->san[0] == 0) {
             CurrentPos->MakeSANString(&(m->moveData),
                                       m->san, SAN_CHECKTEST);
+            TEMP_syncCoreMovetext();
         }
         // add one space for indenting to work out right
         outStr->Append (" ");
@@ -103,6 +104,7 @@ const char* Game::GetNextSAN() {
 		CurrentPos->MakeSANString(
 		    &CurrentMove->moveData, CurrentMove->san,
 		    CurrentMove->next->endMarker() ? SAN_MATETEST : SAN_CHECKTEST);
+		TEMP_syncCoreMovetext();
 	}
 	return CurrentMove->san;
 }
@@ -133,6 +135,7 @@ Game::GetPrevSAN (char * str)
         MoveBackup();
         CurrentPos->MakeSANString (&(m->moveData), m->san, SAN_MATETEST);
         MoveForward();
+        TEMP_syncCoreMovetext();
     }
     strcpy (str, m->san);
 }
