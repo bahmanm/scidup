@@ -1,0 +1,105 @@
+#include "scidup/core/game.h"
+
+#include <gtest/gtest.h>
+
+namespace {
+
+TEST(CoreGameTest, DefaultsToEmptyMetadataAndStandardStart) {
+	scid::core::Game game;
+
+	EXPECT_TRUE(game.event().empty());
+	EXPECT_TRUE(game.site().empty());
+	EXPECT_TRUE(game.round().empty());
+	EXPECT_TRUE(game.white().name.empty());
+	EXPECT_TRUE(game.black().name.empty());
+	EXPECT_EQ(scid::database::ZERO_DATE, game.date());
+	EXPECT_EQ(scid::database::ZERO_DATE, game.eventDate());
+	EXPECT_EQ(scid::database::RESULT_None, game.result());
+	EXPECT_TRUE(game.extraTags().empty());
+	EXPECT_FALSE(game.hasNonStandardStart());
+	EXPECT_EQ(nullptr, game.startPosition());
+	EXPECT_EQ(0, game.initialPlyCounter());
+}
+
+TEST(CoreGameTest, StandardTagsMapToMetadataAndExtraTagsStaySeparate) {
+	scid::core::Game game;
+
+	game.addTag("Event", "Candidates");
+	game.addTag("Site", "Toronto");
+	game.addTag("White", "Player A");
+	game.addTag("Black", "Player B");
+	game.addTag("Round", "7");
+	game.addTag("Annotator", "Example");
+
+	EXPECT_EQ("Candidates", game.event());
+	EXPECT_EQ("Toronto", game.site());
+	EXPECT_EQ("Player A", game.white().name);
+	EXPECT_EQ("Player B", game.black().name);
+	EXPECT_EQ("7", game.round());
+
+	ASSERT_EQ(1U, game.extraTags().size());
+	EXPECT_EQ("Annotator", game.extraTags()[0].first);
+	EXPECT_EQ("Example", game.extraTags()[0].second);
+	ASSERT_NE(nullptr, game.findExtraTag("Annotator"));
+	EXPECT_EQ("Example", *game.findExtraTag("Annotator"));
+
+	game.removeExtraTag("Annotator");
+	EXPECT_EQ(nullptr, game.findExtraTag("Annotator"));
+	EXPECT_TRUE(game.extraTags().empty());
+}
+
+TEST(CoreGameTest, StoresRatingsDatesAndResult) {
+	scid::core::Game game;
+	scid::core::Player white;
+	white.name = "Player A";
+	white.rating = 2800;
+	white.ratingType = scid::database::RATING_Rapid;
+	scid::core::Player black;
+	black.name = "Player B";
+	black.rating = 2650;
+
+	game.setWhite(white);
+	game.setBlack(black);
+	game.setDate(scid::database::date_parsePGNTag("2018.06.11", 10));
+	game.setEventDate(scid::database::date_parsePGNTag("2018.06.01", 10));
+	game.setResult(scid::database::RESULT_White);
+
+	EXPECT_EQ("Player A", game.white().name);
+	EXPECT_EQ(2800, game.white().rating);
+	EXPECT_EQ(scid::database::RATING_Rapid, game.white().ratingType);
+	EXPECT_EQ("Player B", game.black().name);
+	EXPECT_EQ(2650, game.black().rating);
+	EXPECT_EQ(scid::database::date_parsePGNTag("2018.06.11", 10), game.date());
+	EXPECT_EQ(scid::database::date_parsePGNTag("2018.06.01", 10),
+	          game.eventDate());
+	EXPECT_EQ(scid::database::RESULT_White, game.result());
+}
+
+TEST(CoreGameTest, SetStartFenStoresNonStandardStartPosition) {
+	const char* fen = "8/K7/8/8/7k/8/8/8 w - - 45 25";
+	scid::core::Game game;
+
+	ASSERT_EQ(scid::database::OK, game.setStartFen(fen));
+
+	EXPECT_TRUE(game.hasNonStandardStart());
+	ASSERT_NE(nullptr, game.startPosition());
+	EXPECT_EQ(48, game.initialPlyCounter());
+
+	char printed[256];
+	ASSERT_TRUE(game.hasNonStandardStart(printed, sizeof(printed)));
+	EXPECT_STREQ(fen, printed);
+}
+
+TEST(CoreGameTest, InvalidStartFenLeavesExistingStartPositionUnchanged) {
+	const char* fen = "8/K7/8/8/7k/8/8/8 w - - 45 25";
+	scid::core::Game game;
+	ASSERT_EQ(scid::database::OK, game.setStartFen(fen));
+
+	EXPECT_NE(scid::database::OK, game.setStartFen("invalid"));
+
+	char printed[256];
+	ASSERT_TRUE(game.hasNonStandardStart(printed, sizeof(printed)));
+	EXPECT_STREQ(fen, printed);
+}
+
+} // namespace

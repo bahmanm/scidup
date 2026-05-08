@@ -6,6 +6,7 @@ project(
 
 set(
     SCIDUP_CORE_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/game.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/position.cpp" )
 
 set(
@@ -16,6 +17,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/dstring.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/error.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/fullmove.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/game.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/game_result.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/hash.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/movelist.h"
