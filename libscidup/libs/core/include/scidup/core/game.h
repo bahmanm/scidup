@@ -78,6 +78,7 @@ struct Variation {
 };
 
 struct Movetext {
+	std::string initialComment;
 	MoveSequence mainline;
 };
 
@@ -89,6 +90,7 @@ public:
 
 	const GameHeader& header() const;
 	const Movetext& movetext() const;
+	std::string_view initialComment() const;
 	const std::string& event() const;
 	const std::string& site() const;
 	const std::string& round() const;
@@ -130,6 +132,7 @@ public:
 	long long initialPlyCounter() const;
 
 	Move& appendMainlineMove(MoveAction action);
+	void setInitialComment(std::string_view value);
 	void clearMovetext();
 
 private:

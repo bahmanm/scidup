@@ -46,6 +46,10 @@ const Movetext& Game::movetext() const {
 	return movetext_;
 }
 
+std::string_view Game::initialComment() const {
+	return movetext_.initialComment;
+}
+
 const std::string& Game::event() const {
 	return header_.event.name;
 }
@@ -245,6 +249,10 @@ Move& Game::appendMainlineMove(MoveAction action) {
 	auto& move = movetext_.mainline.moves.emplace_back();
 	move.action = action;
 	return move;
+}
+
+void Game::setInitialComment(std::string_view value) {
+	movetext_.initialComment.assign(value.begin(), value.end());
 }
 
 void Game::clearMovetext() {

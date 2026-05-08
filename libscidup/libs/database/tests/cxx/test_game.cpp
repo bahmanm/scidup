@@ -423,6 +423,30 @@ TEST(Test_Game, coreGameMovetextMirrorsLegacyMoveTree) {
 	EXPECT_EQ("d4", game.coreGame().movetext().mainline.moves[0].san);
 }
 
+TEST(Test_Game, coreGameMirrorsInitialMovetextComment) {
+	using namespace std::literals;
+
+	scid::database::Game game;
+	game.SetMoveComment("Before the first move");
+
+	EXPECT_EQ("Before the first move"sv, game.coreGame().initialComment());
+
+	std::string encoded;
+	scid::core::pgn::encode_game(game.coreGame(), encoded);
+
+	auto expected = "[Event\0\"\"]\n"sv
+	                "[Site\0\"\"]\n"sv
+	                "[Date\0\"????.??.??\"]\n"sv
+	                "[Round\0\"\"]\n"sv
+	                "[White\0\"\"]\n"sv
+	                "[Black\0\"\"]\n"sv
+	                "[Result\0\"*\"]\n"sv
+	                "\n"sv
+	                "{Before the first move}\n"sv
+	                "*\n"sv;
+	EXPECT_EQ(expected, encoded);
+}
+
 TEST(Test_Game, coreGameCanBeEncodedAsPlainPgnAfterSanMaterialization) {
 	using namespace std::literals;
 

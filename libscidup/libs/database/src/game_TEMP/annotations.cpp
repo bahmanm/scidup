@@ -43,6 +43,7 @@ void copyMoveData(moveT const& source, scid::core::Move& dest) {
 
 void Game::TEMP_syncCoreMovetext() {
 	coreGame_.clearMovetext();
+	coreGame_.setInitialComment(FirstMove->comment);
 	for (auto move = FirstMove->next; move && !move->endMarker();
 	     move = move->next) {
 		if (move->startMarker())

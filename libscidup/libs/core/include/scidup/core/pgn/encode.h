@@ -292,6 +292,12 @@ void encode_movetext(Game const& game, TCont& dest) {
 	auto move_end = dest.size();
 	dest.push_back('\n');
 
+	if (!game.initialComment().empty()) {
+		encode_movetext_entry<hard_len>(
+		    {MovetextEntryKind::InitialComment, {}, game.initialComment(), {}},
+		    ply, move_end, dest);
+	}
+
 	encode_core_line<hard_len>(game.movetext().mainline, ply, move_end, dest);
 
 	if (dest.back() == '\0')

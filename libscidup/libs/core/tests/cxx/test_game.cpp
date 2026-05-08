@@ -19,6 +19,7 @@ TEST(CoreGameTest, DefaultsToEmptyMetadataAndStandardStart) {
 	EXPECT_FALSE(game.hasNonStandardStart());
 	EXPECT_EQ(nullptr, game.startPosition());
 	EXPECT_EQ(0, game.initialPlyCounter());
+	EXPECT_TRUE(game.initialComment().empty());
 }
 
 TEST(CoreGameTest, StandardTagsMapToMetadataAndExtraTagsStaySeparate) {
@@ -187,6 +188,7 @@ TEST(CoreGameTest, ClearMovetextLeavesHeaderAndStartPositionIntact) {
 	game.setEvent("Candidates");
 	ASSERT_EQ(scid::database::OK,
 	          game.setStartFen("8/K7/8/8/7k/8/8/8 w - - 45 25"));
+	game.setInitialComment("Before the first move");
 	game.appendMainlineMove(
 	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
 
@@ -194,6 +196,7 @@ TEST(CoreGameTest, ClearMovetextLeavesHeaderAndStartPositionIntact) {
 
 	EXPECT_EQ("Candidates", game.event());
 	EXPECT_TRUE(game.hasNonStandardStart());
+	EXPECT_TRUE(game.initialComment().empty());
 	EXPECT_TRUE(game.movetext().mainline.moves.empty());
 }
 
