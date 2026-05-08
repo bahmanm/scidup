@@ -123,6 +123,8 @@ void Game::MoveToPly(int hmNumber) {
 		MoveForward();
 }
 
+// TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
+// instead of keeping it on the generic Game cursor surface.
 errorT Game::MoveForwardInPGN() {
 	if (CurrentMove->prev->varChild && MoveBackup() == OK)
 		return MoveIntoVariation(0);
@@ -141,6 +143,8 @@ errorT Game::MoveForwardInPGN() {
 	return OK;
 }
 
+// TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
+// instead of keeping it on the generic Game cursor surface.
 errorT Game::MoveToLocationInPGN(unsigned stopLocation) {
 	MoveToStart();
 	for (unsigned loc = 1; loc < stopLocation; ++loc) {
@@ -151,6 +155,8 @@ errorT Game::MoveToLocationInPGN(unsigned stopLocation) {
 	return OK;
 }
 
+// TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
+// instead of keeping it on the generic Game cursor surface.
 unsigned Game::GetLocationInPGN() const {
 	unsigned res = 1;
 	const moveT* last_move = CurrentMove->prev;
@@ -162,6 +168,8 @@ unsigned Game::GetLocationInPGN() const {
 	return res;
 }
 
+// TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
+// instead of keeping it on the generic Game cursor surface.
 unsigned Game::GetPgnOffset() const {
 	unsigned res = 1;
 	const moveT* last_move = CurrentMove->getPrevMove();

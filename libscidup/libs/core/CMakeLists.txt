@@ -23,6 +23,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/nags.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/notation.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/pgn/encode.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/pgn/movetext.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/position.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/primitives.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/rating.h"

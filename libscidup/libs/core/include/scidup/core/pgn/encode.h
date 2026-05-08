@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include "scidup/core/pgn/movetext.h"
+
 #include <algorithm>
 #include <string>
 #include <string_view>

@@ -51,21 +51,24 @@ void Game::viewMainlineMoves(
 }
 
 void Game::viewMovetext(
-    const std::function<void(const GameMoveView&)>& visitor) const {
+    const std::function<void(const scid::core::pgn::MovetextEntry&)>&
+        visitor) const {
+	using scid::core::pgn::MovetextEntryKind;
+
 	if (!FirstMove->comment.empty()) {
-		visitor({GameMoveViewKind::InitialComment, {}, {},
+		visitor({MovetextEntryKind::InitialComment, {}, {},
 		         FirstMove->comment, {}});
 	}
 
 	for (auto m = FirstMove; (m = m->nextMoveInPGN());) {
 		if (m->startMarker()) {
-			visitor({GameMoveViewKind::VariationStart, {}, {}, m->comment, {}});
+			visitor({MovetextEntryKind::VariationStart, {}, {}, m->comment, {}});
 		} else if (m->endMarker()) {
 			if (m->nextMoveInPGN()) {
-				visitor({GameMoveViewKind::VariationEnd, {}, {}, {}, {}});
+				visitor({MovetextEntryKind::VariationEnd, {}, {}, {}, {}});
 			}
 		} else {
-			visitor({GameMoveViewKind::Move, m->moveData, m->san, m->comment,
+			visitor({MovetextEntryKind::Move, m->moveData, m->san, m->comment,
 			         {m->nags, m->nagCount}});
 		}
 	}

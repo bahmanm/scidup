@@ -8,6 +8,9 @@
 
 namespace scid::database::gamepos {
 
+// TODO [Game]: Rebuild this snapshot helper on top of the future GameCursor
+// plus the PGN/export traversal adapter. It currently depends on legacy
+// PGN-order cursor methods and should not be moved until those boundaries exist.
 struct GamePos {
 	uint32_t RAVdepth;
 	uint32_t RAVnum;
@@ -72,4 +75,3 @@ inline std::vector<GamePos> collectPositions(Game& game) {
 }
 
 } // namespace scid::database::gamepos
-

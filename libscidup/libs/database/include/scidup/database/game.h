@@ -20,12 +20,12 @@
 #include "scidup/database/common.h"
 #include "scidup/core/date.h"
 #include "scidup/eco/code.h"
-#include "scidup/database/game_TEMP/move_view.h"
 #include "scidup/core/nags.h"
 #include "scidup/database/game_TEMP/pgn_style.h"
 #include "scidup/database/game_TEMP/search.h"
 #include "scidup/database/indexentry.h"
 #include "scidup/database/namebase.h"
+#include "scidup/core/pgn/movetext.h"
 #include "scidup/core/position.h"
 #include <forward_list>
 #include <functional>
@@ -195,6 +195,8 @@ public:
     errorT MoveBackup();
     errorT MoveIntoVariation(uint varNumber);
     errorT MoveExitVariation();
+    // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
+    // instead of keeping it on the generic Game cursor surface.
     errorT MoveForwardInPGN();
     errorT MoveToLocationInPGN(unsigned stopLocation);
     void MoveToStart();
@@ -224,6 +226,8 @@ public:
     uint GetVarLevel() const;
     uint GetVarNumber() const;
 
+    // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
+    // instead of keeping it on the generic Game cursor surface.
     unsigned GetLocationInPGN() const;
     unsigned GetPgnOffset() const;
 
@@ -260,7 +264,8 @@ public:
     void viewMainlineMoves(
         const std::function<void(const simpleMoveT&)>& visitor) const;
     void viewMovetext(
-        const std::function<void(const GameMoveView&)>& visitor) const;
+        const std::function<void(const scid::core::pgn::MovetextEntry&)>&
+            visitor) const;
 
     //////////////////////////////////////////////////////////////
     // Functions that get/set the tag pairs:
