@@ -5,6 +5,9 @@
 
 namespace scid::database {
 
+// TODO [Game]: Move NAG/comment storage behind Move.metadata once the core
+// Move shape exists. These methods are compatibility accessors around legacy
+// moveT fields at the current cursor location.
 void Game::ClearNags() {
 	CurrentMove->prev->nagCount = 0;
 	CurrentMove->prev->nags[0] = 0;
@@ -43,6 +46,8 @@ std::string& Game::accessMoveComment() {
 
 void Game::viewMainlineMoves(
     const std::function<void(const simpleMoveT&)>& visitor) const {
+	// TODO [Game]: Rebuild this on core Game/GameCursor traversal and the
+	// future MoveAction type instead of exposing legacy simpleMoveT directly.
 	for (const auto* m = FirstMove; !m->endMarker(); m = m->Next()) {
 		if (!m->startMarker()) {
 			visitor(m->move());
@@ -53,6 +58,8 @@ void Game::viewMainlineMoves(
 void Game::viewMovetext(
     const std::function<void(const scid::core::pgn::MovetextEntry&)>&
         visitor) const {
+	// TODO [Game]: Move PGN-shaped movetext traversal to a PGN/export adapter
+	// once generic GameCursor traversal exists.
 	using scid::core::pgn::MovetextEntryKind;
 
 	if (!FirstMove->comment.empty()) {

@@ -48,6 +48,9 @@ std::string& Game::find_or_create_tag(std::string_view tag) {
 
 void Game::viewTagPairsImpl(
     const std::function<void(const char*, const char*)>& visitor) const {
+	// TODO [Game]: Move PGN/header tag projection out of Game once the core
+	// metadata model exists. This is formatting/export compatibility, not
+	// storage for the aggregate itself.
 	char strBuf[256];
 	visitor("Event", GetEventStr());
 	visitor("Site", GetSiteStr());
@@ -203,6 +206,8 @@ std::string_view Game::GetResultStr() const {
 
 int Game::setRating(colorT col, const char* ratingType, size_t ratingTypeLen,
                     std::pair<const char*, const char*> rating) {
+	// TODO [Game]: Move PGN rating-tag parsing to the PGN decoder/import
+	// boundary. Core metadata should receive a typed Rating value.
 	auto begin = ratingTypeNames;
 	const size_t ratingSz = 7;
 	auto it = std::find_if(begin, begin + ratingSz, [&](auto rType) {

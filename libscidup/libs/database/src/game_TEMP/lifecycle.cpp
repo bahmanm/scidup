@@ -18,6 +18,8 @@ Game::Game() {
 	Clear();
 }
 
+// TODO [Game]: Keep start-position lifecycle on the future core Game, but keep
+// PGN/UCI/export projections of the starting position outside the aggregate.
 bool Game::HasNonStandardStart(char* outFEN, size_t outFENLen) const {
 	if (!StartPos)
 		return false;
@@ -49,6 +51,8 @@ void Game::SetStartPos(std::unique_ptr<Position> pos) {
 	*CurrentPos = *StartPos;
 }
 
+// TODO [Game]: Keep Scid flags in database/app compatibility, not in the core
+// metadata model.
 void Game::SetScidFlags(const char* s, size_t len) {
 	constexpr size_t size = sizeof(ScidFlags) / sizeof(*ScidFlags);
 	std::fill_n(ScidFlags, size, 0);
@@ -64,6 +68,8 @@ ushort Game::GetNumHalfMoves() {
 }
 
 moveT* Game::allocMove() {
+	// TODO [Game]: Hide legacy moveT chunk allocation behind the future core
+	// move-tree representation.
 	if (moveChunkUsed_ == MOVE_CHUNKSIZE) {
 		moveChunks_.emplace_front(new moveT[MOVE_CHUNKSIZE]);
 		moveChunkUsed_ = 0;
@@ -79,6 +85,9 @@ moveT* Game::NewMove(markerT marker) {
 }
 
 Game::Game(const Game& obj) {
+	// TODO [Game]: Revisit clone/copy after GameCursor exists. This currently
+	// copies aggregate data, legacy export state, and restores PGN-order cursor
+	// location in one compatibility operation.
 	extraTags_ = obj.extraTags_;
 	WhiteStr = obj.WhiteStr;
 	BlackStr = obj.BlackStr;
@@ -115,6 +124,8 @@ Game* Game::clone() {
 }
 
 void Game::strip(bool variations, bool comments, bool NAGs) {
+	// TODO [Game]: Decide whether stripping belongs on core Game or a future
+	// GameEditor. It mutates move-tree structure and Move.metadata together.
 	while (variations && MoveExitVariation() == OK) {
 	}
 
@@ -139,6 +150,9 @@ void Game::strip(bool variations, bool comments, bool NAGs) {
 }
 
 void Game::ClearMoves() {
+	// TODO [Game]: Move move-tree reset and cursor initialization into the
+	// future core Game implementation once move storage is no longer legacy
+	// moveT chunks.
 	if (moveChunks_.empty()) {
 		moveChunkUsed_ = MOVE_CHUNKSIZE;
 	} else {
@@ -157,6 +171,8 @@ void Game::ClearMoves() {
 }
 
 void Game::Clear() {
+	// TODO [Game]: Split this reset across core Game metadata/moves, database
+	// compatibility flags, and legacy export defaults.
 	extraTags_.clear();
 	WhiteStr.clear();
 	BlackStr.clear();

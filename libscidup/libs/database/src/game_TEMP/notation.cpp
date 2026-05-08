@@ -13,6 +13,8 @@
 
 namespace scid::database {
 
+// TODO [Game]: Move UCI position rendering to a notation helper over
+// GameCursor and the future MoveAction type.
 std::string Game::currentPosUCI() const {
 	std::string res = "position startpos moves";
 	char FEN[256] = {};
@@ -55,6 +57,8 @@ std::string Game::currentPosUCI() const {
 errorT
 Game::GetPartialMoveList (DString * outStr, uint plyCount)
 {
+    // TODO [Game]: Rebuild this UI compatibility helper on GameCursor plus SAN
+    // notation once cursor traversal is no longer stored directly on Game.
     // First, copy the relevant data so we can leave the game state
     // unaltered:
     auto location = currentLocation();
@@ -91,6 +95,8 @@ Game::GetPartialMoveList (DString * outStr, uint plyCount)
 // Returns the SAN representation of the next move or an empty string ("") if
 // not at a move.
 const char* Game::GetNextSAN() {
+	// TODO [Game]: Move SAN generation/caching to notation helpers and
+	// Move.metadata once Move owns SAN and GameCursor owns the current position.
 	ASSERT(!CurrentMove->endMarker() || *CurrentMove->san == '\0');
 
 	if (!CurrentMove->endMarker() && *CurrentMove->san == '\0') {
@@ -136,6 +142,8 @@ Game::GetPrevSAN (char * str)
 //      Print the UCI representation of the current move to a string.
 //      Prints an empty string ("") if not at a move.
 void Game::GetPrevMoveUCI(char* str) const {
+    // TODO [Game]: Move UCI move rendering to a notation helper over
+    // MoveAction instead of exposing legacy simpleMoveT through Game.
     ASSERT(str != NULL);
     const auto m = CurrentMove->prev;
     if (!m->startMarker())
@@ -151,6 +159,8 @@ void Game::GetPrevMoveUCI(char* str) const {
 void
 Game::GetNextMoveUCI (char * str)
 {
+    // TODO [Game]: Move UCI move rendering to a notation helper over
+    // MoveAction instead of exposing legacy simpleMoveT through Game.
     ASSERT (str != NULL);
     if (!CurrentMove->endMarker())
         str = CurrentMove->moveData.toLongNotation(str);

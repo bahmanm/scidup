@@ -72,6 +72,8 @@ class Game {
     ratingTypeT WhiteRatingType;
     ratingTypeT BlackRatingType;
     resultT     Result;
+    // TODO [Game]: Keep Scid flags out of the core metadata model until there
+    // is a domain reason for them outside database/app compatibility.
     char        ScidFlags[22];
 
     // Position and moves
@@ -242,6 +244,8 @@ public:
     // Functions that get/set information about the last/next move.
     // Notice: when location is at the start of the game or a variation,
     // infomation are stored into the START_MARKER.
+    // TODO [Game]: Replace this compatibility surface with Move.metadata,
+    // MoveAction notation helpers, and GameCursor traversal.
     //
     errorT AddNag(byte nag);
     errorT RemoveNag(bool isMoveNag);
