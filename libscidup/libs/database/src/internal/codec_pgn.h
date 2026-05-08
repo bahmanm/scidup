@@ -152,7 +152,7 @@ public:
 		} while (game->MoveForwardInPGN() == OK);
 
 		buf_.clear();
-		scid::core::pgn::encode(*game, buf_);
+		scid::core::pgn::encode(game->coreGame(), buf_);
 		buf_.push_back('\n');
 		return file_.append(buf_.data(), buf_.size());
 	}

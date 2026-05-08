@@ -195,7 +195,7 @@ TEST(Test_PgnEncode, encode_game) {
 		                "[Result\0\"*\"]\n"sv
 		                "\n*\n"sv;
 		std::string pgn;
-		scid::core::pgn::encode_game(empty, pgn);
+		scid::core::pgn::encode_game(empty.coreGame(), pgn);
 		EXPECT_EQ(pgn, expected);
 	}
 	{
@@ -218,7 +218,7 @@ TEST(Test_PgnEncode, encode_game) {
 		                "1.e4\0{after the move}\n"sv
 		                "*\n"sv;
 		std::string pgn;
-		scid::core::pgn::encode_game(game, pgn);
+		scid::core::pgn::encode_game(game.coreGame(), pgn);
 		EXPECT_EQ(pgn, expected);
 	}
 }
@@ -235,7 +235,7 @@ TEST(Test_PgnEncode, encode) {
 		                "[Result \"*\"]\n"
 		                "\n*\n";
 		std::string pgn;
-		scid::core::pgn::encode(empty, pgn);
+		scid::core::pgn::encode(empty.coreGame(), pgn);
 		EXPECT_STREQ(pgn.c_str(), expected);
 	}
 	{
@@ -257,7 +257,7 @@ TEST(Test_PgnEncode, encode) {
 		                "{before the move} 1.e4 {after the move}\n"
 		                "*\n";
 		std::string pgn;
-		scid::core::pgn::encode(game, pgn);
+		scid::core::pgn::encode(game.coreGame(), pgn);
 		EXPECT_STREQ(pgn.c_str(), expected);
 	}
 	{
@@ -281,7 +281,7 @@ TEST(Test_PgnEncode, encode) {
 		    "$1 {nag}\n(1...c5 $2) 2.Nf3 {last}\n"
 		    "*\n";
 		std::string pgn;
-		scid::core::pgn::encode(game, pgn);
+		scid::core::pgn::encode(game.coreGame(), pgn);
 		EXPECT_STREQ(pgn.c_str(), expected);
 	}
 }

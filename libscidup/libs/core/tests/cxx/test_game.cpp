@@ -142,7 +142,9 @@ TEST(CoreGameTest, AppendsMainlineMovesWithMetadataAndVariations) {
 	move.san = "e4";
 	move.metadata.comment = "Best by test";
 	move.metadata.nags.push_back(scid::core::NAG_GoodMove);
-	auto& childLine = move.childVariations.emplace_back().line.moves;
+	auto& childVariation = move.childVariations.emplace_back();
+	childVariation.initialComment = "Alternative line";
+	auto& childLine = childVariation.line.moves;
 	childLine.push_back(
 	    {{scid::database::D2, scid::database::D4, scid::database::EMPTY},
 	     "d4",
@@ -159,6 +161,7 @@ TEST(CoreGameTest, AppendsMainlineMovesWithMetadataAndVariations) {
 	ASSERT_EQ(1U, savedMove.metadata.nags.size());
 	EXPECT_EQ(scid::core::NAG_GoodMove, savedMove.metadata.nags[0]);
 	ASSERT_EQ(1U, savedMove.childVariations.size());
+	EXPECT_EQ("Alternative line", savedMove.childVariations[0].initialComment);
 	ASSERT_EQ(1U, savedMove.childVariations[0].line.moves.size());
 	EXPECT_EQ(scid::database::D4,
 	          savedMove.childVariations[0].line.moves[0].action.to);

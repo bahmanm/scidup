@@ -26,7 +26,6 @@
 #include "scidup/database/game_TEMP/search.h"
 #include "scidup/database/indexentry.h"
 #include "scidup/database/namebase.h"
-#include "scidup/core/pgn/movetext.h"
 #include "scidup/core/position.h"
 #include <forward_list>
 #include <functional>
@@ -254,10 +253,6 @@ public:
     void GetPrevSAN(char* str);
     void GetPrevMoveUCI(char* str) const;
     void GetNextMoveUCI(char* str);
-
-    void viewMovetext(
-        const std::function<void(const scid::core::pgn::MovetextEntry&)>&
-            visitor) const;
 
     //////////////////////////////////////////////////////////////
     // Functions that get/set the tag pairs:

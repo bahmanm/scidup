@@ -74,6 +74,7 @@ struct MoveSequence {
 };
 
 struct Variation {
+	std::string initialComment;
 	MoveSequence line;
 };
 

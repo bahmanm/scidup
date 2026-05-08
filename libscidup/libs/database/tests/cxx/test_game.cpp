@@ -378,7 +378,8 @@ TEST(Test_Game, currentPosUCI_startpos) {
 
 TEST(Test_Game, coreGameMovetextMirrorsLegacyMoveTree) {
 	std::string_view pgn =
-	    "1.d4! {Best by test} (1.e4 e5 ( 1...c5)) (1.c4) 1...d5 2.c4";
+	    "1.d4! {Best by test} ({Queen pawn alternative} 1.e4 e5 ( 1...c5)) "
+	    "(1.c4) 1...d5 2.c4";
 	scid::database::Game game;
 	scid::database::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()},
 	                                scid::database::PgnVisitor{game});
@@ -398,6 +399,9 @@ TEST(Test_Game, coreGameMovetextMirrorsLegacyMoveTree) {
 	EXPECT_EQ(scid::core::NAG_GoodMove, mainline[0].metadata.nags[0]);
 	EXPECT_EQ("Best by test", mainline[0].metadata.comment);
 	EXPECT_TRUE(mainline[0].san.empty());
+	ASSERT_EQ(2U, mainline[0].childVariations.size());
+	EXPECT_EQ("Queen pawn alternative",
+	          mainline[0].childVariations[0].initialComment);
 
 	cursor.toStart();
 	ASSERT_EQ(2U, cursor.variationCount());

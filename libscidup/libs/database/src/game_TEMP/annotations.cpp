@@ -27,6 +27,7 @@ void copyVariations(moveT const& source, scid::core::Move& dest) {
 	for (auto variation = source.varChild; variation;
 	     variation = variation->varChild) {
 		auto& destVariation = dest.childVariations.emplace_back();
+		destVariation.initialComment = variation->comment;
 		copyLine(variation->next, destVariation.line);
 	}
 }
@@ -92,31 +93,6 @@ const char* Game::GetMoveComment() const {
 
 std::string& Game::accessMoveComment() {
 	return CurrentMove->prev->comment;
-}
-
-void Game::viewMovetext(
-    const std::function<void(const scid::core::pgn::MovetextEntry&)>&
-        visitor) const {
-	// TODO [Game]: Move PGN-shaped movetext traversal to a PGN/export adapter
-	// once generic GameCursor traversal exists.
-	using scid::core::pgn::MovetextEntryKind;
-
-	if (!FirstMove->comment.empty()) {
-		visitor({MovetextEntryKind::InitialComment, {}, FirstMove->comment, {}});
-	}
-
-	for (auto m = FirstMove; (m = m->nextMoveInPGN());) {
-		if (m->startMarker()) {
-			visitor({MovetextEntryKind::VariationStart, {}, m->comment, {}});
-		} else if (m->endMarker()) {
-			if (m->nextMoveInPGN()) {
-				visitor({MovetextEntryKind::VariationEnd, {}, {}, {}});
-			}
-		} else {
-			visitor({MovetextEntryKind::Move, m->san, m->comment,
-			         {m->nags, m->nagCount}});
-		}
-	}
 }
 
 errorT Game::AddNag (byte nag) {

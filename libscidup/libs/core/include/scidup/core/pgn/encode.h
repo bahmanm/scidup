@@ -248,21 +248,6 @@ void encode_movetext_entry(MovetextEntry const& entry,
 	}
 }
 
-template <int hard_len = 0, typename TGame, typename TCont>
-void encode_movetext(TGame const& game, TCont& dest) {
-	const auto initial_ply = game.initialPlyCounter();
-	std::vector<long long> ply = {initial_ply};
-	auto move_end = dest.size();
-	dest.push_back('\n');
-
-	game.viewMovetext([&](const auto& entry) {
-		encode_movetext_entry<hard_len>(entry, ply, move_end, dest);
-	});
-
-	if (dest.back() == '\0')
-		dest.back() = '\n';
-}
-
 template <int hard_len = 0, typename TCont>
 void encode_core_line(MoveSequence const& line, std::vector<long long>& ply,
                       typename TCont::size_type& move_end, TCont& dest) {
@@ -276,7 +261,10 @@ void encode_core_line(MoveSequence const& line, std::vector<long long>& ply,
 
 		for (auto const& variation : move.childVariations) {
 			encode_movetext_entry<hard_len>(
-			    {MovetextEntryKind::VariationStart, {}, {}, {}},
+			    {MovetextEntryKind::VariationStart,
+			     {},
+			     variation.initialComment,
+			     {}},
 			    ply, move_end, dest);
 			encode_core_line<hard_len>(variation.line, ply, move_end, dest);
 			encode_movetext_entry<hard_len>(
@@ -342,21 +330,6 @@ void encode_game(Game const& game, TCont& dest) {
 	encode_movetext<hard_len>(game, dest);
 
 	auto result = game.resultString();
-	dest.insert(dest.end(), result.begin(), result.end());
-	dest.push_back('\n');
-}
-
-// Encode a game according to the PGN standard.
-// @param game: the game to be encoded.
-// @param dest: the container where the PGN Game will be appended.
-template <int hard_len = 0, typename TGame, typename TCont>
-void encode_game(TGame const& game, TCont& dest) {
-	game.viewTagPairs(
-	    [&](auto tag, auto value) { encode_tag_pair(tag, value, dest); });
-
-	encode_movetext<hard_len>(game, dest);
-
-	auto result = game.GetResultStr();
 	dest.insert(dest.end(), result.begin(), result.end());
 	dest.push_back('\n');
 }
