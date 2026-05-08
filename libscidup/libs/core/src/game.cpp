@@ -1,6 +1,7 @@
 #include "scidup/core/game.h"
 
 #include <algorithm>
+#include <array>
 #include <utility>
 
 namespace scid::core {
@@ -50,6 +51,18 @@ scid::database::resultT Game::result() const {
 	return header_.result;
 }
 
+std::string_view Game::resultString() const {
+	using namespace std::literals;
+	static constexpr std::array values = {"*"sv, "1-0"sv, "0-1"sv, "1/2-1/2"sv};
+	return values[header_.result];
+}
+
+scid::database::ratingT Game::averageRating() const {
+	auto white = header_.white.rating.value;
+	auto black = header_.black.rating.value;
+	return (white == 0 || black == 0) ? 0 : (white + black) / 2;
+}
+
 void Game::setEvent(std::string_view value) {
 	header_.event.name.assign(value.begin(), value.end());
 }
@@ -62,12 +75,28 @@ void Game::setRound(std::string_view value) {
 	header_.event.round.assign(value.begin(), value.end());
 }
 
+void Game::setWhiteName(std::string_view value) {
+	header_.white.name.assign(value.begin(), value.end());
+}
+
+void Game::setBlackName(std::string_view value) {
+	header_.black.name.assign(value.begin(), value.end());
+}
+
 void Game::setWhite(Player value) {
 	header_.white = std::move(value);
 }
 
 void Game::setBlack(Player value) {
 	header_.black = std::move(value);
+}
+
+void Game::setWhiteRating(Rating value) {
+	header_.white.rating = value;
+}
+
+void Game::setBlackRating(Rating value) {
+	header_.black.rating = value;
 }
 
 void Game::setDate(scid::database::dateT value) {

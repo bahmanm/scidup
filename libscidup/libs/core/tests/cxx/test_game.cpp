@@ -85,8 +85,25 @@ TEST(CoreGameTest, StoresRatingsDatesAndResult) {
 	EXPECT_EQ(scid::database::date_parsePGNTag("2018.06.01", 10),
 	          game.eventDate());
 	EXPECT_EQ(scid::database::RESULT_White, game.result());
+	EXPECT_EQ("1-0", game.resultString());
+	EXPECT_EQ(2725, game.averageRating());
 	EXPECT_EQ(game.date(), game.header().event.date);
 	EXPECT_EQ(game.white().rating.value, game.header().white.rating.value);
+}
+
+TEST(CoreGameTest, SetsPlayerNamesAndRatingsDirectly) {
+	scid::core::Game game;
+
+	game.setWhiteName("Player A");
+	game.setBlackName("Player B");
+	game.setWhiteRating({2800, scid::database::RATING_Rapid});
+	game.setBlackRating({0, scid::database::RATING_Elo});
+
+	EXPECT_EQ("Player A", game.white().name);
+	EXPECT_EQ("Player B", game.black().name);
+	EXPECT_EQ(2800, game.white().rating.value);
+	EXPECT_EQ(scid::database::RATING_Rapid, game.white().rating.type);
+	EXPECT_EQ(0, game.averageRating());
 }
 
 TEST(CoreGameTest, SetStartFenStoresNonStandardStartPosition) {

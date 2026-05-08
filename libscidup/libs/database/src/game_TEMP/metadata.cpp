@@ -92,11 +92,11 @@ void Game::SetSiteStr(const char* str) {
 }
 
 void Game::SetWhiteStr(const char* str) {
-	coreGame_.addTag("White", str);
+	coreGame_.setWhiteName(str);
 }
 
 void Game::SetBlackStr(const char* str) {
-	coreGame_.addTag("Black", str);
+	coreGame_.setBlackName(str);
 }
 
 void Game::SetRoundStr(const char* str) {
@@ -116,27 +116,27 @@ void Game::SetResult(resultT res) {
 }
 
 void Game::SetWhiteElo(ratingT elo) {
-	auto player = coreGame_.white();
-	player.rating.value = elo;
-	coreGame_.setWhite(std::move(player));
+	auto rating = coreGame_.white().rating;
+	rating.value = elo;
+	coreGame_.setWhiteRating(rating);
 }
 
 void Game::SetBlackElo(ratingT elo) {
-	auto player = coreGame_.black();
-	player.rating.value = elo;
-	coreGame_.setBlack(std::move(player));
+	auto rating = coreGame_.black().rating;
+	rating.value = elo;
+	coreGame_.setBlackRating(rating);
 }
 
 void Game::SetWhiteRatingType(ratingTypeT b) {
-	auto player = coreGame_.white();
-	player.rating.type = b > 7 ? 0 : b;
-	coreGame_.setWhite(std::move(player));
+	auto rating = coreGame_.white().rating;
+	rating.type = b > 7 ? 0 : b;
+	coreGame_.setWhiteRating(rating);
 }
 
 void Game::SetBlackRatingType(ratingTypeT b) {
-	auto player = coreGame_.black();
-	player.rating.type = b > 7 ? 0 : b;
-	coreGame_.setBlack(std::move(player));
+	auto rating = coreGame_.black().rating;
+	rating.type = b > 7 ? 0 : b;
+	coreGame_.setBlackRating(rating);
 }
 
 void Game::SetEco(scidup::eco::Code eco) {
@@ -176,9 +176,7 @@ resultT Game::GetResult() const {
 }
 
 std::string_view Game::GetResultStr() const {
-	using namespace std::literals;
-	static std::string_view res[] = {"*"sv, "1-0"sv, "0-1"sv, "1/2-1/2"sv};
-	return res[coreGame_.result()];
+	return coreGame_.resultString();
 }
 
 int Game::setRating(colorT col, const char* ratingType, size_t ratingTypeLen,
@@ -232,9 +230,7 @@ scidup::eco::Code Game::GetEco() const {
 }
 
 ratingT Game::GetAverageElo() {
-	auto white = coreGame_.white().rating.value;
-	auto black = coreGame_.black().rating.value;
-	return (white == 0 || black == 0) ? 0 : (white + black) / 2;
+	return coreGame_.averageRating();
 }
 
 } // namespace scid::database

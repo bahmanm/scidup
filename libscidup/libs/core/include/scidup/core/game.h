@@ -58,12 +58,18 @@ public:
 	scid::database::dateT date() const;
 	scid::database::dateT eventDate() const;
 	scid::database::resultT result() const;
+	std::string_view resultString() const;
+	scid::database::ratingT averageRating() const;
 
 	void setEvent(std::string_view value);
 	void setSite(std::string_view value);
 	void setRound(std::string_view value);
+	void setWhiteName(std::string_view value);
+	void setBlackName(std::string_view value);
 	void setWhite(Player value);
 	void setBlack(Player value);
+	void setWhiteRating(Rating value);
+	void setBlackRating(Rating value);
 	void setDate(scid::database::dateT value);
 	void setEventDate(scid::database::dateT value);
 	void setResult(scid::database::resultT value);
