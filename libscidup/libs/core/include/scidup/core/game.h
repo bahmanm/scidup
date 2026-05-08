@@ -77,6 +77,7 @@ public:
 
 	bool hasNonStandardStart() const;
 	bool hasNonStandardStart(char* outFen, std::size_t outFenLen) const;
+	scid::database::Position* startPosition();
 	const scid::database::Position* startPosition() const;
 	scid::database::errorT setStartFen(const char* fen);
 	void setStartPosition(const scid::database::Position& position);

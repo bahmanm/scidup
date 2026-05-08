@@ -28,7 +28,8 @@ simpleMoveT* Game::GetCurrentMove() {
 
 ushort Game::GetCurrentPly() const {
 	auto ply = CurrentPos->GetPlyCounter();
-	return StartPos ? ply - StartPos->GetPlyCounter() : ply;
+	auto startPos = coreGame_.startPosition();
+	return startPos ? ply - startPos->GetPlyCounter() : ply;
 }
 
 uint Game::GetNumVariations() const {

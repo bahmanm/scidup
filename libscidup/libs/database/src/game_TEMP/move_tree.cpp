@@ -98,8 +98,8 @@ errorT Game::MoveExitVariation(void) {
 // Move to the beginning of the game.
 //
 void Game::MoveToStart() {
-	if (StartPos) {
-		*CurrentPos = *StartPos;
+	if (auto startPos = coreGame_.startPosition()) {
+		*CurrentPos = *startPos;
 	} else {
 		CurrentPos->StdStart();
 	}
@@ -333,11 +333,11 @@ void Game::TruncateStart() {
 		return;
 
     NumHalfMoves -= GetCurrentPly();
-    StartPos = std::move(pos);
-    *CurrentPos = *StartPos;
+    coreGame_.setStartPosition(*pos);
+    *CurrentPos = *pos;
     FirstMove->setNext(CurrentMove);
 
-    // Do all the moves to update moveData.pieceNum to the new StartPos
+    // Do all the moves to update moveData.pieceNum to the new start position.
     do {
         if (!CurrentMove->startMarker() && !CurrentMove->endMarker()) {
             CurrentPos->fillMove(CurrentMove->moveData);

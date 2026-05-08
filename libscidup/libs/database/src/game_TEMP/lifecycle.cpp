@@ -21,34 +21,30 @@ Game::Game() {
 // TODO [Game]: Keep start-position lifecycle on the future core Game, but keep
 // PGN/UCI/export projections of the starting position outside the aggregate.
 bool Game::HasNonStandardStart(char* outFEN, size_t outFENLen) const {
-	if (!StartPos)
-		return false;
-	if (outFEN && outFENLen)
-		StartPos->PrintFEN(outFEN, outFENLen);
-	return true;
+	return coreGame_.hasNonStandardStart(outFEN, outFENLen);
 }
 
 long long Game::initialPlyCounter() const {
-	return StartPos ? StartPos->GetPlyCounter() : 0;
+	return coreGame_.initialPlyCounter();
 }
 
 errorT Game::SetStartFen(const char* fenStr) {
-	auto pos = std::make_unique<Position>();
-	if (auto err = pos->ReadFromFEN(fenStr))
+	Position pos;
+	if (auto err = pos.ReadFromFEN(fenStr))
 		return err;
 
-	SetStartPos(std::move(pos));
+	SetStartPos(pos);
 	return OK;
 }
 
 void Game::SetStartPos(Position const& pos) {
-	return SetStartPos(std::make_unique<Position>(pos));
+	ClearMoves();
+	coreGame_.setStartPosition(pos);
+	*CurrentPos = pos;
 }
 
 void Game::SetStartPos(std::unique_ptr<Position> pos) {
-	ClearMoves();
-	StartPos = std::move(pos);
-	*CurrentPos = *StartPos;
+	SetStartPos(*pos);
 }
 
 // TODO [Game]: Keep Scid flags in database/app compatibility, not in the core
@@ -91,9 +87,6 @@ Game::Game(const Game& obj) {
 	coreGame_ = obj.coreGame_;
 	EcoCode = obj.EcoCode;
 	std::copy_n(obj.ScidFlags, sizeof(obj.ScidFlags), ScidFlags);
-
-	if (obj.StartPos)
-		StartPos = std::make_unique<Position>(*obj.StartPos);
 
 	NumHalfMoves = obj.NumHalfMoves;
 	PgnStyle = obj.PgnStyle;
@@ -147,7 +140,7 @@ void Game::ClearMoves() {
 		moveChunks_.erase_after(moveChunks_.begin(), moveChunks_.end());
 		moveChunkUsed_ = 0;
 	}
-	StartPos = nullptr;
+	coreGame_.clearStartPosition();
 	CurrentPos->StdStart();
 
 	FirstMove = NewMove(START_MARKER);

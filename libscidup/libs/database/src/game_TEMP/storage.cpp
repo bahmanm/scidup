@@ -536,7 +536,7 @@ std::pair<IndexEntry, TagRoster> Game::Encode(std::vector<byte>& dest) const {
     ie.SetBlackRatingType(header.black.rating.type);
     if (HasNonStandardStart()) {
         ie.SetStartFlag(true);
-        if (StartPos->isChess960()) {
+        if (coreGame_.startPosition()->isChess960()) {
             ie.setChess960();
         }
     } else {
@@ -544,7 +544,7 @@ std::pair<IndexEntry, TagRoster> Game::Encode(std::vector<byte>& dest) const {
     }
     ie.SetFlag(IndexEntry::StrToFlagMask(ScidFlags), true);
 
-    const auto [promo, underPromo] = mainlineInfo(StartPos.get(),
+    const auto [promo, underPromo] = mainlineInfo(coreGame_.startPosition(),
                                                   FirstMove->next, ie);
 
     // First, encode info not already stored in the index

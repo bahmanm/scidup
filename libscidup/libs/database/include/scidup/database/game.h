@@ -68,7 +68,6 @@ class Game {
     // Position and moves
     byte        moveChunkUsed_;
     std::forward_list<std::unique_ptr<moveT[]> > moveChunks_;
-    std::unique_ptr<Position> StartPos;
     std::unique_ptr<Position> CurrentPos{new Position};
     moveT*      FirstMove;
     moveT*      CurrentMove;

@@ -667,7 +667,7 @@ errorT LegacyGamePgnEncoder::encode() {
     const auto& RoundStr = game.coreGame_.round();
     auto& ScidFlags = game.ScidFlags;
     const auto& SiteStr = game.coreGame_.site();
-    auto& StartPos = game.StartPos;
+    auto* startPos = game.coreGame_.startPosition();
     const auto& WhiteElo = game.coreGame_.white().rating.value;
     const auto& WhiteRatingType = game.coreGame_.white().rating.type;
     const auto& extraTags_ = game.coreGame_.extraTags();
@@ -811,20 +811,20 @@ errorT LegacyGamePgnEncoder::encode() {
         if (options.legacyFormat==PGN_FORMAT_Color) {tb->PrintString ("</tag>"); }
 
         // Print FEN if non-standard start:
-        if (StartPos) {
+        if (startPos) {
             if (options.isLatexFormat()) {
                 tb->PrintString ("\n\\begin{diagram}\n");
                 DString dstr;
-                StartPos->DumpLatexBoard (&dstr);
+                startPos->DumpLatexBoard (&dstr);
                 tb->PrintString (dstr.Data());
                 tb->PrintString ("\n\\end{diagram}\n");
             } else if (options.isHtmlFormat()) {
                 DString dstr;
-                StartPos->DumpHtmlBoard (&dstr, options.htmlStyle, NULL);
+                startPos->DumpHtmlBoard (&dstr, options.htmlStyle, NULL);
                 tb->PrintString (dstr.Data());
             } else {
 	                auto* out = std::copy_n("Position: ", 10, temp);
-	                StartPos->PrintFEN(out, sizeof(temp) - 10);
+	                startPos->PrintFEN(out, sizeof(temp) - 10);
 	                std::strcat(temp, newline);
 	                tb->PrintString (temp);
             }
@@ -889,9 +889,9 @@ errorT LegacyGamePgnEncoder::encode() {
                 }
             }
         // Finally, write the FEN tag if necessary:
-        if (StartPos) {
+        if (startPos) {
             auto* out = std::copy_n("[FEN \"", 6, temp);
-            StartPos->PrintFEN(out, sizeof(temp) - 6);
+            startPos->PrintFEN(out, sizeof(temp) - 6);
             auto it_end = std::copy_n("\"]", 2, temp + std::strlen(temp));
             std::strcpy(it_end, newline);
             tb->PrintString (temp);

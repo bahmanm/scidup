@@ -156,6 +156,10 @@ bool Game::hasNonStandardStart(char* outFen, std::size_t outFenLen) const {
 	return true;
 }
 
+scid::database::Position* Game::startPosition() {
+	return startPosition_ ? &*startPosition_ : nullptr;
+}
+
 const scid::database::Position* Game::startPosition() const {
 	return startPosition_ ? &*startPosition_ : nullptr;
 }
