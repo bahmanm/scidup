@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "scidup/core/game.h"
 #include "scidup/core/pgn/movetext.h"
 
 #include <algorithm>
@@ -194,6 +195,59 @@ static void encode_comment(std::string_view comment, TCont& dest) {
 // @param initial_ply: the ply of the initial position.
 //                     Should be even if it is white turn to move.
 // @param dest: the container where movetext section will be appended.
+template <int hard_len = 0, typename TCont>
+void encode_movetext_entry(MovetextEntry const& entry,
+                           std::vector<long long>& ply,
+                           typename TCont::size_type& move_end,
+                           TCont& dest) {
+	switch (entry.kind) {
+	case MovetextEntryKind::InitialComment:
+		if (!entry.comment.empty())
+			encode_comment<hard_len>(entry.comment, dest);
+		break;
+
+	case MovetextEntryKind::VariationStart:
+		ply.push_back(ply.back() - 1);
+		dest.push_back('(');
+		if (!entry.comment.empty())
+			encode_comment<hard_len>(entry.comment, dest);
+		break;
+
+	case MovetextEntryKind::VariationEnd:
+		ply.pop_back();
+		if (dest.back() == '\0') {
+			dest.back() = ')';
+		} else {
+			dest.push_back(')');
+		}
+		dest.push_back('\0');
+		break;
+
+	case MovetextEntryKind::Move: {
+		auto white_to_move = (ply.back() % 2) == 0;
+		if (white_to_move || move_end != dest.size()) {
+			auto move_number = std::to_string(ply.back() / 2 + 1);
+			move_number.append(white_to_move ? 1 : 3, '.');
+			dest.insert(dest.end(), move_number.begin(), move_number.end());
+		}
+		dest.insert(dest.end(), entry.san.begin(), entry.san.end());
+		dest.push_back('\0');
+		move_end = dest.size();
+		ply.back()++;
+
+		for (auto nag : entry.nags) {
+			dest.push_back('$');
+			auto nag_str = std::to_string(nag);
+			dest.insert(dest.end(), nag_str.begin(), nag_str.end());
+			dest.push_back('\0');
+		}
+		if (!entry.comment.empty())
+			encode_comment<hard_len>(entry.comment, dest);
+		break;
+	}
+	}
+}
+
 template <int hard_len = 0, typename TGame, typename TCont>
 void encode_movetext(TGame const& game, TCont& dest) {
 	const auto initial_ply = game.initialPlyCounter();
@@ -202,57 +256,88 @@ void encode_movetext(TGame const& game, TCont& dest) {
 	dest.push_back('\n');
 
 	game.viewMovetext([&](const auto& entry) {
-		using EntryKind = std::decay_t<decltype(entry.kind)>;
-		switch (entry.kind) {
-		case EntryKind::InitialComment:
-			if (!entry.comment.empty())
-				encode_comment<hard_len>(entry.comment, dest);
-			break;
-
-		case EntryKind::VariationStart:
-			ply.push_back(ply.back() - 1);
-			dest.push_back('(');
-			if (!entry.comment.empty())
-				encode_comment<hard_len>(entry.comment, dest);
-			break;
-
-		case EntryKind::VariationEnd:
-			ply.pop_back();
-			if (dest.back() == '\0') {
-				dest.back() = ')';
-			} else {
-				dest.push_back(')');
-			}
-			dest.push_back('\0');
-			break;
-
-		case EntryKind::Move: {
-			auto white_to_move = (ply.back() % 2) == 0;
-			if (white_to_move || move_end != dest.size()) {
-				auto move_number = std::to_string(ply.back() / 2 + 1);
-				move_number.append(white_to_move ? 1 : 3, '.');
-				dest.insert(dest.end(), move_number.begin(), move_number.end());
-			}
-			dest.insert(dest.end(), entry.san.begin(), entry.san.end());
-			dest.push_back('\0');
-			move_end = dest.size();
-			ply.back()++;
-
-			for (auto nag : entry.nags) {
-				dest.push_back('$');
-				auto nag_str = std::to_string(nag);
-				dest.insert(dest.end(), nag_str.begin(), nag_str.end());
-				dest.push_back('\0');
-			}
-			if (!entry.comment.empty())
-				encode_comment<hard_len>(entry.comment, dest);
-			break;
-		}
-		}
+		encode_movetext_entry<hard_len>(entry, ply, move_end, dest);
 	});
 
 	if (dest.back() == '\0')
 		dest.back() = '\n';
+}
+
+template <int hard_len = 0, typename TCont>
+void encode_core_line(MoveSequence const& line, std::vector<long long>& ply,
+                      typename TCont::size_type& move_end, TCont& dest) {
+	for (auto const& move : line.moves) {
+		encode_movetext_entry<hard_len>(
+		    {MovetextEntryKind::Move,
+		     move.san,
+		     move.metadata.comment,
+		     {move.metadata.nags.data(), move.metadata.nags.size()}},
+		    ply, move_end, dest);
+
+		for (auto const& variation : move.childVariations) {
+			encode_movetext_entry<hard_len>(
+			    {MovetextEntryKind::VariationStart, {}, {}, {}},
+			    ply, move_end, dest);
+			encode_core_line<hard_len>(variation.line, ply, move_end, dest);
+			encode_movetext_entry<hard_len>(
+			    {MovetextEntryKind::VariationEnd, {}, {}, {}},
+			    ply, move_end, dest);
+		}
+	}
+}
+
+template <int hard_len = 0, typename TCont>
+void encode_movetext(Game const& game, TCont& dest) {
+	std::vector<long long> ply = {game.initialPlyCounter()};
+	auto move_end = dest.size();
+	dest.push_back('\n');
+
+	encode_core_line<hard_len>(game.movetext().mainline, ply, move_end, dest);
+
+	if (dest.back() == '\0')
+		dest.back() = '\n';
+}
+
+template <typename TCont>
+void encode_core_tag_pairs(Game const& game, TCont& dest) {
+	char str_buf[256];
+	encode_tag_pair("Event", game.event(), dest);
+	encode_tag_pair("Site", game.site(), dest);
+	scid::database::date_DecodeToString(game.date(), str_buf);
+	encode_tag_pair("Date", str_buf, dest);
+	encode_tag_pair("Round", game.round(), dest);
+	encode_tag_pair("White", game.white().name, dest);
+	encode_tag_pair("Black", game.black().name, dest);
+	encode_tag_pair("Result", game.resultString(), dest);
+
+	if (auto rating = game.white().rating.value) {
+		std::string tag = "White";
+		tag.append(scid::database::ratingTypeNames[game.white().rating.type]);
+		encode_tag_pair(tag, std::to_string(rating), dest);
+	}
+	if (auto rating = game.black().rating.value) {
+		std::string tag = "Black";
+		tag.append(scid::database::ratingTypeNames[game.black().rating.type]);
+		encode_tag_pair(tag, std::to_string(rating), dest);
+	}
+	if (game.eventDate() != scid::database::ZERO_DATE) {
+		scid::database::date_DecodeToString(game.eventDate(), str_buf);
+		encode_tag_pair("EventDate", str_buf, dest);
+	}
+	for (auto const& tag : game.extraTags())
+		encode_tag_pair(tag.first, tag.second, dest);
+	if (game.hasNonStandardStart(str_buf, sizeof(str_buf)))
+		encode_tag_pair("FEN", str_buf, dest);
+}
+
+template <int hard_len = 0, typename TCont>
+void encode_game(Game const& game, TCont& dest) {
+	encode_core_tag_pairs(game, dest);
+	encode_movetext<hard_len>(game, dest);
+
+	auto result = game.resultString();
+	dest.insert(dest.end(), result.begin(), result.end());
+	dest.push_back('\n');
 }
 
 // Encode a game according to the PGN standard.

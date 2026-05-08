@@ -17,6 +17,7 @@
 #include "scidup/database/game.h"
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/nags.h"
+#include "scidup/core/pgn/encode.h"
 #include "scidup/database/game_TEMP/nag_format.h"
 #include "scidup/database/game_TEMP/piece_translation.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
@@ -43,6 +44,15 @@ void expectMoveAction(const scid::core::Move* move,
 	ASSERT_NE(nullptr, move);
 	EXPECT_EQ(from, move->action.from);
 	EXPECT_EQ(to, move->action.to);
+}
+
+void materializeCoreSan(scid::database::Game& game) {
+	auto location = game.currentLocation();
+	game.MoveToStart();
+	do {
+		game.GetNextSAN();
+	} while (game.MoveForwardInPGN() == scid::database::OK);
+	game.restoreLocation(location);
 }
 
 } // namespace
@@ -411,6 +421,36 @@ TEST(Test_Game, coreGameMovetextMirrorsLegacyMoveTree) {
 	game.MoveToStart();
 	EXPECT_STREQ("d4", game.GetNextSAN());
 	EXPECT_EQ("d4", game.coreGame().movetext().mainline.moves[0].san);
+}
+
+TEST(Test_Game, coreGameCanBeEncodedAsPlainPgnAfterSanMaterialization) {
+	using namespace std::literals;
+
+	std::string_view pgn =
+	    "1.d4! {Best by test} (1.e4 e5 ( 1...c5)) (1.c4) 1...d5 2.c4";
+	scid::database::Game game;
+	scid::database::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()},
+	                                scid::database::PgnVisitor{game});
+	materializeCoreSan(game);
+
+	std::string encoded;
+	scid::core::pgn::encode_game(game.coreGame(), encoded);
+
+	auto expected = "[Event\0\"\"]\n"sv
+	                "[Site\0\"\"]\n"sv
+	                "[Date\0\"????.??.??\"]\n"sv
+	                "[Round\0\"\"]\n"sv
+	                "[White\0\"\"]\n"sv
+	                "[Black\0\"\"]\n"sv
+	                "[Result\0\"*\"]\n"sv
+	                "\n"sv
+	                "1.d4\0$1\0{Best by test}\0"sv
+	                "(1.e4\0e5\0(1...c5))\0"sv
+	                "(1.c4)\0"sv
+	                "1...d5\0"sv
+	                "2.c4\n"sv
+	                "*\n"sv;
+	EXPECT_EQ(expected, encoded);
 }
 
 TEST(Test_Game, currentPosUCI_fen) {

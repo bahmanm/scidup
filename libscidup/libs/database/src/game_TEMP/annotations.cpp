@@ -112,19 +112,18 @@ void Game::viewMovetext(
 	using scid::core::pgn::MovetextEntryKind;
 
 	if (!FirstMove->comment.empty()) {
-		visitor({MovetextEntryKind::InitialComment, {}, {},
-		         FirstMove->comment, {}});
+		visitor({MovetextEntryKind::InitialComment, {}, FirstMove->comment, {}});
 	}
 
 	for (auto m = FirstMove; (m = m->nextMoveInPGN());) {
 		if (m->startMarker()) {
-			visitor({MovetextEntryKind::VariationStart, {}, {}, m->comment, {}});
+			visitor({MovetextEntryKind::VariationStart, {}, m->comment, {}});
 		} else if (m->endMarker()) {
 			if (m->nextMoveInPGN()) {
-				visitor({MovetextEntryKind::VariationEnd, {}, {}, {}, {}});
+				visitor({MovetextEntryKind::VariationEnd, {}, {}, {}});
 			}
 		} else {
-			visitor({MovetextEntryKind::Move, m->moveData, m->san, m->comment,
+			visitor({MovetextEntryKind::Move, m->san, m->comment,
 			         {m->nags, m->nagCount}});
 		}
 	}

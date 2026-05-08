@@ -1,6 +1,6 @@
 #pragma once
 
-#include "scidup/core/movelist.h"
+#include "scidup/core/primitives.h"
 
 #include <span>
 #include <string_view>
@@ -16,7 +16,6 @@ enum class MovetextEntryKind {
 
 struct MovetextEntry {
 	MovetextEntryKind kind;
-	scid::database::simpleMoveT move;
 	std::string_view san;
 	std::string_view comment;
 	std::span<const scid::database::byte> nags;
