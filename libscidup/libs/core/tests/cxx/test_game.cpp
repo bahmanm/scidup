@@ -163,6 +163,25 @@ TEST(CoreGameTest, AppendsMainlineMovesWithMetadataAndVariations) {
 	          savedMove.childVariations[0].line.moves[0].action.to);
 }
 
+TEST(CoreGameTest, MoveActionFormatsLongNotation) {
+	EXPECT_EQ("e2e4",
+	          (scid::core::MoveAction{scid::database::E2,
+	                                  scid::database::E4,
+	                                  scid::database::EMPTY})
+	              .longNotation());
+	EXPECT_EQ("a7a8q",
+	          (scid::core::MoveAction{scid::database::A7,
+	                                  scid::database::A8,
+	                                  scid::database::QUEEN})
+	              .longNotation());
+
+	scid::core::MoveAction nullMove{scid::database::E1,
+	                                scid::database::E1,
+	                                scid::database::EMPTY};
+	EXPECT_TRUE(nullMove.isNull());
+	EXPECT_EQ("0000", nullMove.longNotation());
+}
+
 TEST(CoreGameTest, ClearMovetextLeavesHeaderAndStartPositionIntact) {
 	scid::core::Game game;
 	game.setEvent("Candidates");

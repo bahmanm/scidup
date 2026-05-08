@@ -13,8 +13,22 @@
 
 namespace scid::database {
 
+namespace {
+
+scid::core::MoveAction TEMP_moveActionFromLegacyMove(simpleMoveT const& move) {
+	return {move.from, move.to, move.promote};
+}
+
+template <typename OutputIt>
+OutputIt TEMP_copyLongNotation(OutputIt dest, simpleMoveT const& move) {
+	const auto notation = TEMP_moveActionFromLegacyMove(move).longNotation();
+	return std::copy(notation.begin(), notation.end(), dest);
+}
+
+} // namespace
+
 // TODO [Game]: Move UCI position rendering to a notation helper over
-// GameCursor and the future MoveAction type.
+// GameCursor.
 std::string Game::currentPosUCI() const {
 	std::string res = "position startpos moves";
 	char FEN[256] = {};
@@ -43,7 +57,7 @@ std::string Game::currentPosUCI() const {
 	auto it = res.data() + allocSpeedup;
 	for (auto m = moves.crbegin(), end = moves.crend(); m != end; ++m) {
 		*it++ = ' ';
-		it = (*m)->moveData.toLongNotation(it);
+		it = TEMP_copyLongNotation(it, (*m)->moveData);
 	}
 	res.resize(std::distance(res.data(), it)); // shrink
 	return res;
@@ -146,11 +160,11 @@ Game::GetPrevSAN (char * str)
 //      Prints an empty string ("") if not at a move.
 void Game::GetPrevMoveUCI(char* str) const {
     // TODO [Game]: Move UCI move rendering to a notation helper over
-    // MoveAction instead of exposing legacy simpleMoveT through Game.
+    // MoveAction once GameCursor owns previous/next move traversal.
     ASSERT(str != NULL);
     const auto m = CurrentMove->prev;
     if (!m->startMarker())
-        str = m->moveData.toLongNotation(str);
+        str = TEMP_copyLongNotation(str, m->moveData);
 
     *str = '\0';
 }
@@ -163,10 +177,10 @@ void
 Game::GetNextMoveUCI (char * str)
 {
     // TODO [Game]: Move UCI move rendering to a notation helper over
-    // MoveAction instead of exposing legacy simpleMoveT through Game.
+    // MoveAction once GameCursor owns previous/next move traversal.
     ASSERT (str != NULL);
     if (!CurrentMove->endMarker())
-        str = CurrentMove->moveData.toLongNotation(str);
+        str = TEMP_copyLongNotation(str, CurrentMove->moveData);
 
     *str = '\0';
 }

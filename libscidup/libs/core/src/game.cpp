@@ -6,6 +6,28 @@
 
 namespace scid::core {
 
+bool MoveAction::isNull() const {
+	return from == to;
+}
+
+std::string MoveAction::longNotation() const {
+	if (isNull())
+		return "0000";
+
+	std::string notation;
+	notation.reserve(5);
+	notation.push_back(scid::database::square_FyleChar(from));
+	notation.push_back(scid::database::square_RankChar(from));
+	notation.push_back(scid::database::square_FyleChar(to));
+	notation.push_back(scid::database::square_RankChar(to));
+	if (promotion != scid::database::EMPTY) {
+		constexpr const char promotionChars[] = "  qrbn ";
+		notation.push_back(
+		    promotionChars[scid::database::piece_Type(promotion)]);
+	}
+	return notation;
+}
+
 Game::Game() {
 	clear();
 }
