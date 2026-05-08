@@ -15,6 +15,7 @@
  */
 
 #include "scidup/database/game.h"
+#include "scidup/core/game_cursor.h"
 #include "scidup/core/nags.h"
 #include "scidup/database/game_TEMP/nag_format.h"
 #include "scidup/database/game_TEMP/piece_translation.h"
@@ -35,6 +36,14 @@ namespace {
 const char* gameUTF8 = SCIDUP_TEST_RESOURCES_DIR "res_gameUTF8.pgn";
 const char* gameLatin1 = SCIDUP_TEST_RESOURCES_DIR "res_gameLatin1.pgn";
 const char* gameLatin1Conv = SCIDUP_TEST_RESOURCES_DIR "res_gameLatin1expected.pgn";
+
+void expectMoveAction(const scid::core::Move* move,
+                      scid::database::squareT from,
+                      scid::database::squareT to) {
+	ASSERT_NE(nullptr, move);
+	EXPECT_EQ(from, move->action.from);
+	EXPECT_EQ(to, move->action.to);
+}
 
 } // namespace
 
@@ -364,39 +373,40 @@ TEST(Test_Game, coreGameMovetextMirrorsLegacyMoveTree) {
 	scid::database::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()},
 	                                scid::database::PgnVisitor{game});
 
+	scid::core::GameCursor cursor(game.coreGame());
+	expectMoveAction(cursor.nextMove(), scid::database::D2, scid::database::D4);
+	ASSERT_TRUE(cursor.next());
+	expectMoveAction(cursor.nextMove(), scid::database::D7, scid::database::D5);
+	ASSERT_TRUE(cursor.next());
+	expectMoveAction(cursor.nextMove(), scid::database::C2, scid::database::C4);
+	ASSERT_TRUE(cursor.next());
+	EXPECT_TRUE(cursor.isAtGameEnd());
+
 	auto const& mainline = game.coreGame().movetext().mainline.moves;
 	ASSERT_EQ(3U, mainline.size());
-	EXPECT_EQ(scid::database::D2, mainline[0].action.from);
-	EXPECT_EQ(scid::database::D4, mainline[0].action.to);
-	EXPECT_EQ(scid::database::D7, mainline[1].action.from);
-	EXPECT_EQ(scid::database::D5, mainline[1].action.to);
-	EXPECT_EQ(scid::database::C2, mainline[2].action.from);
-	EXPECT_EQ(scid::database::C4, mainline[2].action.to);
-
 	ASSERT_EQ(1U, mainline[0].metadata.nags.size());
 	EXPECT_EQ(scid::core::NAG_GoodMove, mainline[0].metadata.nags[0]);
 	EXPECT_EQ("Best by test", mainline[0].metadata.comment);
 	EXPECT_TRUE(mainline[0].san.empty());
 
-	ASSERT_EQ(2U, mainline[0].childVariations.size());
-	auto const& firstVariation = mainline[0].childVariations[0].line.moves;
-	ASSERT_EQ(2U, firstVariation.size());
-	EXPECT_EQ(scid::database::E2, firstVariation[0].action.from);
-	EXPECT_EQ(scid::database::E4, firstVariation[0].action.to);
-	EXPECT_EQ(scid::database::E7, firstVariation[1].action.from);
-	EXPECT_EQ(scid::database::E5, firstVariation[1].action.to);
+	cursor.toStart();
+	ASSERT_EQ(2U, cursor.variationCount());
+	ASSERT_TRUE(cursor.enterVariation(0));
+	expectMoveAction(cursor.nextMove(), scid::database::E2, scid::database::E4);
+	ASSERT_TRUE(cursor.next());
+	expectMoveAction(cursor.nextMove(), scid::database::E7, scid::database::E5);
+	ASSERT_EQ(1U, cursor.variationCount());
+	ASSERT_TRUE(cursor.enterVariation(0));
+	expectMoveAction(cursor.nextMove(), scid::database::C7, scid::database::C5);
+	ASSERT_TRUE(cursor.next());
+	EXPECT_TRUE(cursor.isAtVariationEnd());
 
-	ASSERT_EQ(1U, firstVariation[1].childVariations.size());
-	auto const& nestedVariation =
-	    firstVariation[1].childVariations[0].line.moves;
-	ASSERT_EQ(1U, nestedVariation.size());
-	EXPECT_EQ(scid::database::C7, nestedVariation[0].action.from);
-	EXPECT_EQ(scid::database::C5, nestedVariation[0].action.to);
-
-	auto const& secondVariation = mainline[0].childVariations[1].line.moves;
-	ASSERT_EQ(1U, secondVariation.size());
-	EXPECT_EQ(scid::database::C2, secondVariation[0].action.from);
-	EXPECT_EQ(scid::database::C4, secondVariation[0].action.to);
+	ASSERT_TRUE(cursor.exitVariation());
+	ASSERT_TRUE(cursor.exitVariation());
+	ASSERT_TRUE(cursor.enterVariation(1));
+	expectMoveAction(cursor.nextMove(), scid::database::C2, scid::database::C4);
+	ASSERT_TRUE(cursor.next());
+	EXPECT_TRUE(cursor.isAtVariationEnd());
 
 	game.MoveToStart();
 	EXPECT_STREQ("d4", game.GetNextSAN());

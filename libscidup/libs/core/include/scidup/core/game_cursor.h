@@ -45,8 +45,8 @@ public:
 	std::size_t variationDepth() const;
 	std::size_t variationIndex() const;
 
-	bool isAtStart() const;
-	bool isAtEnd() const;
+	bool isAtLineStart() const;
+	bool isAtLineEnd() const;
 	bool isAtVariationStart() const;
 	bool isAtVariationEnd() const;
 	bool isAtGameStart() const;

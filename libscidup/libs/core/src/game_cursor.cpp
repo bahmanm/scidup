@@ -12,19 +12,22 @@ GameCursor::GameCursor(const Game& game)
     : game_(game), currentLine_(&game.movetext().mainline) {}
 
 const Move* GameCursor::previousMove() const {
-	if (isAtStart())
+	if (isAtLineStart())
 		return nullptr;
 	return &currentLine().moves[nextIndex_ - 1];
 }
 
 const Move* GameCursor::nextMove() const {
-	if (isAtEnd())
+	if (isAtLineEnd())
 		return nullptr;
 	return &currentLine().moves[nextIndex_];
 }
 
 std::size_t GameCursor::ply() const {
-	return nextIndex_;
+	std::size_t result = nextIndex_;
+	for (auto const& parent : parents_)
+		result += parent.nextIndex;
+	return result;
 }
 
 std::size_t GameCursor::variationCount() const {
@@ -40,20 +43,20 @@ std::size_t GameCursor::variationIndex() const {
 	return parents_.empty() ? 0 : parents_.back().variationIndex;
 }
 
-bool GameCursor::isAtStart() const {
+bool GameCursor::isAtLineStart() const {
 	return nextIndex_ == 0;
 }
 
-bool GameCursor::isAtEnd() const {
+bool GameCursor::isAtLineEnd() const {
 	return nextIndex_ == currentLine().moves.size();
 }
 
 bool GameCursor::isAtVariationStart() const {
-	return isAtStart();
+	return isAtLineStart();
 }
 
 bool GameCursor::isAtVariationEnd() const {
-	return isAtEnd();
+	return isAtLineEnd();
 }
 
 bool GameCursor::isAtGameStart() const {
@@ -69,14 +72,14 @@ bool GameCursor::isAtEmptyVariation() const {
 }
 
 bool GameCursor::next() {
-	if (isAtEnd())
+	if (isAtLineEnd())
 		return false;
 	++nextIndex_;
 	return true;
 }
 
 bool GameCursor::previous() {
-	if (isAtStart())
+	if (isAtLineStart())
 		return false;
 	--nextIndex_;
 	return true;

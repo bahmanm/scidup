@@ -18,10 +18,10 @@ TEST(CoreGameCursorTest, StartsBeforeFirstMainlineMove) {
 
 	scid::core::GameCursor cursor(game);
 
-	EXPECT_TRUE(cursor.isAtStart());
+	EXPECT_TRUE(cursor.isAtLineStart());
 	EXPECT_TRUE(cursor.isAtVariationStart());
 	EXPECT_TRUE(cursor.isAtGameStart());
-	EXPECT_FALSE(cursor.isAtEnd());
+	EXPECT_FALSE(cursor.isAtLineEnd());
 	EXPECT_FALSE(cursor.isAtVariationEnd());
 	EXPECT_FALSE(cursor.isAtGameEnd());
 	EXPECT_FALSE(cursor.isAtEmptyVariation());
@@ -40,10 +40,10 @@ TEST(CoreGameCursorTest, MovesNextAndPreviousThroughMainline) {
 	scid::core::GameCursor cursor(game);
 
 	ASSERT_TRUE(cursor.next());
-	EXPECT_FALSE(cursor.isAtStart());
+	EXPECT_FALSE(cursor.isAtLineStart());
 	EXPECT_FALSE(cursor.isAtVariationStart());
 	EXPECT_FALSE(cursor.isAtGameStart());
-	EXPECT_FALSE(cursor.isAtEnd());
+	EXPECT_FALSE(cursor.isAtLineEnd());
 	EXPECT_FALSE(cursor.isAtVariationEnd());
 	EXPECT_FALSE(cursor.isAtGameEnd());
 	EXPECT_EQ(1U, cursor.ply());
@@ -53,7 +53,7 @@ TEST(CoreGameCursorTest, MovesNextAndPreviousThroughMainline) {
 	EXPECT_EQ("e7e5", cursor.nextMove()->action.longNotation());
 
 	ASSERT_TRUE(cursor.next());
-	EXPECT_TRUE(cursor.isAtEnd());
+	EXPECT_TRUE(cursor.isAtLineEnd());
 	EXPECT_TRUE(cursor.isAtVariationEnd());
 	EXPECT_TRUE(cursor.isAtGameEnd());
 	EXPECT_EQ(nullptr, cursor.nextMove());
@@ -64,7 +64,7 @@ TEST(CoreGameCursorTest, MovesNextAndPreviousThroughMainline) {
 	ASSERT_TRUE(cursor.previous());
 	EXPECT_EQ(1U, cursor.ply());
 	ASSERT_TRUE(cursor.previous());
-	EXPECT_TRUE(cursor.isAtStart());
+	EXPECT_TRUE(cursor.isAtLineStart());
 	EXPECT_FALSE(cursor.previous());
 }
 
@@ -77,7 +77,7 @@ TEST(CoreGameCursorTest, SavesAndRestoresLocation) {
 	ASSERT_TRUE(cursor.next());
 	auto location = cursor.location();
 	cursor.toEnd();
-	ASSERT_TRUE(cursor.isAtEnd());
+	ASSERT_TRUE(cursor.isAtLineEnd());
 
 	ASSERT_TRUE(cursor.restore(location));
 	EXPECT_EQ(1U, cursor.ply());
@@ -133,6 +133,9 @@ TEST(CoreGameCursorTest, SeeksToMainlinePly) {
 	ASSERT_TRUE(cursor.toPly(1));
 	ASSERT_TRUE(cursor.enterVariation(0));
 	EXPECT_EQ(1U, cursor.variationDepth());
+	ASSERT_TRUE(cursor.next());
+	EXPECT_EQ(2U, cursor.ply());
+	ASSERT_TRUE(cursor.previous());
 	ASSERT_TRUE(cursor.toPly(2));
 	EXPECT_EQ(0U, cursor.variationDepth());
 	EXPECT_EQ(2U, cursor.ply());
@@ -163,7 +166,7 @@ TEST(CoreGameCursorTest, EntersAndExitsVariationFromNextMove) {
 	ASSERT_TRUE(cursor.enterVariation(0));
 	EXPECT_EQ(1U, cursor.variationDepth());
 	EXPECT_EQ(0U, cursor.variationIndex());
-	EXPECT_TRUE(cursor.isAtStart());
+	EXPECT_TRUE(cursor.isAtLineStart());
 	EXPECT_TRUE(cursor.isAtVariationStart());
 	EXPECT_FALSE(cursor.isAtGameStart());
 	EXPECT_FALSE(cursor.isAtGameEnd());
@@ -173,7 +176,7 @@ TEST(CoreGameCursorTest, EntersAndExitsVariationFromNextMove) {
 	EXPECT_EQ(0U, cursor.variationCount());
 
 	ASSERT_TRUE(cursor.next());
-	EXPECT_TRUE(cursor.isAtEnd());
+	EXPECT_TRUE(cursor.isAtLineEnd());
 	EXPECT_TRUE(cursor.isAtVariationEnd());
 	EXPECT_FALSE(cursor.isAtGameEnd());
 	ASSERT_TRUE(cursor.exitVariation());
@@ -184,15 +187,17 @@ TEST(CoreGameCursorTest, EntersAndExitsVariationFromNextMove) {
 
 TEST(CoreGameCursorTest, SavesAndRestoresVariationLocation) {
 	scid::core::Game game;
-	auto& first = game.appendMainlineMove(
-	    quiet(scid::database::E2, scid::database::E4));
-	auto& variationMoves = first.childVariations.emplace_back().line.moves;
+	game.appendMainlineMove(quiet(scid::database::E2, scid::database::E4));
+	auto& second = game.appendMainlineMove(
+	    quiet(scid::database::E7, scid::database::E5));
+	auto& variationMoves = second.childVariations.emplace_back().line.moves;
 	variationMoves.push_back(
 	    {quiet(scid::database::C2, scid::database::C4), "c4", {}, {}});
 	variationMoves.push_back(
 	    {quiet(scid::database::E7, scid::database::E5), "e5", {}, {}});
 
 	scid::core::GameCursor cursor(game);
+	ASSERT_TRUE(cursor.next());
 	ASSERT_TRUE(cursor.enterVariation(0));
 	ASSERT_TRUE(cursor.next());
 	auto location = cursor.location();
@@ -202,7 +207,7 @@ TEST(CoreGameCursorTest, SavesAndRestoresVariationLocation) {
 	ASSERT_TRUE(cursor.restore(location));
 	EXPECT_EQ(1U, cursor.variationDepth());
 	EXPECT_EQ(0U, cursor.variationIndex());
-	EXPECT_EQ(1U, cursor.ply());
+	EXPECT_EQ(2U, cursor.ply());
 	ASSERT_NE(nullptr, cursor.previousMove());
 	EXPECT_EQ("c4", cursor.previousMove()->san);
 	ASSERT_NE(nullptr, cursor.nextMove());
@@ -241,8 +246,8 @@ TEST(CoreGameCursorTest, HandlesEmptyGame) {
 	scid::core::Game game;
 	scid::core::GameCursor cursor(game);
 
-	EXPECT_TRUE(cursor.isAtStart());
-	EXPECT_TRUE(cursor.isAtEnd());
+	EXPECT_TRUE(cursor.isAtLineStart());
+	EXPECT_TRUE(cursor.isAtLineEnd());
 	EXPECT_TRUE(cursor.isAtVariationStart());
 	EXPECT_TRUE(cursor.isAtVariationEnd());
 	EXPECT_TRUE(cursor.isAtGameStart());
