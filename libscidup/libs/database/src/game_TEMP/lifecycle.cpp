@@ -18,6 +18,10 @@ Game::Game() {
 	Clear();
 }
 
+const scid::core::Game& Game::coreGame() const {
+	return coreGame_;
+}
+
 // TODO [Game]: Keep start-position lifecycle on the future core Game, but keep
 // PGN/UCI/export projections of the starting position outside the aggregate.
 bool Game::HasNonStandardStart(char* outFEN, size_t outFENLen) const {
@@ -128,6 +132,7 @@ void Game::strip(bool variations, bool comments, bool NAGs) {
 			}
 		}
 	}
+	TEMP_syncCoreMovetext();
 }
 
 void Game::ClearMoves() {
@@ -141,6 +146,7 @@ void Game::ClearMoves() {
 		moveChunkUsed_ = 0;
 	}
 	coreGame_.clearStartPosition();
+	coreGame_.clearMovetext();
 	CurrentPos->StdStart();
 
 	FirstMove = NewMove(START_MARKER);

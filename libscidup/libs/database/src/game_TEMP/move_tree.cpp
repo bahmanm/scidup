@@ -202,7 +202,10 @@ errorT Game::AddMove(simpleMoveT const& sm) {
 	if (VarDepth == 0)
 		++NumHalfMoves;
 
-	return MoveForward();
+	auto err = MoveForward();
+	if (err == OK)
+		TEMP_syncCoreMovetext();
+	return err;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -225,6 +228,7 @@ errorT Game::AddVariation() {
 	// Invariants
 	ASSERT(CurrentMove && CurrentMove->prev);
 	ASSERT(!CurrentMove->startMarker());
+	TEMP_syncCoreMovetext();
 	return OK;
 }
 
@@ -239,6 +243,7 @@ errorT Game::FirstVariation() {
 
 	root->detachChild(parent.second);
 	root->insertChild(parent.second, 0);
+	TEMP_syncCoreMovetext();
 	return OK;
 }
 
@@ -275,6 +280,7 @@ errorT Game::MainVariation() {
 		NumHalfMoves = count_moves(FirstMove->next);
 	}
 
+	TEMP_syncCoreMovetext();
 	return OK;
 }
 
@@ -292,6 +298,7 @@ errorT Game::DeleteVariation() {
 		return ERROR_NoVariation;
 
 	root->detachChild(parent.second);
+	TEMP_syncCoreMovetext();
 	return OK;
 }
 
@@ -311,6 +318,7 @@ void Game::Truncate() {
 	CurrentMove = endMove;
 	if (VarDepth == 0)
 		NumHalfMoves = GetCurrentPly();
+	TEMP_syncCoreMovetext();
 
 	// Invariants
 	ASSERT(CurrentMove && CurrentMove->prev);
@@ -344,6 +352,7 @@ void Game::TruncateStart() {
         }
     } while (MoveForwardInPGN() == OK);
     MoveToStart();
+    TEMP_syncCoreMovetext();
 }
 
 } // namespace scid::database

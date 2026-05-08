@@ -5,12 +5,61 @@
 
 namespace scid::database {
 
+namespace {
+
+scid::core::MoveAction toMoveAction(simpleMoveT const& sm) {
+	return {sm.from, sm.to, sm.promote};
+}
+
+void copyMoveData(moveT const& source, scid::core::Move& dest);
+
+void copyLine(moveT const* source, scid::core::MoveSequence& dest) {
+	for (auto move = source; move && !move->endMarker(); move = move->next) {
+		if (move->startMarker())
+			continue;
+
+		auto& destMove = dest.moves.emplace_back();
+		copyMoveData(*move, destMove);
+	}
+}
+
+void copyVariations(moveT const& source, scid::core::Move& dest) {
+	for (auto variation = source.varChild; variation;
+	     variation = variation->varChild) {
+		auto& destVariation = dest.childVariations.emplace_back();
+		copyLine(variation->next, destVariation.line);
+	}
+}
+
+void copyMoveData(moveT const& source, scid::core::Move& dest) {
+	dest.action = toMoveAction(source.moveData);
+	dest.san = source.san;
+	dest.metadata.comment = source.comment;
+	dest.metadata.nags.assign(source.nags, source.nags + source.nagCount);
+	copyVariations(source, dest);
+}
+
+} // namespace
+
+void Game::TEMP_syncCoreMovetext() {
+	coreGame_.clearMovetext();
+	for (auto move = FirstMove->next; move && !move->endMarker();
+	     move = move->next) {
+		if (move->startMarker())
+			continue;
+
+		auto& dest = coreGame_.appendMainlineMove(toMoveAction(move->moveData));
+		copyMoveData(*move, dest);
+	}
+}
+
 // TODO [Game]: Move NAG/comment storage behind Move.metadata once the core
 // Move shape exists. These methods are compatibility accessors around legacy
 // moveT fields at the current cursor location.
 void Game::ClearNags() {
 	CurrentMove->prev->nagCount = 0;
 	CurrentMove->prev->nags[0] = 0;
+	TEMP_syncCoreMovetext();
 }
 
 byte* Game::GetNags() const {
@@ -91,6 +140,7 @@ errorT Game::AddNag (byte nag) {
 			if( m->nags[i] >= 1 && m->nags[i] <= 6)
 			{
 				m->nags[i] = nag;
+				TEMP_syncCoreMovetext();
 				return OK;
 			}
 	// If it is a position nag replace an existing
@@ -99,6 +149,7 @@ errorT Game::AddNag (byte nag) {
 			if( m->nags[i] >= 10 && m->nags[i] <= 21)
 			{
 				m->nags[i] = nag;
+				TEMP_syncCoreMovetext();
 				return OK;
 			}
 	if( nag >= 1 && nag <= 6)
@@ -111,6 +162,7 @@ errorT Game::AddNag (byte nag) {
 		m->nags[m->nagCount] = nag;
 	m->nagCount += 1;
 	m->nags[m->nagCount] = 0;
+	TEMP_syncCoreMovetext();
     return OK;
 }
 
@@ -124,6 +176,7 @@ errorT Game::RemoveNag (bool isMoveNag) {
 				m->nagCount -= 1;
 				for( int j=i; j<m->nagCount; j++)  m->nags[j] =  m->nags[j+1];
 				m->nags[m->nagCount] = 0;
+				TEMP_syncCoreMovetext();
 				return OK;
 			}
 	}
@@ -135,6 +188,7 @@ errorT Game::RemoveNag (bool isMoveNag) {
 				m->nagCount -= 1;
 				for( int j=i; j<m->nagCount; j++)  m->nags[j] =  m->nags[j+1];
 				m->nags[m->nagCount] = 0;
+				TEMP_syncCoreMovetext();
 				return OK;
 			}
 	}
@@ -151,5 +205,6 @@ void Game::SetMoveComment(const char* comment) {
 		m->comment = comment;
 		// CommentsFlag = 1;
 	}
+	TEMP_syncCoreMovetext();
 }
 } // namespace scid::database

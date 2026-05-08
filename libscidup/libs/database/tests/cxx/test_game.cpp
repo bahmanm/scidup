@@ -357,6 +357,47 @@ TEST(Test_Game, currentPosUCI_startpos) {
 	}
 }
 
+TEST(Test_Game, coreGameMovetextMirrorsLegacyMoveTree) {
+	std::string_view pgn =
+	    "1.d4! {Best by test} (1.e4 e5 ( 1...c5)) (1.c4) 1...d5 2.c4";
+	scid::database::Game game;
+	scid::database::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()},
+	                                scid::database::PgnVisitor{game});
+
+	auto const& mainline = game.coreGame().movetext().mainline.moves;
+	ASSERT_EQ(3U, mainline.size());
+	EXPECT_EQ(scid::database::D2, mainline[0].action.from);
+	EXPECT_EQ(scid::database::D4, mainline[0].action.to);
+	EXPECT_EQ(scid::database::D7, mainline[1].action.from);
+	EXPECT_EQ(scid::database::D5, mainline[1].action.to);
+	EXPECT_EQ(scid::database::C2, mainline[2].action.from);
+	EXPECT_EQ(scid::database::C4, mainline[2].action.to);
+
+	ASSERT_EQ(1U, mainline[0].metadata.nags.size());
+	EXPECT_EQ(scid::core::NAG_GoodMove, mainline[0].metadata.nags[0]);
+	EXPECT_EQ("Best by test", mainline[0].metadata.comment);
+
+	ASSERT_EQ(2U, mainline[0].childVariations.size());
+	auto const& firstVariation = mainline[0].childVariations[0].line.moves;
+	ASSERT_EQ(2U, firstVariation.size());
+	EXPECT_EQ(scid::database::E2, firstVariation[0].action.from);
+	EXPECT_EQ(scid::database::E4, firstVariation[0].action.to);
+	EXPECT_EQ(scid::database::E7, firstVariation[1].action.from);
+	EXPECT_EQ(scid::database::E5, firstVariation[1].action.to);
+
+	ASSERT_EQ(1U, firstVariation[1].childVariations.size());
+	auto const& nestedVariation =
+	    firstVariation[1].childVariations[0].line.moves;
+	ASSERT_EQ(1U, nestedVariation.size());
+	EXPECT_EQ(scid::database::C7, nestedVariation[0].action.from);
+	EXPECT_EQ(scid::database::C5, nestedVariation[0].action.to);
+
+	auto const& secondVariation = mainline[0].childVariations[1].line.moves;
+	ASSERT_EQ(1U, secondVariation.size());
+	EXPECT_EQ(scid::database::C2, secondVariation[0].action.from);
+	EXPECT_EQ(scid::database::C4, secondVariation[0].action.to);
+}
+
 TEST(Test_Game, currentPosUCI_fen) {
 	std::string_view pgn =
 	    "[FEN 8/8/8/8/2p5/1k1p4/p4N2/2K5 w - - 0 198]\n"

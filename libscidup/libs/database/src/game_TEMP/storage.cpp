@@ -628,7 +628,10 @@ errorT Game::DecodeMovesOnly(ByteBuffer& buf) {
 		return err;
 
 	std::vector<moveT*> comment_marks;
-	return DecodeVariation(buf, comment_marks);
+	auto err = DecodeVariation(buf, comment_marks);
+	if (err == OK)
+		TEMP_syncCoreMovetext();
+	return err;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -660,6 +663,9 @@ errorT Game::Decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf)
 
     if (err == OK)
         err = decodeComments(buf, FirstMove, comment_marks);
+
+    if (err == OK)
+        TEMP_syncCoreMovetext();
 
     return err;
 }

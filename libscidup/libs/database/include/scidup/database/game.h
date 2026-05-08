@@ -105,6 +105,7 @@ private:
     bool ExactMatch(Position* pos, ByteBuffer* buf, gameExactMatchT searchType);
     bool VarExactMatch(Position* searchPos, gameExactMatchT searchType);
     std::string& find_or_create_tag(std::string_view tag);
+    void TEMP_syncCoreMovetext();
     void viewTagPairsImpl(
         const std::function<void(const char*, const char*)>& visitor) const;
 
@@ -144,6 +145,7 @@ private:
 public:
     Game();
     ~Game();
+    const scid::core::Game& coreGame() const;
     void Clear();
     void strip(bool variations, bool comments, bool NAGs);
 
