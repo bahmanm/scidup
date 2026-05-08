@@ -2,6 +2,9 @@
 
 namespace scid::database {
 
+// TODO [Game]: Keep this as legacy export/encode compatibility. These flags
+// mix plain PGN, HTML, LaTeX, color tags, and UI formatting concerns; they
+// should not become the final core PGN API.
 enum gameFormatT {
 	PGN_FORMAT_Plain = 0, // Plain regular PGN output
 	PGN_FORMAT_HTML = 1,  // HTML format

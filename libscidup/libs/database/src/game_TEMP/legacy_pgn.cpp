@@ -15,6 +15,9 @@
 
 namespace scid::database {
 
+// TODO [Game]: These Game methods are legacy export/encode compatibility
+// wrappers. The future model should pass explicit options to encoder/exporter
+// objects instead of storing style/export state on Game.
 bool LegacyGameEncodeOptions::legacyFormatFromString(const char* str,
                                                      gameFormatT* fmt) {
 	if (strIsCasePrefix(str, "Plain")) {

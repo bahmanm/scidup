@@ -1,7 +1,7 @@
 #pragma once
 
 #include "scidup/core/primitives.h"
-#include "scidup/database/game_TEMP/pgn_style.h"
+#include "scidup/database/game_TEMP/legacy_encode_options.h"
 
 #include <utility>
 

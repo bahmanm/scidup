@@ -21,7 +21,7 @@
 #include "scidup/core/date.h"
 #include "scidup/eco/code.h"
 #include "scidup/core/nags.h"
-#include "scidup/database/game_TEMP/pgn_style.h"
+#include "scidup/database/game_TEMP/legacy_encode_options.h"
 #include "scidup/database/game_TEMP/search.h"
 #include "scidup/database/indexentry.h"
 #include "scidup/database/namebase.h"
@@ -84,7 +84,8 @@ class Game {
     uint        VarDepth;     // Current variation depth.
     ushort      NumHalfMoves; // Total half moves in the main line.
 
-    // TODO: The following variables should not be part of this class.
+    // TODO [Game]: Move legacy export/encode options out of Game. These are
+    // compatibility settings for the legacy writer, not core Game state.
     uint        PgnStyle;        // see PGN_STYLE macros above.
     gameFormatT PgnFormat;       // see PGN_FORMAT macros above.
     uint        HtmlStyle;       // HTML diagram style, see DumpHtmlBoard method in position.cpp.
@@ -321,6 +322,8 @@ public:
     scidup::eco::Code GetEco() const;
     ratingT     GetAverageElo ();
 
+    // TODO [Game]: Replace this legacy export/encode compatibility surface with
+    // explicit encoder/exporter options outside the Game aggregate.
     // PGN conversion
     std::pair<const char*, unsigned> WriteToPGN (uint lineWidth = 0,
                                                  bool NewLineAtEnd = false,
