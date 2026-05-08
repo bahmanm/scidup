@@ -19,7 +19,6 @@
 #include "scidup/database/common.h"
 #include "dbasepool.h"
 #include "scidup/database/game_id.h"
-#include "scidup/database/game_TEMP/legacy_pgn.h"
 #include "scidup/database/game_TEMP/nag_format.h"
 #include "scidup/database/game_TEMP/positions.h"
 #include "scidup/database/misc.h"

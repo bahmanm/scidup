@@ -17,6 +17,7 @@
 #include "scidup/database/game.h"
 #include "scidup/core/nags.h"
 #include "scidup/database/game_TEMP/nag_format.h"
+#include "scidup/database/game_TEMP/piece_translation.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
 #include "scidup/database/game_TEMP/storage.h"
 #include "scidup/database/scidbase.h"
@@ -135,6 +136,19 @@ TEST(Test_Game, LegacyNagFormatParsePrint) {
 	scid::database::game_printNag(scid::core::NAG_GoodMove, nagText, false,
 	                              scid::database::PGN_FORMAT_Plain);
 	EXPECT_STREQ("$1", nagText);
+}
+
+TEST(Test_Game, LegacyPieceTranslation) {
+	const auto savedLanguage = scid::database::language;
+	scid::database::language = 3; // German: N -> S, B -> L.
+
+	char san[] = "Nf3 Bc4";
+	scid::database::transPieces(san);
+
+	EXPECT_STREQ("Sf3 Lc4", san);
+	EXPECT_EQ('S', scid::database::transPiecesChar('N'));
+
+	scid::database::language = savedLanguage;
 }
 
 TEST(Test_Game, locationInPGN) {

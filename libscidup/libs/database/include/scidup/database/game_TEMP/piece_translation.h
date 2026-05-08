@@ -4,6 +4,8 @@
 
 namespace scid::database {
 
+// Legacy application-wide piece-letter translation used by Tcl/UI export
+// compatibility. This is not part of plain PGN encoding.
 void transPieces(char* s);
 char transPiecesChar(char c);
 
