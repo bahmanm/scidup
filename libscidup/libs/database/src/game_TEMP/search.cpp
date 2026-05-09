@@ -32,35 +32,36 @@ int calcHomePawnMask (pieceT pawn, const pieceT* board)
 //      Used by Game::materialMatch() to test patterns.
 //      Returns 1 if all the patterns in the list match, 0 otherwise.
 //
-int patternsMatch(const Position* pos, patternT* ptn, size_t ptn_size) {
+int patternsMatch(const Position* pos, patternT* patterns, size_t patternCount) {
     const pieceT* board = pos->GetBoard();
-    for (auto ptn_end = ptn + ptn_size; ptn != ptn_end; ++ptn) {
-        if (ptn->rankMatch == NO_RANK) {
+    for (auto pattern = patterns, patternEnd = patterns + patternCount;
+         pattern != patternEnd; ++pattern) {
+        if (pattern->rankMatch == NO_RANK) {
 
-            if (ptn->fyleMatch == NO_FYLE) { // Nothing to test!
+            if (pattern->fyleMatch == NO_FYLE) { // Nothing to test!
             } else {  // Test this fyle:
-                squareT sq = square_Make (ptn->fyleMatch, RANK_1);
+                squareT sq = square_Make (pattern->fyleMatch, RANK_1);
                 int found = 0;
                 for (uint i=0; i < 8; i++, sq += 8) {
-                    if (board[sq] == ptn->pieceMatch) { found = 1; break; }
+                    if (board[sq] == pattern->pieceMatch) { found = 1; break; }
                 }
-                if (found != ptn->flag) { return 0; }
+                if (found != pattern->flag) { return 0; }
             }
 
         } else { // rankMatch is a rank from 1 to 8:
 
-            if (ptn->fyleMatch == NO_FYLE) { // Test the whole rank:
+            if (pattern->fyleMatch == NO_FYLE) { // Test the whole rank:
                 int found = 0;
-                squareT sq = square_Make (A_FYLE, ptn->rankMatch);
+                squareT sq = square_Make (A_FYLE, pattern->rankMatch);
                 for (uint i=0; i < 8; i++, sq++) {
-                    if (board[sq] == ptn->pieceMatch) { found = 1; break; }
+                    if (board[sq] == pattern->pieceMatch) { found = 1; break; }
                 }
-                if (found != ptn->flag) { return 0; }
+                if (found != pattern->flag) { return 0; }
             } else {  // Just test one square:
-                squareT sq = square_Make(ptn->fyleMatch, ptn->rankMatch);
+                squareT sq = square_Make(pattern->fyleMatch, pattern->rankMatch);
                 int found = 0;
-                if (board[sq] == ptn->pieceMatch) { found = 1; }
-                if (found != ptn->flag) { return 0; }
+                if (board[sq] == pattern->pieceMatch) { found = 1; }
+                if (found != pattern->flag) { return 0; }
             }
         }
     }
@@ -76,8 +77,8 @@ int patternsMatch(const Position* pos, patternT* ptn, size_t ptn_size) {
 //      counts, to specify the maximum and minimum number of counts
 //      of each type of piece.
 //
-bool Game::materialMatch(bool PromotionsFlag, ByteBuffer& buf, byte* min,
-                         byte* max, patternT* patterns, size_t ptn_size,
+bool Game::materialMatch(bool promotionsFlag, ByteBuffer& buf, byte* min,
+                         byte* max, patternT* patterns, size_t patternCount,
                          int minPly, int maxPly, int matchLength,
                          bool oppBishops, bool sameBishops, int minDiff,
                          int maxDiff) {
@@ -168,7 +169,7 @@ bool Game::materialMatch(bool PromotionsFlag, ByteBuffer& buf, byte* min,
         if (matDiff < minDiff  ||  matDiff > maxDiff) { goto Next_Move; }
 
         // At this point, the Material matches; do the patterns match?
-        if (ptn_size == 0 || patternsMatch(currentPos(), patterns, ptn_size)) {
+        if (patternCount == 0 || patternsMatch(currentPos(), patterns, patternCount)) {
             foundMatch = true;
             matchesNeeded--;
             if (matchesNeeded <= 0) { return true; }
@@ -178,7 +179,7 @@ bool Game::materialMatch(bool PromotionsFlag, ByteBuffer& buf, byte* min,
 
       Check_Promotions:
         // We only continue if this game has promotion moves:
-        if (! PromotionsFlag) { return false; }
+        if (!promotionsFlag) { return false; }
 
       Next_Move:
         {
@@ -478,11 +479,11 @@ Game::varExactMatch (Position * searchPos, gameExactMatchT searchType)
 
 bool game_search::materialMatch(Game& game, bool promotionsFlag,
                                 ByteBuffer& buf, byte* min, byte* max,
-                                patternT* ptn, std::size_t ptnSize,
+                                patternT* patterns, std::size_t patternCount,
                                 int minPly, int maxPly, int matchLength,
                                 bool oppBishops, bool sameBishops, int minDiff,
                                 int maxDiff) {
-    return game.materialMatch(promotionsFlag, buf, min, max, ptn, ptnSize,
+    return game.materialMatch(promotionsFlag, buf, min, max, patterns, patternCount,
                               minPly, maxPly, matchLength, oppBishops,
                               sameBishops, minDiff, maxDiff);
 }

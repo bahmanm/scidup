@@ -96,10 +96,11 @@ private:
     errorT decodeMovesOnly(ByteBuffer& buf);
     // TODO [Game]: Move these database search operations out of Game once the
     // database wrapper around the future core Game exists.
-    bool materialMatch(bool PromotionsFlag, ByteBuffer& buf, byte* min,
-                       byte* max, patternT* ptn, size_t ptn_size, int minPly,
-                       int maxPly, int matchLength, bool oppBishops,
-                       bool sameBishops, int minDiff, int maxDiff);
+    bool materialMatch(bool promotionsFlag, ByteBuffer& buf, byte* min,
+                       byte* max, patternT* patterns, size_t patternCount,
+                       int minPly, int maxPly, int matchLength,
+                       bool oppBishops, bool sameBishops, int minDiff,
+                       int maxDiff);
     bool exactMatch(Position* pos, ByteBuffer* buf, gameExactMatchT searchType);
     bool varExactMatch(Position* searchPos, gameExactMatchT searchType);
     void TEMP_syncCoreMovetext();
@@ -117,7 +118,7 @@ private:
                                                simpleMoveT& sm);
     friend bool game_search::materialMatch(
         Game& game, bool promotionsFlag, ByteBuffer& buf, byte* min, byte* max,
-        patternT* ptn, std::size_t ptnSize, int minPly, int maxPly,
+        patternT* patterns, std::size_t patternCount, int minPly, int maxPly,
         int matchLength, bool oppBishops, bool sameBishops, int minDiff,
         int maxDiff);
     friend bool game_search::exactMatch(Game& game, Position* pos,
