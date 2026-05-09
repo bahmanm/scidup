@@ -29,6 +29,24 @@ const Move* MovetextCursor::nextMove() const {
 	return &currentLine().moves[nextIndex_];
 }
 
+Variation* MovetextCursor::currentVariation() {
+	if (parents_.empty())
+		return nullptr;
+
+	auto const& parent = parents_.back();
+	return &parent.line->moves[parent.nextIndex]
+	            .childVariations[parent.variationIndex];
+}
+
+const Variation* MovetextCursor::currentVariation() const {
+	if (parents_.empty())
+		return nullptr;
+
+	auto const& parent = parents_.back();
+	return &parent.line->moves[parent.nextIndex]
+	            .childVariations[parent.variationIndex];
+}
+
 std::size_t MovetextCursor::ply() const {
 	std::size_t result = nextIndex_;
 	for (auto const& parent : parents_)

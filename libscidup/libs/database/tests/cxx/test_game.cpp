@@ -495,6 +495,36 @@ TEST(Test_Game, coreGameVariationMetadataMirrorsProgrammaticNagMutation) {
 	          variationMove.metadata.nags[0]);
 }
 
+TEST(Test_Game, coreGameMirrorsProgrammaticCommentMutation) {
+	using namespace std::literals;
+
+	scid::database::Game game;
+	game.setMoveComment("Before the first move");
+	ASSERT_EQ(scid::database::OK,
+	          game.addMove(makeCurrentMove(game, scid::database::E2,
+	                                       scid::database::E4)));
+	game.setMoveComment("After e4");
+	ASSERT_EQ(scid::database::OK, game.addVariation());
+	game.setMoveComment("Queen pawn alternative");
+	ASSERT_EQ(scid::database::OK,
+	          game.addMove(makeCurrentMove(game, scid::database::D2,
+	                                       scid::database::D4)));
+	game.setMoveComment("After d4");
+
+	auto const& movetext = game.coreGame().movetext();
+	EXPECT_EQ("Before the first move"sv, movetext.initialComment);
+
+	auto const& mainlineMove = movetext.mainline.moves[0];
+	EXPECT_EQ("After e4"sv, mainlineMove.metadata.comment);
+	ASSERT_EQ(1U, mainlineMove.childVariations.size());
+	EXPECT_EQ("Queen pawn alternative"sv,
+	          mainlineMove.childVariations[0].initialComment);
+
+	auto const& variationMove =
+	    mainlineMove.childVariations[0].line.moves[0];
+	EXPECT_EQ("After d4"sv, variationMove.metadata.comment);
+}
+
 TEST(Test_Game, coreGameMirrorsInitialMovetextComment) {
 	using namespace std::literals;
 

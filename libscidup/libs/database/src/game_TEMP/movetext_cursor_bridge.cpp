@@ -18,6 +18,11 @@ bool findLegacyMovetextLocation(const moveT* lineStart,
                                 const moveT* target,
                                 std::vector<LegacyMovetextStep>& path,
                                 std::size_t& nextIndex) {
+	if (lineStart == target) {
+		nextIndex = 0;
+		return true;
+	}
+
 	std::size_t lineIndex = 0;
 	for (auto move = lineStart->next; move; move = move->next) {
 		if (move == target) {

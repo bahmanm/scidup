@@ -22,6 +22,8 @@ public:
 	const Move* previousMove() const;
 	Move* nextMove();
 	const Move* nextMove() const;
+	Variation* currentVariation();
+	const Variation* currentVariation() const;
 	std::size_t ply() const;
 	std::size_t variationCount() const;
 	std::size_t variationDepth() const;

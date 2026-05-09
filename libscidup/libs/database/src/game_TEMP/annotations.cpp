@@ -62,6 +62,34 @@ bool syncCoreMoveMetadata(scid::core::Game& coreGame,
 	return true;
 }
 
+bool syncCoreComment(scid::core::Game& coreGame,
+                     const moveT* firstMove,
+                     const moveT* legacyMove) {
+	if (!legacyMove)
+		return false;
+
+	if (legacyMove == firstMove) {
+		coreGame.setInitialComment(legacyMove->comment);
+		return true;
+	}
+
+	if (!legacyMove->startMarker()) {
+		return syncCoreMoveMetadata(coreGame, firstMove, legacyMove);
+	}
+
+	scid::core::MovetextCursor cursor(coreGame);
+	if (!legacy_movetext::moveCursorToLegacyLocation(cursor, firstMove,
+	                                                 legacyMove))
+		return false;
+
+	auto variation = cursor.currentVariation();
+	if (!variation)
+		return false;
+
+	variation->initialComment = legacyMove->comment;
+	return true;
+}
+
 } // namespace
 
 void Game::TEMP_syncCoreMovetext() {
@@ -194,6 +222,7 @@ void Game::setMoveComment(const char* comment) {
 		m->comment = comment;
 		// CommentsFlag = 1;
 	}
-	TEMP_syncCoreMovetext();
+	if (!syncCoreComment(coreGame_, firstMove_, m))
+		TEMP_syncCoreMovetext();
 }
 } // namespace scid::database

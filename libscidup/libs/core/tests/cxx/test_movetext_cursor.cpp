@@ -55,6 +55,7 @@ TEST(CoreMovetextCursorTest, AddsVariationToNextMoveAndEntersIt) {
 
 	auto variation = cursor.addVariation("Queen pawn alternative");
 	ASSERT_NE(nullptr, variation);
+	ASSERT_EQ(variation, cursor.currentVariation());
 	EXPECT_EQ(1U, cursor.variationDepth());
 	EXPECT_TRUE(cursor.isAtVariationStart());
 	EXPECT_TRUE(cursor.isAtEmptyVariation());
@@ -71,6 +72,7 @@ TEST(CoreMovetextCursorTest, AddsVariationToNextMoveAndEntersIt) {
 	EXPECT_EQ("d4", first.childVariations[0].line.moves[0].san);
 	EXPECT_TRUE(cursor.isAtVariationEnd());
 	ASSERT_TRUE(cursor.exitVariation());
+	EXPECT_EQ(nullptr, cursor.currentVariation());
 	EXPECT_EQ(0U, cursor.variationDepth());
 	ASSERT_NE(nullptr, cursor.nextMove());
 	EXPECT_EQ("e2e4", cursor.nextMove()->action.longNotation());
