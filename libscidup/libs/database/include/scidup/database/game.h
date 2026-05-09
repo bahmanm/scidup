@@ -73,7 +73,7 @@ class Game {
     byte        moveChunkUsed_;
     std::forward_list<std::unique_ptr<moveT[]> > moveChunks_;
     std::unique_ptr<Position> CurrentPos{new Position};
-    moveT*      FirstMove;
+    moveT*      firstMove_;
     moveT*      CurrentMove;
     uint        varDepth_;     // Current variation depth.
     ushort      numHalfMoves_; // Total half moves in the main line.

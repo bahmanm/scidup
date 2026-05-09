@@ -74,7 +74,7 @@ Game::Game(const Game& obj) {
 	numHalfMoves_ = obj.numHalfMoves_;
 
 	moveChunkUsed_ = MOVE_CHUNKSIZE;
-	FirstMove = obj.FirstMove->cloneLine(nullptr,
+	firstMove_ = obj.firstMove_->cloneLine(nullptr,
 	                                     [this]() { return allocMove(); });
 
 	toPgnLocation(obj.pgnLocation());
@@ -125,9 +125,9 @@ void Game::clearMoves() {
 	coreGame_.clearMovetext();
 	CurrentPos->StdStart();
 
-	FirstMove = newMove(START_MARKER);
+	firstMove_ = newMove(START_MARKER);
 	CurrentMove = newMove(END_MARKER);
-	FirstMove->setNext(CurrentMove);
+	firstMove_->setNext(CurrentMove);
 
 	varDepth_ = 0;
 	numHalfMoves_ = 0;

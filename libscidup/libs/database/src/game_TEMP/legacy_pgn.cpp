@@ -91,7 +91,7 @@ struct LegacyGamePgnEncoder {
 errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
     auto& CurrentMove = game.CurrentMove;
     auto& CurrentPos = game.CurrentPos;
-    auto& FirstMove = game.FirstMove;
+    auto& firstMove_ = game.firstMove_;
     auto& varDepth_ = game.varDepth_;
     auto previous = [&] { return game.previous(); };
     auto exitVariation = [&] { return game.exitVariation(); };
@@ -157,7 +157,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
 
     std::string strippedComment;
     // If this is a variation and it starts with a comment, print it:
-    if ((varDepth_ > 0 || CurrentMove->prev == FirstMove) &&
+    if ((varDepth_ > 0 || CurrentMove->prev == firstMove_) &&
         (options.style & PGN_STYLE_COMMENTS)) {
         const char* comment = CurrentMove->prev->comment.c_str();
         if (*comment && (options.style & PGN_STYLE_STRIP_MARKS)) {
@@ -630,12 +630,12 @@ errorT LegacyGamePgnEncoder::encode() {
     }
 
     // First: is there a pre-game comment? If so, print it:
-//    if (FirstMove->comment != NULL && (options.style & PGN_STYLE_COMMENTS)
-//        &&  ! strIsAllWhitespace (FirstMove->comment)) {
+//    if (firstMove_->comment != NULL && (options.style & PGN_STYLE_COMMENTS)
+//        &&  ! strIsAllWhitespace (firstMove_->comment)) {
 //        tb->AddTranslation ('\n', newline);
-//        char * s = FirstMove->comment;
+//        char * s = firstMove_->comment;
 //        if (options.style & PGN_STYLE_STRIP_MARKS) {
-//            s = strDuplicate (FirstMove->comment);
+//            s = strDuplicate (firstMove_->comment);
 //            strTrimMarkCodes (s);
 //        }
 //        if (options.isColorFormat()) {

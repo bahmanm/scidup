@@ -545,7 +545,7 @@ std::pair<IndexEntry, TagRoster> Game::encode(std::vector<byte>& dest) const {
     ie.SetFlag(IndexEntry::StrToFlagMask(scidFlags_), true);
 
     const auto [promo, underPromo] = mainlineInfo(coreGame_.startPosition(),
-                                                  FirstMove->next, ie);
+                                                  firstMove_->next, ie);
 
     // First, encode info not already stored in the index
     // This will be the non-STR (non-"seven tag roster") PGN tags.
@@ -559,16 +559,16 @@ std::pair<IndexEntry, TagRoster> Game::encode(std::vector<byte>& dest) const {
 	                         : nullptr,
 	                     dest);
 
-    auto [commentCount, markComments] = countComments(FirstMove);
+    auto [commentCount, markComments] = countComments(firstMove_);
 
     // Compatibility: SCID4 requires the markers
     markComments = true;
 
     // Now the movelist:
-    auto [varCount, nagCount] = encodeMovelist(markComments, FirstMove, dest);
+    auto [varCount, nagCount] = encodeMovelist(markComments, firstMove_, dest);
 
     // Now do the comments
-    encodeComments(markComments, FirstMove, dest);
+    encodeComments(markComments, firstMove_, dest);
 
     ie.SetCommentCount(commentCount);
     ie.SetVariationCount(varCount);
@@ -666,7 +666,7 @@ errorT Game::decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf)
         err = decodeVariation(buf, comment_marks);
 
     if (err == OK)
-        err = decodeComments(buf, FirstMove, comment_marks);
+        err = decodeComments(buf, firstMove_, comment_marks);
 
     if (err == OK)
         TEMP_syncCoreMovetext();

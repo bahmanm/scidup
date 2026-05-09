@@ -104,7 +104,7 @@ void Game::toStart() {
 		CurrentPos->StdStart();
 	}
 	varDepth_ = 0;
-	CurrentMove = FirstMove->next;
+	CurrentMove = firstMove_->next;
 
 	// Invariants
 	ASSERT(CurrentMove && CurrentMove->prev);
@@ -160,7 +160,7 @@ errorT Game::toPgnLocation(unsigned stopLocation) {
 unsigned Game::pgnLocation() const {
 	unsigned res = 1;
 	const moveT* last_move = CurrentMove->prev;
-	const moveT* move = FirstMove;
+	const moveT* move = firstMove_;
 	for (; move != last_move; move = move->nextMoveInPGN()) {
 		if (!move->endMarker())
 			++res;
@@ -174,7 +174,7 @@ unsigned Game::pgnOffset() const {
 	unsigned res = 1;
 	const moveT* last_move = CurrentMove->getPrevMove();
 	if (last_move) {
-		const moveT* move = FirstMove;
+		const moveT* move = firstMove_;
 		for (; move != last_move; move = move->nextMoveInPGN()) {
 			if (!move->endMarker())
 				++res;
@@ -276,8 +276,8 @@ errorT Game::promoteVariationToMainline() {
 			}
 			return res;
 		};
-		ASSERT(FirstMove->startMarker() && FirstMove->next);
-		numHalfMoves_ = count_moves(FirstMove->next);
+		ASSERT(firstMove_->startMarker() && firstMove_->next);
+		numHalfMoves_ = count_moves(firstMove_->next);
 	}
 
 	TEMP_syncCoreMovetext();
@@ -343,7 +343,7 @@ void Game::truncateStart() {
     numHalfMoves_ -= currentPly();
     coreGame_.setStartPosition(*pos);
     *CurrentPos = *pos;
-    FirstMove->setNext(CurrentMove);
+    firstMove_->setNext(CurrentMove);
 
     // Do all the moves to update moveData.pieceNum to the new start position.
     do {
