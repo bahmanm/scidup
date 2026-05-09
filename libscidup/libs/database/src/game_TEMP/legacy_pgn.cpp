@@ -583,7 +583,7 @@ errorT LegacyGamePgnEncoder::encode() {
     const auto& BlackElo = game.coreGame_.black().rating.value;
     const auto& BlackRatingType = game.coreGame_.black().rating.type;
     const auto& Date = game.coreGame_.date();
-    auto& EcoCode = game.EcoCode;
+    const auto EcoCode = scidup::eco::fromString(game.coreGame_.eco().c_str());
     const auto& EventDate = game.coreGame_.eventDate();
     const auto& Result = game.coreGame_.result();
     const auto& RoundStr = game.coreGame_.round();

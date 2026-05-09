@@ -4036,7 +4036,12 @@ sc_game_tags_set (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                     break;
                 }
             case T_ECO:
-                game.SetEco(scidup::eco::fromString(value)); break;
+                {
+                    scidup::eco::String ecoStr;
+                    scidup::eco::toExtendedString(scidup::eco::fromString(value), ecoStr);
+                    game.coreGame().setEco(ecoStr);
+                    break;
+                }
             case T_EVENTDATE:
                 game.coreGame().setEventDate(scid::database::date_EncodeFromString(value));
                 break;

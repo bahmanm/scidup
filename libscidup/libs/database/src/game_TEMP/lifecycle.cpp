@@ -69,7 +69,6 @@ Game::Game(const Game& obj) {
 	// copies aggregate data and restores PGN-order cursor location in one
 	// compatibility operation.
 	coreGame_ = obj.coreGame_;
-	EcoCode = obj.EcoCode;
 	std::copy_n(obj.ScidFlags, sizeof(obj.ScidFlags), ScidFlags);
 
 	NumHalfMoves = obj.NumHalfMoves;
@@ -138,7 +137,6 @@ void Game::Clear() {
 	// TODO [Game]: Split this reset across core Game metadata/moves and
 	// database compatibility flags.
 	coreGame_.clear();
-	EcoCode = 0;
 	ScidFlags[0] = 0;
 
 	ClearMoves();

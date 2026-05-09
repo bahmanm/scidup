@@ -37,7 +37,9 @@ void Game::LoadStandardTags(IndexEntry const& ie, TagRoster const& tags) {
     coreGame_.setWhiteRating({ie.GetWhiteElo(), ie.GetWhiteRatingType()});
     coreGame_.setBlackRating({ie.GetBlackElo(), ie.GetBlackRatingType()});
     coreGame_.setResult(ie.GetResult());
-    SetEco(ie.GetEcoCode());
+    scidup::eco::String ecoStr;
+    scidup::eco::toExtendedString(ie.GetEcoCode(), ecoStr);
+    coreGame_.setEco(ecoStr);
     ie.GetFlagStr(ScidFlags, NULL);
     if (!ie.isChessStd())
         assignTagValue("Variant", "Chess960");
@@ -527,7 +529,7 @@ std::pair<IndexEntry, TagRoster> Game::Encode(std::vector<byte>& dest) const {
     ie.SetDate(header.event.date);
     ie.SetEventDate(header.event.eventDate);
     ie.SetResult(header.result);
-    ie.SetEcoCode(EcoCode);
+    ie.SetEcoCode(scidup::eco::fromString(header.eco.c_str()));
     ie.SetWhiteElo(header.white.rating.value);
     ie.SetBlackElo(header.black.rating.value);
     ie.SetWhiteRatingType(header.white.rating.type);

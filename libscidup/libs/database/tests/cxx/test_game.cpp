@@ -259,7 +259,7 @@ TEST(Test_Game, coreGamePgnEncodingIncludesLegacyMetadataTags) {
 	game.coreGame().setDate(scid::database::date_parsePGNTag("2018.06.11", 10));
 	game.coreGame().setWhiteRating({2800, scid::database::RATING_Rapid});
 	game.coreGame().setBlackRating({2650, scid::database::RATING_Elo});
-	game.SetEco(scidup::eco::fromString("A01"));
+	game.coreGame().setEco("A01");
 	game.coreGame().setEventDate(scid::database::date_parsePGNTag("2018.06.01", 10));
 	game.addTag("UTCDate", "2018.06.10");
 	game.addTag("Annotator", "Example");

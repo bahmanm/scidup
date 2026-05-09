@@ -65,7 +65,6 @@ std::string previousMoveUci(const Game& game);
 class Game {
     // Header data: tag pairs
     scid::core::Game coreGame_;
-    scidup::eco::Code EcoCode;
     // TODO [Game]: Keep Scid flags out of the core metadata model until there
     // is a domain reason for them outside database/app compatibility.
     char        ScidFlags[22];
@@ -250,8 +249,6 @@ public:
     std::string& addTag(std::string_view tag, std::string_view value);
 
     void RemoveExtraTag(std::string_view tag);
-
-    void     SetEco (scidup::eco::Code eco);
 
     Game* clone();
 };

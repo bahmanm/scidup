@@ -25,16 +25,4 @@ void Game::RemoveExtraTag(std::string_view tag) {
 	coreGame_.removeExtraTag(tag);
 }
 
-void Game::SetEco(scidup::eco::Code eco) {
-	EcoCode = eco;
-	if (eco == scidup::eco::ECO_None) {
-		coreGame_.setEco({});
-		return;
-	}
-
-	char ecoStr[sizeof(scidup::eco::String)] = {};
-	scidup::eco::toExtendedString(eco, ecoStr);
-	coreGame_.setEco(ecoStr);
-}
-
 } // namespace scid::database

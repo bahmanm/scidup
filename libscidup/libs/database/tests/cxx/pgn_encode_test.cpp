@@ -201,7 +201,7 @@ TEST(Test_PgnEncode, encode_game) {
 	}
 	{
 		scid::database::Game game;
-		game.SetEco(scidup::eco::fromString("A01"));
+		game.coreGame().setEco("A01");
 		game.SetMoveComment("before the move");
 		scid::database::simpleMoveT sm;
 		game.currentPos()->makeMove(scid::database::E2, scid::database::E4, scid::database::EMPTY, sm);
