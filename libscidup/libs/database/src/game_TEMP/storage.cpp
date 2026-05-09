@@ -34,10 +34,8 @@ void Game::LoadStandardTags(IndexEntry const& ie, TagRoster const& tags) {
     coreGame_.setRound(tags.round);
     coreGame_.setDate(ie.GetDate());
     coreGame_.setEventDate(ie.GetEventDate());
-    SetWhiteElo(ie.GetWhiteElo());
-    SetBlackElo(ie.GetBlackElo());
-    SetWhiteRatingType(ie.GetWhiteRatingType());
-    SetBlackRatingType(ie.GetBlackRatingType());
+    coreGame_.setWhiteRating({ie.GetWhiteElo(), ie.GetWhiteRatingType()});
+    coreGame_.setBlackRating({ie.GetBlackElo(), ie.GetBlackRatingType()});
     coreGame_.setResult(ie.GetResult());
     SetEco(ie.GetEcoCode());
     ie.GetFlagStr(ScidFlags, NULL);

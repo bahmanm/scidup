@@ -4008,13 +4008,33 @@ sc_game_tags_set (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             case T_BLACK: game.addTag("Black", value); break;
             case T_RESULT: game.coreGame().setResult(scid::database::strGetResult(value)); break;
             case T_WHITE_ELO:
-                game.SetWhiteElo (scid::database::strGetUnsigned(value)); break;
+                {
+                    auto rating = game.coreGame().white().rating;
+                    rating.value = scid::database::strGetUnsigned(value);
+                    game.coreGame().setWhiteRating(rating);
+                    break;
+                }
             case T_WHITE_RTYPE:
-                game.SetWhiteRatingType (strGetRatingType (value)); break;
+                {
+                    auto rating = game.coreGame().white().rating;
+                    rating.type = strGetRatingType(value);
+                    game.coreGame().setWhiteRating(rating);
+                    break;
+                }
             case T_BLACK_ELO:
-                game.SetBlackElo (scid::database::strGetUnsigned(value)); break;
+                {
+                    auto rating = game.coreGame().black().rating;
+                    rating.value = scid::database::strGetUnsigned(value);
+                    game.coreGame().setBlackRating(rating);
+                    break;
+                }
             case T_BLACK_RTYPE:
-                game.SetBlackRatingType (strGetRatingType (value)); break;
+                {
+                    auto rating = game.coreGame().black().rating;
+                    rating.type = strGetRatingType(value);
+                    game.coreGame().setBlackRating(rating);
+                    break;
+                }
             case T_ECO:
                 game.SetEco(scidup::eco::fromString(value)); break;
             case T_EVENTDATE:

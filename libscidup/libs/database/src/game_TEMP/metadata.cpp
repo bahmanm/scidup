@@ -25,30 +25,6 @@ void Game::RemoveExtraTag(std::string_view tag) {
 	coreGame_.removeExtraTag(tag);
 }
 
-void Game::SetWhiteElo(ratingT elo) {
-	auto rating = coreGame_.white().rating;
-	rating.value = elo;
-	coreGame_.setWhiteRating(rating);
-}
-
-void Game::SetBlackElo(ratingT elo) {
-	auto rating = coreGame_.black().rating;
-	rating.value = elo;
-	coreGame_.setBlackRating(rating);
-}
-
-void Game::SetWhiteRatingType(ratingTypeT b) {
-	auto rating = coreGame_.white().rating;
-	rating.type = b > 7 ? 0 : b;
-	coreGame_.setWhiteRating(rating);
-}
-
-void Game::SetBlackRatingType(ratingTypeT b) {
-	auto rating = coreGame_.black().rating;
-	rating.type = b > 7 ? 0 : b;
-	coreGame_.setBlackRating(rating);
-}
-
 void Game::SetEco(scidup::eco::Code eco) {
 	EcoCode = eco;
 	if (eco == scidup::eco::ECO_None) {

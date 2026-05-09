@@ -251,10 +251,6 @@ public:
 
     void RemoveExtraTag(std::string_view tag);
 
-    void     SetWhiteElo (ratingT elo);
-    void     SetBlackElo (ratingT elo);
-    void     SetWhiteRatingType (ratingTypeT b);
-    void     SetBlackRatingType (ratingTypeT b);
     void     SetEco (scidup::eco::Code eco);
 
     Game* clone();

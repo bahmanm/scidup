@@ -108,6 +108,10 @@ TEST(CoreGameTest, SetsPlayerNamesAndRatingsDirectly) {
 	EXPECT_EQ(2800, game.white().rating.value);
 	EXPECT_EQ(scid::database::RATING_Rapid, game.white().rating.type);
 	EXPECT_EQ(0, game.averageRating());
+
+	game.setWhiteRating({2500, static_cast<scid::database::ratingTypeT>(8)});
+	EXPECT_EQ(2500, game.white().rating.value);
+	EXPECT_EQ(scid::database::RATING_Elo, game.white().rating.type);
 }
 
 TEST(CoreGameTest, SetStartFenStoresNonStandardStartPosition) {

@@ -257,9 +257,8 @@ TEST(Test_Game, coreGamePgnEncodingIncludesLegacyMetadataTags) {
 	game.addTag("White", "white player");
 	game.addTag("Black", "black player");
 	game.coreGame().setDate(scid::database::date_parsePGNTag("2018.06.11", 10));
-	game.SetWhiteElo(2800);
-	game.SetWhiteRatingType(scid::database::RATING_Rapid);
-	game.SetBlackElo(2650);
+	game.coreGame().setWhiteRating({2800, scid::database::RATING_Rapid});
+	game.coreGame().setBlackRating({2650, scid::database::RATING_Elo});
 	game.SetEco(scidup::eco::fromString("A01"));
 	game.coreGame().setEventDate(scid::database::date_parsePGNTag("2018.06.01", 10));
 	game.addTag("UTCDate", "2018.06.10");

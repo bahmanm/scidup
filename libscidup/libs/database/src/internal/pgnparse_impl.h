@@ -268,11 +268,11 @@ private:
 			res = 0;
 		}
 		if (col == WHITE) {
-			game.SetWhiteElo(static_cast<ratingT>(elo));
-			game.SetWhiteRatingType(rType);
+			game.coreGame().setWhiteRating(
+			    {static_cast<ratingT>(elo), rType});
 		} else {
-			game.SetBlackElo(static_cast<ratingT>(elo));
-			game.SetBlackRatingType(rType);
+			game.coreGame().setBlackRating(
+			    {static_cast<ratingT>(elo), rType});
 		}
 		return res;
 	}

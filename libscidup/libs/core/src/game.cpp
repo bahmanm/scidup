@@ -6,6 +6,14 @@
 
 namespace scid::core {
 
+namespace {
+Rating normalizeRating(Rating rating) {
+	if (rating.type > scid::database::NUM_RATING_TYPES)
+		rating.type = scid::database::RATING_Elo;
+	return rating;
+}
+} // namespace
+
 bool MoveAction::isNull() const {
 	return from == to;
 }
@@ -131,11 +139,11 @@ void Game::setBlack(Player value) {
 }
 
 void Game::setWhiteRating(Rating value) {
-	header_.white.rating = value;
+	header_.white.rating = normalizeRating(value);
 }
 
 void Game::setBlackRating(Rating value) {
-	header_.black.rating = value;
+	header_.black.rating = normalizeRating(value);
 }
 
 void Game::setDate(scid::database::dateT value) {
