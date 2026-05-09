@@ -124,7 +124,7 @@ public:
 		s.dirty = false;
 		s.history.clear();
 		if (!s.loadedGameId) {
-			s.game->Clear();
+			s.game->clear();
 			return scid::database::OK;
 		}
 

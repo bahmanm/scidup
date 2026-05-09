@@ -2327,7 +2327,7 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::Game * g = &editor.game();
     if (gameNumber > 0) {
         g = scratchGame;
-        g->Clear();
+        g->clear();
         if (gameNumber > db->numGames()) {
             return setResult (ti, "Invalid game number");
         }
@@ -3489,7 +3489,7 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             // Print the numbered game instead of the active game:
 
             g = scratchGame;
-            g->Clear();
+            g->clear();
             if (value < 1  ||  value > base->numGames()) {
                 return setResult (ti, "Invalid game number");
             }

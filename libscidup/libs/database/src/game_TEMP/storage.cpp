@@ -611,7 +611,7 @@ errorT Game::DecodeNextMove(ByteBuffer* buf, simpleMoveT& sm) {
 errorT Game::DecodeSkipTags(ByteBuffer* buf) {
     ASSERT(buf != NULL);
 
-    Clear();
+    clear();
     errorT err = buf->decodeTags([](auto, auto) {});
     if (err != OK)
         return err;
@@ -644,7 +644,7 @@ errorT Game::DecodeMovesOnly(ByteBuffer& buf) {
 //      tags, etc.
 //
 errorT Game::Decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf) {
-    Clear();
+    clear();
     LoadStandardTags(ie, tags);
 
     errorT err = buf.decodeTags([&](const auto& tag, const auto& value) {

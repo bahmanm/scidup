@@ -147,7 +147,7 @@ public:
     ~Game();
     scid::core::Game& coreGame();
     const scid::core::Game& coreGame() const;
-    void Clear();
+    void clear();
     void strip(bool variations, bool comments, bool NAGs);
 
     /// Setup the start position from a FEN string and remove all the moves.

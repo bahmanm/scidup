@@ -13,7 +13,7 @@ Game::~Game() = default;
 constexpr int MOVE_CHUNKSIZE = 128;
 
 Game::Game() {
-	Clear();
+	clear();
 }
 
 scid::core::Game& Game::coreGame() {
@@ -133,7 +133,7 @@ void Game::ClearMoves() {
 	NumHalfMoves = 0;
 }
 
-void Game::Clear() {
+void Game::clear() {
 	// TODO [Game]: Split this reset across core Game metadata/moves and
 	// database compatibility flags.
 	coreGame_.clear();

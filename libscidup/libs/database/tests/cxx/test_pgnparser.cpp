@@ -160,7 +160,7 @@ TEST(Test_PgnParser, EPD) {
 
 	auto len = std::strlen(pgn);
 	scid::database::PgnParseLog parseLog;
-	game.Clear();
+	game.clear();
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                         game, parseLog));
 	EXPECT_TRUE(parseLog.log.empty());
@@ -169,7 +169,7 @@ TEST(Test_PgnParser, EPD) {
 	    "rnbqkb1r/1ppppppp/5n2/p7/2P5/4P3/PP1P1PPP/RNBQKBNR b KQkq - 0 1", buf);
 	EXPECT_STREQ("0 1;", game.moveComment());
 
-	game.Clear();
+	game.clear();
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                         game, parseLog));
 	EXPECT_TRUE(parseLog.log.empty());
@@ -179,7 +179,7 @@ TEST(Test_PgnParser, EPD) {
 	    buf);
 	EXPECT_STREQ("", game.moveComment());
 
-	game.Clear();
+	game.clear();
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                         game, parseLog));
 	EXPECT_TRUE(parseLog.log.empty());
@@ -188,7 +188,7 @@ TEST(Test_PgnParser, EPD) {
 	EXPECT_STREQ("bm Bb8-c7; ce +M3; pv Bb8-c7 Be7-f8 Ke8xf8 d6-d5 Rf5-f7+;",
 	             game.moveComment());
 
-	game.Clear();
+	game.clear();
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                         game, parseLog));
 	EXPECT_TRUE(parseLog.log.empty());
@@ -196,13 +196,13 @@ TEST(Test_PgnParser, EPD) {
 	EXPECT_STREQ("1B2K3/4b3/3pk3/5R2/8/7B/8/8 w - - 0 1", buf);
 	EXPECT_STREQ("bm Bc7 Rf3+", game.moveComment());
 
-	game.Clear();
+	game.clear();
 	ASSERT_FALSE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                          game, parseLog));
 	EXPECT_FALSE(parseLog.log.empty());
 	EXPECT_NE(game.moveComment(), nullptr);
 
-	game.Clear();
+	game.clear();
 	std::string last_log = parseLog.log;
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                         game, parseLog));
@@ -213,14 +213,14 @@ TEST(Test_PgnParser, EPD) {
 	                 1024, true)
 	                 .first);
 
-	game.Clear();
+	game.clear();
 	last_log = parseLog.log;
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                         game, parseLog));
 	EXPECT_STREQ(last_log.c_str(), parseLog.log.c_str());
 	EXPECT_EQ("Partial game", game.coreGame().event());
 
-	game.Clear();
+	game.clear();
 	ASSERT_FALSE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                          game, parseLog));
 	ASSERT_EQ(parseLog.n_bytes, len);

@@ -96,7 +96,7 @@ public:
 			nRead_ += file_.sgetn(buf_.data() + nRead_, verge);
 		}
 
-		game.Clear();
+		game.clear();
 		PgnVisitor visitor(game);
 		auto parse = pgn::parse_game(
 		    {buf_.data() + nParsed_, buf_.data() + nRead_}, visitor);
