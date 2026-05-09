@@ -444,6 +444,39 @@ TEST(Test_Game, coreGameMovetextMirrorsProgrammaticVariationAdds) {
 	EXPECT_EQ("d2d4", variation[0].action.longNotation());
 }
 
+TEST(Test_Game, stateQueriesMirrorCoreCursorForProgrammaticVariation) {
+	scid::database::Game game;
+
+	ASSERT_EQ(scid::database::OK,
+	          game.addMove(makeCurrentMove(game, scid::database::E2,
+	                                       scid::database::E4)));
+	ASSERT_EQ(scid::database::OK, game.addVariation());
+	EXPECT_EQ(1U, game.variationLevel());
+	EXPECT_EQ(0U, game.variationNumber());
+	EXPECT_EQ(0U, game.variationCount());
+	EXPECT_TRUE(game.isAtVariationStart());
+	EXPECT_TRUE(game.isAtVariationEnd());
+	EXPECT_TRUE(game.isAtEmptyVariation());
+	EXPECT_FALSE(game.isAtStart());
+	EXPECT_FALSE(game.isAtEnd());
+
+	ASSERT_EQ(scid::database::OK,
+	          game.addMove(makeCurrentMove(game, scid::database::D2,
+	                                       scid::database::D4)));
+	EXPECT_EQ(1U, game.variationLevel());
+	EXPECT_EQ(0U, game.variationNumber());
+	EXPECT_FALSE(game.isAtVariationStart());
+	EXPECT_TRUE(game.isAtVariationEnd());
+	EXPECT_FALSE(game.isAtEmptyVariation());
+
+	ASSERT_EQ(scid::database::OK, game.exitVariation());
+	EXPECT_EQ(0U, game.variationLevel());
+	EXPECT_EQ(0U, game.variationNumber());
+	EXPECT_EQ(1U, game.variationCount());
+	EXPECT_TRUE(game.isAtStart());
+	EXPECT_FALSE(game.isAtEnd());
+}
+
 TEST(Test_Game, coreGameMoveMetadataMirrorsProgrammaticNagMutation) {
 	scid::database::Game game;
 

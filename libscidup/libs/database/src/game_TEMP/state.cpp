@@ -1,5 +1,7 @@
 #include "scidup/database/game.h"
 
+#include "scidup/core/game_cursor.h"
+#include "movetext_cursor_bridge.h"
 #include "movetree.h"
 
 namespace scid::database {
@@ -33,14 +35,29 @@ ushort Game::currentPly() const {
 }
 
 uint Game::variationCount() const {
+	scid::core::GameCursor cursor(coreGame_);
+	if (legacy_movetext::moveCursorToLegacyLocation(cursor, firstMove_,
+	                                                currentMove_))
+		return static_cast<uint>(cursor.variationCount());
+
 	return currentMove_->numVariations;
 }
 
 uint Game::variationLevel() const {
+	scid::core::GameCursor cursor(coreGame_);
+	if (legacy_movetext::moveCursorToLegacyLocation(cursor, firstMove_,
+	                                                currentMove_))
+		return static_cast<uint>(cursor.variationDepth());
+
 	return varDepth_;
 }
 
 uint Game::variationNumber() const {
+	scid::core::GameCursor cursor(coreGame_);
+	if (legacy_movetext::moveCursorToLegacyLocation(cursor, firstMove_,
+	                                                currentMove_))
+		return static_cast<uint>(cursor.variationIndex());
+
 	if (varDepth_ != 0) {
 		uint varNumber = 0;
 		auto moves = currentMove_->getParent();
@@ -54,22 +71,47 @@ uint Game::variationNumber() const {
 }
 
 bool Game::isAtVariationStart() const {
+	scid::core::GameCursor cursor(coreGame_);
+	if (legacy_movetext::moveCursorToLegacyLocation(cursor, firstMove_,
+	                                                currentMove_))
+		return cursor.isAtVariationStart();
+
 	return currentMove_->prev->startMarker();
 }
 
 bool Game::isAtVariationEnd() const {
+	scid::core::GameCursor cursor(coreGame_);
+	if (legacy_movetext::moveCursorToLegacyLocation(cursor, firstMove_,
+	                                                currentMove_))
+		return cursor.isAtVariationEnd();
+
 	return currentMove_->endMarker();
 }
 
 bool Game::isAtStart() const {
+	scid::core::GameCursor cursor(coreGame_);
+	if (legacy_movetext::moveCursorToLegacyLocation(cursor, firstMove_,
+	                                                currentMove_))
+		return cursor.isAtGameStart();
+
 	return varDepth_ == 0 && isAtVariationStart();
 }
 
 bool Game::isAtEnd() const {
+	scid::core::GameCursor cursor(coreGame_);
+	if (legacy_movetext::moveCursorToLegacyLocation(cursor, firstMove_,
+	                                                currentMove_))
+		return cursor.isAtGameEnd();
+
 	return varDepth_ == 0 && isAtVariationEnd();
 }
 
 bool Game::isAtEmptyVariation() const {
+	scid::core::GameCursor cursor(coreGame_);
+	if (legacy_movetext::moveCursorToLegacyLocation(cursor, firstMove_,
+	                                                currentMove_))
+		return cursor.isAtEmptyVariation();
+
 	return varDepth_ != 0 && isAtVariationStart() && isAtVariationEnd();
 }
 
