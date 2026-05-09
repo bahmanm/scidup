@@ -1,9 +1,5 @@
 #include "scidup/database/game.h"
 
-#include "scidup/database/misc.h"
-
-#include <algorithm>
-#include <cstring>
 #include <string>
 #include <utility>
 #include <vector>
@@ -33,10 +29,6 @@ const std::vector<std::pair<std::string, std::string>>& Game::GetExtraTags()
 const char* Game::FindExtraTag(const char* tag) const {
 	auto value = coreGame_.findExtraTag(tag);
 	return value ? value->c_str() : NULL;
-}
-
-void Game::ClearExtraTags() {
-	coreGame_.clearExtraTags();
 }
 
 void Game::RemoveExtraTag(std::string_view tag) {
@@ -143,40 +135,6 @@ resultT Game::GetResult() const {
 	return coreGame_.result();
 }
 
-std::string_view Game::GetResultStr() const {
-	return coreGame_.resultString();
-}
-
-int Game::setRating(colorT col, const char* ratingType, size_t ratingTypeLen,
-                    std::pair<const char*, const char*> rating) {
-	// TODO [Game]: Move PGN rating-tag parsing to the PGN decoder/import
-	// boundary. Core metadata should receive a typed Rating value.
-	auto begin = ratingTypeNames;
-	const size_t ratingSz = 7;
-	auto it = std::find_if(begin, begin + ratingSz, [&](auto rType) {
-		return std::equal(ratingType, ratingType + ratingTypeLen, rType,
-		                  rType + std::strlen(rType));
-	});
-	auto rType = static_cast<ratingTypeT>(std::distance(begin, it));
-	if (rType >= ratingSz)
-		return -1;
-
-	int res = 1;
-	auto elo = strGetUnsigned(std::string{rating.first, rating.second}.c_str());
-	if (elo > MAX_ELO) {
-		elo = 0;
-		res = 0;
-	}
-	if (col == WHITE) {
-		SetWhiteElo(static_cast<ratingT>(elo));
-		SetWhiteRatingType(rType);
-	} else {
-		SetBlackElo(static_cast<ratingT>(elo));
-		SetBlackRatingType(rType);
-	}
-	return res;
-}
-
 ratingT Game::GetWhiteElo() const {
 	return coreGame_.white().rating.value;
 }
@@ -195,10 +153,6 @@ ratingTypeT Game::GetBlackRatingType() const {
 
 scidup::eco::Code Game::GetEco() const {
 	return EcoCode;
-}
-
-ratingT Game::GetAverageElo() {
-	return coreGame_.averageRating();
 }
 
 } // namespace scid::database

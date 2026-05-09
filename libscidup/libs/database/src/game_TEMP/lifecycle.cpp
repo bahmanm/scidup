@@ -4,8 +4,6 @@
 #include "scidup/core/position.h"
 
 #include <algorithm>
-#include <cstring>
-#include <memory>
 #include <utility>
 
 namespace scid::database {
@@ -28,10 +26,6 @@ bool Game::HasNonStandardStart(char* outFEN, size_t outFENLen) const {
 	return coreGame_.hasNonStandardStart(outFEN, outFENLen);
 }
 
-long long Game::initialPlyCounter() const {
-	return coreGame_.initialPlyCounter();
-}
-
 errorT Game::SetStartFen(const char* fenStr) {
 	Position pos;
 	if (auto err = pos.ReadFromFEN(fenStr))
@@ -47,20 +41,12 @@ void Game::SetStartPos(Position const& pos) {
 	*CurrentPos = pos;
 }
 
-void Game::SetStartPos(std::unique_ptr<Position> pos) {
-	SetStartPos(*pos);
-}
-
 // TODO [Game]: Keep Scid flags in database/app compatibility, not in the core
 // metadata model.
 void Game::SetScidFlags(const char* s, size_t len) {
 	constexpr size_t size = sizeof(ScidFlags) / sizeof(*ScidFlags);
 	std::fill_n(ScidFlags, size, 0);
 	std::copy_n(s, std::min(size - 1, len), ScidFlags);
-}
-
-void Game::SetScidFlags(const char* s) {
-	SetScidFlags(s, std::strlen(s));
 }
 
 ushort Game::GetNumHalfMoves() {
@@ -86,16 +72,13 @@ moveT* Game::NewMove(markerT marker) {
 
 Game::Game(const Game& obj) {
 	// TODO [Game]: Revisit clone/copy after GameCursor exists. This currently
-	// copies aggregate data, legacy export state, and restores PGN-order cursor
-	// location in one compatibility operation.
+	// copies aggregate data and restores PGN-order cursor location in one
+	// compatibility operation.
 	coreGame_ = obj.coreGame_;
 	EcoCode = obj.EcoCode;
 	std::copy_n(obj.ScidFlags, sizeof(obj.ScidFlags), ScidFlags);
 
 	NumHalfMoves = obj.NumHalfMoves;
-	PgnStyle = obj.PgnStyle;
-	PgnFormat = obj.PgnFormat;
-	HtmlStyle = obj.HtmlStyle;
 
 	moveChunkUsed_ = MOVE_CHUNKSIZE;
 	FirstMove = obj.FirstMove->cloneLine(nullptr,
@@ -158,15 +141,11 @@ void Game::ClearMoves() {
 }
 
 void Game::Clear() {
-	// TODO [Game]: Split this reset across core Game metadata/moves, database
-	// compatibility flags, and legacy export defaults.
+	// TODO [Game]: Split this reset across core Game metadata/moves and
+	// database compatibility flags.
 	coreGame_.clear();
 	EcoCode = 0;
 	ScidFlags[0] = 0;
-
-	PgnStyle = PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS;
-	PgnFormat = PGN_FORMAT_Plain;
-	HtmlStyle = 0;
 
 	ClearMoves();
 }

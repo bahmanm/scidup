@@ -16,6 +16,7 @@
 #include "crosstab.h"
 #include "scidup/core/dstring.h"
 #include "scidup/database/game_id.h"
+#include "scidup/database/game_TEMP/notation.h"
 #include "scidup/database/game_TEMP/piece_translation.h"
 #include "scidup/eco/book.h"
 #include <algorithm>
@@ -127,7 +128,7 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
     EcoCode = g->GetEco();
     WhiteElo = g->GetWhiteElo();
     BlackElo = g->GetBlackElo();
-    AvgElo = g->GetAverageElo();
+    AvgElo = g->coreGame().averageRating();
     Length = 0;
     StartPly = g->GetCurrentPly();
     auto location = g->currentLocation();
@@ -1975,7 +1976,8 @@ OpTable::AddMoveOrder (scid::database::Game * g)
     scid::database::uint id = 0;
     int index = -1;
     scid::database::DString dstr;
-    g->GetPartialMoveList (&dstr, g->GetCurrentPly());
+    scid::database::game_notation::writePartialMoveList(
+        *g, dstr, g->GetCurrentPly());
 
     // Search for this move order in the current list:
 

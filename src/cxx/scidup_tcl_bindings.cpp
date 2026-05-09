@@ -32,7 +32,9 @@
 #include "engine.h"
 #include "scidup/database/game_id.h"
 #include "scidup/database/game.h"
+#include "scidup/database/game_TEMP/legacy_pgn.h"
 #include "scidup/database/game_TEMP/nag_format.h"
+#include "scidup/database/game_TEMP/notation.h"
 #include "scidup/database/game_TEMP/piece_translation.h"
 #include "scidup/database/game_TEMP/search.h"
 #include "scidup/database/game_TEMP/storage.h"
@@ -393,26 +395,26 @@ sc_base_inUse (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 //  exportGame:
 //    Called by sc_base_export() to export a single game.
 void
-exportGame (scid::database::Game * g, FILE * exportFile, scid::database::gameFormatT format, scid::database::uint pgnStyle)
+exportGame (scid::database::Game * g, FILE * exportFile,
+            scid::database::LegacyGameEncodeOptions options)
 {
     char old_language = scid::database::language;
 
-    g->ResetPgnStyle (pgnStyle);
-    g->SetPgnFormat (format);
-
     // Format-specific settings:
-    switch (format) {
+    switch (options.legacyFormat) {
     case scid::database::PGN_FORMAT_HTML:
     case scid::database::PGN_FORMAT_LaTeX:
-        g->AddPgnStyle (PGN_STYLE_SHORT_HEADER);
+        options.addStyle(PGN_STYLE_SHORT_HEADER);
         break;
     default:
         scid::database::language = 0;
         break;
     }
 
-    g->SetHtmlStyle (htmlDiagStyle);
-    std::pair<const char*, unsigned> pgn = g->WriteToPGN(75, true, format != scid::database::PGN_FORMAT_LaTeX);
+    options.htmlStyle = htmlDiagStyle;
+    std::pair<const char*, unsigned> pgn = scid::database::legacy_pgn::encode(
+        *g, options, 75, true,
+        options.legacyFormat != scid::database::PGN_FORMAT_LaTeX);
     //size_t nWrited =
     fwrite(pgn.first, 1, pgn.second, exportFile);
     //TODO:
@@ -456,7 +458,8 @@ sc_base_export (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, usage);
     }
 
-    if (! scid::database::Game::PgnFormatFromString (argv[3], &outputFormat)) {
+    if (! scid::database::LegacyGameEncodeOptions::legacyFormatFromString(
+            argv[3], &outputFormat)) {
         return errorResult (ti, usage);
     }
 
@@ -566,7 +569,7 @@ sc_base_export (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     if (!exportFilter) {
         auto editor = scidup::app::editor::gameSession(*db);
-        exportGame (&editor.game(), exportFile, outputFormat, pgnStyle);
+        exportGame (&editor.game(), exportFile, {pgnStyle, outputFormat, 0});
     } else { //TODO: remove this (duplicate of sc_filter export)
         scid::database::Progress progress = UI_CreateProgress(ti);
         scid::database::uint numSeen = 0;
@@ -584,7 +587,7 @@ sc_base_export (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 if (db->getGame(*ie, *g) != scid::database::OK) {
                     continue;
                 }
-                exportGame (g, exportFile, outputFormat, pgnStyle);
+                exportGame (g, exportFile, {pgnStyle, outputFormat, 0});
             }
         }
         progress.report(1, 1);
@@ -1959,12 +1962,16 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             if (exportFile == NULL) return errorResult (ti, "Error opening file for exporting games.");
             auto old_language = scid::database::language;
             scid::database::Game g;
+            auto encodeOptions = scid::database::defaultLegacyGameEncodeOptions();
             if (scid::database::strCompare("LaTeX", argv[6]) == 0) {
-                g.SetPgnFormat (scid::database::PGN_FORMAT_LaTeX);
-                g.ResetPgnStyle (PGN_STYLE_TAGS | PGN_STYLE_COMMENTS | PGN_STYLE_VARS | PGN_STYLE_SHORT_HEADER | PGN_STYLE_SYMBOLS | PGN_STYLE_INDENT_VARS);
+                encodeOptions.legacyFormat = scid::database::PGN_FORMAT_LaTeX;
+                encodeOptions.style = PGN_STYLE_TAGS | PGN_STYLE_COMMENTS |
+                    PGN_STYLE_VARS | PGN_STYLE_SHORT_HEADER | PGN_STYLE_SYMBOLS |
+                    PGN_STYLE_INDENT_VARS;
             } else { //Default to PGN
-                g.SetPgnFormat (scid::database::PGN_FORMAT_Plain);
-                g.ResetPgnStyle (PGN_STYLE_TAGS | PGN_STYLE_COMMENTS | PGN_STYLE_VARS);
+                encodeOptions.legacyFormat = scid::database::PGN_FORMAT_Plain;
+                encodeOptions.style = PGN_STYLE_TAGS | PGN_STYLE_COMMENTS |
+                    PGN_STYLE_VARS;
                 scid::database::language = 0;
             }
             if (argc > 7) fprintf(exportFile, "%s", argv[7]);
@@ -1978,7 +1985,9 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                     // Skip any corrupt games:
                     if (dbase->getGame(*ie, g) != scid::database::OK) continue;
 
-                    std::pair<const char*, unsigned> pgn = g.WriteToPGN(75, true);
+                    std::pair<const char*, unsigned> pgn =
+                        scid::database::legacy_pgn::encode(g, encodeOptions,
+                                                           75, true);
                     if (pgn.second != fwrite(pgn.first, 1, pgn.second, exportFile)) {
                         err = scid::database::ERROR_FileWrite;
                         break;
@@ -2132,7 +2141,9 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                              : "standard");
 
     case GAME_UCI_CURRENTPOS:
-        return UI_Result(ti, scid::database::OK, editor.game().currentPosUCI());
+        return UI_Result(ti, scid::database::OK,
+                         scid::database::game_notation::currentPositionUci(
+                             editor.game()));
 
     case GAME_UNDO:
         if (argc > 2 && scid::database::strCompare("size", argv[2]) == 0) {
@@ -2585,7 +2596,8 @@ sc_game_firstMoves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (plyCount == 0) plyCount = 1;
 
     scid::database::DString dstr;
-    editor.game().GetPartialMoveList (&dstr, plyCount);
+    scid::database::game_notation::writePartialMoveList(
+        editor.game(), dstr, plyCount);
     return UI_Result(ti, scid::database::OK, std::string(dstr.Data()));
 }
 
@@ -2702,34 +2714,39 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         } else if (scid::database::strIsPrefix (argv[arg], "result")) {
             return setResult (ti, scid::database::RESULT_STR[g.GetResult()]);
         } else if (scid::database::strIsPrefix (argv[arg], "nextMove")) {
-            g.GetSAN (temp);
+            scid::database::strCopy(
+                temp, scid::database::game_notation::nextSan(g).c_str());
             scid::database::transPieces(temp);
             AppendResult (ti, temp, NULL);
             return TCL_OK;
 // nextMoveNT is the same as nextMove, except that the move is not translated
         } else if (scid::database::strIsPrefix (argv[arg], "nextMoveNT")) {
-            g.GetSAN (temp);
-            AppendResult (ti, temp, NULL);
+            AppendResult(
+                ti, scid::database::game_notation::nextSan(g).c_str(), NULL);
             return TCL_OK;
 // returns next move played in UCI format
         } else if (scid::database::strIsPrefix (argv[arg], "nextMoveUCI")) {
-          g.GetNextMoveUCI (temp);
-          AppendResult (ti, temp, NULL);
+          AppendResult(
+              ti, scid::database::game_notation::nextMoveUci(g).c_str(),
+              NULL);
           return TCL_OK;
         } else if (scid::database::strIsPrefix (argv[arg], "previousMove")) {
-            g.GetPrevSAN (temp);
+            scid::database::strCopy(
+                temp, scid::database::game_notation::previousSan(g).c_str());
             scid::database::transPieces(temp);
             AppendResult (ti, temp, NULL);
             return TCL_OK;
 // previousMoveNT is the same as previousMove, except that the move is not translated
         } else if (scid::database::strIsPrefix (argv[arg], "previousMoveNT")) {
-            g.GetPrevSAN (temp);
-            AppendResult (ti, temp, NULL);
+            AppendResult(
+                ti, scid::database::game_notation::previousSan(g).c_str(),
+                NULL);
             return TCL_OK;
 // returns previous move played in UCI format
         } else if (scid::database::strIsPrefix (argv[arg], "previousMoveUCI")) {
-            g.GetPrevMoveUCI (temp);
-            AppendResult (ti, temp, NULL);
+            AppendResult(
+                ti, scid::database::game_notation::previousMoveUci(g).c_str(),
+                NULL);
             return TCL_OK;
         } else if (scid::database::strIsPrefix (argv[arg], "duplicate")) {
             scid::database::uint dupGameNum = loadedGameId ? db->getDuplicates(*loadedGameId) : 0;
@@ -2868,7 +2885,8 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::uint prevMoveCount = moveCount;
     if (toMove == scid::database::WHITE) { prevMoveCount--; }
 
-    g.GetPrevSAN (san);
+    scid::database::strCopy(
+        san, scid::database::game_notation::previousSan(g).c_str());
     strcpy(tempTrans, san);
     scid::database::transPieces(tempTrans);
     bool printNags = true;
@@ -2902,7 +2920,8 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Now print next move:
 
-    g.GetSAN (san);
+    scid::database::strCopy(
+        san, scid::database::game_notation::nextSan(g).c_str());
     strcpy(tempTrans, san);
     scid::database::transPieces(tempTrans);
     if (san[0] == 0) {
@@ -2966,7 +2985,8 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         for (scid::database::uint vnum = 0; vnum < varCount && vnum < 5; vnum++) {
             char s[20];
             g.MoveIntoVariation (vnum);
-            g.GetSAN (s);
+            scid::database::strCopy(
+                s, scid::database::game_notation::nextSan(g).c_str());
             strcpy(tempTrans, s);
             scid::database::transPieces(tempTrans);
             std::snprintf(temp, sizeof(temp), "   <run sc_var enter %u; updateBoard -animate>v%u",
@@ -3261,7 +3281,8 @@ sc_game_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         if (sm == NULL) { break; }
         char * s = moveStrings[plyCount];
         if (sanFormat) {
-            g->GetSAN (s);
+            scid::database::strCopy(
+                s, scid::database::game_notation::nextSan(*g).c_str());
         } else {
             s = sm->toLongNotation(s);
             *s = 0;
@@ -3419,9 +3440,7 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     auto editor = scidup::app::editor::gameSession(*base);
     scid::database::Game * g = &editor.game();
     scid::database::uint lineWidth = 99999;
-    g->ResetPgnStyle();
-    g->SetPgnFormat (scid::database::PGN_FORMAT_Plain);
-    g->AddPgnStyle (PGN_STYLE_TAGS | PGN_STYLE_COMMENTS | PGN_STYLE_VARS);
+    auto encodeOptions = scid::database::defaultLegacyGameEncodeOptions();
 
     // Parse all the command options:
     // Note that every option takes a value so options/values always occur
@@ -3475,9 +3494,12 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         } else if (index == OPT_FORMAT) {
             // The option value should be "plain", "html" or "latex".
-            if (! g->SetPgnFormatFromString (argv[thisArg+1])) {
+            scid::database::gameFormatT format;
+            if (! scid::database::LegacyGameEncodeOptions::legacyFormatFromString(
+                    argv[thisArg + 1], &format)) {
                 return errorResult (ti, "Invalid -format option.");
             }
+            encodeOptions.legacyFormat = format;
 
         } else {
             // The option is a boolean affecting pgn style:
@@ -3510,16 +3532,17 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             };
             if (bitmask > 0) {
                 if (value) {
-                    g->AddPgnStyle (bitmask);
+                    encodeOptions.addStyle(bitmask);
                 } else {
-                    g->RemovePgnStyle (bitmask);
+                    encodeOptions.removeStyle(bitmask);
                 }
             }
         }
         thisArg += 2;
     }
 
-    std::pair<const char*, unsigned> pgnBuf = g->WriteToPGN(lineWidth);
+    std::pair<const char*, unsigned> pgnBuf =
+        scid::database::legacy_pgn::encode(*g, encodeOptions, lineWidth);
     AppendResult (ti, pgnBuf.first, NULL);
     return TCL_OK;
 }
@@ -3586,7 +3609,7 @@ sc_game_save (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         // was loaded, but the user may have changed them.
         char buf[scid::database::IndexEntry::IDX_NUM_FLAGS + 1];
         ieOld->GetFlagStr(buf, "WBMENPTKQ!?U123456");
-        currGame.SetScidFlags(buf);
+        currGame.SetScidFlags(buf, std::strlen(buf));
     }
     auto location = currGame.currentLocation();
     scid::database::errorT res = dbase->saveGame(currGame, gnum);
@@ -3711,7 +3734,8 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
             scid::database::colorT toMove = g->GetCurrentPos()->GetToMove();
             scid::database::uint moveCount = g->GetCurrentPos()->GetFullMoveCount();
             char san [20];
-            g->GetSAN (san);
+            scid::database::strCopy(
+                san, scid::database::game_notation::nextSan(*g).c_str());
 	            if (san[0] != 0) {
 	                char temp[40];
 	                if (toMove == scid::database::WHITE) {
@@ -3987,7 +4011,13 @@ sc_game_tags_set (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             case T_EXTRA:
                 {
                     // Add all the nonstandard tags:
-                    game.ClearExtraTags ();
+                    std::vector<std::string> extraTags;
+                    for (auto const& tag : game.GetExtraTags()) {
+                        extraTags.push_back(tag.first);
+                    }
+                    for (auto const& tag : extraTags) {
+                        game.RemoveExtraTag(tag);
+                    }
 
                     Tcl_Obj* list = Tcl_NewStringObj(value, -1);
                     Tcl_IncrRefCount(list);
@@ -4691,8 +4721,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
             game.MoveToEnd();
             game.currentPos()->MakeLongStr(boardStr);
-            char lastmove[scid::database::UCI_MOVE_STRING_SIZE] = {};
-            game.GetPrevMoveUCI(lastmove);
+            auto lastmove = scid::database::game_notation::previousMoveUci(game);
             UI_List result(2);
             result.push_back(boardStr);
             result.push_back(lastmove);
@@ -8278,13 +8307,17 @@ sc_search_header (ClientData, Tcl_Interp * ti, scid::database::scidBaseT* base, 
 			if (base->getGame(*ie, *scratchGame) != scid::database::OK) {
 				match = false;
 			} else {
-				scratchGame->ResetPgnStyle();
-				scratchGame->AddPgnStyle(PGN_STYLE_TAGS);
-				scratchGame->AddPgnStyle(PGN_STYLE_COMMENTS);
-				scratchGame->AddPgnStyle(PGN_STYLE_VARS);
-				scratchGame->AddPgnStyle(PGN_STYLE_SYMBOLS);
-				scratchGame->SetPgnFormat(scid::database::PGN_FORMAT_Plain);
-				const char* buf = scratchGame->WriteToPGN().first;
+				const auto encodeOptions =
+				    scid::database::LegacyGameEncodeOptions{
+				        PGN_STYLE_TAGS | PGN_STYLE_COMMENTS |
+				            PGN_STYLE_VARS | PGN_STYLE_SYMBOLS,
+				        scid::database::PGN_FORMAT_Plain,
+				        0,
+				    };
+				const char* buf =
+				    scid::database::legacy_pgn::encode(*scratchGame,
+				                                       encodeOptions)
+				        .first;
 					for (scid_tcl_size m = 0; m < pgnTextCount; m++) {
 						if (match) {
 							match = scid::database::strContains(buf, sPgnText[m]);
@@ -8413,8 +8446,13 @@ sc_var_list (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     char s[100];
     for (scid::database::uint varNumber = 0; varNumber < varCount; varNumber++) {
         game.MoveIntoVariation (varNumber);
-        if (uci) game.GetNextMoveUCI (s);
-        else game.GetSAN (s);
+        if (uci) {
+            scid::database::strCopy(
+                s, scid::database::game_notation::nextMoveUci(game).c_str());
+        } else {
+            scid::database::strCopy(
+                s, scid::database::game_notation::nextSan(game).c_str());
+        }
         // if (s[0] == 0) { scid::database::strCopy (s, "(empty)"); }
         AppendElement (ti, s);
         game.MoveExitVariation ();

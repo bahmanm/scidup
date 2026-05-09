@@ -4,6 +4,7 @@
 #include "pgn_lexer.h"
 #include "scidup/database/game_TEMP/nag_format.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
+#include "scidup/database/misc.h"
 #include <algorithm>
 #include <optional>
 #include <string>
@@ -247,6 +248,35 @@ private:
 		return logErr("Invalid Result tag: ", str);
 	}
 
+	int parseRating(colorT col, const char* ratingType, size_t ratingTypeLen,
+	                TView rating) {
+		const auto ratingTypeView = std::string_view{ratingType, ratingTypeLen};
+		constexpr size_t ratingTypeCount = 7;
+		auto begin = ratingTypeNames;
+		auto it = std::find_if(begin, begin + ratingTypeCount,
+		                       [&](auto rType) {
+			                       return ratingTypeView == std::string_view{rType};
+		                       });
+		auto rType = static_cast<ratingTypeT>(std::distance(begin, it));
+		if (rType >= ratingTypeCount)
+			return -1;
+
+		int res = 1;
+		auto elo = strGetUnsigned(std::string{rating.first, rating.second}.c_str());
+		if (elo > MAX_ELO) {
+			elo = 0;
+			res = 0;
+		}
+		if (col == WHITE) {
+			game.SetWhiteElo(static_cast<ratingT>(elo));
+			game.SetWhiteRatingType(rType);
+		} else {
+			game.SetBlackElo(static_cast<ratingT>(elo));
+			game.SetBlackRatingType(rType);
+		}
+		return res;
+	}
+
 	std::optional<std::string> parsedTagValue(std::string_view tag) const {
 		auto const& coreGame = game.coreGame();
 		char strBuf[256];
@@ -344,12 +374,12 @@ private:
 		}
 		if (tagLen >= 8) {
 			if (std::equal(tag, tag + 5, "White") && game.GetWhiteElo() == 0) {
-				auto res = game.setRating(WHITE, tag + 5, tagLen - 5, value);
+				auto res = parseRating(WHITE, tag + 5, tagLen - 5, value);
 				if (res >= 0)
 					return res;
 			} else if (std::equal(tag, tag + 5, "Black") &&
 			           game.GetBlackElo() == 0) {
-				auto res = game.setRating(BLACK, tag + 5, tagLen - 5, value);
+				auto res = parseRating(BLACK, tag + 5, tagLen - 5, value);
 				if (res >= 0)
 					return res;
 			}

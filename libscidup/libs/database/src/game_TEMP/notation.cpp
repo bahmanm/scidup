@@ -1,6 +1,7 @@
 #include "scidup/database/game.h"
 
 #include "scidup/database/common.h"
+#include "scidup/database/game_TEMP/notation.h"
 #include "scidup/core/dstring.h"
 #include "scidup/core/notation.h"
 #include "scidup/core/position.h"
@@ -27,17 +28,17 @@ OutputIt TEMP_copyLongNotation(OutputIt dest, simpleMoveT const& move) {
 
 } // namespace
 
-// TODO [Game]: Move UCI position rendering to a notation helper over
-// GameCursor.
-std::string Game::currentPosUCI() const {
+std::string game_notation::currentPositionUci(const Game& game) {
+	// TODO [Game]: Move UCI position rendering to a notation helper over
+	// GameCursor.
 	std::string res = "position startpos moves";
 	char FEN[256] = {};
 
 	std::vector<const moveT*> moves;
-	const moveT* move = CurrentMove;
+	const moveT* move = game.CurrentMove;
 	while ((move = move->getPrevMove())) {
 		if (move->moveData.isNullMove()) {
-			Position lastValidPos = *currentPos();
+			Position lastValidPos = *game.currentPos();
 				for (const moveT* m : moves) {
 					lastValidPos.UndoSimpleMove(m->moveData);
 				}
@@ -47,7 +48,7 @@ std::string Game::currentPosUCI() const {
 		moves.emplace_back(move);
 	}
 
-		if (*FEN || HasNonStandardStart(FEN, sizeof(FEN))) {
+		if (*FEN || game.HasNonStandardStart(FEN, sizeof(FEN))) {
 			res.replace(9, 4, "fen ");
 			res.replace(13, 4, FEN);
 		}
@@ -64,45 +65,35 @@ std::string Game::currentPosUCI() const {
 }
 
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::GetPartialMoveList():
-//      Write the first few moves of a game.
-//
-errorT
-Game::GetPartialMoveList (DString * outStr, uint plyCount)
-{
+errorT game_notation::writePartialMoveList(Game& game, DString& out,
+                                           uint plyCount) {
     // TODO [Game]: Rebuild this UI compatibility helper on GameCursor plus SAN
     // notation once cursor traversal is no longer stored directly on Game.
     // First, copy the relevant data so we can leave the game state
     // unaltered:
-    auto location = currentLocation();
+    auto location = game.currentLocation();
 
-    MoveToStart();
+    game.MoveToStart();
     char temp [80];
     for (uint i=0; i < plyCount; i++) {
-        if (CurrentMove->marker == END_MARKER) {
+        if (game.AtEnd()) {
             break;
         }
-        if (i != 0) { outStr->Append (" "); }
-        if (i == 0  ||  CurrentPos->GetToMove() == WHITE) {
-            std::snprintf(temp, sizeof(temp), "%d%s", CurrentPos->GetFullMoveCount(),
-                     (CurrentPos->GetToMove() == WHITE ? "." : "..."));
-            outStr->Append (temp);
-        }
-        moveT * m = CurrentMove;
-        if (m->san[0] == 0) {
-            CurrentPos->MakeSANString(&(m->moveData),
-                                      m->san, SAN_CHECKTEST);
-            TEMP_syncCoreMovetext();
+        const auto* pos = game.currentPos();
+        if (i != 0) { out.Append (" "); }
+        if (i == 0  ||  pos->GetToMove() == WHITE) {
+            std::snprintf(temp, sizeof(temp), "%d%s", pos->GetFullMoveCount(),
+                     (pos->GetToMove() == WHITE ? "." : "..."));
+            out.Append (temp);
         }
         // add one space for indenting to work out right
-        outStr->Append (" ");
-        outStr->Append (m->san);
-        MoveForward();
+        out.Append (" ");
+        out.Append (game.GetNextSAN());
+        game.MoveForward();
     }
 
     // Now reconstruct the original game state:
-    restoreLocation(location);
+    game.restoreLocation(location);
     return OK;
 }
 
@@ -123,66 +114,44 @@ const char* Game::GetNextSAN() {
 	return CurrentMove->san;
 }
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::GetSAN():
-//      Print the SAN representation of the current move to a string.
-//      Prints an empty string ("") if not at a move.
-void Game::GetSAN(char* str) {
-	ASSERT(str != NULL);
-	strcpy(str, GetNextSAN());
+std::string game_notation::nextSan(Game& game) {
+	return game.GetNextSAN();
 }
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::GetPrevSAN():
-//      Print the SAN representation of the previous move to a string.
-//      Prints an empty string ("") if not at a move.
-void
-Game::GetPrevSAN (char * str)
-{
-    ASSERT (str != NULL);
-    moveT * m = CurrentMove->prev;
+std::string game_notation::previousSan(Game& game) {
+    // TODO [Game]: Move SAN generation/caching to notation helpers and
+    // Move.metadata once Move owns SAN and GameCursor owns the current position.
+    moveT * m = game.CurrentMove->prev;
     if (m->startMarker()  ||  m->endMarker()) {
-        str[0] = 0;
-        return;
+        return {};
     }
     if (m->san[0] == 0) {
-        MoveBackup();
-        CurrentPos->MakeSANString (&(m->moveData), m->san, SAN_MATETEST);
-        MoveForward();
-        TEMP_syncCoreMovetext();
+        game.MoveBackup();
+        game.CurrentPos->MakeSANString (&(m->moveData), m->san, SAN_MATETEST);
+        game.MoveForward();
+        game.TEMP_syncCoreMovetext();
     }
-    strcpy (str, m->san);
+    return m->san;
 }
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::GetPrevMoveUCI():
-//      Print the UCI representation of the current move to a string.
-//      Prints an empty string ("") if not at a move.
-void Game::GetPrevMoveUCI(char* str) const {
-    // TODO [Game]: Move UCI move rendering to a notation helper over
-    // MoveAction once GameCursor owns previous/next move traversal.
-    ASSERT(str != NULL);
-    const auto m = CurrentMove->prev;
-    if (!m->startMarker())
-        str = TEMP_copyLongNotation(str, m->moveData);
-
-    *str = '\0';
+std::string game_notation::previousMoveUci(const Game& game) {
+	// TODO [Game]: Move UCI move rendering to a notation helper over
+	// MoveAction once GameCursor owns previous/next move traversal.
+	const auto move = game.CurrentMove->prev;
+	if (move->startMarker()) {
+		return {};
+	}
+	return TEMP_moveActionFromLegacyMove(move->moveData).longNotation();
 }
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::GetNextMoveUCI():
-//      Print the UCI representation of the next move to a string.
-//      Prints an empty string ("") if not at a move.
-void
-Game::GetNextMoveUCI (char * str)
-{
-    // TODO [Game]: Move UCI move rendering to a notation helper over
-    // MoveAction once GameCursor owns previous/next move traversal.
-    ASSERT (str != NULL);
-    if (!CurrentMove->endMarker())
-        str = TEMP_copyLongNotation(str, CurrentMove->moveData);
-
-    *str = '\0';
+std::string game_notation::nextMoveUci(const Game& game) {
+	// TODO [Game]: Move UCI move rendering to a notation helper over
+	// MoveAction once GameCursor owns previous/next move traversal.
+	const auto move = game.CurrentMove;
+	if (move->endMarker()) {
+		return {};
+	}
+	return TEMP_moveActionFromLegacyMove(move->moveData).longNotation();
 }
 
 } // namespace scid::database

@@ -18,7 +18,9 @@
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/nags.h"
 #include "scidup/core/pgn/encode.h"
+#include "scidup/database/game_TEMP/legacy_pgn.h"
 #include "scidup/database/game_TEMP/nag_format.h"
+#include "scidup/database/game_TEMP/notation.h"
 #include "scidup/database/game_TEMP/piece_translation.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
 #include "scidup/database/game_TEMP/storage.h"
@@ -55,6 +57,15 @@ void materializeCoreSan(scid::database::Game& game) {
 	game.restoreLocation(location);
 }
 
+scid::database::LegacyGameEncodeOptions scidFlagsPgnOptions() {
+	return {
+	    PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
+	        PGN_STYLE_SCIDFLAGS,
+	    scid::database::PGN_FORMAT_Plain,
+	    0,
+	};
+}
+
 } // namespace
 
 TEST(Test_Game, clone) {
@@ -78,35 +89,34 @@ TEST(Test_Game, clone) {
 		ASSERT_TRUE(
 		    std::equal(board, board + 66, clone->currentPos()->GetBoard()));
 
-		char sanGame[12] = {};
-		game.GetSAN(sanGame);
-		char sanClone[12] = {};
-		clone->GetSAN(sanClone);
-		ASSERT_STREQ(sanGame, sanClone);
+		ASSERT_EQ(scid::database::game_notation::nextSan(game),
+		          scid::database::game_notation::nextSan(*clone));
 
-		game.SetPgnFormat(scid::database::PGN_FORMAT_Plain);
-		game.ResetPgnStyle(PGN_STYLE_TAGS | PGN_STYLE_VARS |
-		                   PGN_STYLE_COMMENTS | PGN_STYLE_SCIDFLAGS);
-		auto pgnGame = game.WriteToPGN(75, true);
+		auto pgnGame =
+		    scid::database::legacy_pgn::encode(game, scidFlagsPgnOptions(), 75,
+		                                       true);
 
-		clone->SetPgnFormat(scid::database::PGN_FORMAT_Plain);
-		clone->ResetPgnStyle(PGN_STYLE_TAGS | PGN_STYLE_VARS |
-		                     PGN_STYLE_COMMENTS | PGN_STYLE_SCIDFLAGS);
-		auto pgnClone = clone->WriteToPGN(75, true);
+		auto pgnClone = scid::database::legacy_pgn::encode(
+		    *clone, scidFlagsPgnOptions(), 75, true);
 
 		ASSERT_TRUE(std::equal(pgnClone.first, pgnClone.first + pgnClone.second,
 		                       pgnGame.first, pgnGame.first + pgnGame.second));
 	}
 }
 
-TEST(Test_Game, WriteToPGNDoesNotMutatePgnStyle) {
+TEST(Test_Game, WriteToPGNDoesNotMutateOptions) {
 	scid::database::Game game;
-	game.ResetPgnStyle(PGN_STYLE_TAGS | PGN_STYLE_COLUMN);
-	const auto pgnStyle = game.GetPgnStyle();
+	const auto options = scid::database::LegacyGameEncodeOptions{
+	    PGN_STYLE_TAGS | PGN_STYLE_COLUMN,
+	    scid::database::PGN_FORMAT_Plain,
+	    0,
+	};
 
-	game.WriteToPGN(75, true);
+	auto first = scid::database::legacy_pgn::encode(game, options, 75, true);
+	std::string firstPgn(first.first, first.second);
+	auto second = scid::database::legacy_pgn::encode(game, options, 75, true);
 
-	EXPECT_EQ(pgnStyle, game.GetPgnStyle());
+	EXPECT_EQ(firstPgn, std::string(second.first, second.second));
 }
 
 TEST(Test_Game, LegacyGameEncodeOptionsFormatFromString) {
@@ -247,8 +257,8 @@ TEST(Test_Game, coreGamePgnEncodingIncludesLegacyMetadataTags) {
 	game.SetWhiteStr("white player");
 	game.SetBlackStr("black player");
 	game.SetDate(scid::database::date_parsePGNTag("2018.06.11", 10));
-	const char* white_elo = "2800";
-	game.setRating(scid::database::WHITE, "Rapid", 5, {white_elo, white_elo + 4});
+	game.SetWhiteElo(2800);
+	game.SetWhiteRatingType(scid::database::RATING_Rapid);
 	game.SetBlackElo(2650);
 	game.SetEco(scidup::eco::fromString("A01"));
 	game.SetEventDate(scid::database::date_parsePGNTag("2018.06.01", 10));
@@ -330,7 +340,7 @@ TEST(Test_Game, encodeFEN) {
 	}
 }
 
-TEST(Test_Game, currentPosUCI_startpos) {
+TEST(Test_Game, currentPositionUci_startpos) {
 	std::string_view pgn = "1.d4 (1.e4 e5 ( 1...c5)) (1.c4) 1...d5 2.c4";
 	scid::database::Game game;
 	scid::database::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()},
@@ -351,7 +361,7 @@ TEST(Test_Game, currentPosUCI_startpos) {
 	    {11, "position startpos moves d2d4 d7d5 c2c4"}};
 	for (auto [pos, str] : expected) {
 		game.MoveToLocationInPGN(pos);
-		EXPECT_EQ(str, game.currentPosUCI());
+		EXPECT_EQ(str, scid::database::game_notation::currentPositionUci(game));
 	}
 }
 
@@ -460,7 +470,7 @@ TEST(Test_Game, coreGameCanBeEncodedAsPlainPgnAfterSanMaterialization) {
 	EXPECT_EQ(expected, encoded);
 }
 
-TEST(Test_Game, currentPosUCI_fen) {
+TEST(Test_Game, currentPositionUci_fen) {
 	std::string_view pgn =
 	    "[FEN 8/8/8/8/2p5/1k1p4/p4N2/2K5 w - - 0 198]\n"
 	    "198.Kd2 ( 198.Nxd3 a1=R+ 199.Kd2 cxd3 )198...a1=Q 199.Ke3 Qe1+ 0-1";
@@ -485,7 +495,7 @@ TEST(Test_Game, currentPosUCI_fen) {
 	};
 	for (auto [pos, str] : expected) {
 		game.MoveToLocationInPGN(pos);
-		EXPECT_EQ(str, game.currentPosUCI());
+		EXPECT_EQ(str, scid::database::game_notation::currentPositionUci(game));
 	}
 }
 

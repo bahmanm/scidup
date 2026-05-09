@@ -91,10 +91,6 @@ const char* Game::GetMoveComment() const {
 	return CurrentMove->prev->comment.c_str();
 }
 
-std::string& Game::accessMoveComment() {
-	return CurrentMove->prev->comment;
-}
-
 errorT Game::AddNag (byte nag) {
     moveT * m = CurrentMove->prev;
     if (m->nagCount + 1 >= MAX_NAGS) { return ERROR_GameFull; }

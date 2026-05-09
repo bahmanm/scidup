@@ -25,6 +25,7 @@ struct LegacyGameEncodeOptions {
 	bool isColorFormat() const { return legacyFormat == PGN_FORMAT_Color; }
 	bool hasStyle(unsigned mask) const { return (style & mask) != 0; }
 	void addStyle(unsigned mask) { style |= mask; }
+	void removeStyle(unsigned mask) { style &= ~mask; }
 };
 
 } // namespace scid::database
@@ -42,3 +43,15 @@ struct LegacyGameEncodeOptions {
 #define PGN_STYLE_STRIP_MARKS 1024
 #define PGN_STYLE_NO_NULL_MOVES 2048
 #define PGN_STYLE_UNICODE 4096
+
+namespace scid::database {
+
+inline LegacyGameEncodeOptions defaultLegacyGameEncodeOptions() {
+	return {
+	    PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS,
+	    PGN_FORMAT_Plain,
+	    0,
+	};
+}
+
+} // namespace scid::database

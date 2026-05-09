@@ -1,4 +1,5 @@
 #include "scidup/database/game_TEMP/nag_format.h"
+#include "scidup/database/game_TEMP/legacy_pgn.h"
 #include "scidup/database/game_TEMP/piece_translation.h"
 #include "scidup/database/common.h"
 #include "scidup/database/game.h"
@@ -15,9 +16,6 @@
 
 namespace scid::database {
 
-// TODO [Game]: These Game methods are legacy export/encode compatibility
-// wrappers. The future model should pass explicit options to encoder/exporter
-// objects instead of storing style/export state on Game.
 bool LegacyGameEncodeOptions::legacyFormatFromString(const char* str,
                                                      gameFormatT* fmt) {
 	if (strIsCasePrefix(str, "Plain")) {
@@ -35,82 +33,6 @@ bool LegacyGameEncodeOptions::legacyFormatFromString(const char* str,
 	}
 	return true;
 }
-
-void Game::ResetPgnStyle(void) {
-	PgnStyle = 0;
-}
-
-void Game::ResetPgnStyle(uint flag) {
-	PgnStyle = flag;
-}
-
-uint Game::GetPgnStyle() {
-	return PgnStyle;
-}
-
-void Game::SetPgnStyle(uint mask, bool setting) {
-	if (setting) {
-		AddPgnStyle(mask);
-	} else {
-		RemovePgnStyle(mask);
-	}
-}
-
-void Game::AddPgnStyle(uint mask) {
-	PgnStyle |= mask;
-}
-
-void Game::RemovePgnStyle(uint mask) {
-	PgnStyle &= ~mask;
-}
-
-void Game::SetPgnFormat(gameFormatT gf) {
-	PgnFormat = gf;
-}
-
-// Compatibility wrapper for encode format parsing.
-bool Game::PgnFormatFromString(const char* str, gameFormatT* fmt) {
-	return LegacyGameEncodeOptions::legacyFormatFromString(str, fmt);
-}
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::SetPgnFormatFromString():
-//      Sets the PgnFormat from the provided string.
-//      Returns true if the PgnFormat was successfully set.
-bool
-Game::SetPgnFormatFromString (const char * str)
-{
-	return LegacyGameEncodeOptions::legacyFormatFromString(str, &PgnFormat);
-}
-
-bool Game::IsPlainFormat() {
-	return LegacyGameEncodeOptions{PgnStyle, PgnFormat, HtmlStyle}
-	    .isPlainFormat();
-}
-
-bool Game::IsHtmlFormat() {
-	return LegacyGameEncodeOptions{PgnStyle, PgnFormat, HtmlStyle}
-	    .isHtmlFormat();
-}
-
-bool Game::IsLatexFormat() {
-	return LegacyGameEncodeOptions{PgnStyle, PgnFormat, HtmlStyle}
-	    .isLatexFormat();
-}
-
-bool Game::IsColorFormat() {
-	return LegacyGameEncodeOptions{PgnStyle, PgnFormat, HtmlStyle}
-	    .isColorFormat();
-}
-
-void Game::SetHtmlStyle(uint style) {
-	HtmlStyle = style;
-}
-
-uint Game::GetHtmlStyle() {
-	return HtmlStyle;
-}
-
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // writeComment:
@@ -950,16 +872,11 @@ std::pair<const char*, unsigned> LegacyGamePgnEncoder::encodeToPgnText(
     return std::make_pair(tbuf.GetBuffer(), tbuf.GetByteCount());
 }
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::WriteToPGN():
-//      Print the entire game.
-//
-std::pair<const char*, unsigned>
-Game::WriteToPGN(uint lineWidth, bool NewLineAtEnd, bool newLineToSpaces)
-{
+std::pair<const char*, unsigned> legacy_pgn::encode(
+    Game& game, LegacyGameEncodeOptions options, unsigned lineWidth,
+    bool newLineAtEnd, bool newLineToSpaces) {
     return LegacyGamePgnEncoder::encodeToPgnText(
-        *this, {PgnStyle, PgnFormat, HtmlStyle}, lineWidth, NewLineAtEnd,
-        newLineToSpaces);
+        game, options, lineWidth, newLineAtEnd, newLineToSpaces);
 }
 
 } // namespace scid::database

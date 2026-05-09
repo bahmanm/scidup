@@ -22,7 +22,6 @@
 #include "scidup/core/date.h"
 #include "scidup/eco/code.h"
 #include "scidup/core/nags.h"
-#include "scidup/database/game_TEMP/legacy_encode_options.h"
 #include "scidup/database/game_TEMP/search.h"
 #include "scidup/database/indexentry.h"
 #include "scidup/database/namebase.h"
@@ -52,6 +51,14 @@ errorT decodeSkipTags(Game& game, ByteBuffer* buf);
 errorT decodeNextMove(Game& game, ByteBuffer* buf, simpleMoveT& sm);
 } // namespace game_storage
 
+namespace game_notation {
+std::string currentPositionUci(const Game& game);
+std::string nextMoveUci(const Game& game);
+std::string nextSan(Game& game);
+std::string previousSan(Game& game);
+std::string previousMoveUci(const Game& game);
+} // namespace game_notation
+
 //////////////////////////////////////////////////////////////////////
 //  Game:  Class Definition
 
@@ -71,12 +78,6 @@ class Game {
     moveT*      CurrentMove;
     uint        VarDepth;     // Current variation depth.
     ushort      NumHalfMoves; // Total half moves in the main line.
-
-    // TODO [Game]: Move legacy export/encode options out of Game. These are
-    // compatibility settings for the legacy writer, not core Game state.
-    uint        PgnStyle;        // see PGN_STYLE macros above.
-    gameFormatT PgnFormat;       // see PGN_FORMAT macros above.
-    uint        HtmlStyle;       // HTML diagram style, see DumpHtmlBoard method in position.cpp.
 
 private:
     Game(const Game&);
@@ -128,6 +129,11 @@ private:
     friend bool game_search::varExactMatch(Game& game, Position* pos,
                                            gameExactMatchT searchType);
     friend struct LegacyGamePgnEncoder;
+    friend std::string game_notation::currentPositionUci(const Game& game);
+    friend std::string game_notation::nextMoveUci(const Game& game);
+    friend std::string game_notation::nextSan(Game& game);
+    friend std::string game_notation::previousSan(Game& game);
+    friend std::string game_notation::previousMoveUci(const Game& game);
 
     /**
      * Contains the information of the current position in the game, so that
@@ -148,20 +154,14 @@ public:
 
     bool HasNonStandardStart(char* outFEN = nullptr, size_t outFENLen = 0) const;
 
-    // The last field of the initial FEN is the number of the full moves.
-    // @return  2 * full move - 2; +1 if it is black to move.
-    long long initialPlyCounter() const;
-
     /// Setup the start position from a FEN string and remove all the moves.
     /// If the FEN is invalid the game is not changed.
     errorT SetStartFen(const char* fenStr);
 
     /// Set a new start position and remove all the moves.
     void SetStartPos(Position const& pos);
-    void SetStartPos(std::unique_ptr<Position> pos);
 
     void SetScidFlags(const char* s, size_t len);
-    void SetScidFlags(const char* s);
 
     ushort GetNumHalfMoves();
 
@@ -200,8 +200,6 @@ public:
     //
     const Position* currentPos() const;
     Position* GetCurrentPos(); // Deprecated, use the const version
-    /// @return an "UCI position" string that leads to the current position
-    std::string currentPosUCI() const;
     simpleMoveT* GetCurrentMove();
     ushort GetCurrentPly() const;
     uint GetNumVariations() const;
@@ -243,14 +241,9 @@ public:
     /// If there are no previous moves, return an empty comment.
     std::pair<const char*, const char*> previousComments() const;
     const char* GetMoveComment() const;
-    std::string& accessMoveComment();
     void SetMoveComment(const char* comment);
 
     const char* GetNextSAN();
-    void GetSAN(char* str);
-    void GetPrevSAN(char* str);
-    void GetPrevMoveUCI(char* str) const;
-    void GetNextMoveUCI(char* str);
 
     //////////////////////////////////////////////////////////////
     // Functions that get/set the tag pairs:
@@ -263,7 +256,6 @@ public:
 
     const std::vector<std::pair<std::string, std::string>>& GetExtraTags() const;
     const char* FindExtraTag(const char* tag) const;
-    void ClearExtraTags();
     void RemoveExtraTag(std::string_view tag);
 
     void     SetEventStr (const char * str);
@@ -278,8 +270,6 @@ public:
     void     SetBlackElo (ratingT elo);
     void     SetWhiteRatingType (ratingTypeT b);
     void     SetBlackRatingType (ratingTypeT b);
-    int setRating(colorT col, const char* ratingType, size_t ratingTypeLen,
-                  std::pair<const char*, const char*> rating);
     void     SetEco (scidup::eco::Code eco);
     const char* GetEventStr () const;
     const char* GetSiteStr ()  const;
@@ -289,41 +279,11 @@ public:
     dateT    GetDate ()        const;
     dateT    GetEventDate ()   const;
     resultT  GetResult ()      const;
-    std::string_view GetResultStr() const;
     ratingT     GetWhiteElo ()    const;
     ratingT     GetBlackElo ()    const;
     ratingTypeT GetWhiteRatingType () const;
     ratingTypeT GetBlackRatingType () const;
     scidup::eco::Code GetEco() const;
-    ratingT     GetAverageElo ();
-
-    // TODO [Game]: Replace this legacy export/encode compatibility surface with
-    // explicit encoder/exporter options outside the Game aggregate.
-    // PGN conversion
-    std::pair<const char*, unsigned> WriteToPGN (uint lineWidth = 0,
-                                                 bool NewLineAtEnd = false,
-                                                 bool newLineToSpaces = true);
-
-    void      ResetPgnStyle (void);
-    void      ResetPgnStyle (uint flag);
-
-    uint      GetPgnStyle ();
-    void      SetPgnStyle (uint mask, bool setting);
-    void      AddPgnStyle (uint mask);
-    void      RemovePgnStyle (uint mask);
-
-    void      SetPgnFormat (gameFormatT gf);
-    bool      SetPgnFormatFromString (const char * str);
-    static bool PgnFormatFromString (const char * str, gameFormatT * fmt);
-    bool      IsPlainFormat ();
-    bool      IsHtmlFormat  ();
-    bool      IsLatexFormat ();
-    bool      IsColorFormat ();
-
-    void      SetHtmlStyle (uint style);
-    uint      GetHtmlStyle ();
-
-    errorT    GetPartialMoveList (DString * str, uint plyCount);
 
     Game* clone();
 };

@@ -15,6 +15,7 @@
 */
 
 #include "scidup/database/game.h"
+#include "scidup/database/game_TEMP/legacy_pgn.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
 #include "pgnparse_impl.h"
 #include <algorithm>
@@ -79,10 +80,13 @@ TEST(Test_PgnParser, UTF8_char) {
 	scid::database::PgnParseLog errors;
 	ASSERT_TRUE(scid::database::pgnParseGame(pgnUTF8.data(), pgnUTF8.size(), game, errors));
 	EXPECT_TRUE(errors.log.empty());
-	game.SetPgnFormat(scid::database::PGN_FORMAT_Plain);
-	game.ResetPgnStyle(PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
-	                   PGN_STYLE_SCIDFLAGS);
-	auto pgn = game.WriteToPGN(75, true);
+	auto pgn = scid::database::legacy_pgn::encode(
+	    game,
+	    {PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
+	         PGN_STYLE_SCIDFLAGS,
+	     scid::database::PGN_FORMAT_Plain,
+	     0},
+	    75, true);
 
 	ASSERT_EQ(canonicaliseWhitespace(std::move(pgnUTF8)),
 	          canonicaliseWhitespace(std::string{pgn.first, pgn.second}));
@@ -96,10 +100,13 @@ TEST(Test_PgnParser, Latin1_char) {
 	scid::database::PgnParseLog errors;
 	ASSERT_TRUE(scid::database::pgnParseGame(pgnLatin1.data(), pgnLatin1.size(), game, errors));
 	EXPECT_TRUE(errors.log.empty());
-	game.SetPgnFormat(scid::database::PGN_FORMAT_Plain);
-	game.ResetPgnStyle(PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
-	                   PGN_STYLE_SCIDFLAGS);
-	auto pgn = game.WriteToPGN(75, true);
+	auto pgn = scid::database::legacy_pgn::encode(
+	    game,
+	    {PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
+	         PGN_STYLE_SCIDFLAGS,
+	     scid::database::PGN_FORMAT_Plain,
+	     0},
+	    75, true);
 
 	auto pgnUTF8 = readFile(gameLatin1Conv);
 	ASSERT_TRUE(pgnUTF8.size() > 0);
@@ -150,8 +157,6 @@ TEST(Test_PgnParser, EPD) {
 
 	char buf[128];
 	scid::database::Game game;
-	game.SetPgnFormat(scid::database::PGN_FORMAT_Plain);
-	game.ResetPgnStyle(PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS);
 
 	auto len = std::strlen(pgn);
 	scid::database::PgnParseLog parseLog;
@@ -202,7 +207,11 @@ TEST(Test_PgnParser, EPD) {
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                         game, parseLog));
 	EXPECT_TRUE(parseLog.log.size() > last_log.size());
-	EXPECT_STREQ(expected_game, game.WriteToPGN(1024, true).first);
+	EXPECT_STREQ(expected_game,
+	             scid::database::legacy_pgn::encode(
+	                 game, scid::database::defaultLegacyGameEncodeOptions(),
+	                 1024, true)
+	                 .first);
 
 	game.Clear();
 	last_log = parseLog.log;
@@ -389,13 +398,11 @@ TEST(Test_PgnParser, TagPairs) {
 
 		scid::database::PgnParseLog parseLog;
 		scid::database::Game game;
-		game.SetPgnFormat(scid::database::PGN_FORMAT_Plain);
-		game.ResetPgnStyle(PGN_STYLE_TAGS | PGN_STYLE_VARS |
-		                   PGN_STYLE_COMMENTS);
 
 		ASSERT_TRUE(scid::database::pgnParseGame(src.c_str(), src.size(), game, parseLog));
 		ASSERT_EQ(!parseLog.log.size(), !errors);
-		auto pgn = game.WriteToPGN(75, true);
+		auto pgn = scid::database::legacy_pgn::encode(
+		    game, scid::database::defaultLegacyGameEncodeOptions(), 75, true);
 		src.assign(pgn.first, pgn.second);
 		ASSERT_STREQ(src.c_str(), expect.c_str());
 	};

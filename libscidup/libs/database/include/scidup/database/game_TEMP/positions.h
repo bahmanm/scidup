@@ -1,6 +1,7 @@
 #pragma once
 
 #include "scidup/database/game.h"
+#include "scidup/database/game_TEMP/notation.h"
 
 #include <cstdint>
 #include <string>
@@ -55,8 +56,7 @@ inline void collectPositions(Game& game, TCont& dest) {
 			gamepos.NAGs.push_back(*nag);
 		}
 		gamepos.comment = game.GetMoveComment();
-		game.GetPrevSAN(strBuf);
-		gamepos.lastMoveSAN = strBuf;
+		gamepos.lastMoveSAN = game_notation::previousSan(game);
 
 	} while (game.MoveForwardInPGN() == OK);
 }
