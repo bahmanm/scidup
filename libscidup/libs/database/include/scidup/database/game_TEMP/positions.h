@@ -47,8 +47,8 @@ inline void collectPositions(Game& game, TCont& dest) {
 
 		dest.emplace_back();
 		auto& gamepos = dest.back();
-		gamepos.RAVdepth = game.GetVarLevel();
-		gamepos.RAVnum = game.GetVarNumber();
+		gamepos.RAVdepth = game.variationLevel();
+		gamepos.RAVnum = game.variationNumber();
 		char strBuf[256];
 		game.currentPos()->PrintFEN(strBuf, sizeof(strBuf));
 		gamepos.FEN = strBuf;

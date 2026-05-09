@@ -133,7 +133,7 @@ errorT Game::MoveForwardInPGN() {
 		if (VarDepth == 0)
 			return ERROR_EndOfMoveList;
 
-		auto varnum = GetVarNumber();
+		auto varnum = variationNumber();
 		MoveExitVariation();
 		if (MoveIntoVariation(varnum + 1) == OK)
 			return OK;

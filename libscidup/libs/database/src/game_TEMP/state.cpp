@@ -32,15 +32,15 @@ ushort Game::currentPly() const {
 	return startPos ? ply - startPos->GetPlyCounter() : ply;
 }
 
-uint Game::GetNumVariations() const {
+uint Game::variationCount() const {
 	return CurrentMove->numVariations;
 }
 
-uint Game::GetVarLevel() const {
+uint Game::variationLevel() const {
 	return VarDepth;
 }
 
-uint Game::GetVarNumber() const {
+uint Game::variationNumber() const {
 	if (VarDepth != 0) {
 		uint varNumber = 0;
 		auto moves = CurrentMove->getParent();
