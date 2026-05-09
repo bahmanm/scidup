@@ -129,7 +129,7 @@ void Game::clearMoves() {
 	CurrentMove = newMove(END_MARKER);
 	FirstMove->setNext(CurrentMove);
 
-	VarDepth = 0;
+	varDepth_ = 0;
 	numHalfMoves_ = 0;
 }
 

@@ -12,7 +12,7 @@ namespace scid::database {
 ///////////////////////////////////////////////////////////////////////////
 // A "location" in the game is represented by a position (Game::CurrentPos), the
 // next move to be played (Game::CurrentMove) and the number of parent variations
-// (Game::VarDepth). Since CurrentMove is the next move to be played, some
+// (Game::varDepth_). Since CurrentMove is the next move to be played, some
 // invariants must hold: it is never nullptr and it never points to a
 // START_MARKER (it will point to a END_MARKER if there are no more moves). This
 // also means that CurrentMove->prev is always valid: it will point to a
@@ -62,7 +62,7 @@ errorT Game::enterVariation(uint varNumber) {
 		subVar = subVar->varChild;
 		if (varNumber == 0) {
 			CurrentMove = subVar->next; // skip the START_MARKER
-			++VarDepth;
+			++varDepth_;
 
 			// Invariants
 			ASSERT(CurrentMove && CurrentMove->prev);
@@ -78,7 +78,7 @@ errorT Game::enterVariation(uint varNumber) {
 //      Move out of a variation, to the parent.
 //
 errorT Game::exitVariation(void) {
-	if (VarDepth == 0) // not in a variation!
+	if (varDepth_ == 0) // not in a variation!
 		return ERROR_NoVariation;
 
 	// Algorithm: go back previous moves as far as possible, then
@@ -86,7 +86,7 @@ errorT Game::exitVariation(void) {
 	while (previous() == OK) {
 	}
 	CurrentMove = CurrentMove->getParent().first;
-	--VarDepth;
+	--varDepth_;
 
 	// Invariants
 	ASSERT(CurrentMove && CurrentMove->prev);
@@ -103,7 +103,7 @@ void Game::toStart() {
 	} else {
 		CurrentPos->StdStart();
 	}
-	VarDepth = 0;
+	varDepth_ = 0;
 	CurrentMove = FirstMove->next;
 
 	// Invariants
@@ -130,7 +130,7 @@ errorT Game::nextPgn() {
 		return enterVariation(0);
 
 	while (next() != OK) {
-		if (VarDepth == 0)
+		if (varDepth_ == 0)
 			return ERROR_EndOfMoveList;
 
 		auto varnum = variationNumber();
@@ -199,7 +199,7 @@ errorT Game::addMove(simpleMoveT const& sm) {
 	CurrentMove->setNext(newMove(END_MARKER));
 	CurrentMove->marker = NO_MARKER;
 	CurrentMove->moveData = sm;
-	if (VarDepth == 0)
+	if (varDepth_ == 0)
 		++numHalfMoves_;
 
 	auto err = next();
@@ -223,7 +223,7 @@ errorT Game::addVariation() {
 
 	// Move into variation
 	CurrentMove = newVar->next;
-	++VarDepth;
+	++varDepth_;
 
 	// Invariants
 	ASSERT(CurrentMove && CurrentMove->prev);
@@ -266,8 +266,8 @@ errorT Game::promoteVariationToMainline() {
 	// Swap the mainline with the current variation
 	root->swapLine(*parent.second->next);
 
-	ASSERT(VarDepth);
-	if (--VarDepth == 0) { // Recalculate mainline half-move count.
+	ASSERT(varDepth_);
+	if (--varDepth_ == 0) { // Recalculate mainline half-move count.
 		const auto count_moves = [](auto move) {
 			int res = 0;
 			while (!move->endMarker()) {
@@ -316,7 +316,7 @@ void Game::truncate() {
 	CurrentMove->prev->setNext(endMove);
 
 	CurrentMove = endMove;
-	if (VarDepth == 0)
+	if (varDepth_ == 0)
 		numHalfMoves_ = currentPly();
 	TEMP_syncCoreMovetext();
 
@@ -337,7 +337,7 @@ void Game::truncateStart() {
 	    if (pos->ReadFromFEN(tempStr) != OK)
 	        return;
 
-    if (VarDepth != 0 && promoteVariationToMainline() != OK)
+    if (varDepth_ != 0 && promoteVariationToMainline() != OK)
 		return;
 
     numHalfMoves_ -= currentPly();

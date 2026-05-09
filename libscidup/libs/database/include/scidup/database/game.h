@@ -75,7 +75,7 @@ class Game {
     std::unique_ptr<Position> CurrentPos{new Position};
     moveT*      FirstMove;
     moveT*      CurrentMove;
-    uint        VarDepth;     // Current variation depth.
+    uint        varDepth_;     // Current variation depth.
     ushort      numHalfMoves_; // Total half moves in the main line.
 
 private:
@@ -172,7 +172,7 @@ public:
 
     //////////////////////////////////////////////////////////////
     // Functions that move the current location (only CurrentPos,
-    // CurrentMove and VarDepth are modified by these functions):
+    // CurrentMove and varDepth_ are modified by these functions):
     //
     errorT next();
     errorT previous();

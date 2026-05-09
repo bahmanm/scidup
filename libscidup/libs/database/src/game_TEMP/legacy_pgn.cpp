@@ -92,7 +92,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
     auto& CurrentMove = game.CurrentMove;
     auto& CurrentPos = game.CurrentPos;
     auto& FirstMove = game.FirstMove;
-    auto& VarDepth = game.VarDepth;
+    auto& varDepth_ = game.varDepth_;
     auto previous = [&] { return game.previous(); };
     auto exitVariation = [&] { return game.exitVariation(); };
     auto next = [&] { return game.next(); };
@@ -135,8 +135,8 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
         endColumn = "<br>";
     }
 
-    if (options.isHtmlFormat()  &&  VarDepth == 0) { tb->PrintString ("<b>"); }
-    if ((options.style & PGN_STYLE_COLUMN)  &&  VarDepth == 0) {
+    if (options.isHtmlFormat()  &&  varDepth_ == 0) { tb->PrintString ("<b>"); }
+    if ((options.style & PGN_STYLE_COLUMN)  &&  varDepth_ == 0) {
         tb->PrintString (startTable);
     }
 
@@ -157,7 +157,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
 
     std::string strippedComment;
     // If this is a variation and it starts with a comment, print it:
-    if ((VarDepth > 0 || CurrentMove->prev == FirstMove) &&
+    if ((varDepth_ > 0 || CurrentMove->prev == FirstMove) &&
         (options.style & PGN_STYLE_COMMENTS)) {
         const char* comment = CurrentMove->prev->comment.c_str();
         if (*comment && (options.style & PGN_STYLE_STRIP_MARKS)) {
@@ -169,7 +169,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
             writeComment(tb, preCommentStr, comment, postCommentStr,
                          options.isColorFormat(), numMovesPrinted);
             tb->PrintSpace();
-            if (!VarDepth) {
+            if (!varDepth_) {
                 tb->ClearTranslation ('\n');
                 tb->NewLine();
                 if (options.isColorFormat() || options.isLatexFormat()) {
@@ -223,7 +223,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
             tb->PrintChar ('>');
         }
         if (printMoveNum  ||  (CurrentPos->GetToMove() == WHITE)) {
-            if ((options.style & PGN_STYLE_COLUMN)  &&  VarDepth == 0) {
+            if ((options.style & PGN_STYLE_COLUMN)  &&  varDepth_ == 0) {
                 tb->PrintString (startColumn);
                 char temp [10];
                 std::snprintf(temp, sizeof(temp), "%4u.", CurrentPos->GetFullMoveCount());
@@ -256,7 +256,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
 
         // Now print the move: only regenerate the SAN string if necessary.
 
-        if ((options.style & PGN_STYLE_COLUMN)  &&  VarDepth == 0) {
+        if ((options.style & PGN_STYLE_COLUMN)  &&  varDepth_ == 0) {
             tb->PauseTranslations();
             tb->PrintString (nextColumn);
             tb->ResumeTranslations();
@@ -328,14 +328,14 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
             }
             tb->PrintSpace();
             colWidth--;
-            if ((options.style & PGN_STYLE_COLUMN)  &&  VarDepth == 0) {
+            if ((options.style & PGN_STYLE_COLUMN)  &&  varDepth_ == 0) {
                 if (options.isPlainFormat()  ||  options.isColorFormat()) {
                     while (colWidth-- > 0) { tb->PrintSpace(); }
                 }
             }
 
             if (printDiagramHere) {
-                if ((options.style & PGN_STYLE_COLUMN)  &&  VarDepth == 0) {
+                if ((options.style & PGN_STYLE_COLUMN)  &&  varDepth_ == 0) {
                     if (! endedColumn) {
                         if (CurrentPos->GetToMove() == WHITE) {
                             tb->PauseTranslations ();
@@ -347,13 +347,13 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                         endedColumn = true;
                     }
                 }
-                if (options.isHtmlFormat()  &&  VarDepth == 0) {
+                if (options.isHtmlFormat()  &&  varDepth_ == 0) {
                     tb->PrintString ("</b>");
                 }
                 if (options.isLatexFormat()) {
                     // The commented-out code below will print diagrams
                     // in variations smaller than game diagrams:
-                    //if (VarDepth == 0) {
+                    //if (varDepth_ == 0) {
                     //    tb->PrintString("\n\\font\\Chess=chess20\n");
                     //} else {
                     //    tb->PrintString("\n\\font\\Chess=chess10\n");
@@ -370,7 +370,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                 previous ();
                 tb->PrintString (dstr->Data());
                 delete dstr;
-                if (options.isHtmlFormat()  &&  VarDepth == 0) {
+                if (options.isHtmlFormat()  &&  varDepth_ == 0) {
                     tb->PrintString ("<b>");
                 }
                 if (options.isLatexFormat()) {
@@ -401,7 +401,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                 }
 
 /* Code commented to remove extra lines
-                if ((options.style & PGN_STYLE_COLUMN)  &&  VarDepth == 0) {
+                if ((options.style & PGN_STYLE_COLUMN)  &&  varDepth_ == 0) {
                        if (! endedColumn) {
                            if (CurrentPos->GetToMove() == WHITE) {
                                tb->PauseTranslations ();
@@ -414,10 +414,10 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                        }
                 }
 */
-                if (options.isHtmlFormat()  &&  VarDepth == 0) {
+                if (options.isHtmlFormat()  &&  varDepth_ == 0) {
                     tb->PrintString ("</b><dl><dd>");
                 }
-                if ((options.style & PGN_STYLE_INDENT_COMMENTS) && VarDepth == 0) {
+                if ((options.style & PGN_STYLE_INDENT_COMMENTS) && varDepth_ == 0) {
                     if (options.isColorFormat()) {
                         tb->PrintString ("<br><ip1>");
                     } else {
@@ -428,7 +428,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                 writeComment(tb, preCommentStr, comment, postCommentStr,
                              options.isColorFormat(), numMovesPrinted);
 
-                if ((options.style & PGN_STYLE_INDENT_COMMENTS) && VarDepth == 0) {
+                if ((options.style & PGN_STYLE_INDENT_COMMENTS) && varDepth_ == 0) {
                     if (options.isColorFormat()) {
                         tb->PrintString ("</ip1><br>");
                         commentLine = true;
@@ -456,7 +456,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                     }
                     delete dstr;
                 }
-                if (options.isHtmlFormat() && VarDepth == 0) {
+                if (options.isHtmlFormat() && varDepth_ == 0) {
                     tb->PrintString ("</dl><b>");
                 }
                 printMoveNum = true;
@@ -467,7 +467,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
 
         // Print any variations if the style indicates:
         if ((options.style & PGN_STYLE_VARS)  &&  (m->numVariations > 0)) {
-            if ((options.style & PGN_STYLE_COLUMN)  &&  VarDepth == 0) {
+            if ((options.style & PGN_STYLE_COLUMN)  &&  varDepth_ == 0) {
                 if (! endedColumn) {
                     if (CurrentPos->GetToMove() == WHITE) {
                         tb->PauseTranslations ();
@@ -480,7 +480,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                     endedColumn = true;
                 }
             }
-            if (options.isColorFormat()  &&  VarDepth == 0) { tb->PrintString ("<var>"); }
+            if (options.isColorFormat()  &&  varDepth_ == 0) { tb->PrintString ("<var>"); }
             // Doesn't indent first var in column mode properly
             // if including !(options.style & PGN_STYLE_COLUMN) here.
             // But as-is, depth 3 vars don't indent in COLUMN mode (bug)
@@ -492,9 +492,9 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
             for (uint i=0; i < m->numVariations; i++) {
                 if (options.style & PGN_STYLE_INDENT_VARS) {
                     if (options.isColorFormat()) {
-                        if (VarDepth < 19) {
+                        if (varDepth_ < 19) {
                             char tmp_str[16];
-                            std::snprintf(tmp_str, sizeof(tmp_str), "<ip%u>", VarDepth + 1);
+                            std::snprintf(tmp_str, sizeof(tmp_str), "<ip%u>", varDepth_ + 1);
                             tb->PrintString(tmp_str);
                         }
                     } else {
@@ -502,9 +502,9 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                     }
                 }
                 if (options.isHtmlFormat()) {
-                    if (VarDepth == 0) { tb->PrintString ("</b><dl><dd>"); }
+                    if (varDepth_ == 0) { tb->PrintString ("</b><dl><dd>"); }
                 }
-                if (options.isLatexFormat()  &&  VarDepth == 0) {
+                if (options.isLatexFormat()  &&  varDepth_ == 0) {
                     if (options.style & PGN_STYLE_INDENT_VARS) {
                         tb->PrintLine ("\\begin{variation}");
                     } else {
@@ -513,9 +513,9 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                 }
                 if (options.isColorFormat()) { tb->PrintString ("<blue>"); }
 
-                // Note tabs in column mode don't work after this VarDepth>1 for some reason
-                // this VarDepth check is redundant i think
-                if (!options.isLatexFormat()  ||  VarDepth != 0) {
+                // Note tabs in column mode don't work after this varDepth_>1 for some reason
+                // this varDepth_ check is redundant i think
+                if (!options.isLatexFormat()  ||  varDepth_ != 0) {
                     tb->PrintChar ('(');
                 }
 
@@ -527,14 +527,14 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                 writeMoveList(true, inComment);
 
                 exitVariation();
-                if (!options.isLatexFormat()  ||  VarDepth != 0) {
+                if (!options.isLatexFormat()  ||  varDepth_ != 0) {
                     tb->PrintChar (')');
                 }
                 if (options.isColorFormat()) { tb->PrintString ("<blue>"); }
                 if (options.isHtmlFormat()) {
-                    if (VarDepth == 0) { tb->PrintString ("</dl><b>"); }
+                    if (varDepth_ == 0) { tb->PrintString ("</dl><b>"); }
                 }
-                if (options.isLatexFormat()  &&  VarDepth == 0) {
+                if (options.isLatexFormat()  &&  varDepth_ == 0) {
                     if (options.style & PGN_STYLE_INDENT_VARS) {
                         tb->PrintLine ("\\end{variation}");
                     } else {
@@ -543,9 +543,9 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                 }
                 if (options.style & PGN_STYLE_INDENT_VARS) {
                     if (options.isColorFormat()) {
-                        if (VarDepth < 19) {
+                        if (varDepth_ < 19) {
                             char tmp_str[16];
-                            std::snprintf(tmp_str, sizeof(tmp_str), "</ip%u><br>", VarDepth + 1);
+                            std::snprintf(tmp_str, sizeof(tmp_str), "</ip%u><br>", varDepth_ + 1);
                             tb->PrintString(tmp_str);
                         }
                     } else {
@@ -554,11 +554,11 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                 } else { tb->PrintSpace(); }
                 printMoveNum = true;
             }
-            if (options.isColorFormat()  &&  VarDepth == 0) {
+            if (options.isColorFormat()  &&  varDepth_ == 0) {
                 tb->PrintString ("</var>");
             }
         }
-        if ((options.style & PGN_STYLE_COLUMN)  &&  VarDepth == 0) {
+        if ((options.style & PGN_STYLE_COLUMN)  &&  varDepth_ == 0) {
             if (endedColumn) { tb->PrintString(startTable); }
             if (!endedColumn  &&  CurrentPos->GetToMove() == BLACK) {
                 tb->PrintString (endColumn);
@@ -568,8 +568,8 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
         next();
     }
     if (inComment) { tb->PrintString ("}"); }
-    if (options.isHtmlFormat()  &&  VarDepth == 0) { tb->PrintString ("</b>"); }
-    if ((options.style & PGN_STYLE_COLUMN)  &&  VarDepth == 0) {
+    if (options.isHtmlFormat()  &&  varDepth_ == 0) { tb->PrintString ("</b>"); }
+    if ((options.style & PGN_STYLE_COLUMN)  &&  varDepth_ == 0) {
         tb->PrintString(endTable);
     }
     return OK;

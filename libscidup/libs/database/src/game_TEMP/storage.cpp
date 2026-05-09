@@ -332,7 +332,7 @@ errorT Game::decodeVariation(ByteBuffer& buf,
 	simpleMoveT sm;
 	for (;;) {
 		auto [err, val] = buf.nextMove(
-		    this->VarDepth, [&](auto) { return true; },
+		    this->varDepth_, [&](auto) { return true; },
 		    [&] {
 			    // Mark this comment as needing to be read
 			    comment_marks.push_back(this->CurrentMove->prev);
