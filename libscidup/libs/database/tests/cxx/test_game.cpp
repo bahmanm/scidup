@@ -451,6 +451,7 @@ TEST(Test_Game, stateQueriesMirrorCoreCursorForProgrammaticVariation) {
 	          game.addMove(makeCurrentMove(game, scid::database::E2,
 	                                       scid::database::E4)));
 	ASSERT_EQ(scid::database::OK, game.addVariation());
+	EXPECT_EQ(0U, game.currentPly());
 	EXPECT_EQ(1U, game.variationLevel());
 	EXPECT_EQ(0U, game.variationNumber());
 	EXPECT_EQ(0U, game.variationCount());
@@ -463,6 +464,7 @@ TEST(Test_Game, stateQueriesMirrorCoreCursorForProgrammaticVariation) {
 	ASSERT_EQ(scid::database::OK,
 	          game.addMove(makeCurrentMove(game, scid::database::D2,
 	                                       scid::database::D4)));
+	EXPECT_EQ(1U, game.currentPly());
 	EXPECT_EQ(1U, game.variationLevel());
 	EXPECT_EQ(0U, game.variationNumber());
 	EXPECT_FALSE(game.isAtVariationStart());
@@ -470,6 +472,7 @@ TEST(Test_Game, stateQueriesMirrorCoreCursorForProgrammaticVariation) {
 	EXPECT_FALSE(game.isAtEmptyVariation());
 
 	ASSERT_EQ(scid::database::OK, game.exitVariation());
+	EXPECT_EQ(0U, game.currentPly());
 	EXPECT_EQ(0U, game.variationLevel());
 	EXPECT_EQ(0U, game.variationNumber());
 	EXPECT_EQ(1U, game.variationCount());
