@@ -63,7 +63,7 @@ public:
 	void visitPGN_EPD(TView line) {
 		ASSERT(nErrorsAllowed_ >= 0);
 		std::string tmp(line.first, line.second);
-		if (game.SetStartFen(tmp.c_str()) == OK) {
+		if (game.setStartFen(tmp.c_str()) == OK) {
 			auto opcode = std::find_if(
 			    line.first, line.second, [spaces = 0](char ch) mutable {
 				    return (ch == ' ') ? spaces++ == 4 : spaces == 4;
@@ -340,7 +340,7 @@ private:
 			}
 			if (std::equal(tag, tag + 3, "FEN")) {
 				std::string tmp{value.first, value.second};
-				return game.SetStartFen(tmp.c_str()) == OK;
+				return game.setStartFen(tmp.c_str()) == OK;
 			}
 			break;
 		case 4:
@@ -369,7 +369,7 @@ private:
 				return !date_isPartial(date);
 			}
 			if (std::equal(tag, tag + 9, "ScidFlags")) {
-				game.SetScidFlags(value.first,
+				game.setScidFlags(value.first,
 				                  std::distance(value.first, value.second));
 				return true;
 			}

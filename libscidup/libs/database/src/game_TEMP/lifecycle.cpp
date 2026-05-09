@@ -24,16 +24,16 @@ const scid::core::Game& Game::coreGame() const {
 	return coreGame_;
 }
 
-errorT Game::SetStartFen(const char* fenStr) {
+errorT Game::setStartFen(const char* fenStr) {
 	Position pos;
 	if (auto err = pos.ReadFromFEN(fenStr))
 		return err;
 
-	SetStartPos(pos);
+	setStartPosition(pos);
 	return OK;
 }
 
-void Game::SetStartPos(Position const& pos) {
+void Game::setStartPosition(Position const& pos) {
 	ClearMoves();
 	coreGame_.setStartPosition(pos);
 	*CurrentPos = pos;
@@ -41,7 +41,7 @@ void Game::SetStartPos(Position const& pos) {
 
 // TODO [Game]: Keep Scid flags in database/app compatibility, not in the core
 // metadata model.
-void Game::SetScidFlags(const char* s, size_t len) {
+void Game::setScidFlags(const char* s, size_t len) {
 	constexpr size_t size = sizeof(ScidFlags) / sizeof(*ScidFlags);
 	std::fill_n(ScidFlags, size, 0);
 	std::copy_n(s, std::min(size - 1, len), ScidFlags);

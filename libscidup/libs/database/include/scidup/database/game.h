@@ -152,12 +152,12 @@ public:
 
     /// Setup the start position from a FEN string and remove all the moves.
     /// If the FEN is invalid the game is not changed.
-    errorT SetStartFen(const char* fenStr);
+    errorT setStartFen(const char* fenStr);
 
     /// Set a new start position and remove all the moves.
-    void SetStartPos(Position const& pos);
+    void setStartPosition(Position const& pos);
 
-    void SetScidFlags(const char* s, size_t len);
+    void setScidFlags(const char* s, size_t len);
 
     //////////////////////////////////////////////////////////////
     // Functions to add or delete moves:

@@ -3618,7 +3618,7 @@ sc_game_save (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         // was loaded, but the user may have changed them.
         char buf[scid::database::IndexEntry::IDX_NUM_FLAGS + 1];
         ieOld->GetFlagStr(buf, "WBMENPTKQ!?U123456");
-        currGame.SetScidFlags(buf, std::strlen(buf));
+        currGame.setScidFlags(buf, std::strlen(buf));
     }
     auto location = currGame.currentLocation();
     scid::database::errorT res = dbase->saveGame(currGame, gnum);
@@ -3652,7 +3652,7 @@ sc_game_startBoard (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: sc_game startBoard <fenString>");
     }
     const char * str = argv[2];
-    auto err = editor.game().SetStartFen(str);
+    auto err = editor.game().setStartFen(str);
     if (err != scid::database::OK)
         return errorResult(ti, "Invalid FEN string.");
 
@@ -4749,7 +4749,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                 return UI_Result(ti, err);
 
             auto game = scid::database::Game();
-            game.SetStartPos(pos);
+            game.setStartPosition(pos);
             if (const auto len = std::strlen(argv[3])) {
                 scid::database::PgnParseLog pgn;
                 if (!scid::database::pgnParseGame(argv[3], len, game, pgn))
@@ -4883,7 +4883,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             scid::database::PgnParseLog log;
             scid::database::Game game;
             if (pos.ReadFromFENorUCI(argv[2]) == scid::database::OK &&
-                (game.SetStartPos(pos), true) &&
+                (game.setStartPosition(pos), true) &&
                 scid::database::pgnParseGame(argv[3], std::strlen(argv[3]), game, log) &&
                 log.log.empty()) {
                 std::string moves;

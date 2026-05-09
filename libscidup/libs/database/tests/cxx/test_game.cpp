@@ -265,7 +265,7 @@ TEST(Test_Game, coreGamePgnEncodingIncludesLegacyMetadataTags) {
 	game.coreGame().addTag("Annotator", "Example");
 	game.coreGame().setResult(scid::database::RESULT_Black);
 	const char* fen = "8/N2P1pk1/2n2q2/1P2pp2/5PN1/QKPp1P2/8/8 w - - 0 1";
-	game.SetStartFen(fen);
+	game.setStartFen(fen);
 	game.coreGame().addTag("Event", "event nAme");
 	game.coreGame().addTag("Round", "round 4");
 	game.coreGame().addTag("Site", "a long site maybe in a long country");
@@ -325,7 +325,7 @@ TEST(Test_Game, encodeFEN) {
 	    "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1";
 	{
 		scid::database::Game game;
-		game.SetStartFen(kiwipete);
+		game.setStartFen(kiwipete);
 		scid::database::game_storage::encode(game, encodedGame);
 	}
 	{

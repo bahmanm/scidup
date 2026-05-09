@@ -621,7 +621,7 @@ errorT Game::DecodeSkipTags(ByteBuffer* buf) {
         return err_startpos;
 
     if (fen)
-        return SetStartFen(fen);
+        return setStartFen(fen);
 
     return OK;
 }
@@ -659,7 +659,7 @@ errorT Game::Decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf)
         return err_startpos;
 
     if (fen)
-        err = SetStartFen(fen);
+        err = setStartFen(fen);
 
     std::vector<moveT*> comment_marks;
     if (err == OK)
