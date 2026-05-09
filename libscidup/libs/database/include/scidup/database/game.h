@@ -180,8 +180,8 @@ public:
     errorT exitVariation();
     // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
     // instead of keeping it on the generic Game cursor surface.
-    errorT MoveForwardInPGN();
-    errorT MoveToLocationInPGN(unsigned stopLocation);
+    errorT nextPgn();
+    errorT toPgnLocation(unsigned stopLocation);
     void toStart();
     /// Move to the end of the main line.
     void toEnd();
@@ -209,8 +209,8 @@ public:
 
     // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
     // instead of keeping it on the generic Game cursor surface.
-    unsigned GetLocationInPGN() const;
-    unsigned GetPgnOffset() const;
+    unsigned pgnLocation() const;
+    unsigned pgnOffset() const;
 
     bool isAtVariationStart() const;
     bool isAtVariationEnd() const;

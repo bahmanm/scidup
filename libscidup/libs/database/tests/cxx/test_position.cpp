@@ -29,7 +29,7 @@ TEST(Test_PrintFen, castling_flag_kside_from_pgn) {
 		char buf[1024];
 		game.currentPos()->PrintFEN(buf, sizeof(buf));
 		EXPECT_STREQ(buf, expected);
-		game.MoveForwardInPGN();
+		game.nextPgn();
 	}
 }
 
@@ -57,6 +57,6 @@ TEST(Test_PrintFen, castling_flag_qside_from_pgn) {
 		char buf[1024];
 		game.currentPos()->PrintFEN(buf, sizeof(buf));
 		EXPECT_STREQ(buf, expected);
-		game.MoveForwardInPGN();
+		game.nextPgn();
 	}
 }

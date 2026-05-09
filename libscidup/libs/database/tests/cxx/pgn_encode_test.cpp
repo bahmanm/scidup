@@ -180,7 +180,7 @@ static void SAN_hack(scid::database::Game& game) {
 	game.toStart();
 	do {
 		scid::database::game_notation::nextSan(game);
-	} while (game.MoveForwardInPGN() == scid::database::OK);
+	} while (game.nextPgn() == scid::database::OK);
 };
 
 TEST(Test_PgnEncode, encode_game) {

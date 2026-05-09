@@ -4686,14 +4686,14 @@ sc_move_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     auto editor = scidup::app::editor::gameSession(*db);
     if (argc == 2)
-        return UI_Result(ti, scid::database::OK, editor.game().GetLocationInPGN());
+        return UI_Result(ti, scid::database::OK, editor.game().pgnLocation());
 
     if (argc != 3) {
         return errorResult (ti, "Usage: sc_move pgn [offset]");
     }
 
     scid::database::uint offset = scid::database::strGetUnsigned (argv[2]);
-    editor.game().MoveToLocationInPGN (offset);
+    editor.game().toPgnLocation (offset);
     return TCL_OK;
 }
 
@@ -4824,7 +4824,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return setUintResult (ti, g.currentPos()->GetFullMoveCount());
 
     case POS_PGNOFFSET:
-        setUintResult (ti, g.GetPgnOffset());
+        setUintResult (ti, g.pgnOffset());
         break;
 
     case POS_SETCOMMENT:

@@ -125,7 +125,7 @@ void Game::toPly(int hmNumber) {
 
 // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
 // instead of keeping it on the generic Game cursor surface.
-errorT Game::MoveForwardInPGN() {
+errorT Game::nextPgn() {
 	if (CurrentMove->prev->varChild && previous() == OK)
 		return enterVariation(0);
 
@@ -145,10 +145,10 @@ errorT Game::MoveForwardInPGN() {
 
 // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
 // instead of keeping it on the generic Game cursor surface.
-errorT Game::MoveToLocationInPGN(unsigned stopLocation) {
+errorT Game::toPgnLocation(unsigned stopLocation) {
 	toStart();
 	for (unsigned loc = 1; loc < stopLocation; ++loc) {
-		errorT err = MoveForwardInPGN();
+		errorT err = nextPgn();
 		if (err != OK)
 			return err;
 	}
@@ -157,7 +157,7 @@ errorT Game::MoveToLocationInPGN(unsigned stopLocation) {
 
 // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
 // instead of keeping it on the generic Game cursor surface.
-unsigned Game::GetLocationInPGN() const {
+unsigned Game::pgnLocation() const {
 	unsigned res = 1;
 	const moveT* last_move = CurrentMove->prev;
 	const moveT* move = FirstMove;
@@ -170,7 +170,7 @@ unsigned Game::GetLocationInPGN() const {
 
 // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
 // instead of keeping it on the generic Game cursor surface.
-unsigned Game::GetPgnOffset() const {
+unsigned Game::pgnOffset() const {
 	unsigned res = 1;
 	const moveT* last_move = CurrentMove->getPrevMove();
 	if (last_move) {
@@ -350,7 +350,7 @@ void Game::truncateStart() {
         if (!CurrentMove->startMarker() && !CurrentMove->endMarker()) {
             CurrentPos->fillMove(CurrentMove->moveData);
         }
-    } while (MoveForwardInPGN() == OK);
+    } while (nextPgn() == OK);
     toStart();
     TEMP_syncCoreMovetext();
 }

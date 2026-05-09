@@ -58,7 +58,7 @@ inline void collectPositions(Game& game, TCont& dest) {
 		gamepos.comment = game.moveComment();
 		gamepos.lastMoveSAN = game_notation::previousSan(game);
 
-	} while (game.MoveForwardInPGN() == OK);
+	} while (game.nextPgn() == OK);
 }
 
 /**

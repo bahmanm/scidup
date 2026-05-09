@@ -150,7 +150,7 @@ public:
 		game->toStart();
 		do {
 			game_notation::nextSan(*game);
-		} while (game->MoveForwardInPGN() == OK);
+		} while (game->nextPgn() == OK);
 
 		buf_.clear();
 		scid::core::pgn::encode(game->coreGame(), buf_);

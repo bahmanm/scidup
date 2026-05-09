@@ -53,7 +53,7 @@ void materializeCoreSan(scid::database::Game& game) {
 	game.toStart();
 	do {
 		scid::database::game_notation::nextSan(game);
-	} while (game.MoveForwardInPGN() == scid::database::OK);
+	} while (game.nextPgn() == scid::database::OK);
 	game.restoreLocation(location);
 }
 
@@ -79,11 +79,11 @@ TEST(Test_Game, clone) {
 		ASSERT_EQ(scid::database::OK, dbase.getGame(*dbase.getIndexEntry(0), game));
 
 		std::mt19937 re(std::random_device{}());
-		game.MoveToLocationInPGN(std::uniform_int_distribution<>{0, 500}(re));
+		game.toPgnLocation(std::uniform_int_distribution<>{0, 500}(re));
 
 		std::unique_ptr<scid::database::Game> clone{game.clone()};
 
-		ASSERT_EQ(clone->GetPgnOffset(), game.GetPgnOffset());
+		ASSERT_EQ(clone->pgnOffset(), game.pgnOffset());
 
 		auto board = game.currentPos()->GetBoard();
 		ASSERT_TRUE(
@@ -197,23 +197,23 @@ TEST(Test_Game, locationInPGN) {
 		game.toStart();
 		while (true) {
 			++location;
-			scid::database::errorT errForward = game.MoveForwardInPGN();
+			scid::database::errorT errForward = game.nextPgn();
 			if (errForward != scid::database::OK) {
-				ASSERT_EQ(errForward, game.MoveToLocationInPGN(location));
+				ASSERT_EQ(errForward, game.toPgnLocation(location));
 				break;
 			}
 
-			ASSERT_EQ(location, game.GetLocationInPGN());
+			ASSERT_EQ(location, game.pgnLocation());
 			if (!game.isAtVariationStart()) {
-				ASSERT_EQ(location, game.GetPgnOffset());
+				ASSERT_EQ(location, game.pgnOffset());
 			}
 
 			std::string san = scid::database::game_notation::nextSan(game);
 			auto ply1 = game.currentPly();
-			game.MoveToLocationInPGN(location);
+			game.toPgnLocation(location);
 			auto ply2 = game.currentPly();
 			ASSERT_EQ(ply1, ply2);
-			ASSERT_EQ(location, game.GetLocationInPGN());
+			ASSERT_EQ(location, game.pgnLocation());
 			ASSERT_EQ(san, scid::database::game_notation::nextSan(game));
 		}
 	}
@@ -231,7 +231,7 @@ TEST(Test_Game, toStart_toEnd) {
 	ASSERT_EQ(scid::database::OK, dbase.getGame(*ie, game));
 
 	for (int i = 0; i < 10; i++) {
-		game.MoveToLocationInPGN(distribution(randomEngine));
+		game.toPgnLocation(distribution(randomEngine));
 		ASSERT_NE(0, game.currentPly());
 		game.toStart(); // Move to start from any position
 		EXPECT_EQ(0, game.currentPly());
@@ -243,7 +243,7 @@ TEST(Test_Game, toStart_toEnd) {
 	game.toEnd(); // Move to end from end
 	EXPECT_EQ(149, game.currentPly());
 	for (int i = 0; i < 10; i++) {
-		game.MoveToLocationInPGN(distribution(randomEngine));
+		game.toPgnLocation(distribution(randomEngine));
 		game.toEnd(); // Move to end from any position
 		EXPECT_EQ(149, game.currentPly());
 	}
@@ -359,7 +359,7 @@ TEST(Test_Game, currentPositionUci_startpos) {
 	    {10, "position startpos moves d2d4 d7d5"},
 	    {11, "position startpos moves d2d4 d7d5 c2c4"}};
 	for (auto [pos, str] : expected) {
-		game.MoveToLocationInPGN(pos);
+		game.toPgnLocation(pos);
 		EXPECT_EQ(str, scid::database::game_notation::currentPositionUci(game));
 	}
 }
@@ -493,7 +493,7 @@ TEST(Test_Game, currentPositionUci_fen) {
 	    // clang-format on
 	};
 	for (auto [pos, str] : expected) {
-		game.MoveToLocationInPGN(pos);
+		game.toPgnLocation(pos);
 		EXPECT_EQ(str, scid::database::game_notation::currentPositionUci(game));
 	}
 }

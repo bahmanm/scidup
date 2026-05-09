@@ -77,7 +77,7 @@ Game::Game(const Game& obj) {
 	FirstMove = obj.FirstMove->cloneLine(nullptr,
 	                                     [this]() { return allocMove(); });
 
-	MoveToLocationInPGN(obj.GetLocationInPGN());
+	toPgnLocation(obj.pgnLocation());
 }
 
 Game* Game::clone() {
