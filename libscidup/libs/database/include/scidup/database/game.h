@@ -81,8 +81,8 @@ class Game {
 private:
     Game(const Game&);
     moveT* allocMove();
-    moveT* NewMove(markerT marker);
-    void ClearMoves();
+    moveT* newMove(markerT marker);
+    void clearMoves();
     errorT DecodeVariation(ByteBuffer& buf, std::vector<moveT*>& comment_marks);
     static errorT decodeMove(ByteBuffer* buf, simpleMoveT* sm, byte val,
                              const Position* pos);

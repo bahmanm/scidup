@@ -196,7 +196,7 @@ errorT Game::addMove(simpleMoveT const& sm) {
 	if (!CurrentMove->endMarker())
 		truncate();
 
-	CurrentMove->setNext(NewMove(END_MARKER));
+	CurrentMove->setNext(newMove(END_MARKER));
 	CurrentMove->marker = NO_MARKER;
 	CurrentMove->moveData = sm;
 	if (VarDepth == 0)
@@ -217,8 +217,8 @@ errorT Game::addVariation() {
 	if (err != OK)
 		return err;
 
-	auto newVar = NewMove(START_MARKER);
-	newVar->setNext(NewMove(END_MARKER));
+	auto newVar = newMove(START_MARKER);
+	newVar->setNext(newMove(END_MARKER));
 	CurrentMove->appendChild(newVar);
 
 	// Move into variation
@@ -312,7 +312,7 @@ void Game::truncate() {
 	if (CurrentMove->endMarker())
 		return;
 
-	auto endMove = NewMove(END_MARKER);
+	auto endMove = newMove(END_MARKER);
 	CurrentMove->prev->setNext(endMove);
 
 	CurrentMove = endMove;

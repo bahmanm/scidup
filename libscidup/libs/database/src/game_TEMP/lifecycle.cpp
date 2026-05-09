@@ -34,7 +34,7 @@ errorT Game::setStartFen(const char* fenStr) {
 }
 
 void Game::setStartPosition(Position const& pos) {
-	ClearMoves();
+	clearMoves();
 	coreGame_.setStartPosition(pos);
 	*CurrentPos = pos;
 }
@@ -57,7 +57,7 @@ moveT* Game::allocMove() {
 	return moveChunks_.front().get() + moveChunkUsed_++;
 }
 
-moveT* Game::NewMove(markerT marker) {
+moveT* Game::newMove(markerT marker) {
 	moveT* res = allocMove();
 	res->clear();
 	res->marker = marker;
@@ -111,7 +111,7 @@ void Game::strip(bool variations, bool comments, bool NAGs) {
 	TEMP_syncCoreMovetext();
 }
 
-void Game::ClearMoves() {
+void Game::clearMoves() {
 	// TODO [Game]: Move move-tree reset and cursor initialization into the
 	// future core Game implementation once move storage is no longer legacy
 	// moveT chunks.
@@ -125,8 +125,8 @@ void Game::ClearMoves() {
 	coreGame_.clearMovetext();
 	CurrentPos->StdStart();
 
-	FirstMove = NewMove(START_MARKER);
-	CurrentMove = NewMove(END_MARKER);
+	FirstMove = newMove(START_MARKER);
+	CurrentMove = newMove(END_MARKER);
 	FirstMove->setNext(CurrentMove);
 
 	VarDepth = 0;
@@ -139,7 +139,7 @@ void Game::clear() {
 	coreGame_.clear();
 	ScidFlags[0] = 0;
 
-	ClearMoves();
+	clearMoves();
 }
 
 } // namespace scid::database
