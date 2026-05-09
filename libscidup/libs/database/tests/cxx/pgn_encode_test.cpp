@@ -22,6 +22,7 @@
 
 #include "scidup/database/game.h"
 #include "scidup/core/pgn/encode.h"
+#include "scidup/database/game_TEMP/notation.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
 #include "pgnparse_impl.h"
 #include <gtest/gtest.h>
@@ -178,7 +179,7 @@ static void SAN_hack(scid::database::Game& game) {
 	// It would be better to do this when the game is decoded.
 	game.MoveToStart();
 	do {
-		game.GetNextSAN();
+		scid::database::game_notation::nextSan(game);
 	} while (game.MoveForwardInPGN() == scid::database::OK);
 };
 

@@ -29,6 +29,7 @@
 #include "pgnparse_impl.h"
 #include "filebuf.h"
 #include "scidup/core/pgn/encode.h"
+#include "scidup/database/game_TEMP/notation.h"
 #include <algorithm>
 #include <cstring>
 #include <vector>
@@ -148,7 +149,7 @@ public:
 		// It would be better to do this when the game is decoded.
 		game->MoveToStart();
 		do {
-			game->GetNextSAN();
+			game_notation::nextSan(*game);
 		} while (game->MoveForwardInPGN() == OK);
 
 		buf_.clear();

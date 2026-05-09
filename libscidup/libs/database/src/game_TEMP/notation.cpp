@@ -88,7 +88,7 @@ errorT game_notation::writePartialMoveList(Game& game, DString& out,
         }
         // add one space for indenting to work out right
         out.Append (" ");
-        out.Append (game.GetNextSAN());
+        out.Append (game_notation::nextSan(game).c_str());
         game.MoveForward();
     }
 
@@ -97,25 +97,18 @@ errorT game_notation::writePartialMoveList(Game& game, DString& out,
     return OK;
 }
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Returns the SAN representation of the next move or an empty string ("") if
-// not at a move.
-const char* Game::GetNextSAN() {
+std::string game_notation::nextSan(Game& game) {
 	// TODO [Game]: Move SAN generation/caching to notation helpers and
 	// Move.metadata once Move owns SAN and GameCursor owns the current position.
-	ASSERT(!CurrentMove->endMarker() || *CurrentMove->san == '\0');
+	ASSERT(!game.CurrentMove->endMarker() || *game.CurrentMove->san == '\0');
 
-	if (!CurrentMove->endMarker() && *CurrentMove->san == '\0') {
-		CurrentPos->MakeSANString(
-		    &CurrentMove->moveData, CurrentMove->san,
-		    CurrentMove->next->endMarker() ? SAN_MATETEST : SAN_CHECKTEST);
-		TEMP_syncCoreMovetext();
+	if (!game.CurrentMove->endMarker() && *game.CurrentMove->san == '\0') {
+		game.CurrentPos->MakeSANString(
+		    &game.CurrentMove->moveData, game.CurrentMove->san,
+		    game.CurrentMove->next->endMarker() ? SAN_MATETEST : SAN_CHECKTEST);
+		game.TEMP_syncCoreMovetext();
 	}
-	return CurrentMove->san;
-}
-
-std::string game_notation::nextSan(Game& game) {
-	return game.GetNextSAN();
+	return game.CurrentMove->san;
 }
 
 std::string game_notation::previousSan(Game& game) {

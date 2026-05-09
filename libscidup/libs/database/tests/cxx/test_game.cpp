@@ -52,7 +52,7 @@ void materializeCoreSan(scid::database::Game& game) {
 	auto location = game.currentLocation();
 	game.MoveToStart();
 	do {
-		game.GetNextSAN();
+		scid::database::game_notation::nextSan(game);
 	} while (game.MoveForwardInPGN() == scid::database::OK);
 	game.restoreLocation(location);
 }
@@ -208,13 +208,13 @@ TEST(Test_Game, locationInPGN) {
 				ASSERT_EQ(location, game.GetPgnOffset());
 			}
 
-			std::string san = game.GetNextSAN();
+			std::string san = scid::database::game_notation::nextSan(game);
 			auto ply1 = game.GetCurrentPly();
 			game.MoveToLocationInPGN(location);
 			auto ply2 = game.GetCurrentPly();
 			ASSERT_EQ(ply1, ply2);
 			ASSERT_EQ(location, game.GetLocationInPGN());
-			ASSERT_TRUE(san == game.GetNextSAN());
+			ASSERT_EQ(san, scid::database::game_notation::nextSan(game));
 		}
 	}
 }
@@ -412,7 +412,7 @@ TEST(Test_Game, coreGameMovetextMirrorsLegacyMoveTree) {
 	EXPECT_TRUE(cursor.isAtVariationEnd());
 
 	game.MoveToStart();
-	EXPECT_STREQ("d4", game.GetNextSAN());
+	EXPECT_EQ("d4", scid::database::game_notation::nextSan(game));
 	EXPECT_EQ("d4", game.coreGame().movetext().mainline.moves[0].san);
 }
 
@@ -563,7 +563,7 @@ template <typename DataT> std::string decode_game(DataT const& data) {
 	std::string moves;
 	do {
 		moves += ' ';
-		moves.append(game.GetNextSAN());
+		moves.append(scid::database::game_notation::nextSan(game));
 	} while (game.MoveForward() == scid::database::OK);
 	moves.erase(0, 1);
 	return moves;

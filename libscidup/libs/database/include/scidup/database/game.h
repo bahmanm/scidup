@@ -243,8 +243,6 @@ public:
     const char* GetMoveComment() const;
     void SetMoveComment(const char* comment);
 
-    const char* GetNextSAN();
-
     //////////////////////////////////////////////////////////////
     // Functions that get/set the tag pairs:
     //
