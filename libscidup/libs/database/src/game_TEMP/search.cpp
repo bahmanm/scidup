@@ -86,7 +86,7 @@ bool Game::MaterialMatch(bool PromotionsFlag, ByteBuffer& buf, byte* min,
     int matchesNeeded = matchLength;
     int matDiff;
     uint plyCount = 0;
-    errorT err = DecodeSkipTags(&buf);
+    errorT err = decodeSkipTags(&buf);
     while (err == OK) {
         bool foundMatch = false;
         byte wMinor, bMinor;
@@ -183,7 +183,7 @@ bool Game::MaterialMatch(bool PromotionsFlag, ByteBuffer& buf, byte* min,
       Next_Move:
         {
             simpleMoveT sm;
-            err = DecodeNextMove(&buf, sm);
+            err = decodeNextMove(&buf, sm);
             if (err == OK) {
                 CurrentPos->DoSimpleMove(sm);
             }
@@ -208,14 +208,14 @@ bool
 Game::ExactMatch (Position * searchPos, ByteBuffer * buf,
                   gameExactMatchT searchType)
 {
-    // If buf is NULL, the game is in memory. Otherwise, Decode only
+    // If buf is NULL, the game is in memory. Otherwise, decode only
     // the necessary moves:
     errorT err = OK;
 
     if (buf == NULL) {
         toStart();
     } else {
-        err = DecodeSkipTags(buf);
+        err = decodeSkipTags(buf);
     }
 
     uint search_whiteHPawns = 0;
@@ -361,7 +361,7 @@ Game::ExactMatch (Position * searchPos, ByteBuffer * buf,
             err = next();
         } else {
             simpleMoveT nextMove;
-            err = DecodeNextMove(buf, nextMove);
+            err = decodeNextMove(buf, nextMove);
             if (err == OK) {
                 CurrentPos->DoSimpleMove(nextMove);
                 if (doHomePawnChecks) {

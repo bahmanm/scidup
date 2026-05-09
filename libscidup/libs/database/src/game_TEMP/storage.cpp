@@ -18,7 +18,7 @@
 namespace scid::database {
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::LoadStandardTags():
+// Game::loadStandardTags():
 //      Sets the standard tag values for this game, given an
 //      index file entry and a namebase that stores the
 //      player/site/event/round names.
@@ -26,7 +26,7 @@ namespace scid::database {
 // boundary. The future core Game should not know about compact database
 // metadata records.
 //
-void Game::LoadStandardTags(IndexEntry const& ie, TagRoster const& tags) {
+void Game::loadStandardTags(IndexEntry const& ie, TagRoster const& tags) {
     coreGame_.setEvent(tags.event);
     coreGame_.setSite(tags.site);
     coreGame_.setWhiteName(tags.white);
@@ -327,7 +327,7 @@ std::pair<unsigned, unsigned> encodeMovelist(bool mark_comments, const MoveT* m,
 }
 
 /// Decodes the game moves
-errorT Game::DecodeVariation(ByteBuffer& buf,
+errorT Game::decodeVariation(ByteBuffer& buf,
                              std::vector<moveT*>& comment_marks) {
 	simpleMoveT sm;
 	for (;;) {
@@ -502,7 +502,7 @@ std::pair<bool, bool> mainlineInfo(const Position* customStart,
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::Encode(): Encode the game to a buffer for disk storage.
+// Game::encode(): Encode the game to a buffer for disk storage.
 //      If passed a NON-null IndexEntry pointer, it will fill in the
 //      following fields of that index entry, which are computed as
 //      the game is encoded:
@@ -512,7 +512,7 @@ std::pair<bool, bool> mainlineInfo(const Position* customStart,
 //       -  finalMatSig: the material signature of the final position.
 //       -  homePawnData: the home pawn change list.
 //
-std::pair<IndexEntry, TagRoster> Game::Encode(std::vector<byte>& dest) const {
+std::pair<IndexEntry, TagRoster> Game::encode(std::vector<byte>& dest) const {
     // TODO [Game]: Keep IndexEntry/TagRoster projection in the database storage
     // boundary. Core metadata should be projected here, not stored in database
     // codec types.
@@ -578,7 +578,7 @@ std::pair<IndexEntry, TagRoster> Game::Encode(std::vector<byte>& dest) const {
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::DecodeNextMove():
+// Game::decodeNextMove():
 //      Decodes one more mainline move of the game from the bytebuffer.
 //      Used in searches for speed, since it is usually possible to
 //      determine if a game matches the search criteria without decoding
@@ -591,7 +591,7 @@ std::pair<IndexEntry, TagRoster> Game::Encode(std::vector<byte>& dest) const {
 //      moves have been decoded. Returns ERROR_Game if some corruption was
 //      detected.
 //
-errorT Game::DecodeNextMove(ByteBuffer* buf, simpleMoveT& sm) {
+errorT Game::decodeNextMove(ByteBuffer* buf, simpleMoveT& sm) {
 	ASSERT(buf != NULL);
 
 	auto [err, val] = buf->nextLineMove();
@@ -605,10 +605,10 @@ errorT Game::DecodeNextMove(ByteBuffer* buf, simpleMoveT& sm) {
 // Game::DecodeStart():
 //      Decodes the starting information from the game's on-disk
 //      representation in the bytebuffer. After this is called,
-//      DecodeNextMove() can be called to decode each successive
+//      decodeNextMove() can be called to decode each successive
 //      mainline move.
 //
-errorT Game::DecodeSkipTags(ByteBuffer* buf) {
+errorT Game::decodeSkipTags(ByteBuffer* buf) {
     ASSERT(buf != NULL);
 
     clear();
@@ -626,26 +626,26 @@ errorT Game::DecodeSkipTags(ByteBuffer* buf) {
     return OK;
 }
 
-errorT Game::DecodeMovesOnly(ByteBuffer& buf) {
-	if (errorT err = DecodeSkipTags(&buf))
+errorT Game::decodeMovesOnly(ByteBuffer& buf) {
+	if (errorT err = decodeSkipTags(&buf))
 		return err;
 
 	std::vector<moveT*> comment_marks;
-	auto err = DecodeVariation(buf, comment_marks);
+	auto err = decodeVariation(buf, comment_marks);
 	if (err == OK)
 		TEMP_syncCoreMovetext();
 	return err;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::Decode():
+// Game::decode():
 //      Decodes a game from its on-disk representation in a bytebuffer.
 //      Decodes all the information: comments, variations, non-standard
 //      tags, etc.
 //
-errorT Game::Decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf) {
+errorT Game::decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf) {
     clear();
-    LoadStandardTags(ie, tags);
+    loadStandardTags(ie, tags);
 
     errorT err = buf.decodeTags([&](const auto& tag, const auto& value) {
         auto& dest = coreGame_.findOrCreateTag(tag);
@@ -663,7 +663,7 @@ errorT Game::Decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf)
 
     std::vector<moveT*> comment_marks;
     if (err == OK)
-        err = DecodeVariation(buf, comment_marks);
+        err = decodeVariation(buf, comment_marks);
 
     if (err == OK)
         err = decodeComments(buf, FirstMove, comment_marks);
@@ -676,30 +676,30 @@ errorT Game::Decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf)
 
 std::pair<IndexEntry, TagRoster> game_storage::encode(
     const Game& game, std::vector<byte>& dest) {
-	return game.Encode(dest);
+	return game.encode(dest);
 }
 
 void game_storage::loadStandardTags(Game& game, IndexEntry const& ie,
                                     TagRoster const& tags) {
-	game.LoadStandardTags(ie, tags);
+	game.loadStandardTags(ie, tags);
 }
 
 errorT game_storage::decode(Game& game, IndexEntry const& ie,
                             TagRoster const& tags, ByteBuffer buf) {
-	return game.Decode(ie, tags, buf);
+	return game.decode(ie, tags, buf);
 }
 
 errorT game_storage::decodeMovesOnly(Game& game, ByteBuffer& buf) {
-	return game.DecodeMovesOnly(buf);
+	return game.decodeMovesOnly(buf);
 }
 
 errorT game_storage::decodeSkipTags(Game& game, ByteBuffer* buf) {
-	return game.DecodeSkipTags(buf);
+	return game.decodeSkipTags(buf);
 }
 
 errorT game_storage::decodeNextMove(Game& game, ByteBuffer* buf,
                                     simpleMoveT& sm) {
-	return game.DecodeNextMove(buf, sm);
+	return game.decodeNextMove(buf, sm);
 }
 
 } // namespace scid::database

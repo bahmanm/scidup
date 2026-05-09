@@ -83,17 +83,17 @@ private:
     moveT* allocMove();
     moveT* newMove(markerT marker);
     void clearMoves();
-    errorT DecodeVariation(ByteBuffer& buf, std::vector<moveT*>& comment_marks);
+    errorT decodeVariation(ByteBuffer& buf, std::vector<moveT*>& comment_marks);
     static errorT decodeMove(ByteBuffer* buf, simpleMoveT* sm, byte val,
                              const Position* pos);
     // TODO [Game]: Move these database storage-codec operations out of Game
     // once the database wrapper around the future core Game exists.
-    void LoadStandardTags(IndexEntry const& ie, TagRoster const& tags);
-    std::pair<IndexEntry, TagRoster> Encode(std::vector<byte>& dest) const;
-    errorT DecodeSkipTags(ByteBuffer* buf);
-    errorT DecodeNextMove(ByteBuffer* buf, simpleMoveT& sm);
-    errorT Decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf);
-    errorT DecodeMovesOnly(ByteBuffer& buf);
+    void loadStandardTags(IndexEntry const& ie, TagRoster const& tags);
+    std::pair<IndexEntry, TagRoster> encode(std::vector<byte>& dest) const;
+    errorT decodeSkipTags(ByteBuffer* buf);
+    errorT decodeNextMove(ByteBuffer* buf, simpleMoveT& sm);
+    errorT decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf);
+    errorT decodeMovesOnly(ByteBuffer& buf);
     // TODO [Game]: Move these database search operations out of Game once the
     // database wrapper around the future core Game exists.
     bool MaterialMatch(bool PromotionsFlag, ByteBuffer& buf, byte* min,
