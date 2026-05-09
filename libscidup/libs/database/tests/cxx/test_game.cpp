@@ -66,6 +66,14 @@ scid::database::LegacyGameEncodeOptions scidFlagsPgnOptions() {
 	};
 }
 
+scid::database::simpleMoveT makeCurrentMove(scid::database::Game& game,
+                                            scid::database::squareT from,
+                                            scid::database::squareT to) {
+	scid::database::simpleMoveT move;
+	game.currentPos()->makeMove(from, to, scid::database::EMPTY, move);
+	return move;
+}
+
 } // namespace
 
 TEST(Test_Game, clone) {
@@ -413,6 +421,27 @@ TEST(Test_Game, coreGameMovetextMirrorsLegacyMoveTree) {
 	game.toStart();
 	EXPECT_EQ("d4", scid::database::game_notation::nextSan(game));
 	EXPECT_EQ("d4", game.coreGame().movetext().mainline.moves[0].san);
+}
+
+TEST(Test_Game, coreGameMovetextMirrorsProgrammaticVariationAdds) {
+	scid::database::Game game;
+
+	ASSERT_EQ(scid::database::OK,
+	          game.addMove(makeCurrentMove(game, scid::database::E2,
+	                                       scid::database::E4)));
+	ASSERT_EQ(scid::database::OK, game.addVariation());
+	ASSERT_EQ(scid::database::OK,
+	          game.addMove(makeCurrentMove(game, scid::database::D2,
+	                                       scid::database::D4)));
+
+	auto const& mainline = game.coreGame().movetext().mainline.moves;
+	ASSERT_EQ(1U, mainline.size());
+	EXPECT_EQ("e2e4", mainline[0].action.longNotation());
+	ASSERT_EQ(1U, mainline[0].childVariations.size());
+
+	auto const& variation = mainline[0].childVariations[0].line.moves;
+	ASSERT_EQ(1U, variation.size());
+	EXPECT_EQ("d2d4", variation[0].action.longNotation());
 }
 
 TEST(Test_Game, coreGameMirrorsInitialMovetextComment) {
