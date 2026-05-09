@@ -117,16 +117,16 @@ private:
 
 	std::unique_ptr<scid::database::Game> genGame() {
 		auto res = std::unique_ptr<scid::database::Game>(new scid::database::Game);
-		res->GetCurrentPos()->StdStart();
+		res->currentPos()->StdStart();
 		scid::database::MoveList mlist;
 		for (auto i = rand(0, maxMoves); i > 0; --i) {
-			res->GetCurrentPos()->GenerateMoves(&mlist, scid::database::EMPTY, scid::database::GEN_ALL_MOVES,
+			res->currentPos()->GenerateMoves(&mlist, scid::database::EMPTY, scid::database::GEN_ALL_MOVES,
 			                                    true);
 			if (mlist.Size() == 0)
 				break;
 
 			auto move = *mlist.Get(rand(0, mlist.Size() - 1));
-			res->GetCurrentPos()->fillMove(move);
+			res->currentPos()->fillMove(move);
 			res->AddMove(move);
 
 			if (rand(0, 6) == 0)

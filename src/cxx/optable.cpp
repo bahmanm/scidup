@@ -132,7 +132,7 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
     Length = 0;
     StartPly = g->GetCurrentPly();
     auto location = g->currentLocation();
-    if (g->GetCurrentPos()->GetToMove() == scid::database::BLACK) {
+    if (g->currentPos()->GetToMove() == scid::database::BLACK) {
         g->MoveBackup();
     }
     NoteNumber = NoteMoveNum = 0;
@@ -151,7 +151,7 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
             ShortGame = true;
         } else {
             Length++;
-            g->GetCurrentPos()->MakeSANString (sm, Move[i], scid::database::SAN_CHECKTEST);
+            g->currentPos()->MakeSANString (sm, Move[i], scid::database::SAN_CHECKTEST);
             scid::database::strStrip (Move[i], '-');
             scid::database::strStrip (Move[i], '=');
             g->MoveForward();
@@ -167,7 +167,7 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
             ShortGame = true;
         } else {
             Length++;
-            g->GetCurrentPos()->MakeSANString (sm, Move[i], scid::database::SAN_CHECKTEST);
+            g->currentPos()->MakeSANString (sm, Move[i], scid::database::SAN_CHECKTEST);
             scid::database::strStrip (Move[i], '-');
             scid::database::strStrip (Move[i], '=');
             g->MoveForward();
@@ -182,7 +182,7 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
     g->MoveToStart();
     for (i=0; i < maxThemePly; i++) {
         if (g->MoveForward() != scid::database::OK) { break; }
-        SetPositionalThemes (g->GetCurrentPos());
+        SetPositionalThemes (g->currentPos());
     }
 
     g->restoreLocation(location);
@@ -480,7 +480,7 @@ OpTable::Init (const char * type, scid::database::Game * g, scidup::eco::Book * 
     NumMoveOrders = 0;
     Format = OPTABLE_Text;
     StartLength = 0;
-    WTM = (g->GetCurrentPos()->GetToMove() == scid::database::WHITE ? true : false);
+    WTM = (g->currentPos()->GetToMove() == scid::database::WHITE ? true : false);
     DecimalChar = '.';
 
     Results[scid::database::RESULT_White] = Results[scid::database::RESULT_Black] = 0;
@@ -504,14 +504,14 @@ OpTable::Init (const char * type, scid::database::Game * g, scidup::eco::Book * 
             continue;
         }
         if (ebook != NULL && ECOstr_.empty()) {
-            auto eco = ebook->findEcoString(*g->GetCurrentPos());
+            auto eco = ebook->findEcoString(*g->currentPos());
             if (!eco.empty())
                 ECOstr_.append(eco);
         }
         g->MoveBackup();
         scid::database::simpleMoveT * sm = g->GetCurrentMove();
         if (sm == NULL) { break; }
-        g->GetCurrentPos()->MakeSANString (sm, StartLine[StartLength],
+        g->currentPos()->MakeSANString (sm, StartLine[StartLength],
                                            scid::database::SAN_CHECKTEST);
         StartLength++;
         if (StartLength >= OPTABLE_MAX_STARTLINE) { break; }

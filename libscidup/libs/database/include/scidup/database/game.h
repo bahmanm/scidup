@@ -192,8 +192,8 @@ public:
     //////////////////////////////////////////////////////////////
     // Functions that get information about the current location.
     //
+    Position* currentPos();
     const Position* currentPos() const;
-    Position* GetCurrentPos(); // Deprecated, use the const version
     simpleMoveT* GetCurrentMove();
     ushort GetCurrentPly() const;
     uint GetNumVariations() const;

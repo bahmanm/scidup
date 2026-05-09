@@ -14,11 +14,11 @@ void Game::restoreLocation(const GameSavedPos& savedPos) {
 	VarDepth = savedPos.varDepth;
 }
 
-const Position* Game::currentPos() const {
+Position* Game::currentPos() {
 	return CurrentPos.get();
 }
 
-Position* Game::GetCurrentPos() {
+const Position* Game::currentPos() const {
 	return CurrentPos.get();
 }
 

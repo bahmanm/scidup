@@ -118,7 +118,7 @@ public:
 			return true;
 
 		simpleMoveT sm;
-		auto err = game.GetCurrentPos()->ParseMove(&sm, tok.first, tok.second);
+		auto err = game.currentPos()->ParseMove(&sm, tok.first, tok.second);
 		if (err != OK) {
 			if (game_parseNag(tok))
 				return visitPGN_NAG(tok);

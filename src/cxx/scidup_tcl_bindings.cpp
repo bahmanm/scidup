@@ -1234,7 +1234,7 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         scidup::eco::Code ecoCode = scidup::eco::ECO_None;
         for (;;) {
-            auto pos = g->GetCurrentPos();
+            auto pos = g->currentPos();
             if (pos->TotalMaterial() < ecoBook->fewestPieces())
                 break;
 
@@ -1248,7 +1248,7 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 scid::database::OK)
                 break;
 
-            g->GetCurrentPos()->DoSimpleMove(sm);
+            g->currentPos()->DoSimpleMove(sm);
         }
 
         if (!extendedCodes) {
@@ -1296,7 +1296,7 @@ sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     game.MoveToEnd();
     scidup::eco::Code ecoCode = scidup::eco::ECO_None;
     do {
-        ecoCode = ecoBook->findEco(*game.GetCurrentPos());
+        ecoCode = ecoBook->findEco(*game.currentPos());
     } while (ecoCode == scidup::eco::ECO_None && game.MoveBackup() == scid::database::OK);
 
     auto ply = game.GetCurrentPly();
@@ -1909,7 +1909,7 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                     bool useCache = (argc == 5);
 
                     auto editor = scidup::app::editor::gameSession(*db);
-                    auto const& pos = *editor.game().GetCurrentPos();
+                    auto const& pos = *editor.game().currentPos();
                     if (useCache &&
                         scidup::app::tree::session(*dbase).cacheRestore(pos))
                         return UI_Result(ti, scid::database::OK);
@@ -2095,7 +2095,7 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case GAME_SANTOUCI:
         if (argc == 3) {
-            auto pos = editor.game().GetCurrentPos();
+            auto pos = editor.game().currentPos();
             scid::database::simpleMoveT sm;
             auto end = argv[2] + std::strlen(argv[2]);
             if (auto err = pos->ParseMove(&sm, argv[2], end))
@@ -2760,7 +2760,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         } else if (scid::database::strIsPrefix(argv[arg], "ECO")) {
             std::string str;
             if (ecoBook) {
-                auto ecoStr = ecoBook->findEcoString(*g.GetCurrentPos());
+                auto ecoStr = ecoBook->findEcoString(*g.currentPos());
                 if (!ecoStr.empty())
                     str.append(ecoStr);
             }
@@ -2888,8 +2888,8 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     char san [20];
     char tempTrans[20];
     scid::database::byte * nags;
-    scid::database::colorT toMove = g.GetCurrentPos()->GetToMove();
-    scid::database::uint moveCount = g.GetCurrentPos()->GetFullMoveCount();
+    scid::database::colorT toMove = g.currentPos()->GetToMove();
+    scid::database::uint moveCount = g.currentPos()->GetFullMoveCount();
     scid::database::uint prevMoveCount = moveCount;
     if (toMove == scid::database::WHITE) { prevMoveCount--; }
 
@@ -2971,8 +2971,8 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     if (showMaterialValue) {
-        scid::database::uint mWhite = g.GetCurrentPos()->MaterialValue (scid::database::WHITE);
-        scid::database::uint mBlack = g.GetCurrentPos()->MaterialValue (scid::database::BLACK);
+        scid::database::uint mWhite = g.currentPos()->MaterialValue (scid::database::WHITE);
+        scid::database::uint mBlack = g.currentPos()->MaterialValue (scid::database::BLACK);
         std::snprintf(temp, sizeof(temp), "    <gray>(%u-%u", mWhite, mBlack);
         AppendResult (ti, temp, NULL);
         if (mWhite > mBlack) {
@@ -3062,7 +3062,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Now check ECO book for the current position:
     if (ecoBook) {
-        auto ecoStr = ecoBook->findEcoString(*g.GetCurrentPos());
+        auto ecoStr = ecoBook->findEcoString(*g.currentPos());
         if (!ecoStr.empty()) {
             std::string ecoComment(ecoStr);
             scidup::eco::Code eco = scidup::eco::fromString(ecoComment.c_str());
@@ -3079,7 +3079,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
     if (showFEN) {
         char boardStr [200];
-        g.GetCurrentPos()->PrintFEN(boardStr, sizeof(boardStr));
+        g.currentPos()->PrintFEN(boardStr, sizeof(boardStr));
         AppendResult (ti, "<br><gray>", boardStr, "</gray>", NULL);
     }
     return TCL_OK;
@@ -3169,7 +3169,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     compactBoardStr * mergeBoards = new compactBoardStr [nMergePos];
     merge->MoveToStart();
     for (scid::database::uint i=0; i < nMergePos; i++) {
-        merge->GetCurrentPos()->PrintCompactStr (mergeBoards[i]);
+        merge->currentPos()->PrintCompactStr (mergeBoards[i]);
         merge->MoveForward();
     }
 
@@ -3184,7 +3184,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         if (game.MoveForward() != scid::database::OK) { done = true; }
         ply++;
         compactBoardStr currentBoard;
-        game.GetCurrentPos()->PrintCompactStr (currentBoard);
+        game.currentPos()->PrintCompactStr (currentBoard);
         for (scid::database::uint n=0; n < nMergePos; n++) {
             if (scid::database::strEqual (currentBoard, mergeBoards[n])) {
                 matchPly = ply;
@@ -3369,7 +3369,7 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::Game* g = &editor.game();
     if (ecoBook) {
         while (g->MoveForward() == scid::database::OK) {}
-        while (ecoBook->findEcoString(*g->GetCurrentPos()).empty()) {
+        while (ecoBook->findEcoString(*g->currentPos()).empty()) {
             if (g->MoveBackup() != scid::database::OK) break;
         }
     }
@@ -3382,7 +3382,7 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::HFilter filter = scidup::app::tree::resolveFilter(*base, filtername);
     scid::database::dateT currentDate = g->coreGame().date();
     while (g->MoveForward() == scid::database::OK) {
-        scid::database::SearchPos(*g->GetCurrentPos()).setFilter(*base, filter, scid::database::Progress());
+        scid::database::SearchPos(*g->currentPos()).setFilter(*base, filter, scid::database::Progress());
         int count = 0;
         for (scid::database::uint i=0, n = base->numGames(); i < n; i++) {
             if (filter.get(i) == 0) continue;
@@ -3735,11 +3735,11 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
     g->MoveToStart();
     do {
             char boardStr[100];
-            g->GetCurrentPos()->MakeLongStr (boardStr);
+            g->currentPos()->MakeLongStr (boardStr);
             boards.push_back(boardStr);
 
-            scid::database::colorT toMove = g->GetCurrentPos()->GetToMove();
-            scid::database::uint moveCount = g->GetCurrentPos()->GetFullMoveCount();
+            scid::database::colorT toMove = g->currentPos()->GetToMove();
+            scid::database::uint moveCount = g->currentPos()->GetFullMoveCount();
             char san [20];
             scid::database::strCopy(
                 san, scid::database::game_notation::nextSan(*g).c_str());
@@ -4600,7 +4600,7 @@ sc_move_add (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         s[5] = 0;
     }
     scid::database::simpleMoveT sm;
-    scid::database::Position * pos = editor.game().GetCurrentPos();
+    scid::database::Position * pos = editor.game().currentPos();
     scid::database::errorT err = pos->ReadCoordMove(&sm, s, s[4] == 0 ? 4 : 5, true);
     if (err == scid::database::OK) {
         err = editor.game().AddMove(sm);
@@ -4772,7 +4772,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         break;
 
     case POS_FEN:
-        g.GetCurrentPos()->PrintFEN(boardStr, sizeof(boardStr));
+        g.currentPos()->PrintFEN(boardStr, sizeof(boardStr));
         AppendResult (ti, boardStr, NULL);
         break;
 
@@ -4804,7 +4804,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_pos_isAt (cd, ti, argc, argv);
 
     case POS_ISCHECK:
-        return UI_Result(ti, scid::database::OK, g.GetCurrentPos()->IsKingInCheck());
+        return UI_Result(ti, scid::database::OK, g.currentPos()->IsKingInCheck());
 
     case POS_ISLEGAL:
         return sc_pos_isLegal (cd, ti, argc, argv);
@@ -4820,8 +4820,8 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         //     (db->game->GetCurrentPly() + 2) / 2
         // but that value is wrong for games with non-standard
         // start positions. The correct value to return is:
-        //     db->game->GetCurrentPos()->GetFullMoveCount()
-        return setUintResult (ti, g.GetCurrentPos()->GetFullMoveCount());
+        //     db->game->currentPos()->GetFullMoveCount()
+        return setUintResult (ti, g.currentPos()->GetFullMoveCount());
 
     case POS_PGNOFFSET:
         setUintResult (ti, g.GetPgnOffset());
@@ -4831,7 +4831,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_pos_setComment (cd, ti, argc, argv);
 
     case POS_SIDE:
-        setResult (ti, (g.GetCurrentPos()->GetToMove() == scid::database::WHITE)
+        setResult (ti, (g.currentPos()->GetToMove() == scid::database::WHITE)
                    ? "white" : "black");
         break;
 
@@ -4840,7 +4840,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             bool flip = false;
             if (argc > 2  &&  scid::database::strIsPrefix (argv[2], "flip")) { flip = true; }
             scid::database::DString * dstr = new scid::database::DString;
-            g.GetCurrentPos()->DumpLatexBoard (dstr, flip);
+            g.currentPos()->DumpLatexBoard (dstr, flip);
             AppendResult (ti, dstr->Data(), NULL);
             delete dstr;
         }
@@ -4851,7 +4851,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case POS_ATTACKS:
         {
-            scid::database::Position pos(*g.GetCurrentPos());
+            scid::database::Position pos(*g.currentPos());
             for (scid::database::colorT c = scid::database::WHITE; c <= scid::database::BLACK; c++) {
                 for (scid::database::uint i = 0; i < pos.GetCount(c); i++) {
                     scid::database::squareT sq = pos.GetList(c)[i];
@@ -4984,7 +4984,7 @@ sc_pos_analyze (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (arg != argc) { return errorResult (ti, usage); }
 
     // Generate all legal moves:
-    scid::database::Position * pos = editor.game().GetCurrentPos();
+    scid::database::Position * pos = editor.game().currentPos();
     scid::database::MoveList mlist;
     pos->GenerateMoves(&mlist);
 
@@ -5027,7 +5027,7 @@ sc_pos_bestSquare (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: sc_pos bestSquare <square>");
     }
 
-    scid::database::Position * pos = editor.game().GetCurrentPos();
+    scid::database::Position * pos = editor.game().currentPos();
 
     // Try to read the square parameter as algebraic ("h8") or numeric (63):
     scid::database::squareT sq = scid::database::strGetSquare (argv[2]);
@@ -5145,7 +5145,7 @@ sc_pos_hash (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             default:  return errorResult (ti, usage);
         }
     }
-    scid::database::Position * pos = editor.game().GetCurrentPos();
+    scid::database::Position * pos = editor.game().currentPos();
     scid::database::uint hash = pos->HashValue();
     if (pawnHashOnly) {
         hash = pos->PawnHashValue();
@@ -5185,7 +5185,7 @@ sc_pos_html (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (argc == arg+1) { style = scid::database::strGetUnsigned (argv[arg]); }
 
     scid::database::DString * dstr = new scid::database::DString;
-    editor.game().GetCurrentPos()->DumpHtmlBoard (dstr, style, path, flip);
+    editor.game().currentPos()->DumpHtmlBoard (dstr, style, path, flip);
     AppendResult (ti, dstr->Data(), NULL);
     delete dstr;
     return TCL_OK;
@@ -5241,7 +5241,7 @@ sc_pos_isPromo (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: sc_pos isPromotion <square> <square>");
     }
 
-    scid::database::Position * pos = editor.game().GetCurrentPos();
+    scid::database::Position * pos = editor.game().currentPos();
     int fromSq = scid::database::strGetInteger (argv[2]);
     int toSq = scid::database::strGetInteger (argv[3]);
 
@@ -5269,7 +5269,7 @@ sc_pos_isLegal (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return UI_Result(ti, scid::database::OK, false);
     }
 
-    auto pos = editor.game().GetCurrentPos();
+    auto pos = editor.game().currentPos();
     bool legal = pos->IsLegalMove(sq1, sq2, scid::database::EMPTY) ||
                  pos->IsLegalMove(sq2, sq1, scid::database::EMPTY) ||
                  pos->IsLegalMove(sq1, sq2, scid::database::QUEEN) ||
@@ -5287,7 +5287,7 @@ UI_res_t sc_pos_moves(UI_handle_t ti, int argc, const char** argv) {
         return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
     bool coordMoves = argc == 3 && scid::database::strGetBoolean(argv[2]);
-    auto pos = editor.game().GetCurrentPos();
+    auto pos = editor.game().currentPos();
     scid::database::MoveList moves;
     pos->GenerateMoves(&moves);
     UI_List res(moves.Size() * (coordMoves ? 2 : 1));
@@ -7256,7 +7256,7 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
     auto editor = scidup::app::editor::gameSession(*db);
-    scid::database::Position searchPos = *(editor.game().GetCurrentPos());
+    scid::database::Position searchPos = *(editor.game().currentPos());
     auto tree = base->getTreeStat(filter);
 
     auto calc_eco = [&](auto const& move) {
@@ -7511,7 +7511,7 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
     flip = scid::database::strGetBoolean (argv[5]);
 
     auto editor = scidup::app::editor::gameSession(*db);
-    scid::database::Position * pos = editor.game().GetCurrentPos();
+    scid::database::Position * pos = editor.game().currentPos();
 
     scid::database::Progress progress = UI_CreateProgress(ti);
     Timer timer;  // Start timing this search.
@@ -8627,7 +8627,7 @@ sc_book_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::uint slot = scid::database::strGetUnsigned (argv[2]);
     char boardStr[100];
     auto editor = scidup::app::editor::gameSession(*db);
-    editor.game().GetCurrentPos()->PrintFEN(boardStr, sizeof(boardStr));
+    editor.game().currentPos()->PrintFEN(boardStr, sizeof(boardStr));
 
     char moves[1024] = {};
     auto extra_info = polyglot_moves(moves, boardStr, slot);
@@ -8657,7 +8657,7 @@ sc_book_positions (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 	    scid::database::uint slot = scid::database::strGetUnsigned (argv[2]);
 			auto editor = scidup::app::editor::gameSession(*db);
-			editor.game().GetCurrentPos()->PrintFEN(boardStr, sizeof(boardStr));
+			editor.game().currentPos()->PrintFEN(boardStr, sizeof(boardStr));
 			polyglot_positions(moves, (const char *) boardStr, slot);
     AppendResult (ti, moves, NULL);
     return TCL_OK;
