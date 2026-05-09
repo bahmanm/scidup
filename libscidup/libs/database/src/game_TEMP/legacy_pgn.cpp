@@ -94,10 +94,10 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
     auto& FirstMove = game.FirstMove;
     auto& VarDepth = game.VarDepth;
     auto previous = [&] { return game.previous(); };
-    auto MoveExitVariation = [&] { return game.MoveExitVariation(); };
+    auto exitVariation = [&] { return game.exitVariation(); };
     auto next = [&] { return game.next(); };
-    auto MoveIntoVariation = [&](uint varNumber) {
-        return game.MoveIntoVariation(varNumber);
+    auto enterVariation = [&](uint varNumber) {
+        return game.enterVariation(varNumber);
     };
 
     sanStringT tempTrans;
@@ -519,14 +519,14 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                     tb->PrintChar ('(');
                 }
 
-                MoveIntoVariation (i);
+                enterVariation (i);
                 numMovesPrinted++;
                 tb->PrintSpace();
 
                 // Recursively print the variation:
                 writeMoveList(true, inComment);
 
-                MoveExitVariation();
+                exitVariation();
                 if (!options.isLatexFormat()  ||  VarDepth != 0) {
                     tb->PrintChar (')');
                 }

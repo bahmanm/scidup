@@ -55,9 +55,9 @@ errorT Game::previous(void) {
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::MoveIntoVariation():
+// Game::enterVariation():
 //      Move into a subvariation. Variations are numbered from 0.
-errorT Game::MoveIntoVariation(uint varNumber) {
+errorT Game::enterVariation(uint varNumber) {
 	for (auto subVar = CurrentMove; subVar->varChild; --varNumber) {
 		subVar = subVar->varChild;
 		if (varNumber == 0) {
@@ -74,10 +74,10 @@ errorT Game::MoveIntoVariation(uint varNumber) {
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::MoveExitVariation():
+// Game::exitVariation():
 //      Move out of a variation, to the parent.
 //
-errorT Game::MoveExitVariation(void) {
+errorT Game::exitVariation(void) {
 	if (VarDepth == 0) // not in a variation!
 		return ERROR_NoVariation;
 
@@ -127,15 +127,15 @@ void Game::MoveToPly(int hmNumber) {
 // instead of keeping it on the generic Game cursor surface.
 errorT Game::MoveForwardInPGN() {
 	if (CurrentMove->prev->varChild && previous() == OK)
-		return MoveIntoVariation(0);
+		return enterVariation(0);
 
 	while (next() != OK) {
 		if (VarDepth == 0)
 			return ERROR_EndOfMoveList;
 
 		auto varnum = variationNumber();
-		MoveExitVariation();
-		if (MoveIntoVariation(varnum + 1) == OK)
+		exitVariation();
+		if (enterVariation(varnum + 1) == OK)
 			return OK;
 
 		next();
@@ -294,7 +294,7 @@ errorT Game::MainVariation() {
 errorT Game::DeleteVariation() {
 	auto parent = CurrentMove->getParent();
 	auto root = parent.first;
-	if (!root || MoveExitVariation() != OK)
+	if (!root || exitVariation() != OK)
 		return ERROR_NoVariation;
 
 	root->detachChild(parent.second);

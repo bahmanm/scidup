@@ -462,9 +462,9 @@ Game::VarExactMatch (Position * searchPos, gameExactMatchT searchType)
 
         // Now try searching each variation in turn:
         for (uint i=0; i < CurrentMove->numVariations; i++) {
-            MoveIntoVariation (i);
+            enterVariation (i);
             match = VarExactMatch (searchPos, searchType);
-            MoveExitVariation();
+            exitVariation();
             if (match) { return true; }
         }
         // Continue down this variation:

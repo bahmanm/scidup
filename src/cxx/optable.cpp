@@ -500,7 +500,7 @@ OpTable::Init (const char * type, scid::database::Game * g, scidup::eco::Book * 
     auto location = g->currentLocation();
     while (! g->isAtStart()) {
         if (g->isAtVariationStart()) {
-            g->MoveExitVariation();
+            g->exitVariation();
             continue;
         }
         if (ebook != NULL && ECOstr_.empty()) {

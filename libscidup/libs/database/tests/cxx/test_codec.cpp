@@ -136,7 +136,7 @@ private:
 			if (varOp < 20) {
 				res->AddVariation();
 			} else if (varOp > 80) {
-				res->MoveExitVariation();
+				res->exitVariation();
 				res->next();
 			}
 		}

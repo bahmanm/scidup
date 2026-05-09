@@ -341,7 +341,7 @@ errorT Game::DecodeVariation(ByteBuffer& buf,
 			    if (newVariation)
 				    return AddVariation() == OK;
 
-			    return (MoveExitVariation() == OK && next() == OK);
+			    return (exitVariation() == OK && next() == OK);
 		    },
 		    [&](auto nag) {
 			    return this->AddNag(nag) == OK;

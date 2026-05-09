@@ -197,7 +197,7 @@ public:
 		if (nErrorsAllowed_ < 0)
 			return true;
 
-		if (game.MoveExitVariation() != OK || game.next() != OK)
+		if (game.exitVariation() != OK || game.next() != OK)
 			return logFatalErr("Failed to exit from variation.");
 
 		return true;

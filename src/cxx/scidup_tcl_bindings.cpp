@@ -2992,7 +2992,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         AppendResult (ti, "<br>", translate (ti, "Variations"), ":", NULL);
         for (scid::database::uint vnum = 0; vnum < varCount && vnum < 5; vnum++) {
             char s[20];
-            g.MoveIntoVariation (vnum);
+            g.enterVariation (vnum);
             scid::database::strCopy(
                 s, scid::database::game_notation::nextSan(g).c_str());
             strcpy(tempTrans, s);
@@ -3013,7 +3013,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 AppendResult (ti, "<red>", s, "</red>", NULL);
             }
             AppendResult (ti, "</run>", NULL);
-            g.MoveExitVariation ();
+            g.exitVariation ();
         }
     }
 
@@ -3252,7 +3252,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     game.SetMoveComment(dstr.Data());
 
     // And exit the new variation:
-    game.MoveExitVariation();
+    game.exitVariation();
     return TCL_OK;
 }
 
@@ -3282,7 +3282,7 @@ sc_game_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     auto location = g->currentLocation();
     while (! g->isAtStart()) {
         if (g->isAtVariationStart()) {
-            g->MoveExitVariation();
+            g->exitVariation();
             continue;
         }
         g->previous();
@@ -8427,7 +8427,7 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_var_enter (cd, ti, argc, argv);
 
     case VAR_EXIT:
-        game.MoveExitVariation();
+        game.exitVariation();
         break;
 
     case VAR_FIRST:
@@ -8487,7 +8487,7 @@ sc_var_list (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::uint varCount = game.variationCount();
     char s[100];
     for (scid::database::uint varNumber = 0; varNumber < varCount; varNumber++) {
-        game.MoveIntoVariation (varNumber);
+        game.enterVariation (varNumber);
         if (uci) {
             scid::database::strCopy(
                 s, scid::database::game_notation::nextMoveUci(game).c_str());
@@ -8497,7 +8497,7 @@ sc_var_list (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         }
         // if (s[0] == 0) { scid::database::strCopy (s, "(empty)"); }
         AppendElement (ti, s);
-        game.MoveExitVariation ();
+        game.exitVariation ();
     }
     return TCL_OK;
 }
@@ -8519,7 +8519,7 @@ sc_var_enter (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "No such variation!");
     }
 
-    game.MoveIntoVariation (varNumber);
+    game.enterVariation (varNumber);
     // Should moving into a variation also automatically play
     // the first variation move? Maybe it should depend on
     // whether there is a comment before the first move.
