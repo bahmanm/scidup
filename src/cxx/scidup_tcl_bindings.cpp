@@ -37,7 +37,6 @@
 #include "scidup/database/game_TEMP/notation.h"
 #include "scidup/database/game_TEMP/piece_translation.h"
 #include "scidup/database/game_TEMP/search.h"
-#include "scidup/database/game_TEMP/state.h"
 #include "scidup/database/game_TEMP/storage.h"
 #include "optable.h"
 #include "scidup/eco/book.h"
@@ -1300,7 +1299,7 @@ sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         ecoCode = ecoBook->findEco(*game.GetCurrentPos());
     } while (ecoCode == scidup::eco::ECO_None && game.MoveBackup() == scid::database::OK);
 
-    auto ply = scid::database::game_state::currentPly(game);
+    auto ply = game.GetCurrentPly();
     game.restoreLocation(location);
 
     if (ecoCode == scidup::eco::ECO_None)
@@ -2594,7 +2593,7 @@ sc_game_firstMoves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // Check plyCount is a reasonable value, or set it to current plycount.
     auto editor = scidup::app::editor::gameSession(*db);
     if (plyCount < 0)
-        plyCount = scid::database::game_state::currentPly(editor.game());
+        plyCount = editor.game().GetCurrentPly();
     if (plyCount == 0) plyCount = 1;
 
     scid::database::DString dstr;
@@ -2796,9 +2795,11 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         std::snprintf(temp, sizeof(temp), "<br>(%s: %s)",
                  translate (ti, "Result"), translate (ti, "hidden"));
     } else {
+        const auto moveCount = static_cast<unsigned>(
+            (g.coreGame().mainlineHalfMoveCount() + 1) / 2);
         std::snprintf(temp, sizeof(temp), "<br>%s <red>(%u)</red>",
                  scid::database::RESULT_LONGSTR[g.GetResult()],
-                 (scid::database::game_state::mainlineHalfMoveCount(g) + 1) / 2);
+                 moveCount);
     }
     AppendResult (ti, temp, NULL);
 
@@ -3158,7 +3159,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     // Set up an array of all the game positions in the merge game:
-    scid::database::uint nMergePos = scid::database::game_state::mainlineHalfMoveCount(*merge) + 1;
+    scid::database::uint nMergePos = merge->coreGame().mainlineHalfMoveCount() + 1;
     typedef char compactBoardStr [36];
     compactBoardStr * mergeBoards = new compactBoardStr [nMergePos];
     merge->MoveToStart();
@@ -3226,7 +3227,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     const auto belo = ie->GetBlackElo();
     auto dstr = scid::database::DString();
     dstr.Append(scid::database::RESULT_LONGSTR[ie->GetResult()]);
-    const auto mergeHalfMoves = scid::database::game_state::mainlineHalfMoveCount(*merge);
+    const auto mergeHalfMoves = merge->coreGame().mainlineHalfMoveCount();
     if (ply < mergeHalfMoves) {
         dstr.Append("(", (mergeHalfMoves + 1) / 2, ")");
     }
@@ -3390,11 +3391,11 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         if (count <= 1) { // Novelty found
             base->deleteFilter(filtername.c_str());
-            return UI_Result(ti, scid::database::OK, scid::database::game_state::currentPly(*g));
+            return UI_Result(ti, scid::database::OK, g->GetCurrentPly());
         }
 
-        auto work_done = scid::database::game_state::currentPly(*g) + 1;
-        if (!progress.report(work_done, scid::database::game_state::mainlineHalfMoveCount(*g))) {
+        auto work_done = g->GetCurrentPly() + 1;
+        if (!progress.report(work_done, g->coreGame().mainlineHalfMoveCount())) {
             base->deleteFilter(filtername.c_str());
             return UI_Result(ti, scid::database::ERROR_UserCancel);
         }
@@ -3725,7 +3726,7 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
         res.push_back(dstr.Data());
 
     // Here, a list of the boards or moves is requested:
-    const auto n_moves = scid::database::game_state::mainlineHalfMoveCount(*g) + 1;
+    const auto n_moves = g->coreGame().mainlineHalfMoveCount() + 1;
     UI_List boards(n_moves);
     UI_List moves(n_moves);
     auto location = g->currentLocation();
@@ -4784,7 +4785,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case POS_MOVENUM:
         // This used to return:
-        //     (game_state::currentPly(db->game) + 2) / 2
+        //     (db->game->GetCurrentPly() + 2) / 2
         // but that value is wrong for games with non-standard
         // start positions. The correct value to return is:
         //     db->game->GetCurrentPos()->GetFullMoveCount()
@@ -4814,7 +4815,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         break;
 
     case LOCATION:
-        return UI_Result(ti, scid::database::OK, scid::database::game_state::currentPly(g));
+        return UI_Result(ti, scid::database::OK, g.GetCurrentPly());
 
     case POS_ATTACKS:
         {
@@ -7596,27 +7597,27 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
             if (ply == 0  &&  possibleMatch) {
                 if (scid::database::game_search::exactMatch(
                         *g, pos, nullptr, searchType)) {
-                    ply = scid::database::game_state::currentPly(*g) + 1;
+                    ply = g->GetCurrentPly() + 1;
                 }
             }
             if (ply == 0  &&  possibleFlippedMatch) {
                 if (scid::database::game_search::exactMatch(
                         *g, posFlip, nullptr, searchType)) {
-                    ply = scid::database::game_state::currentPly(*g) + 1;
+                    ply = g->GetCurrentPly() + 1;
                 }
             }
             if (ply == 0  &&  possibleMatch) {
                 g->MoveToStart();
                 if (scid::database::game_search::varExactMatch(
                         *g, pos, searchType)) {
-                    ply = scid::database::game_state::currentPly(*g) + 1;
+                    ply = g->GetCurrentPly() + 1;
                 }
             }
             if (ply == 0  &&  possibleFlippedMatch) {
                 g->MoveToStart();
                 if (scid::database::game_search::varExactMatch(
                         *g, posFlip, searchType)) {
-                    ply = scid::database::game_state::currentPly(*g) + 1;
+                    ply = g->GetCurrentPly() + 1;
                 }
             }
         } else {
@@ -7626,13 +7627,13 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
                 if (scid::database::game_search::exactMatch(
                         *g, pos, &bbuf_clone, searchType)) {
                     // Set its auto-load move number to the matching move:
-                    ply = scid::database::game_state::currentPly(*g) + 1;
+                    ply = g->GetCurrentPly() + 1;
                 }
             }
             if (ply == 0  &&  possibleFlippedMatch) {
                 if (scid::database::game_search::exactMatch(
                         *g, posFlip, &bbuf, searchType)) {
-                    ply = scid::database::game_state::currentPly(*g) + 1;
+                    ply = g->GetCurrentPly() + 1;
                 }
             }
         }
@@ -8042,7 +8043,7 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         if (result) {
             // update the filter value to the current ply:
-            scid::database::uint plyOfMatch = scid::database::game_state::currentPly(*g) + 1 - matchLength;
+            scid::database::uint plyOfMatch = g->GetCurrentPly() + 1 - matchLength;
             scid::database::byte b = (scid::database::byte) (plyOfMatch + 1);
             if (b == 0) { b = 1; }
             filter.set (gameNum, b);

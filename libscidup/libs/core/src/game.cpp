@@ -50,6 +50,10 @@ std::string_view Game::initialComment() const {
 	return movetext_.initialComment;
 }
 
+std::size_t Game::mainlineHalfMoveCount() const {
+	return movetext_.mainline.moves.size();
+}
+
 const std::string& Game::event() const {
 	return header_.event.name;
 }

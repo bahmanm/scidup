@@ -1,19 +1,8 @@
 #include "scidup/database/game.h"
-#include "scidup/database/game_TEMP/state.h"
 
 #include "movetree.h"
 
 namespace scid::database {
-
-uint game_state::currentPly(const Game& game) {
-	auto ply = game.currentPos()->GetPlyCounter();
-	auto startPos = game.coreGame().startPosition();
-	return startPos ? ply - startPos->GetPlyCounter() : ply;
-}
-
-uint game_state::mainlineHalfMoveCount(const Game& game) {
-	return static_cast<uint>(game.coreGame().movetext().mainline.moves.size());
-}
 
 Game::GameSavedPos Game::currentLocation() const {
 	return GameSavedPos{*CurrentPos, CurrentMove, VarDepth};

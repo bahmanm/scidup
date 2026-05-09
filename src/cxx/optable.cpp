@@ -18,7 +18,6 @@
 #include "scidup/database/game_id.h"
 #include "scidup/database/game_TEMP/notation.h"
 #include "scidup/database/game_TEMP/piece_translation.h"
-#include "scidup/database/game_TEMP/state.h"
 #include "scidup/eco/book.h"
 #include <algorithm>
 #include <cstdio>
@@ -125,13 +124,13 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
 
     Date = g->GetDate();
     Result = g->GetResult();
-    NumMoves = (scid::database::game_state::mainlineHalfMoveCount(*g) + 1) / 2;
+    NumMoves = (g->coreGame().mainlineHalfMoveCount() + 1) / 2;
     EcoCode = g->GetEco();
     WhiteElo = g->GetWhiteElo();
     BlackElo = g->GetBlackElo();
     AvgElo = g->coreGame().averageRating();
     Length = 0;
-    StartPly = scid::database::game_state::currentPly(*g);
+    StartPly = g->GetCurrentPly();
     auto location = g->currentLocation();
     if (g->GetCurrentPos()->GetToMove() == scid::database::BLACK) {
         g->MoveBackup();
@@ -1978,7 +1977,7 @@ OpTable::AddMoveOrder (scid::database::Game * g)
     int index = -1;
     scid::database::DString dstr;
     scid::database::game_notation::writePartialMoveList(
-        *g, dstr, scid::database::game_state::currentPly(*g));
+        *g, dstr, g->GetCurrentPly());
 
     // Search for this move order in the current list:
 

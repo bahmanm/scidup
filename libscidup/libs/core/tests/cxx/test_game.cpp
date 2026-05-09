@@ -155,6 +155,7 @@ TEST(CoreGameTest, AppendsMainlineMovesWithMetadataAndVariations) {
 	     {}});
 
 	ASSERT_EQ(1U, game.movetext().mainline.moves.size());
+	EXPECT_EQ(1U, game.mainlineHalfMoveCount());
 	auto const& savedMove = game.movetext().mainline.moves[0];
 	EXPECT_EQ(scid::database::E2, savedMove.action.from);
 	EXPECT_EQ(scid::database::E4, savedMove.action.to);
@@ -204,6 +205,7 @@ TEST(CoreGameTest, ClearMovetextLeavesHeaderAndStartPositionIntact) {
 	EXPECT_TRUE(game.hasNonStandardStart());
 	EXPECT_TRUE(game.initialComment().empty());
 	EXPECT_TRUE(game.movetext().mainline.moves.empty());
+	EXPECT_EQ(0U, game.mainlineHalfMoveCount());
 }
 
 } // namespace

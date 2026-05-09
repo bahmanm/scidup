@@ -93,6 +93,7 @@ public:
 	const GameHeader& header() const;
 	const Movetext& movetext() const;
 	std::string_view initialComment() const;
+	std::size_t mainlineHalfMoveCount() const;
 	const std::string& event() const;
 	const std::string& site() const;
 	const std::string& round() const;
