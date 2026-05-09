@@ -26,7 +26,7 @@ simpleMoveT* Game::currentMove() {
 	return CurrentMove->endMarker() ? nullptr : &CurrentMove->moveData;
 }
 
-ushort Game::GetCurrentPly() const {
+ushort Game::currentPly() const {
 	auto ply = CurrentPos->GetPlyCounter();
 	auto startPos = coreGame_.startPosition();
 	return startPos ? ply - startPos->GetPlyCounter() : ply;

@@ -195,7 +195,7 @@ public:
     Position* currentPos();
     const Position* currentPos() const;
     simpleMoveT* currentMove();
-    ushort GetCurrentPly() const;
+    ushort currentPly() const;
     uint GetNumVariations() const;
 
     // Each variation has a "level" and a "number".

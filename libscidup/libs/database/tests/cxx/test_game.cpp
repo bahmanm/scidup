@@ -209,9 +209,9 @@ TEST(Test_Game, locationInPGN) {
 			}
 
 			std::string san = scid::database::game_notation::nextSan(game);
-			auto ply1 = game.GetCurrentPly();
+			auto ply1 = game.currentPly();
 			game.MoveToLocationInPGN(location);
-			auto ply2 = game.GetCurrentPly();
+			auto ply2 = game.currentPly();
 			ASSERT_EQ(ply1, ply2);
 			ASSERT_EQ(location, game.GetLocationInPGN());
 			ASSERT_EQ(san, scid::database::game_notation::nextSan(game));
@@ -232,20 +232,20 @@ TEST(Test_Game, MoveToStart_MoveToEnd) {
 
 	for (int i = 0; i < 10; i++) {
 		game.MoveToLocationInPGN(distribution(randomEngine));
-		ASSERT_NE(0, game.GetCurrentPly());
+		ASSERT_NE(0, game.currentPly());
 		game.MoveToStart(); // Move to start from any position
-		EXPECT_EQ(0, game.GetCurrentPly());
+		EXPECT_EQ(0, game.currentPly());
 	}
 	game.MoveToStart(); // Move to start from start
-	EXPECT_EQ(0, game.GetCurrentPly());
+	EXPECT_EQ(0, game.currentPly());
 	game.MoveToEnd(); // Move to end from start
-	EXPECT_EQ(149, game.GetCurrentPly());
+	EXPECT_EQ(149, game.currentPly());
 	game.MoveToEnd(); // Move to end from end
-	EXPECT_EQ(149, game.GetCurrentPly());
+	EXPECT_EQ(149, game.currentPly());
 	for (int i = 0; i < 10; i++) {
 		game.MoveToLocationInPGN(distribution(randomEngine));
 		game.MoveToEnd(); // Move to end from any position
-		EXPECT_EQ(149, game.GetCurrentPly());
+		EXPECT_EQ(149, game.currentPly());
 	}
 }
 

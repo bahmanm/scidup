@@ -317,7 +317,7 @@ void Game::Truncate() {
 
 	CurrentMove = endMove;
 	if (VarDepth == 0)
-		NumHalfMoves = GetCurrentPly();
+		NumHalfMoves = currentPly();
 	TEMP_syncCoreMovetext();
 
 	// Invariants
@@ -340,7 +340,7 @@ void Game::TruncateStart() {
     if (VarDepth != 0 && MainVariation() != OK)
 		return;
 
-    NumHalfMoves -= GetCurrentPly();
+    NumHalfMoves -= currentPly();
     coreGame_.setStartPosition(*pos);
     *CurrentPos = *pos;
     FirstMove->setNext(CurrentMove);
