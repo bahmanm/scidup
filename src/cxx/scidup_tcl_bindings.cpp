@@ -8444,7 +8444,7 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case VAR_PROMOTE:
         editor.setDirty();
-        return UI_Result(ti, game.MainVariation ());
+        return UI_Result(ti, game.promoteVariationToMainline ());
 
     default:
         return InvalidCommand (ti, "sc_var", options);
@@ -8469,7 +8469,7 @@ int sc_var_delete(ClientData, Tcl_Interp* ti, int, const char**) {
 //    first in the list.
 int sc_var_first(ClientData, Tcl_Interp* ti, int, const char**) {
 	auto editor = scidup::app::editor::gameSession(*db);
-	auto err = editor.game().FirstVariation();
+	auto err = editor.game().promoteVariationToFirst();
 	if (err != scid::database::ERROR_NoVariation)
 		editor.setDirty();
 	return UI_Result(ti, err);

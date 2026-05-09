@@ -233,9 +233,9 @@ errorT Game::addVariation() {
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::FirstVariation():
+// Game::promoteVariationToFirst():
 // Promotes the current variation to first variation.
-errorT Game::FirstVariation() {
+errorT Game::promoteVariationToFirst() {
 	auto parent = CurrentMove->getParent();
 	auto root = parent.first;
 	if (!root)
@@ -248,10 +248,10 @@ errorT Game::FirstVariation() {
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::MainVariation():
-//    Like FirstVariation, but promotes the variation to the main line,
+// Game::promoteVariationToMainline():
+//    Like promoteVariationToFirst, but promotes the variation to the main line,
 //    demoting the main line to be the first variation.
-errorT Game::MainVariation() {
+errorT Game::promoteVariationToMainline() {
 	auto parent = CurrentMove->getParent();
 	auto root = parent.first;
 	if (!root)
@@ -337,7 +337,7 @@ void Game::TruncateStart() {
 	    if (pos->ReadFromFEN(tempStr) != OK)
 	        return;
 
-    if (VarDepth != 0 && MainVariation() != OK)
+    if (VarDepth != 0 && promoteVariationToMainline() != OK)
 		return;
 
     NumHalfMoves -= currentPly();

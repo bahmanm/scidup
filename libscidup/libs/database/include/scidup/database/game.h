@@ -165,8 +165,8 @@ public:
     errorT addMove(simpleMoveT const& sm);
     errorT addVariation();
     errorT deleteVariation();
-    errorT FirstVariation();
-    errorT MainVariation();
+    errorT promoteVariationToFirst();
+    errorT promoteVariationToMainline();
     void Truncate();
     void TruncateStart();
 
