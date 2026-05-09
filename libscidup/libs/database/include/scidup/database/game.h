@@ -102,8 +102,6 @@ private:
                        bool sameBishops, int minDiff, int maxDiff);
     bool ExactMatch(Position* pos, ByteBuffer* buf, gameExactMatchT searchType);
     bool VarExactMatch(Position* searchPos, gameExactMatchT searchType);
-    std::string& find_or_create_tag(std::string_view tag);
-    std::string& assignTagValue(std::string_view tag, std::string_view value);
     void TEMP_syncCoreMovetext();
 
     friend std::pair<IndexEntry, TagRoster> game_storage::encode(
@@ -238,10 +236,6 @@ public:
     std::pair<const char*, const char*> previousComments() const;
     const char* GetMoveComment() const;
     void SetMoveComment(const char* comment);
-
-    //////////////////////////////////////////////////////////////
-    // Functions that get/set the tag pairs:
-    //
 
     Game* clone();
 };

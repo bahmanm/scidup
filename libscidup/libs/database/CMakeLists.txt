@@ -13,7 +13,6 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/annotations.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/legacy_pgn.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/lifecycle.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/metadata.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/move_tree.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/nag_format.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/notation.cpp"

@@ -42,7 +42,7 @@ void Game::LoadStandardTags(IndexEntry const& ie, TagRoster const& tags) {
     coreGame_.setEco(ecoStr);
     ie.GetFlagStr(ScidFlags, NULL);
     if (!ie.isChessStd())
-        assignTagValue("Variant", "Chess960");
+        coreGame_.findOrCreateTag("Variant").assign("Chess960");
 }
 
 
@@ -648,7 +648,8 @@ errorT Game::Decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf)
     LoadStandardTags(ie, tags);
 
     errorT err = buf.decodeTags([&](const auto& tag, const auto& value) {
-        assignTagValue(tag, value);
+        auto& dest = coreGame_.findOrCreateTag(tag);
+        dest.assign(value.begin(), value.end());
     });
     if (err)
         return err;
