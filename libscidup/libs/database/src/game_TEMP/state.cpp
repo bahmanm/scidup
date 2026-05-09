@@ -5,21 +5,21 @@
 namespace scid::database {
 
 Game::GameSavedPos Game::currentLocation() const {
-	return GameSavedPos{*CurrentPos, currentMove_, varDepth_};
+	return GameSavedPos{*currentPos_, currentMove_, varDepth_};
 }
 
 void Game::restoreLocation(const GameSavedPos& savedPos) {
-	*CurrentPos = savedPos.pos;
+	*currentPos_ = savedPos.pos;
 	currentMove_ = savedPos.move;
 	varDepth_ = savedPos.varDepth;
 }
 
 Position* Game::currentPos() {
-	return CurrentPos.get();
+	return currentPos_.get();
 }
 
 const Position* Game::currentPos() const {
-	return CurrentPos.get();
+	return currentPos_.get();
 }
 
 simpleMoveT* Game::currentMove() {
@@ -27,7 +27,7 @@ simpleMoveT* Game::currentMove() {
 }
 
 ushort Game::currentPly() const {
-	auto ply = CurrentPos->GetPlyCounter();
+	auto ply = currentPos_->GetPlyCounter();
 	auto startPos = coreGame_.startPosition();
 	return startPos ? ply - startPos->GetPlyCounter() : ply;
 }

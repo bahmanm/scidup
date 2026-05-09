@@ -90,7 +90,7 @@ struct LegacyGamePgnEncoder {
 //
 errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
     auto& currentMove_ = game.currentMove_;
-    auto& CurrentPos = game.CurrentPos;
+    auto& currentPos_ = game.currentPos_;
     auto& firstMove_ = game.firstMove_;
     auto& varDepth_ = game.varDepth_;
     auto previous = [&] { return game.previous(); };
@@ -185,7 +185,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
 
         if (m->san[0] == 0) {
             // If there is a next move we can skip the SAN_MATETEST
-            CurrentPos->MakeSANString(
+            currentPos_->MakeSANString(
                 &(m->moveData), m->san,
                 (m->next->marker != END_MARKER) ? SAN_CHECKTEST : SAN_MATETEST);
         }
@@ -222,13 +222,13 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
             tb->PrintInt (numMovesPrinted);
             tb->PrintChar ('>');
         }
-        if (printMoveNum  ||  (CurrentPos->GetToMove() == WHITE)) {
+        if (printMoveNum  ||  (currentPos_->GetToMove() == WHITE)) {
             if ((options.style & PGN_STYLE_COLUMN)  &&  varDepth_ == 0) {
                 tb->PrintString (startColumn);
                 char temp [10];
-                std::snprintf(temp, sizeof(temp), "%4u.", CurrentPos->GetFullMoveCount());
+                std::snprintf(temp, sizeof(temp), "%4u.", currentPos_->GetFullMoveCount());
                 tb->PrintString (temp);
-                if (CurrentPos->GetToMove() == BLACK) {
+                if (currentPos_->GetToMove() == BLACK) {
                     tb->PauseTranslations();
                     tb->PrintString (nextColumn);
                     tb->PrintString ("...");
@@ -239,9 +239,9 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                 }
             } else {
             if (options.style & PGN_STYLE_MOVENUM_SPACE) {
-                tb->PrintInt(CurrentPos->GetFullMoveCount(), (CurrentPos->GetToMove() == WHITE ? "." : ". ..."));
+                tb->PrintInt(currentPos_->GetFullMoveCount(), (currentPos_->GetToMove() == WHITE ? "." : ". ..."));
                 } else {
-                    tb->PrintInt(CurrentPos->GetFullMoveCount(), (CurrentPos->GetToMove() == WHITE ? "." : "..."));
+                    tb->PrintInt(currentPos_->GetFullMoveCount(), (currentPos_->GetToMove() == WHITE ? "." : "..."));
                 }
                 if (options.style & PGN_STYLE_MOVENUM_SPACE) {
                     if (options.isLatexFormat()) {
@@ -337,7 +337,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
             if (printDiagramHere) {
                 if ((options.style & PGN_STYLE_COLUMN)  &&  varDepth_ == 0) {
                     if (! endedColumn) {
-                        if (CurrentPos->GetToMove() == WHITE) {
+                        if (currentPos_->GetToMove() == WHITE) {
                             tb->PauseTranslations ();
                             tb->PrintString (nextColumn);
                             tb->ResumeTranslations ();
@@ -363,9 +363,9 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                 next ();
                 DString * dstr = new DString;
                 if (options.isHtmlFormat()) {
-                    CurrentPos->DumpHtmlBoard (dstr, options.htmlStyle, NULL);
+                    currentPos_->DumpHtmlBoard (dstr, options.htmlStyle, NULL);
                 } else {
-                    CurrentPos->DumpLatexBoard (dstr);
+                    currentPos_->DumpLatexBoard (dstr);
                 }
                 previous ();
                 tb->PrintString (dstr->Data());
@@ -403,7 +403,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
 /* Code commented to remove extra lines
                 if ((options.style & PGN_STYLE_COLUMN)  &&  varDepth_ == 0) {
                        if (! endedColumn) {
-                           if (CurrentPos->GetToMove() == WHITE) {
+                           if (currentPos_->GetToMove() == WHITE) {
                                tb->PauseTranslations ();
                                tb->PrintString (nextColumn);
                                tb->ResumeTranslations ();
@@ -445,9 +445,9 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                     next ();
                     DString * dstr = new DString;
                     if (options.isHtmlFormat()) {
-                        CurrentPos->DumpHtmlBoard (dstr, options.htmlStyle, NULL);
+                        currentPos_->DumpHtmlBoard (dstr, options.htmlStyle, NULL);
                     } else {
-                        CurrentPos->DumpLatexBoard (dstr);
+                        currentPos_->DumpLatexBoard (dstr);
                     }
                     previous ();
                     tb->PrintString (dstr->Data());
@@ -469,7 +469,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
         if ((options.style & PGN_STYLE_VARS)  &&  (m->numVariations > 0)) {
             if ((options.style & PGN_STYLE_COLUMN)  &&  varDepth_ == 0) {
                 if (! endedColumn) {
-                    if (CurrentPos->GetToMove() == WHITE) {
+                    if (currentPos_->GetToMove() == WHITE) {
                         tb->PauseTranslations ();
                         tb->PrintString (nextColumn);
                         tb->ResumeTranslations ();
@@ -560,7 +560,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
         }
         if ((options.style & PGN_STYLE_COLUMN)  &&  varDepth_ == 0) {
             if (endedColumn) { tb->PrintString(startTable); }
-            if (!endedColumn  &&  CurrentPos->GetToMove() == BLACK) {
+            if (!endedColumn  &&  currentPos_->GetToMove() == BLACK) {
                 tb->PrintString (endColumn);
                 endedColumn = true;
             }

@@ -10,7 +10,7 @@
 namespace scid::database {
 
 ///////////////////////////////////////////////////////////////////////////
-// A "location" in the game is represented by a position (Game::CurrentPos), the
+// A "location" in the game is represented by a position (Game::currentPos_), the
 // next move to be played (Game::currentMove_) and the number of parent variations
 // (Game::varDepth_). Since currentMove_ is the next move to be played, some
 // invariants must hold: it is never nullptr and it never points to a
@@ -28,7 +28,7 @@ errorT Game::next(void) {
 	if (currentMove_->endMarker())
 		return ERROR_EndOfMoveList;
 
-	CurrentPos->DoSimpleMove(currentMove_->moveData);
+	currentPos_->DoSimpleMove(currentMove_->moveData);
 	currentMove_ = currentMove_->next;
 
 	// Invariants
@@ -46,7 +46,7 @@ errorT Game::previous(void) {
 		return ERROR_StartOfMoveList;
 
 	currentMove_ = currentMove_->prev;
-	CurrentPos->UndoSimpleMove(currentMove_->moveData);
+	currentPos_->UndoSimpleMove(currentMove_->moveData);
 
 	// Invariants
 	ASSERT(currentMove_ && currentMove_->prev);
@@ -99,9 +99,9 @@ errorT Game::exitVariation(void) {
 //
 void Game::toStart() {
 	if (auto startPos = coreGame_.startPosition()) {
-		*CurrentPos = *startPos;
+		*currentPos_ = *startPos;
 	} else {
-		CurrentPos->StdStart();
+		currentPos_->StdStart();
 	}
 	varDepth_ = 0;
 	currentMove_ = firstMove_->next;
@@ -332,7 +332,7 @@ void Game::truncateStart() {
 	    // It is necessary to rebuild the current position using ReadFromFEN()
 	    // because the order of pieces is important when encoding to SCIDv4 format.
 	    char tempStr[256];
-	    CurrentPos->PrintFEN(tempStr, sizeof(tempStr));
+	    currentPos_->PrintFEN(tempStr, sizeof(tempStr));
 	    auto pos = std::make_unique<Position>();
 	    if (pos->ReadFromFEN(tempStr) != OK)
 	        return;
@@ -342,13 +342,13 @@ void Game::truncateStart() {
 
     numHalfMoves_ -= currentPly();
     coreGame_.setStartPosition(*pos);
-    *CurrentPos = *pos;
+    *currentPos_ = *pos;
     firstMove_->setNext(currentMove_);
 
     // Do all the moves to update moveData.pieceNum to the new start position.
     do {
         if (!currentMove_->startMarker() && !currentMove_->endMarker()) {
-            CurrentPos->fillMove(currentMove_->moveData);
+            currentPos_->fillMove(currentMove_->moveData);
         }
     } while (nextPgn() == OK);
     toStart();

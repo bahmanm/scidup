@@ -103,7 +103,7 @@ std::string game_notation::nextSan(Game& game) {
 	ASSERT(!game.currentMove_->endMarker() || *game.currentMove_->san == '\0');
 
 	if (!game.currentMove_->endMarker() && *game.currentMove_->san == '\0') {
-		game.CurrentPos->MakeSANString(
+		game.currentPos_->MakeSANString(
 		    &game.currentMove_->moveData, game.currentMove_->san,
 		    game.currentMove_->next->endMarker() ? SAN_MATETEST : SAN_CHECKTEST);
 		game.TEMP_syncCoreMovetext();
@@ -120,7 +120,7 @@ std::string game_notation::previousSan(Game& game) {
     }
     if (m->san[0] == 0) {
         game.previous();
-        game.CurrentPos->MakeSANString (&(m->moveData), m->san, SAN_MATETEST);
+        game.currentPos_->MakeSANString (&(m->moveData), m->san, SAN_MATETEST);
         game.next();
         game.TEMP_syncCoreMovetext();
     }

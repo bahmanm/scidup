@@ -36,7 +36,7 @@ errorT Game::setStartFen(const char* fenStr) {
 void Game::setStartPosition(Position const& pos) {
 	clearMoves();
 	coreGame_.setStartPosition(pos);
-	*CurrentPos = pos;
+	*currentPos_ = pos;
 }
 
 // TODO [Game]: Keep Scid flags in database/app compatibility, not in the core
@@ -123,7 +123,7 @@ void Game::clearMoves() {
 	}
 	coreGame_.clearStartPosition();
 	coreGame_.clearMovetext();
-	CurrentPos->StdStart();
+	currentPos_->StdStart();
 
 	firstMove_ = newMove(START_MARKER);
 	currentMove_ = newMove(END_MARKER);

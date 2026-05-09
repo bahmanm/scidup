@@ -72,7 +72,7 @@ class Game {
     // Position and moves
     byte        moveChunkUsed_;
     std::forward_list<std::unique_ptr<moveT[]> > moveChunks_;
-    std::unique_ptr<Position> CurrentPos{new Position};
+    std::unique_ptr<Position> currentPos_{new Position};
     moveT*      firstMove_;
     moveT*      currentMove_;
     uint        varDepth_;     // Current variation depth.
@@ -171,7 +171,7 @@ public:
     void truncateStart();
 
     //////////////////////////////////////////////////////////////
-    // Functions that move the current location (only CurrentPos,
+    // Functions that move the current location (only currentPos_,
     // currentMove_ and varDepth_ are modified by these functions):
     //
     errorT next();
