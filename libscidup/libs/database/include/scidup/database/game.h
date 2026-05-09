@@ -148,6 +148,7 @@ private:
 public:
     Game();
     ~Game();
+    scid::core::Game& coreGame();
     const scid::core::Game& coreGame() const;
     void Clear();
     void strip(bool variations, bool comments, bool NAGs);
@@ -248,36 +249,13 @@ public:
     // previous value will be overwritten.
     std::string& addTag(std::string_view tag, std::string_view value);
 
-    const std::vector<std::pair<std::string, std::string>>& GetExtraTags() const;
-    const char* FindExtraTag(const char* tag) const;
     void RemoveExtraTag(std::string_view tag);
 
-    void     SetEventStr (const char * str);
-    void     SetSiteStr  (const char * str);
-    void     SetWhiteStr (const char * str);
-    void     SetBlackStr (const char * str);
-    void     SetRoundStr (const char * str);
-    void     SetDate (dateT date);
-    void     SetEventDate (dateT date);
-    void     SetResult (resultT res);
     void     SetWhiteElo (ratingT elo);
     void     SetBlackElo (ratingT elo);
     void     SetWhiteRatingType (ratingTypeT b);
     void     SetBlackRatingType (ratingTypeT b);
     void     SetEco (scidup::eco::Code eco);
-    const char* GetEventStr () const;
-    const char* GetSiteStr ()  const;
-    const char* GetWhiteStr () const;
-    const char* GetBlackStr () const;
-    const char* GetRoundStr () const;
-    dateT    GetDate ()        const;
-    dateT    GetEventDate ()   const;
-    resultT  GetResult ()      const;
-    ratingT     GetWhiteElo ()    const;
-    ratingT     GetBlackElo ()    const;
-    ratingTypeT GetWhiteRatingType () const;
-    ratingTypeT GetBlackRatingType () const;
-    scidup::eco::Code GetEco() const;
 
     Game* clone();
 };

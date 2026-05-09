@@ -16,6 +16,10 @@ Game::Game() {
 	Clear();
 }
 
+scid::core::Game& Game::coreGame() {
+	return coreGame_;
+}
+
 const scid::core::Game& Game::coreGame() const {
 	return coreGame_;
 }

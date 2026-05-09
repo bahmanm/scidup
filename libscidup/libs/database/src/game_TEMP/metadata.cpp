@@ -21,50 +21,8 @@ std::string& Game::assignTagValue(std::string_view tag,
 	return dest;
 }
 
-const std::vector<std::pair<std::string, std::string>>& Game::GetExtraTags()
-    const {
-	return coreGame_.extraTags();
-}
-
-const char* Game::FindExtraTag(const char* tag) const {
-	auto value = coreGame_.findExtraTag(tag);
-	return value ? value->c_str() : NULL;
-}
-
 void Game::RemoveExtraTag(std::string_view tag) {
 	coreGame_.removeExtraTag(tag);
-}
-
-void Game::SetEventStr(const char* str) {
-	coreGame_.setEvent(str);
-}
-
-void Game::SetSiteStr(const char* str) {
-	coreGame_.setSite(str);
-}
-
-void Game::SetWhiteStr(const char* str) {
-	coreGame_.setWhiteName(str);
-}
-
-void Game::SetBlackStr(const char* str) {
-	coreGame_.setBlackName(str);
-}
-
-void Game::SetRoundStr(const char* str) {
-	coreGame_.setRound(str);
-}
-
-void Game::SetDate(dateT date) {
-	coreGame_.setDate(date);
-}
-
-void Game::SetEventDate(dateT date) {
-	coreGame_.setEventDate(date);
-}
-
-void Game::SetResult(resultT res) {
-	coreGame_.setResult(res);
 }
 
 void Game::SetWhiteElo(ratingT elo) {
@@ -101,58 +59,6 @@ void Game::SetEco(scidup::eco::Code eco) {
 	char ecoStr[sizeof(scidup::eco::String)] = {};
 	scidup::eco::toExtendedString(eco, ecoStr);
 	coreGame_.setEco(ecoStr);
-}
-
-const char* Game::GetEventStr() const {
-	return coreGame_.event().c_str();
-}
-
-const char* Game::GetSiteStr() const {
-	return coreGame_.site().c_str();
-}
-
-const char* Game::GetWhiteStr() const {
-	return coreGame_.white().name.c_str();
-}
-
-const char* Game::GetBlackStr() const {
-	return coreGame_.black().name.c_str();
-}
-
-const char* Game::GetRoundStr() const {
-	return coreGame_.round().c_str();
-}
-
-dateT Game::GetDate() const {
-	return coreGame_.date();
-}
-
-dateT Game::GetEventDate() const {
-	return coreGame_.eventDate();
-}
-
-resultT Game::GetResult() const {
-	return coreGame_.result();
-}
-
-ratingT Game::GetWhiteElo() const {
-	return coreGame_.white().rating.value;
-}
-
-ratingT Game::GetBlackElo() const {
-	return coreGame_.black().rating.value;
-}
-
-ratingTypeT Game::GetWhiteRatingType() const {
-	return coreGame_.white().rating.type;
-}
-
-ratingTypeT Game::GetBlackRatingType() const {
-	return coreGame_.black().rating.type;
-}
-
-scidup::eco::Code Game::GetEco() const {
-	return EcoCode;
 }
 
 } // namespace scid::database

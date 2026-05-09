@@ -218,7 +218,7 @@ TEST(Test_PgnParser, EPD) {
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                         game, parseLog));
 	EXPECT_STREQ(last_log.c_str(), parseLog.log.c_str());
-	EXPECT_STREQ("Partial game", game.GetEventStr());
+	EXPECT_EQ("Partial game", game.coreGame().event());
 
 	game.Clear();
 	ASSERT_FALSE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,

@@ -593,14 +593,15 @@ errorT LegacyGamePgnEncoder::encode() {
     const auto& WhiteElo = game.coreGame_.white().rating.value;
     const auto& WhiteRatingType = game.coreGame_.white().rating.type;
     const auto& extraTags_ = game.coreGame_.extraTags();
-    auto FindExtraTag = [&](const char* tag) {
-        return game.FindExtraTag(tag);
+    auto findExtraTag = [&](const char* tag) {
+        auto value = game.coreGame_.findExtraTag(tag);
+        return value ? value->c_str() : nullptr;
     };
-    auto GetBlackStr = [&] { return game.GetBlackStr(); };
-    auto GetEventStr = [&] { return game.GetEventStr(); };
-    auto GetRoundStr = [&] { return game.GetRoundStr(); };
-    auto GetSiteStr = [&] { return game.GetSiteStr(); };
-    auto GetWhiteStr = [&] { return game.GetWhiteStr(); };
+    auto blackStr = [&] { return game.coreGame().black().name.c_str(); };
+    auto eventStr = [&] { return game.coreGame().event().c_str(); };
+    auto roundStr = [&] { return game.coreGame().round().c_str(); };
+    auto siteStr = [&] { return game.coreGame().site().c_str(); };
+    auto whiteStr = [&] { return game.coreGame().white().name.c_str(); };
     auto MoveToStart = [&] { game.MoveToStart(); };
 
     char temp[256];
@@ -669,7 +670,7 @@ errorT LegacyGamePgnEncoder::encode() {
         //if (options.isHtmlFormat()) { tb->PrintString ("<font size=+1>"); }
         if (options.isLatexFormat()) { tb->PrintString ("$\\circ$ "); }
         if (options.legacyFormat==PGN_FORMAT_Color) {tb->PrintString ("<tag>"); }
-        tb->PrintString (GetWhiteStr());
+        tb->PrintString (whiteStr());
         if (WhiteElo > 0) {
             std::snprintf(temp, sizeof(temp), "  (%u)", WhiteElo);
             tb->PrintString (temp);
@@ -686,7 +687,7 @@ errorT LegacyGamePgnEncoder::encode() {
             tb->PrintString ("   --   ");
             break;
         }
-        tb->PrintString (GetBlackStr());
+        tb->PrintString (blackStr());
         if (BlackElo > 0) {
             std::snprintf(temp, sizeof(temp), "  (%u)", BlackElo);
             tb->PrintString (temp);
@@ -694,16 +695,16 @@ errorT LegacyGamePgnEncoder::encode() {
         //if (options.isHtmlFormat()) { tb->PrintString ("</font>"); }
         tb->PrintString (newline);
 
-        tb->PrintString (GetEventStr());
+        tb->PrintString (eventStr());
         if (!RoundStr.empty() && RoundStr != "?") {
             tb->PrintString (options.isHtmlFormat() ? " &nbsp;(" : " (");
-            tb->PrintString (GetRoundStr());
+            tb->PrintString (roundStr());
             tb->PrintString (")");
         }
         tb->PrintString (options.isHtmlFormat() ? "&nbsp;&nbsp; " : "  ");
         if (options.isLatexFormat()) { tb->PrintString (newline); }
         if (!SiteStr.empty() && SiteStr != "?") {
-            tb->PrintString (GetSiteStr());
+            tb->PrintString (siteStr());
             tb->PrintString (newline);
         }
 
@@ -723,7 +724,7 @@ errorT LegacyGamePgnEncoder::encode() {
             scidup::eco::toExtendedString(EcoCode, ecoStr);
             tb->PrintString (ecoStr);
         }
-        auto annotator = FindExtraTag("Annotator");
+        auto annotator = findExtraTag("Annotator");
         if (annotator != NULL) {
             std::snprintf(temp, sizeof(temp), " (%s)", annotator);
             tb->PrintString(temp);
@@ -758,17 +759,17 @@ errorT LegacyGamePgnEncoder::encode() {
         uint wrapColumn = tb->GetWrapColumn();
         tb->SetWrapColumn (99999);
         if (options.isColorFormat()) { tb->PrintString ("<tag>"); }
-        std::snprintf(temp, sizeof(temp), "[Event \"%s\"]%s", GetEventStr(), newline);
+        std::snprintf(temp, sizeof(temp), "[Event \"%s\"]%s", eventStr(), newline);
         tb->PrintString (temp);
-        std::snprintf(temp, sizeof(temp), "[Site \"%s\"]%s", GetSiteStr(), newline);
+        std::snprintf(temp, sizeof(temp), "[Site \"%s\"]%s", siteStr(), newline);
         tb->PrintString (temp);
         std::snprintf(temp, sizeof(temp), "[Date \"%s\"]%s", dateStr, newline);
         tb->PrintString (temp);
-        std::snprintf(temp, sizeof(temp), "[Round \"%s\"]%s", GetRoundStr(), newline);
+        std::snprintf(temp, sizeof(temp), "[Round \"%s\"]%s", roundStr(), newline);
         tb->PrintString (temp);
-        std::snprintf(temp, sizeof(temp), "[White \"%s\"]%s", GetWhiteStr(), newline);
+        std::snprintf(temp, sizeof(temp), "[White \"%s\"]%s", whiteStr(), newline);
         tb->PrintString (temp);
-        std::snprintf(temp, sizeof(temp), "[Black \"%s\"]%s", GetBlackStr(), newline);
+        std::snprintf(temp, sizeof(temp), "[Black \"%s\"]%s", blackStr(), newline);
         tb->PrintString (temp);
         std::snprintf(temp, sizeof(temp), "[Result \"%s\"]%s", RESULT_LONGSTR[Result], newline);
         tb->PrintString (temp);

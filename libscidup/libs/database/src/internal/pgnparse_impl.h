@@ -105,9 +105,9 @@ public:
 			ASSERT(resultCh == '*');
 		}
 
-		auto prev_result = game.GetResult();
+		auto prev_result = game.coreGame().result();
 		if (result != prev_result) {
-			game.SetResult(result);
+			game.coreGame().setResult(result);
 			if (prev_result != RESULT_None && nErrorsAllowed_ >= 0)
 				logErr("Final result did not match the header tag.");
 		}
@@ -228,20 +228,20 @@ private:
 	bool parseTagResult(TView str) {
 		auto len = std::distance(str.first, str.second);
 		if (len > 0 && *str.first == '*') {
-			game.SetResult(RESULT_None);
+			game.coreGame().setResult(RESULT_None);
 			return true;
 		}
 		if (len >= 3) {
 			if (std::equal(str.first, str.first + 3, "1-0")) {
-				game.SetResult(RESULT_White);
+				game.coreGame().setResult(RESULT_White);
 				return true;
 			}
 			if (std::equal(str.first, str.first + 3, "0-1")) {
-				game.SetResult(RESULT_Black);
+				game.coreGame().setResult(RESULT_Black);
 				return true;
 			}
 			if (std::equal(str.first, str.first + 3, "1/2")) {
-				game.SetResult(RESULT_Draw);
+				game.coreGame().setResult(RESULT_Draw);
 				return true;
 			}
 		}
@@ -343,7 +343,7 @@ private:
 		case 4:
 			if (std::equal(tag, tag + 4, "Date")) {
 				const auto date = date_parsePGNTag(value);
-				game.SetDate(date);
+				game.coreGame().setDate(date);
 				return !date_isPartial(date);
 			}
 			break;
@@ -353,16 +353,16 @@ private:
 			break;
 		case 7:
 			if (std::equal(tag, tag + 7, "UTCDate") &&
-			    game.GetDate() == ZERO_DATE) {
+			    game.coreGame().date() == ZERO_DATE) {
 				const auto date = date_parsePGNTag(value);
 				if (!date_isPartial(date))
-					game.SetDate(date);
+					game.coreGame().setDate(date);
 			}
 			break;
 		case 9:
 			if (std::equal(tag, tag + 9, "EventDate")) {
 				const auto date = date_parsePGNTag(value);
-				game.SetEventDate(date);
+				game.coreGame().setEventDate(date);
 				return !date_isPartial(date);
 			}
 			if (std::equal(tag, tag + 9, "ScidFlags")) {
@@ -373,12 +373,13 @@ private:
 			break;
 		}
 		if (tagLen >= 8) {
-			if (std::equal(tag, tag + 5, "White") && game.GetWhiteElo() == 0) {
+			if (std::equal(tag, tag + 5, "White") &&
+			    game.coreGame().white().rating.value == 0) {
 				auto res = parseRating(WHITE, tag + 5, tagLen - 5, value);
 				if (res >= 0)
 					return res;
 			} else if (std::equal(tag, tag + 5, "Black") &&
-			           game.GetBlackElo() == 0) {
+			           game.coreGame().black().rating.value == 0) {
 				auto res = parseRating(BLACK, tag + 5, tagLen - 5, value);
 				if (res >= 0)
 					return res;

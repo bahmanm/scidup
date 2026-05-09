@@ -2341,16 +2341,19 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     scid::database::idNumberT eventId = 0, siteId = 0;
-    if (db->getNameBase()->FindExactName (scid::database::NAME_EVENT, g->GetEventStr(), &eventId) != scid::database::OK) {
+    if (db->getNameBase()->FindExactName(
+            scid::database::NAME_EVENT, g->coreGame().event().c_str(),
+            &eventId) != scid::database::OK) {
         return TCL_OK;
     }
-    if (db->getNameBase()->FindExactName (scid::database::NAME_SITE, g->GetSiteStr(), &siteId) != scid::database::OK) {
+    if (db->getNameBase()->FindExactName (
+            scid::database::NAME_SITE, g->coreGame().site().c_str(), &siteId) != scid::database::OK) {
         return TCL_OK;
     }
 
-    scid::database::dateT eventDate = g->GetEventDate();
-    scid::database::dateT firstSeenDate = g->GetDate();
-    scid::database::dateT lastSeenDate = g->GetDate();
+    scid::database::dateT eventDate = g->coreGame().eventDate();
+    scid::database::dateT firstSeenDate = g->coreGame().date();
+    scid::database::dateT lastSeenDate = g->coreGame().date();
 
     Crosstable * ctable = new Crosstable;
     if (sort == EOPT_SORT_NAME) { ctable->SortByName(); }
@@ -2459,7 +2462,9 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     char stemp[1000];
-    std::snprintf(stemp, sizeof(stemp), "%s%s%s, ", g->GetEventStr(), newlineStr, g->GetSiteStr());
+    std::snprintf(stemp, sizeof(stemp), "%s%s%s, ",
+                  g->coreGame().event().c_str(), newlineStr,
+                  g->coreGame().site().c_str());
     AppendResult (ti, stemp, NULL);
     scid::database::date_DecodeToString (firstSeenDate, stemp);
     scid::database::strTrimDate (stemp);
@@ -2687,33 +2692,33 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 commentHeight = scid::database::strGetBoolean(argv[arg]);
             }
         } else if (scid::database::strIsPrefix (argv[arg], "white")) {
-            AppendResult (ti, g.GetWhiteStr(), NULL);
+            AppendResult (ti, g.coreGame().white().name.c_str(), NULL);
             return TCL_OK;
         } else if (scid::database::strIsPrefix (argv[arg], "welo")) {
-            return setIntResult (ti, g.GetWhiteElo() );
+            return setIntResult (ti, g.coreGame().white().rating.value);
         } else if (scid::database::strIsPrefix (argv[arg], "black")) {
-            AppendResult (ti, g.GetBlackStr(), NULL);
+            AppendResult (ti, g.coreGame().black().name.c_str(), NULL);
             return TCL_OK;
         } else if (scid::database::strIsPrefix (argv[arg], "belo")) {
-            return setIntResult (ti, g.GetBlackElo() );
+            return setIntResult (ti, g.coreGame().black().rating.value);
         } else if (scid::database::strIsPrefix (argv[arg], "event")) {
-            AppendResult (ti, g.GetEventStr(), NULL);
+            AppendResult (ti, g.coreGame().event().c_str(), NULL);
             return TCL_OK;
         } else if (scid::database::strIsPrefix (argv[arg], "site")) {
-            AppendResult (ti, g.GetSiteStr(), NULL);
+            AppendResult (ti, g.coreGame().site().c_str(), NULL);
             return TCL_OK;
         } else if (scid::database::strIsPrefix (argv[arg], "round")) {
-            AppendResult (ti, g.GetRoundStr(), NULL);
+            AppendResult (ti, g.coreGame().round().c_str(), NULL);
             return TCL_OK;
         } else if (scid::database::strIsPrefix (argv[arg], "date")) {
             char dateStr [12];
-            scid::database::date_DecodeToString (g.GetDate(), dateStr);
+            scid::database::date_DecodeToString (g.coreGame().date(), dateStr);
             AppendResult (ti, dateStr, NULL);
             return TCL_OK;
         } else if (scid::database::strIsPrefix (argv[arg], "year")) {
-            return setUintResult (ti, scid::database::date_GetYear (g.GetDate()));
+            return setUintResult (ti, scid::database::date_GetYear(g.coreGame().date()));
         } else if (scid::database::strIsPrefix (argv[arg], "result")) {
-            return setResult (ti, scid::database::RESULT_STR[g.GetResult()]);
+            return setResult (ti, scid::database::RESULT_STR[g.coreGame().result()]);
         } else if (scid::database::strIsPrefix (argv[arg], "nextMove")) {
             scid::database::strCopy(
                 temp, scid::database::game_notation::nextSan(g).c_str());
@@ -2767,25 +2772,25 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     const char * gameStr = translate (ti, "game");
     std::snprintf(temp, sizeof(temp), "%c%s %u:  <pi %s>%s</pi>", toupper(gameStr[0]),
              gameStr + 1, loadedGameId ? *loadedGameId + 1 : 0,
-             g.GetWhiteStr(), g.GetWhiteStr());
-    if (auto whCountry = g.FindExtraTag("WhiteCountry"))
+             g.coreGame().white().name.c_str(), g.coreGame().white().name.c_str());
+    if (auto whCountry = g.coreGame().findExtraTag("WhiteCountry"))
         std::snprintf(temp + std::strlen(temp), sizeof(temp) - std::strlen(temp),
-                      " (%s)", whCountry);
+                      " (%s)", whCountry->c_str());
 
     AppendResult (ti, temp, NULL);
-    scid::database::ratingT elo = g.GetWhiteElo();
+    scid::database::ratingT elo = g.coreGame().white().rating.value;
     if (elo != 0) {
         std::snprintf(temp, sizeof(temp), " <red>%u</red>", elo);
         AppendResult (ti, temp, NULL);
     }
     std::snprintf(temp, sizeof(temp), "  --  <pi %s>%s</pi>",
-             g.GetBlackStr(), g.GetBlackStr());
-    if (auto blCountry = g.FindExtraTag("BlackCountry"))
+             g.coreGame().black().name.c_str(), g.coreGame().black().name.c_str());
+    if (auto blCountry = g.coreGame().findExtraTag("BlackCountry"))
         std::snprintf(temp + std::strlen(temp), sizeof(temp) - std::strlen(temp),
-                      " (%s)", blCountry);
+                      " (%s)", blCountry->c_str());
 
     AppendResult (ti, temp, NULL);
-    elo = g.GetBlackElo();
+    elo = g.coreGame().black().rating.value;
     if (elo != 0) {
         std::snprintf(temp, sizeof(temp), " <red>%u</red>", elo);
         AppendResult (ti, temp, NULL);
@@ -2798,14 +2803,14 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         const auto moveCount = static_cast<unsigned>(
             (g.coreGame().mainlineHalfMoveCount() + 1) / 2);
         std::snprintf(temp, sizeof(temp), "<br>%s <red>(%u)</red>",
-                 scid::database::RESULT_LONGSTR[g.GetResult()],
+                 scid::database::RESULT_LONGSTR[g.coreGame().result()],
                  moveCount);
     }
     AppendResult (ti, temp, NULL);
 
-    if (g.GetEco() != 0) {
+    if (!g.coreGame().eco().empty()) {
         scidup::eco::String fullEcoStr;
-        scidup::eco::toExtendedString(g.GetEco(), fullEcoStr);
+        scid::database::strCopy(fullEcoStr, g.coreGame().eco().c_str());
         scidup::eco::String basicEcoStr;
         scid::database::strCopy (basicEcoStr, fullEcoStr);
         if (scid::database::strLength(basicEcoStr) >= 4) { basicEcoStr[3] = 0; }
@@ -2814,7 +2819,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                           "</run></blue>", NULL);
     }
     char dateStr[20];
-    scid::database::date_DecodeToString (g.GetDate(), dateStr);
+    scid::database::date_DecodeToString (g.coreGame().date(), dateStr);
     scid::database::strTrimDate (dateStr);
     AppendResult (ti, "   <red>", dateStr, "</red>", NULL);
 
@@ -2863,7 +2868,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             }
         }
 
-        if (g.FindExtraTag("Bib") != NULL) {
+        if (g.coreGame().findExtraTag("Bib") != nullptr) {
            AppendResult (ti, "  <red><run ::Bibliography::ShowRef>Bib</run></red>", NULL);
         }
 
@@ -2875,9 +2880,9 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
     std::snprintf(temp, sizeof(temp),
                   "<br><gray><run ::crosstab::Open>%s:  %s</run> (%s)</gray><br>",
-             g.GetSiteStr(),
-             g.GetEventStr(),
-             g.GetRoundStr());
+             g.coreGame().site().c_str(),
+             g.coreGame().event().c_str(),
+             g.coreGame().round().c_str());
     AppendResult (ti, temp, NULL);
 
     char san [20];
@@ -3375,7 +3380,7 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::Progress progress = UI_CreateProgress(ti);
     std::string filtername = base->newFilter();
     scid::database::HFilter filter = scidup::app::tree::resolveFilter(*base, filtername);
-    scid::database::dateT currentDate = g->GetDate();
+    scid::database::dateT currentDate = g->coreGame().date();
     while (g->MoveForward() == scid::database::OK) {
         scid::database::SearchPos(*g->GetCurrentPos()).setFilter(*base, filter, scid::database::Progress());
         int count = 0;
@@ -3698,30 +3703,27 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
 
     // Return header summary if requested:
         scid::database::DString dstr;
-        dstr.Append (g->GetWhiteStr());
-        scid::database::ratingT elo = g->GetWhiteElo();
+        dstr.Append (g->coreGame().white().name.c_str());
+        scid::database::ratingT elo = g->coreGame().white().rating.value;
         if (elo > 0) { dstr.Append (" (", elo, ")"); }
-        dstr.Append ("  --  ", g->GetBlackStr());
-        elo = g->GetBlackElo();
+        dstr.Append ("  --  ", g->coreGame().black().name.c_str());
+        elo = g->coreGame().black().rating.value;
         if (elo > 0) { dstr.Append (" (", elo, ")"); }
-        dstr.Append ("\n", g->GetEventStr());
-        const char * round = g->GetRoundStr();
+        dstr.Append ("\n", g->coreGame().event().c_str());
+        const char * round = g->coreGame().round().c_str();
         if (! scid::database::strIsUnknownName(round)) {
             dstr.Append (" (", round, ")");
         }
-        dstr.Append ("  ", g->GetSiteStr(), "\n");
+        dstr.Append ("  ", g->coreGame().site().c_str(), "\n");
         char dateStr [20];
-        scid::database::date_DecodeToString (g->GetDate(), dateStr);
+        scid::database::date_DecodeToString (g->coreGame().date(), dateStr);
         // Remove ".??" or ".??.??" from end of date:
         if (dateStr[4] == '.'  &&  dateStr[5] == '?') { dateStr[4] = 0; }
         if (dateStr[7] == '.'  &&  dateStr[8] == '?') { dateStr[7] = 0; }
         dstr.Append (dateStr, "  ");
-        dstr.Append (scid::database::RESULT_LONGSTR[g->GetResult()]);
-        scidup::eco::Code eco = g->GetEco();
-        if (eco != 0) {
-            scidup::eco::String ecoStr;
-            scidup::eco::toExtendedString(eco, ecoStr);
-            dstr.Append ("  ", ecoStr);
+        dstr.Append (scid::database::RESULT_LONGSTR[g->coreGame().result()]);
+        if (!g->coreGame().eco().empty()) {
+            dstr.Append ("  ", g->coreGame().eco().c_str());
         }
         res.push_back(dstr.Data());
 
@@ -3763,7 +3765,7 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
                 }
                 moves.push_back(temp);
             } else {
-                moves.push_back(scid::database::RESULT_LONGSTR[g->GetResult()]);
+                moves.push_back(scid::database::RESULT_LONGSTR[g->coreGame().result()]);
             }
 
     } while (g->MoveForward() == scid::database::OK);
@@ -3851,89 +3853,94 @@ sc_game_tags_get (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     switch (index) {
     case T_Event:
-        s = g->GetEventStr();  if (!s) { s = "?"; }
+        s = g->coreGame().event().c_str();  if (!s) { s = "?"; }
         AppendResult (ti, s, NULL);
         break;
 
     case T_Site:
-        s = g->GetSiteStr();  if (!s) { s = "?"; }
+        s = g->coreGame().site().c_str();  if (!s) { s = "?"; }
         AppendResult (ti, s, NULL);
         break;
 
     case T_Date:
         {
             char dateStr[20];
-            scid::database::date_DecodeToString (g->GetDate(), dateStr);
+            scid::database::date_DecodeToString (g->coreGame().date(), dateStr);
             AppendResult (ti, dateStr, NULL);
         }
         break;
 
     case T_Year:
-        return setUintResult (ti, scid::database::date_GetYear (g->GetDate()));
+        return setUintResult (ti, scid::database::date_GetYear(g->coreGame().date()));
 
     case T_Month:
-        return setUintWidthResult (ti, scid::database::date_GetMonth (g->GetDate()), 2);
+        return setUintWidthResult (ti, scid::database::date_GetMonth(g->coreGame().date()), 2);
 
     case T_Day:
-        return setUintWidthResult (ti, scid::database::date_GetDay (g->GetDate()), 2);
+        return setUintWidthResult (ti, scid::database::date_GetDay(g->coreGame().date()), 2);
 
     case T_Round:
-        s = g->GetRoundStr();  if (!s) { s = "?"; }
+        s = g->coreGame().round().c_str();  if (!s) { s = "?"; }
         AppendResult (ti, s, NULL);
         break;
 
     case T_White:
-        s = g->GetWhiteStr();  if (!s) { s = "?"; }
+        s = g->coreGame().white().name.c_str();  if (!s) { s = "?"; }
         AppendResult (ti, s, NULL);
         break;
 
     case T_Black:
-        s = g->GetBlackStr();  if (!s) { s = "?"; }
+        s = g->coreGame().black().name.c_str();  if (!s) { s = "?"; }
         AppendResult (ti, s, NULL);
         break;
 
     case T_Result:
-        return UI_Result(ti, scid::database::OK, std::string(1, scid::database::RESULT_CHAR[g->GetResult()]));
+        return UI_Result(
+            ti, scid::database::OK,
+            std::string(1, scid::database::RESULT_CHAR[g->coreGame().result()]));
 
     case T_WhiteElo:
-        return setUintResult (ti, g->GetWhiteElo());
+        return setUintResult (ti, g->coreGame().white().rating.value);
 
     case T_BlackElo:
-        return setUintResult (ti, g->GetBlackElo());
+        return setUintResult (ti, g->coreGame().black().rating.value);
 
     case T_WhiteRType:
-        return setResult (ti, scid::database::ratingTypeNames[g->GetWhiteRatingType()]);
+        return setResult (
+            ti, scid::database::ratingTypeNames[g->coreGame().white().rating.type]);
 
     case T_BlackRType:
-        return setResult (ti, scid::database::ratingTypeNames[g->GetBlackRatingType()]);
+        return setResult (
+            ti, scid::database::ratingTypeNames[g->coreGame().black().rating.type]);
 
     case T_ECO:
         {
-            scidup::eco::String ecoStr;
-            scidup::eco::toExtendedString(g->GetEco(), ecoStr);
-            AppendResult (ti, ecoStr, NULL);
+            AppendResult (ti, g->coreGame().eco().c_str(), NULL);
             break;
         }
 
     case T_EDate:
         {
             char dateStr[20];
-            scid::database::date_DecodeToString (g->GetEventDate(), dateStr);
+            scid::database::date_DecodeToString (g->coreGame().eventDate(), dateStr);
             AppendResult (ti, dateStr, NULL);
         }
         break;
 
     case T_EYear:
-        return setUintResult (ti, scid::database::date_GetYear (g->GetEventDate()));
+        return setUintResult (
+            ti, scid::database::date_GetYear(g->coreGame().eventDate()));
 
     case T_EMonth:
-        return setUintWidthResult (ti, scid::database::date_GetMonth (g->GetEventDate()), 2);
+        return setUintWidthResult (
+            ti, scid::database::date_GetMonth(g->coreGame().eventDate()), 2);
 
     case T_EDay:
-        return setUintWidthResult (ti, scid::database::date_GetDay (g->GetEventDate()), 2);
+        return setUintWidthResult (
+            ti, scid::database::date_GetDay(g->coreGame().eventDate()), 2);
 
     case T_Extra:
-        for (auto& tag : g->GetExtraTags()) {
+        for (auto& tag : g->coreGame().extraTags()) {
             AppendResult(ti, tag.first.c_str(), " \"", tag.second.c_str(), "\"\n", NULL);
         }
         break;
@@ -3991,15 +3998,15 @@ sc_game_tags_set (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         arg += 2;
 
         switch (index) {
-            case T_EVENT: game.SetEventStr (value); break;
-            case T_SITE: game.SetSiteStr (value); break;
+            case T_EVENT: game.addTag("Event", value); break;
+            case T_SITE: game.addTag("Site", value); break;
             case T_DATE:
-                game.SetDate (scid::database::date_EncodeFromString(value));
+                game.coreGame().setDate(scid::database::date_EncodeFromString(value));
                 break;
-            case T_ROUND: game.SetRoundStr (value); break;
-            case T_WHITE: game.SetWhiteStr (value); break;
-            case T_BLACK: game.SetBlackStr (value); break;
-            case T_RESULT: game.SetResult (scid::database::strGetResult(value)); break;
+            case T_ROUND: game.addTag("Round", value); break;
+            case T_WHITE: game.addTag("White", value); break;
+            case T_BLACK: game.addTag("Black", value); break;
+            case T_RESULT: game.coreGame().setResult(scid::database::strGetResult(value)); break;
             case T_WHITE_ELO:
                 game.SetWhiteElo (scid::database::strGetUnsigned(value)); break;
             case T_WHITE_RTYPE:
@@ -4011,13 +4018,13 @@ sc_game_tags_set (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             case T_ECO:
                 game.SetEco(scidup::eco::fromString(value)); break;
             case T_EVENTDATE:
-                game.SetEventDate (scid::database::date_EncodeFromString(value));
+                game.coreGame().setEventDate(scid::database::date_EncodeFromString(value));
                 break;
             case T_EXTRA:
                 {
                     // Add all the nonstandard tags:
                     std::vector<std::string> extraTags;
-                    for (auto const& tag : game.GetExtraTags()) {
+                    for (auto const& tag : game.coreGame().extraTags()) {
                         extraTags.push_back(tag.first);
                     }
                     for (auto const& tag : extraTags) {
@@ -5497,11 +5504,14 @@ sc_name_edit (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         auto editor = scidup::app::editor::gameSession(*dbase);
         scid::database::Game* g = &editor.game();
         auto nb = dbase->getNameBase();
-        if (nb->FindExactName(scid::database::NAME_EVENT, g->GetEventStr(), &eventId) != scid::database::OK)
+        if (nb->FindExactName(scid::database::NAME_EVENT,
+                              g->coreGame().event().c_str(),
+                              &eventId) != scid::database::OK)
             return UI_Result(ti, scid::database::OK, 0);
-        if (nb->FindExactName(scid::database::NAME_SITE, g->GetSiteStr(), &siteId) != scid::database::OK)
+        if (nb->FindExactName(scid::database::NAME_SITE,
+                              g->coreGame().site().c_str(), &siteId) != scid::database::OK)
             return UI_Result(ti, scid::database::OK, 0);
-        eventDate = g->GetEventDate();
+        eventDate = g->coreGame().eventDate();
     }
     auto inCTable = [&](const scid::database::IndexEntry& ie) {
         if (editSelection != EDIT_CTABLE)
@@ -5708,10 +5718,12 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::idNumberT opponentId = 0;
     const char * opponent = NULL;
     auto editor = scidup::app::editor::gameSession(*db);
-    if (scid::database::strEqual (playerName, editor.game().GetWhiteStr())) {
-        opponent = editor.game().GetBlackStr();
-    } else if (scid::database::strEqual (playerName, editor.game().GetBlackStr())) {
-        opponent = editor.game().GetWhiteStr();
+    if (scid::database::strEqual (
+            playerName, editor.game().coreGame().white().name.c_str())) {
+        opponent = editor.game().coreGame().black().name.c_str();
+    } else if (scid::database::strEqual (
+                   playerName, editor.game().coreGame().black().name.c_str())) {
+        opponent = editor.game().coreGame().white().name.c_str();
     }
 
     if (opponent != NULL) {

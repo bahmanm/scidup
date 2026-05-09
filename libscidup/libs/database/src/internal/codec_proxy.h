@@ -163,8 +163,9 @@ private:
 		return parseGames(progress, *getDerived(), [&](Game& game) {
 			buf.clear();
 
-			if (auto replace_game = game.FindExtraTag(special_replace_tag)) {
-				auto gnum = std::strtoul(replace_game, NULL, 10);
+			if (auto replace_game =
+			        game.coreGame().findExtraTag(special_replace_tag)) {
+				auto gnum = std::strtoul(replace_game->c_str(), NULL, 10);
 				if (gnum < CodecMemory::numGames()) {
 					game.RemoveExtraTag(special_replace_tag);
 					auto [ie, tags] = game_storage::encode(game, buf);

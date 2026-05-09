@@ -114,20 +114,20 @@ void
 OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, scid::database::gamenumT gameNum,
               scid::database::uint maxExtraMoves, scid::database::uint maxThemeMoveNumber)
 {
-    White = scid::database::strDuplicate (g->GetWhiteStr());
-    Black = scid::database::strDuplicate (g->GetBlackStr());
-    Site = scid::database::strDuplicate (g->GetSiteStr());
+    White = scid::database::strDuplicate (g->coreGame().white().name.c_str());
+    Black = scid::database::strDuplicate (g->coreGame().black().name.c_str());
+    Site = scid::database::strDuplicate (g->coreGame().site().c_str());
 
     WhiteID = ie->GetWhite();
     BlackID = ie->GetBlack();
     GameNumber = gameNum;
 
-    Date = g->GetDate();
-    Result = g->GetResult();
+    Date = g->coreGame().date();
+    Result = g->coreGame().result();
     NumMoves = (g->coreGame().mainlineHalfMoveCount() + 1) / 2;
-    EcoCode = g->GetEco();
-    WhiteElo = g->GetWhiteElo();
-    BlackElo = g->GetBlackElo();
+    EcoCode = scidup::eco::fromString(g->coreGame().eco().c_str());
+    WhiteElo = g->coreGame().white().rating.value;
+    BlackElo = g->coreGame().black().rating.value;
     AvgElo = g->coreGame().averageRating();
     Length = 0;
     StartPly = g->GetCurrentPly();

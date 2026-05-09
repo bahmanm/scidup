@@ -27,18 +27,18 @@ namespace scid::database {
 // metadata records.
 //
 void Game::LoadStandardTags(IndexEntry const& ie, TagRoster const& tags) {
-    SetEventStr(tags.event);
-    SetSiteStr(tags.site);
-    SetWhiteStr(tags.white);
-    SetBlackStr(tags.black);
-    SetRoundStr(tags.round);
-    SetDate(ie.GetDate());
-    SetEventDate(ie.GetEventDate());
+    coreGame_.setEvent(tags.event);
+    coreGame_.setSite(tags.site);
+    coreGame_.setWhiteName(tags.white);
+    coreGame_.setBlackName(tags.black);
+    coreGame_.setRound(tags.round);
+    coreGame_.setDate(ie.GetDate());
+    coreGame_.setEventDate(ie.GetEventDate());
     SetWhiteElo(ie.GetWhiteElo());
     SetBlackElo(ie.GetBlackElo());
     SetWhiteRatingType(ie.GetWhiteRatingType());
     SetBlackRatingType(ie.GetBlackRatingType());
-    SetResult(ie.GetResult());
+    coreGame_.setResult(ie.GetResult());
     SetEco(ie.GetEcoCode());
     ie.GetFlagStr(ScidFlags, NULL);
     if (!ie.isChessStd())
@@ -517,11 +517,11 @@ std::pair<IndexEntry, TagRoster> Game::Encode(std::vector<byte>& dest) const {
     // boundary. Core metadata should be projected here, not stored in database
     // codec types.
     auto tags = TagRoster();
-    tags.event = GetEventStr();
-    tags.site = GetSiteStr();
-    tags.white = GetWhiteStr();
-    tags.black = GetBlackStr();
-    tags.round = GetRoundStr();
+    tags.event = coreGame_.event().c_str();
+    tags.site = coreGame_.site().c_str();
+    tags.white = coreGame_.white().name.c_str();
+    tags.black = coreGame_.black().name.c_str();
+    tags.round = coreGame_.round().c_str();
 
     auto ie = IndexEntry();
     // Set the fields in the IndexEntry:
@@ -549,7 +549,7 @@ std::pair<IndexEntry, TagRoster> Game::Encode(std::vector<byte>& dest) const {
 
     // First, encode info not already stored in the index
     // This will be the non-STR (non-"seven tag roster") PGN tags.
-    encodeTags(GetExtraTags(), dest);
+    encodeTags(coreGame_.extraTags(), dest);
 
 	    // Encode the promotion flags and the start position
 	    char FEN[256];
