@@ -339,7 +339,7 @@ errorT Game::DecodeVariation(ByteBuffer& buf,
 		    },
 		    [&](auto newVariation) {
 			    if (newVariation)
-				    return AddVariation() == OK;
+				    return addVariation() == OK;
 
 			    return (exitVariation() == OK && next() == OK);
 		    },
@@ -351,7 +351,7 @@ errorT Game::DecodeVariation(ByteBuffer& buf,
 
 		auto errMove = decodeMove(&buf, &sm, val, currentPos());
 		if (!errMove)
-			errMove = AddMove(sm);
+			errMove = addMove(sm);
 		if (errMove)
 			return errMove;
 	}

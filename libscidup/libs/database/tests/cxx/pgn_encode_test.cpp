@@ -205,7 +205,7 @@ TEST(Test_PgnEncode, encode_game) {
 		game.SetMoveComment("before the move");
 		scid::database::simpleMoveT sm;
 		game.currentPos()->makeMove(scid::database::E2, scid::database::E4, scid::database::EMPTY, sm);
-		game.AddMove(sm);
+		game.addMove(sm);
 		game.SetMoveComment("after the move");
 		SAN_hack(game);
 		auto expected = "[Event\0\"\"]\n"sv
@@ -246,7 +246,7 @@ TEST(Test_PgnEncode, encode) {
 		game.SetMoveComment("before the move");
 		scid::database::simpleMoveT sm;
 		game.currentPos()->makeMove(scid::database::E2, scid::database::E4, scid::database::EMPTY, sm);
-		game.AddMove(sm);
+		game.addMove(sm);
 		game.SetMoveComment("after the move");
 		SAN_hack(game);
 		auto expected = "[Event \"\"]\n"

@@ -125,7 +125,7 @@ public:
 
 			return logFatalErr("Failed to parse the move: ", tok);
 		}
-		return (game.AddMove(sm) == OK)
+		return (game.addMove(sm) == OK)
 		           ? true
 		           : logFatalErr("Failed to add the move: ", tok);
 	}
@@ -187,7 +187,7 @@ public:
 		if (nErrorsAllowed_ < 0)
 			return true;
 
-		if (game.AddVariation() != OK)
+		if (game.addVariation() != OK)
 			return logFatalErr("Failed to add a new variation.");
 
 		return true;

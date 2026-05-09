@@ -2615,14 +2615,14 @@ int sc_game_import(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 	editor.setDirty();
 	bool new_variation = false;
 	if (editor.game().next() == scid::database::OK) {
-		new_variation = (editor.game().AddVariation() == scid::database::OK);
+		new_variation = (editor.game().addVariation() == scid::database::OK);
 	}
 
 	scid::database::PgnParseLog pgn;
 	auto ok = scid::database::pgnParseGame(argv[2], std::strlen(argv[2]), editor.game(), pgn);
 
 	if (new_variation && editor.game().isAtEmptyVariation()) {
-		editor.game().DeleteVariation();
+		editor.game().deleteVariation();
 	}
 
 	if (!ok && pgn.log.empty())
@@ -3210,11 +3210,11 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         game.next();
     }
     game.next();
-    game.AddVariation();
+    game.addVariation();
     editor.setDirty();
     if (sm) {
         // We need to replicate the last move of the current game.
-        game.AddMove(*sm);
+        game.addMove(*sm);
     }
     merge->toPly (mergePly);
     ply = mergePly;
@@ -3222,7 +3222,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         scid::database::simpleMoveT * mergeMove = merge->currentMove();
         if (merge->next() != scid::database::OK) { break; }
         if (mergeMove == NULL) { break; }
-        if (game.AddMove(*mergeMove) != scid::database::OK) { break; }
+        if (game.addMove(*mergeMove) != scid::database::OK) { break; }
         ply++;
     }
 
@@ -4603,7 +4603,7 @@ sc_move_add (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::Position * pos = editor.game().currentPos();
     scid::database::errorT err = pos->ReadCoordMove(&sm, s, s[4] == 0 ? 4 : 5, true);
     if (err == scid::database::OK) {
-        err = editor.game().AddMove(sm);
+        err = editor.game().addMove(sm);
         if (err == scid::database::OK) {
             editor.setDirty();
             return TCL_OK;
@@ -8415,7 +8415,7 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
     case VAR_CREATE:
         if (! (game.isAtVariationStart()  &&  game.isAtVariationEnd())) {
             game.next();
-            game.AddVariation();
+            game.addVariation();
             editor.setDirty();
         }
         break;
@@ -8458,7 +8458,7 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 //    Deletes a specified variation.
 int sc_var_delete(ClientData, Tcl_Interp* ti, int, const char**) {
 	auto editor = scidup::app::editor::gameSession(*db);
-	auto err = editor.game().DeleteVariation();
+	auto err = editor.game().deleteVariation();
 	if (err != scid::database::ERROR_NoVariation)
 		editor.setDirty();
 	return UI_Result(ti, err);

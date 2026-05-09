@@ -162,9 +162,9 @@ public:
     //////////////////////////////////////////////////////////////
     // Functions to add or delete moves:
     //
-    errorT AddMove(simpleMoveT const& sm);
-    errorT AddVariation();
-    errorT DeleteVariation();
+    errorT addMove(simpleMoveT const& sm);
+    errorT addVariation();
+    errorT deleteVariation();
     errorT FirstVariation();
     errorT MainVariation();
     void Truncate();

@@ -127,14 +127,14 @@ private:
 
 			auto move = *mlist.Get(rand(0, mlist.Size() - 1));
 			res->currentPos()->fillMove(move);
-			res->AddMove(move);
+			res->addMove(move);
 
 			if (rand(0, 6) == 0)
 				res->SetMoveComment(rand_comment().c_str());
 
 			int varOp = rand(0, 80 + int(res->variationLevel()) * 20);
 			if (varOp < 20) {
-				res->AddVariation();
+				res->addVariation();
 			} else if (varOp > 80) {
 				res->exitVariation();
 				res->next();

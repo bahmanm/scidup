@@ -188,10 +188,10 @@ unsigned Game::GetPgnOffset() const {
 // moves. Promoting variations also modifies the moves graph.
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::AddMove():
+// Game::addMove():
 //      Add a move at current position and do it.
 //
-errorT Game::AddMove(simpleMoveT const& sm) {
+errorT Game::addMove(simpleMoveT const& sm) {
 	// We must be at the end of a game/variation to add a move:
 	if (!CurrentMove->endMarker())
 		Truncate();
@@ -209,10 +209,10 @@ errorT Game::AddMove(simpleMoveT const& sm) {
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::AddVariation():
+// Game::addVariation():
 //      Add a variation for the current move.
 //      Also moves into the variation.
-errorT Game::AddVariation() {
+errorT Game::addVariation() {
 	auto err = previous();
 	if (err != OK)
 		return err;
@@ -285,13 +285,13 @@ errorT Game::MainVariation() {
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::DeleteVariation():
+// Game::deleteVariation():
 //      Deletes a variation. Variations are numbered from 0.
 //      Note that for speed and simplicity, freed moves are not
 //      added to the free list. This means that repeatedly adding and
 //      deleting variations will waste memory until the game is cleared.
 //
-errorT Game::DeleteVariation() {
+errorT Game::deleteVariation() {
 	auto parent = CurrentMove->getParent();
 	auto root = parent.first;
 	if (!root || exitVariation() != OK)
