@@ -28,7 +28,6 @@
 #include "scidup/database/namebase.h"
 #include "scidup/core/position.h"
 #include <forward_list>
-#include <functional>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -105,8 +104,6 @@ private:
     bool VarExactMatch(Position* searchPos, gameExactMatchT searchType);
     std::string& find_or_create_tag(std::string_view tag);
     void TEMP_syncCoreMovetext();
-    void viewTagPairsImpl(
-        const std::function<void(const char*, const char*)>& visitor) const;
 
     friend std::pair<IndexEntry, TagRoster> game_storage::encode(
         const Game& game, std::vector<byte>& dest);
@@ -258,9 +255,6 @@ public:
     // Functions that get/set the tag pairs:
     //
 
-    // Invoke @e visitor for each existing tag pair
-    template <typename TFunc> void viewTagPairs(TFunc visitor) const;
-
     // Add a tag.
     // For the tags that cannot be duplicated (like Event or White), the
     // previous value will be overwritten.
@@ -338,10 +332,6 @@ public:
 
     Game* clone();
 };
-
-template <typename TFunc> void Game::viewTagPairs(TFunc visitor) const {
-	viewTagPairsImpl(visitor);
-}
 
 } // namespace scid::database
 #endif  // #ifndef SCID_GAME_H

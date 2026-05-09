@@ -239,70 +239,49 @@ TEST(Test_Game, MoveToStart_MoveToEnd) {
 	}
 }
 
-TEST(Test_Game, viewTagPairs) {
+TEST(Test_Game, coreGamePgnEncodingIncludesLegacyMetadataTags) {
+	using namespace std::literals;
+
 	scid::database::Game game;
 
-	// Expect to visit the STR even for an empty game
-	std::vector<std::pair<std::string, std::string>> expected_STR = {
-	    {"Event", ""}, {"Site", ""},  {"Date", "????.??.??"}, {"Round", ""},
-	    {"White", ""}, {"Black", ""}, {"Result", "*"}};
-	std::vector<std::pair<std::string, std::string>> result_STR;
-	game.viewTagPairs([&](const char* tag, const char* value) {
-		result_STR.emplace_back(tag, value);
-	});
-	EXPECT_TRUE(std::equal(expected_STR.begin(), expected_STR.end(),
-	                       result_STR.begin(), result_STR.end()));
-
-	// Set all possible tag-pair types and expect to visit them all
-	std::vector<std::pair<std::string, std::string>> expected_extra;
-	expected_STR[4].second = "white player";
-	game.SetWhiteStr(expected_STR[4].second.c_str());
-	expected_STR[5].second = "black \\player\"";
-	game.SetBlackStr(expected_STR[5].second.c_str());
-	expected_STR[2].second = "2018.06.11";
+	game.SetWhiteStr("white player");
+	game.SetBlackStr("black player");
 	game.SetDate(scid::database::date_parsePGNTag("2018.06.11", 10));
 	const char* white_elo = "2800";
-	expected_extra.emplace_back("WhiteRapid", white_elo);
 	game.setRating(scid::database::WHITE, "Rapid", 5, {white_elo, white_elo + 4});
-	expected_extra.emplace_back("BlackElo", "2650");
 	game.SetBlackElo(2650);
-	expected_extra.emplace_back("ECO", "A01");
 	game.SetEco(scidup::eco::fromString("A01"));
-	expected_extra.emplace_back("EventDate", "2018.06.01");
 	game.SetEventDate(scid::database::date_parsePGNTag("2018.06.01", 10));
-	expected_extra.emplace_back("UTCDate", "2018.06.10");
 	game.addTag("UTCDate", "2018.06.10");
-	expected_extra.emplace_back("UTF-8", (const char*)u8"Hell\u00F6");
-	game.addTag(expected_extra.back().first.c_str(),
-	            expected_extra.back().second.c_str());
-	expected_extra.emplace_back("special chars", R"(Escape\\\" and \n {}\")");
-	game.addTag(expected_extra.back().first.c_str(),
-	            expected_extra.back().second.c_str());
-	expected_STR[6].second = "0-1";
+	game.addTag("Annotator", "Example");
 	game.SetResult(scid::database::RESULT_Black);
-	expected_extra.emplace_back(
-	    "FEN", "8/N2P1pk1/2n2q2/1P2pp2/5PN1/QKPp1P2/8/8 w - - 0 1");
-	game.SetStartFen(expected_extra.back().second.c_str());
-	expected_STR[0].second = "event nAme";
+	const char* fen = "8/N2P1pk1/2n2q2/1P2pp2/5PN1/QKPp1P2/8/8 w - - 0 1";
+	game.SetStartFen(fen);
 	game.SetEventStr("event nAme");
-	expected_STR[3].second = "round 4";
 	game.SetRoundStr("round 4");
-	expected_STR[1].second = "a long site maybe in a long country";
 	game.SetSiteStr("a long site maybe in a long country");
 
-	// Expect to visit the STR (in order)
-	result_STR.clear();
-	game.viewTagPairs([&](const char* tag, const char* value) {
-		result_STR.emplace_back(tag, value);
-	});
-	auto it = result_STR.begin();
-	for (auto& exp : expected_STR) {
-		EXPECT_EQ(exp, *it++);
-	}
-	for (auto& exp : expected_extra) {
-		EXPECT_EQ(exp, *it++);
-	}
-	EXPECT_EQ(it, result_STR.end());
+	std::string pgn;
+	scid::core::pgn::encode_game(game.coreGame(), pgn);
+
+	auto expected = "[Event\0\"event nAme\"]\n"sv
+	                "[Site\0\"a long site maybe in a long country\"]\n"sv
+	                "[Date\0\"2018.06.11\"]\n"sv
+	                "[Round\0\"round 4\"]\n"sv
+	                "[White\0\"white player\"]\n"sv
+	                "[Black\0\"black player\"]\n"sv
+	                "[Result\0\"0-1\"]\n"sv
+	                "[WhiteRapid\0\"2800\"]\n"sv
+	                "[BlackElo\0\"2650\"]\n"sv
+	                "[ECO\0\"A01\"]\n"sv
+	                "[EventDate\0\"2018.06.01\"]\n"sv
+	                "[UTCDate\0\"2018.06.10\"]\n"sv
+	                "[Annotator\0\"Example\"]\n"sv
+	                "[FEN\0\"8/N2P1pk1/2n2q2/1P2pp2/5PN1/"
+	                "QKPp1P2/8/8 w - - 0 1\"]\n"sv
+	                "\n"sv
+	                "0-1\n"sv;
+	EXPECT_EQ(expected, pgn);
 }
 
 TEST(Test_Game, empty_tag_name) {

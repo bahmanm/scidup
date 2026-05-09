@@ -5,6 +5,8 @@
 #include "scidup/database/game_TEMP/nag_format.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
 #include <algorithm>
+#include <optional>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -143,12 +145,10 @@ public:
 			const auto value_sv = std::string_view(value.first, valueLen);
 			std::string tag_parsed;
 			std::string value_parsed;
-			game.viewTagPairs([&](auto game_tag, auto game_value) {
-				if (tag_sv == game_tag) {
-					tag_parsed = game_tag;
-					value_parsed = game_value;
-				}
-			});
+			if (auto parsed = parsedTagValue(tag_sv)) {
+				tag_parsed = tag_sv;
+				value_parsed = std::move(*parsed);
+			}
 			if (tag_sv != tag_parsed || value_sv != value_parsed) {
 				std::string err(tag_sv);
 				err.append(" \"");
@@ -245,6 +245,56 @@ private:
 			}
 		}
 		return logErr("Invalid Result tag: ", str);
+	}
+
+	std::optional<std::string> parsedTagValue(std::string_view tag) const {
+		auto const& coreGame = game.coreGame();
+		char strBuf[256];
+
+		if (tag == "Event")
+			return coreGame.event();
+		if (tag == "Site")
+			return coreGame.site();
+		if (tag == "Date") {
+			date_DecodeToString(coreGame.date(), strBuf);
+			return strBuf;
+		}
+		if (tag == "Round")
+			return coreGame.round();
+		if (tag == "White")
+			return coreGame.white().name;
+		if (tag == "Black")
+			return coreGame.black().name;
+		if (tag == "Result")
+			return std::string(coreGame.resultString());
+
+		if (coreGame.white().rating.value != 0) {
+			std::string ratingTag = "White";
+			ratingTag.append(ratingTypeNames[coreGame.white().rating.type]);
+			if (tag == ratingTag)
+				return std::to_string(coreGame.white().rating.value);
+		}
+		if (coreGame.black().rating.value != 0) {
+			std::string ratingTag = "Black";
+			ratingTag.append(ratingTypeNames[coreGame.black().rating.type]);
+			if (tag == ratingTag)
+				return std::to_string(coreGame.black().rating.value);
+		}
+		if (tag == "ECO" && !coreGame.eco().empty())
+			return coreGame.eco();
+		if (tag == "EventDate" &&
+		    coreGame.eventDate() != scid::database::ZERO_DATE) {
+			date_DecodeToString(coreGame.eventDate(), strBuf);
+			return strBuf;
+		}
+		for (auto const& entry : coreGame.extraTags()) {
+			if (tag == entry.first)
+				return entry.second;
+		}
+		if (tag == "FEN" && coreGame.hasNonStandardStart(strBuf, sizeof(strBuf)))
+			return strBuf;
+
+		return std::nullopt;
 	}
 
 	bool parseTagPair(const char* tag, size_t tagLen, TView value) {
