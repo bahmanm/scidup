@@ -29,7 +29,7 @@ int calcHomePawnMask (pieceT pawn, const pieceT* board)
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // patternsMatch():
-//      Used by Game::MaterialMatch() to test patterns.
+//      Used by Game::materialMatch() to test patterns.
 //      Returns 1 if all the patterns in the list match, 0 otherwise.
 //
 int patternsMatch(const Position* pos, patternT* ptn, size_t ptn_size) {
@@ -71,12 +71,12 @@ int patternsMatch(const Position* pos, patternT* ptn, size_t ptn_size) {
 } // end of anonymous namespace
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::MaterialMatch(): Material search test.
+// Game::materialMatch(): Material search test.
 //      The parameters min and max should each be an array of 15
 //      counts, to specify the maximum and minimum number of counts
 //      of each type of piece.
 //
-bool Game::MaterialMatch(bool PromotionsFlag, ByteBuffer& buf, byte* min,
+bool Game::materialMatch(bool PromotionsFlag, ByteBuffer& buf, byte* min,
                          byte* max, patternT* patterns, size_t ptn_size,
                          int minPly, int maxPly, int matchLength,
                          bool oppBishops, bool sameBishops, int minDiff,
@@ -197,7 +197,7 @@ bool Game::MaterialMatch(bool PromotionsFlag, ByteBuffer& buf, byte* min,
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::ExactMatch():
+// Game::exactMatch():
 //      Exact position search test.
 //      If sm is not NULL, its from, to, promote etc will be filled with
 //      the next move at the matching position, if there is one.
@@ -205,7 +205,7 @@ bool Game::MaterialMatch(bool PromotionsFlag, ByteBuffer& buf, byte* min,
 //      true if the game could never match even with extra moves.
 //
 bool
-Game::ExactMatch (Position * searchPos, ByteBuffer * buf,
+Game::exactMatch (Position * searchPos, ByteBuffer * buf,
                   gameExactMatchT searchType)
 {
     // If buf is NULL, the game is in memory. Otherwise, decode only
@@ -383,12 +383,12 @@ Game::ExactMatch (Position * searchPos, ByteBuffer * buf,
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::VarExactMatch():
-//    Like ExactMatch(), but also searches in variations.
-//    This is much slower than ExactMatch(), since it will
+// Game::varExactMatch():
+//    Like exactMatch(), but also searches in variations.
+//    This is much slower than exactMatch(), since it will
 //    search every position until a match is found.
 bool
-Game::VarExactMatch (Position * searchPos, gameExactMatchT searchType)
+Game::varExactMatch (Position * searchPos, gameExactMatchT searchType)
 {
     uint wpawnFyle [8] = {0, 0, 0, 0, 0, 0, 0, 0};
     uint bpawnFyle [8] = {0, 0, 0, 0, 0, 0, 0, 0};;
@@ -463,7 +463,7 @@ Game::VarExactMatch (Position * searchPos, gameExactMatchT searchType)
         // Now try searching each variation in turn:
         for (uint i=0; i < CurrentMove->numVariations; i++) {
             enterVariation (i);
-            match = VarExactMatch (searchPos, searchType);
+            match = varExactMatch (searchPos, searchType);
             exitVariation();
             if (match) { return true; }
         }
@@ -482,19 +482,19 @@ bool game_search::materialMatch(Game& game, bool promotionsFlag,
                                 int minPly, int maxPly, int matchLength,
                                 bool oppBishops, bool sameBishops, int minDiff,
                                 int maxDiff) {
-    return game.MaterialMatch(promotionsFlag, buf, min, max, ptn, ptnSize,
+    return game.materialMatch(promotionsFlag, buf, min, max, ptn, ptnSize,
                               minPly, maxPly, matchLength, oppBishops,
                               sameBishops, minDiff, maxDiff);
 }
 
 bool game_search::exactMatch(Game& game, Position* pos, ByteBuffer* buf,
                              gameExactMatchT searchType) {
-    return game.ExactMatch(pos, buf, searchType);
+    return game.exactMatch(pos, buf, searchType);
 }
 
 bool game_search::varExactMatch(Game& game, Position* pos,
                                 gameExactMatchT searchType) {
-    return game.VarExactMatch(pos, searchType);
+    return game.varExactMatch(pos, searchType);
 }
 
 } // namespace scid::database
