@@ -587,7 +587,7 @@ errorT LegacyGamePgnEncoder::encode() {
     const auto& EventDate = game.coreGame_.eventDate();
     const auto& Result = game.coreGame_.result();
     const auto& RoundStr = game.coreGame_.round();
-    auto& ScidFlags = game.ScidFlags;
+    auto& scidFlags = game.scidFlags_;
     const auto& SiteStr = game.coreGame_.site();
     auto* startPos = game.coreGame_.startPosition();
     const auto& WhiteElo = game.coreGame_.white().rating.value;
@@ -799,8 +799,8 @@ errorT LegacyGamePgnEncoder::encode() {
                 tb->PrintString (temp);
                 }
 
-                if (options.style & PGN_STYLE_SCIDFLAGS  &&  *ScidFlags != 0) {
-                std::snprintf(temp, sizeof(temp), "[ScidFlags \"%s\"]%s", ScidFlags, newline);
+                if (options.style & PGN_STYLE_SCIDFLAGS  &&  *scidFlags != 0) {
+                std::snprintf(temp, sizeof(temp), "[ScidFlags \"%s\"]%s", scidFlags, newline);
                 tb->PrintString (temp);
                 }
 

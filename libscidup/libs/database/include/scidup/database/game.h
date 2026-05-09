@@ -67,7 +67,7 @@ class Game {
     scid::core::Game coreGame_;
     // TODO [Game]: Keep Scid flags out of the core metadata model until there
     // is a domain reason for them outside database/app compatibility.
-    char        ScidFlags[22];
+    char        scidFlags_[22];
 
     // Position and moves
     byte        moveChunkUsed_;

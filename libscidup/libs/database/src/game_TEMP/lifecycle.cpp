@@ -42,9 +42,9 @@ void Game::setStartPosition(Position const& pos) {
 // TODO [Game]: Keep Scid flags in database/app compatibility, not in the core
 // metadata model.
 void Game::setScidFlags(const char* s, size_t len) {
-	constexpr size_t size = sizeof(ScidFlags) / sizeof(*ScidFlags);
-	std::fill_n(ScidFlags, size, 0);
-	std::copy_n(s, std::min(size - 1, len), ScidFlags);
+	constexpr size_t size = sizeof(scidFlags_) / sizeof(*scidFlags_);
+	std::fill_n(scidFlags_, size, 0);
+	std::copy_n(s, std::min(size - 1, len), scidFlags_);
 }
 
 moveT* Game::allocMove() {
@@ -69,7 +69,7 @@ Game::Game(const Game& obj) {
 	// copies aggregate data and restores PGN-order cursor location in one
 	// compatibility operation.
 	coreGame_ = obj.coreGame_;
-	std::copy_n(obj.ScidFlags, sizeof(obj.ScidFlags), ScidFlags);
+	std::copy_n(obj.scidFlags_, sizeof(obj.scidFlags_), scidFlags_);
 
 	NumHalfMoves = obj.NumHalfMoves;
 
@@ -137,7 +137,7 @@ void Game::clear() {
 	// TODO [Game]: Split this reset across core Game metadata/moves and
 	// database compatibility flags.
 	coreGame_.clear();
-	ScidFlags[0] = 0;
+	scidFlags_[0] = 0;
 
 	clearMoves();
 }

@@ -40,7 +40,7 @@ void Game::loadStandardTags(IndexEntry const& ie, TagRoster const& tags) {
     scidup::eco::String ecoStr;
     scidup::eco::toExtendedString(ie.GetEcoCode(), ecoStr);
     coreGame_.setEco(ecoStr);
-    ie.GetFlagStr(ScidFlags, NULL);
+    ie.GetFlagStr(scidFlags_, NULL);
     if (!ie.isChessStd())
         coreGame_.findOrCreateTag("Variant").assign("Chess960");
 }
@@ -542,7 +542,7 @@ std::pair<IndexEntry, TagRoster> Game::encode(std::vector<byte>& dest) const {
     } else {
         ie.SetStartFlag(false);
     }
-    ie.SetFlag(IndexEntry::StrToFlagMask(ScidFlags), true);
+    ie.SetFlag(IndexEntry::StrToFlagMask(scidFlags_), true);
 
     const auto [promo, underPromo] = mainlineInfo(coreGame_.startPosition(),
                                                   FirstMove->next, ie);
