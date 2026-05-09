@@ -27,12 +27,12 @@
 #pragma once
 
 #include "scidup/core/game.h"
-#include "scidup/core/pgn/movetext.h"
 
 #include <algorithm>
+#include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
-#include <type_traits>
 #include <vector>
 
 namespace scid::core::pgn {
@@ -190,11 +190,22 @@ static void encode_comment(std::string_view comment, TCont& dest) {
 	dest.push_back('\0');
 }
 
-// Encode the movetext section according to the PGN standard.
-// @param m: iterator to the list of moves.
-// @param initial_ply: the ply of the initial position.
-//                     Should be even if it is white turn to move.
-// @param dest: the container where movetext section will be appended.
+namespace detail {
+
+enum class MovetextEntryKind {
+	InitialComment,
+	VariationStart,
+	VariationEnd,
+	Move
+};
+
+struct MovetextEntry {
+	MovetextEntryKind kind;
+	std::string_view san;
+	std::string_view comment;
+	std::span<const std::uint8_t> nags;
+};
+
 template <int hard_len = 0, typename TCont>
 void encode_movetext_entry(MovetextEntry const& entry,
                            std::vector<long long>& ply,
@@ -248,27 +259,29 @@ void encode_movetext_entry(MovetextEntry const& entry,
 	}
 }
 
+} // namespace detail
+
 template <int hard_len = 0, typename TCont>
 void encode_core_line(MoveSequence const& line, std::vector<long long>& ply,
                       typename TCont::size_type& move_end, TCont& dest) {
 	for (auto const& move : line.moves) {
-		encode_movetext_entry<hard_len>(
-		    {MovetextEntryKind::Move,
+		detail::encode_movetext_entry<hard_len>(
+		    {detail::MovetextEntryKind::Move,
 		     move.san,
 		     move.metadata.comment,
 		     {move.metadata.nags.data(), move.metadata.nags.size()}},
 		    ply, move_end, dest);
 
 		for (auto const& variation : move.childVariations) {
-			encode_movetext_entry<hard_len>(
-			    {MovetextEntryKind::VariationStart,
+			detail::encode_movetext_entry<hard_len>(
+			    {detail::MovetextEntryKind::VariationStart,
 			     {},
 			     variation.initialComment,
 			     {}},
 			    ply, move_end, dest);
 			encode_core_line<hard_len>(variation.line, ply, move_end, dest);
-			encode_movetext_entry<hard_len>(
-			    {MovetextEntryKind::VariationEnd, {}, {}, {}},
+			detail::encode_movetext_entry<hard_len>(
+			    {detail::MovetextEntryKind::VariationEnd, {}, {}, {}},
 			    ply, move_end, dest);
 		}
 	}
@@ -281,8 +294,11 @@ void encode_movetext(Game const& game, TCont& dest) {
 	dest.push_back('\n');
 
 	if (!game.initialComment().empty()) {
-		encode_movetext_entry<hard_len>(
-		    {MovetextEntryKind::InitialComment, {}, game.initialComment(), {}},
+		detail::encode_movetext_entry<hard_len>(
+		    {detail::MovetextEntryKind::InitialComment,
+		     {},
+		     game.initialComment(),
+		     {}},
 		    ply, move_end, dest);
 	}
 

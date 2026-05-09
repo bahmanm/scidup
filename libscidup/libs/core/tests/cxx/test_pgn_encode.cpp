@@ -1,10 +1,8 @@
 #include "scidup/core/pgn/encode.h"
-#include "scidup/core/pgn/movetext.h"
 #include "scidup/core/game.h"
 #include "scidup/core/nags.h"
 
 #include <gtest/gtest.h>
-#include <array>
 #include <string>
 #include <string_view>
 
@@ -34,24 +32,6 @@ TEST(Test_PgnEncodeCore, EncodeComment) {
 	scid::core::pgn::encode_comment("normal comment", text);
 
 	EXPECT_EQ("{normal comment}\0"sv, text);
-}
-
-TEST(Test_PgnEncodeCore, MovetextEntryCarriesPgnTraversalData) {
-	using namespace std::literals;
-
-	std::array<scid::database::byte, 2> nags = {1, 3};
-	scid::core::pgn::MovetextEntry entry{
-	    scid::core::pgn::MovetextEntryKind::Move,
-	    "Nf3"sv,
-	    "develops a knight"sv,
-	    nags};
-
-	EXPECT_EQ(scid::core::pgn::MovetextEntryKind::Move, entry.kind);
-	EXPECT_EQ("Nf3"sv, entry.san);
-	EXPECT_EQ("develops a knight"sv, entry.comment);
-	ASSERT_EQ(2u, entry.nags.size());
-	EXPECT_EQ(1, entry.nags[0]);
-	EXPECT_EQ(3, entry.nags[1]);
 }
 
 TEST(Test_PgnEncodeCore, EncodeCoreGame) {
