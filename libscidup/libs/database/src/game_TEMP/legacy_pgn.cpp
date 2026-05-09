@@ -93,9 +93,9 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
     auto& CurrentPos = game.CurrentPos;
     auto& FirstMove = game.FirstMove;
     auto& VarDepth = game.VarDepth;
-    auto MoveBackup = [&] { return game.MoveBackup(); };
+    auto previous = [&] { return game.previous(); };
     auto MoveExitVariation = [&] { return game.MoveExitVariation(); };
-    auto MoveForward = [&] { return game.MoveForward(); };
+    auto next = [&] { return game.next(); };
     auto MoveIntoVariation = [&](uint varNumber) {
         return game.MoveIntoVariation(varNumber);
     };
@@ -360,14 +360,14 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                     //}
                     tb->PrintString ("\n\\begin{diagram}\n");
                 }
-                MoveForward ();
+                next ();
                 DString * dstr = new DString;
                 if (options.isHtmlFormat()) {
                     CurrentPos->DumpHtmlBoard (dstr, options.htmlStyle, NULL);
                 } else {
                     CurrentPos->DumpLatexBoard (dstr);
                 }
-                MoveBackup ();
+                previous ();
                 tb->PrintString (dstr->Data());
                 delete dstr;
                 if (options.isHtmlFormat()  &&  VarDepth == 0) {
@@ -442,14 +442,14 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                     if (options.isLatexFormat()) {
                         tb->PrintString ("\n\\begin{diagram}\n");
                     }
-                    MoveForward ();
+                    next ();
                     DString * dstr = new DString;
                     if (options.isHtmlFormat()) {
                         CurrentPos->DumpHtmlBoard (dstr, options.htmlStyle, NULL);
                     } else {
                         CurrentPos->DumpLatexBoard (dstr);
                     }
-                    MoveBackup ();
+                    previous ();
                     tb->PrintString (dstr->Data());
                     if (options.isLatexFormat()) {
                         tb->PrintString ("\n\\end{diagram}\n");
@@ -565,7 +565,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                 endedColumn = true;
             }
         }
-        MoveForward();
+        next();
     }
     if (inComment) { tb->PrintString ("}"); }
     if (options.isHtmlFormat()  &&  VarDepth == 0) { tb->PrintString ("</b>"); }

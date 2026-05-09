@@ -1297,7 +1297,7 @@ sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scidup::eco::Code ecoCode = scidup::eco::ECO_None;
     do {
         ecoCode = ecoBook->findEco(*game.currentPos());
-    } while (ecoCode == scidup::eco::ECO_None && game.MoveBackup() == scid::database::OK);
+    } while (ecoCode == scidup::eco::ECO_None && game.previous() == scid::database::OK);
 
     auto ply = game.currentPly();
     game.restoreLocation(location);
@@ -2614,7 +2614,7 @@ int sc_game_import(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 	auto editor = scidup::app::editor::gameSession(*db);
 	editor.setDirty();
 	bool new_variation = false;
-	if (editor.game().MoveForward() == scid::database::OK) {
+	if (editor.game().next() == scid::database::OK) {
 		new_variation = (editor.game().AddVariation() == scid::database::OK);
 	}
 
@@ -3170,7 +3170,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     merge->MoveToStart();
     for (scid::database::uint i=0; i < nMergePos; i++) {
         merge->currentPos()->PrintCompactStr (mergeBoards[i]);
-        merge->MoveForward();
+        merge->next();
     }
 
     // Now find the deepest position in the current game that occurs
@@ -3181,7 +3181,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::uint ply = 0;
     bool done = false;
     while (!done) {
-        if (game.MoveForward() != scid::database::OK) { done = true; }
+        if (game.next() != scid::database::OK) { done = true; }
         ply++;
         compactBoardStr currentBoard;
         game.currentPos()->PrintCompactStr (currentBoard);
@@ -3204,12 +3204,12 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (atLastMove) {
         // At end of game, so remember final game move for replicating
         // at the start of the variation:
-        game.MoveBackup();
+        game.previous();
         sm = game.currentMove();
         ASSERT(sm);
-        game.MoveForward();
+        game.next();
     }
-    game.MoveForward();
+    game.next();
     game.AddVariation();
     editor.setDirty();
     if (sm) {
@@ -3220,7 +3220,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     ply = mergePly;
     while (ply < endPly) {
         scid::database::simpleMoveT * mergeMove = merge->currentMove();
-        if (merge->MoveForward() != scid::database::OK) { break; }
+        if (merge->next() != scid::database::OK) { break; }
         if (mergeMove == NULL) { break; }
         if (game.AddMove(*mergeMove) != scid::database::OK) { break; }
         ply++;
@@ -3285,7 +3285,7 @@ sc_game_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             g->MoveExitVariation();
             continue;
         }
-        g->MoveBackup();
+        g->previous();
         scid::database::simpleMoveT * sm = g->currentMove();
         if (sm == NULL) { break; }
         char * s = moveStrings[plyCount];
@@ -3368,9 +3368,9 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     auto editor = scidup::app::editor::gameSession(*base);
     scid::database::Game* g = &editor.game();
     if (ecoBook) {
-        while (g->MoveForward() == scid::database::OK) {}
+        while (g->next() == scid::database::OK) {}
         while (ecoBook->findEcoString(*g->currentPos()).empty()) {
-            if (g->MoveBackup() != scid::database::OK) break;
+            if (g->previous() != scid::database::OK) break;
         }
     }
 
@@ -3381,7 +3381,7 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     std::string filtername = base->newFilter();
     scid::database::HFilter filter = scidup::app::tree::resolveFilter(*base, filtername);
     scid::database::dateT currentDate = g->coreGame().date();
-    while (g->MoveForward() == scid::database::OK) {
+    while (g->next() == scid::database::OK) {
         scid::database::SearchPos(*g->currentPos()).setFilter(*base, filter, scid::database::Progress());
         int count = 0;
         for (scid::database::uint i=0, n = base->numGames(); i < n; i++) {
@@ -3768,7 +3768,7 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
                 moves.push_back(scid::database::RESULT_LONGSTR[g->coreGame().result()]);
             }
 
-    } while (g->MoveForward() == scid::database::OK);
+    } while (g->next() == scid::database::OK);
     g->restoreLocation(location);
 
     res.push_back(boards);
@@ -4543,7 +4543,7 @@ sc_move (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         break;
 
     case MOVE_ENDVAR:
-        while (editor.game().MoveForward() == scid::database::OK) {
+        while (editor.game().next() == scid::database::OK) {
         }
         break;
 
@@ -4644,7 +4644,7 @@ sc_move_back (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     for (int i = 0; i < count; i++) {
-        if (editor.game().MoveBackup() != scid::database::OK) { break; }
+        if (editor.game().previous() != scid::database::OK) { break; }
         numMovesTakenBack++;
     }
 
@@ -4668,7 +4668,7 @@ sc_move_forward (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     for (int i = 0; i < count; i++) {
-        if (editor.game().MoveForward() != scid::database::OK) { break; }
+        if (editor.game().next() != scid::database::OK) { break; }
         numMovesMade++;
     }
 
@@ -8414,7 +8414,7 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case VAR_CREATE:
         if (! (game.isAtVariationStart()  &&  game.isAtVariationEnd())) {
-            game.MoveForward();
+            game.next();
             game.AddVariation();
             editor.setDirty();
         }
@@ -8524,7 +8524,7 @@ sc_var_enter (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // the first variation move? Maybe it should depend on
     // whether there is a comment before the first move.
     // Uncomment the following line to auto-play the first move:
-    game.MoveForward();
+    game.next();
 
     return TCL_OK;
 }

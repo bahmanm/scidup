@@ -509,7 +509,7 @@ TEST(Test_Game, illegalPGN_Castling) {
 	game.currentPos()->PrintFEN(fen, sizeof(fen));
 	EXPECT_STREQ(
 	    fen, "rnbq1rk1/ppppbppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQ1RK1 w - - 6 5");
-	game.MoveBackup();
+	game.previous();
 	game.currentPos()->PrintFEN(fen, sizeof(fen));
 	EXPECT_STREQ(
 	    fen, "rnbqk2r/ppppbppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQ1RK1 b kq - 5 4");
@@ -563,7 +563,7 @@ template <typename DataT> std::string decode_game(DataT const& data) {
 	do {
 		moves += ' ';
 		moves.append(scid::database::game_notation::nextSan(game));
-	} while (game.MoveForward() == scid::database::OK);
+	} while (game.next() == scid::database::OK);
 	moves.erase(0, 1);
 	return moves;
 }

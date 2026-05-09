@@ -37,8 +37,8 @@ void expect_roundtrip(std::string_view pgn) {
 		EXPECT_EQ(scid::database::game_notation::nextSan(original),
 		          scid::database::game_notation::nextSan(decoded));
 
-		const auto originalErr = original.MoveForward();
-		const auto decodedErr = decoded.MoveForward();
+		const auto originalErr = original.next();
+		const auto decodedErr = decoded.next();
 		EXPECT_EQ(originalErr, decodedErr);
 		if (originalErr != scid::database::OK)
 			break;

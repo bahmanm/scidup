@@ -174,8 +174,8 @@ public:
     // Functions that move the current location (only CurrentPos,
     // CurrentMove and VarDepth are modified by these functions):
     //
-    errorT MoveForward();
-    errorT MoveBackup();
+    errorT next();
+    errorT previous();
     errorT MoveIntoVariation(uint varNumber);
     errorT MoveExitVariation();
     // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter

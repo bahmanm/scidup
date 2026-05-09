@@ -89,7 +89,7 @@ errorT game_notation::writePartialMoveList(Game& game, DString& out,
         // add one space for indenting to work out right
         out.Append (" ");
         out.Append (game_notation::nextSan(game).c_str());
-        game.MoveForward();
+        game.next();
     }
 
     // Now reconstruct the original game state:
@@ -119,9 +119,9 @@ std::string game_notation::previousSan(Game& game) {
         return {};
     }
     if (m->san[0] == 0) {
-        game.MoveBackup();
+        game.previous();
         game.CurrentPos->MakeSANString (&(m->moveData), m->san, SAN_MATETEST);
-        game.MoveForward();
+        game.next();
         game.TEMP_syncCoreMovetext();
     }
     return m->san;

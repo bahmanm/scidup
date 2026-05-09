@@ -358,7 +358,7 @@ Game::ExactMatch (Position * searchPos, ByteBuffer * buf,
 
     Move_Forward:
         if (buf == NULL) {
-            err = MoveForward();
+            err = next();
         } else {
             simpleMoveT nextMove;
             err = DecodeNextMove(buf, nextMove);
@@ -468,7 +468,7 @@ Game::VarExactMatch (Position * searchPos, gameExactMatchT searchType)
             if (match) { return true; }
         }
         // Continue down this variation:
-        MoveForward();
+        next();
         if (CurrentMove->marker == END_MARKER) {
             err = ERROR_EndOfMoveList;
         }

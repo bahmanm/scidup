@@ -24,7 +24,7 @@ namespace scid::database {
 // Also update all the necessary fields in the simpleMove structure
 // (CurrentMove->moveData) so it can be undone.
 //
-errorT Game::MoveForward(void) {
+errorT Game::next(void) {
 	if (CurrentMove->endMarker())
 		return ERROR_EndOfMoveList;
 
@@ -38,10 +38,10 @@ errorT Game::MoveForward(void) {
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::MoveBackup():
+// Game::previous():
 //      Backup one move.
 //
-errorT Game::MoveBackup(void) {
+errorT Game::previous(void) {
 	if (CurrentMove->prev->startMarker())
 		return ERROR_StartOfMoveList;
 
@@ -83,7 +83,7 @@ errorT Game::MoveExitVariation(void) {
 
 	// Algorithm: go back previous moves as far as possible, then
 	// go up to the parent of the variation.
-	while (MoveBackup() == OK) {
+	while (previous() == OK) {
 	}
 	CurrentMove = CurrentMove->getParent().first;
 	--VarDepth;
@@ -113,23 +113,23 @@ void Game::MoveToStart() {
 
 void Game::MoveToEnd() {
 	MoveToStart();
-	while (MoveForward() == OK) {
+	while (next() == OK) {
 	}
 }
 
 void Game::MoveToPly(int hmNumber) {
 	MoveToStart();
 	for (int i = 0; i < hmNumber; ++i)
-		MoveForward();
+		next();
 }
 
 // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
 // instead of keeping it on the generic Game cursor surface.
 errorT Game::MoveForwardInPGN() {
-	if (CurrentMove->prev->varChild && MoveBackup() == OK)
+	if (CurrentMove->prev->varChild && previous() == OK)
 		return MoveIntoVariation(0);
 
-	while (MoveForward() != OK) {
+	while (next() != OK) {
 		if (VarDepth == 0)
 			return ERROR_EndOfMoveList;
 
@@ -138,7 +138,7 @@ errorT Game::MoveForwardInPGN() {
 		if (MoveIntoVariation(varnum + 1) == OK)
 			return OK;
 
-		MoveForward();
+		next();
 	}
 	return OK;
 }
@@ -202,7 +202,7 @@ errorT Game::AddMove(simpleMoveT const& sm) {
 	if (VarDepth == 0)
 		++NumHalfMoves;
 
-	auto err = MoveForward();
+	auto err = next();
 	if (err == OK)
 		TEMP_syncCoreMovetext();
 	return err;
@@ -213,7 +213,7 @@ errorT Game::AddMove(simpleMoveT const& sm) {
 //      Add a variation for the current move.
 //      Also moves into the variation.
 errorT Game::AddVariation() {
-	auto err = MoveBackup();
+	auto err = previous();
 	if (err != OK)
 		return err;
 

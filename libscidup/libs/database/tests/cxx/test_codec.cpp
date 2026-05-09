@@ -137,7 +137,7 @@ private:
 				res->AddVariation();
 			} else if (varOp > 80) {
 				res->MoveExitVariation();
-				res->MoveForward();
+				res->next();
 			}
 		}
 		return res;

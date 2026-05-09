@@ -133,7 +133,7 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
     StartPly = g->currentPly();
     auto location = g->currentLocation();
     if (g->currentPos()->GetToMove() == scid::database::BLACK) {
-        g->MoveBackup();
+        g->previous();
     }
     NoteNumber = NoteMoveNum = 0;
     scid::database::uint columnMoves = OPTABLE_COLUMNS * 2;
@@ -154,7 +154,7 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
             g->currentPos()->MakeSANString (sm, Move[i], scid::database::SAN_CHECKTEST);
             scid::database::strStrip (Move[i], '-');
             scid::database::strStrip (Move[i], '=');
-            g->MoveForward();
+            g->next();
         }
         i++;
     }
@@ -170,7 +170,7 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
             g->currentPos()->MakeSANString (sm, Move[i], scid::database::SAN_CHECKTEST);
             scid::database::strStrip (Move[i], '-');
             scid::database::strStrip (Move[i], '=');
-            g->MoveForward();
+            g->next();
         }
         i++;
     }
@@ -181,7 +181,7 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
     for (i=0; i < NUM_POSTHEMES; i++) { Theme[i] = 0; }
     g->MoveToStart();
     for (i=0; i < maxThemePly; i++) {
-        if (g->MoveForward() != scid::database::OK) { break; }
+        if (g->next() != scid::database::OK) { break; }
         SetPositionalThemes (g->currentPos());
     }
 
@@ -508,7 +508,7 @@ OpTable::Init (const char * type, scid::database::Game * g, scidup::eco::Book * 
             if (!eco.empty())
                 ECOstr_.append(eco);
         }
-        g->MoveBackup();
+        g->previous();
         scid::database::simpleMoveT * sm = g->currentMove();
         if (sm == NULL) { break; }
         g->currentPos()->MakeSANString (sm, StartLine[StartLength],
