@@ -86,7 +86,7 @@ Game* Game::clone() {
 
 void Game::strip(bool variations, bool comments, bool NAGs) {
 	// TODO [Game]: Decide whether stripping belongs on core Game or a future
-	// GameEditor. It mutates move-tree structure and Move.metadata together.
+	// MovetextCursor. It mutates move-tree structure and Move.metadata together.
 	while (variations && exitVariation() == OK) {
 	}
 

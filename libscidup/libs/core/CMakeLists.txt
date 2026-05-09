@@ -7,6 +7,7 @@ project(
 set(
     SCIDUP_CORE_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_cursor.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/movetext_cursor.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/position.cpp" )
 
@@ -20,6 +21,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/fullmove.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/game.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/game_cursor.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/movetext_cursor.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/game_result.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/hash.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/movelist.h"

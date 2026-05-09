@@ -18,6 +18,8 @@
 
 namespace scid::core {
 
+class MovetextCursor;
+
 using TagPair = std::pair<std::string, std::string>;
 
 struct Rating {
@@ -145,6 +147,8 @@ public:
 	void clearMovetext();
 
 private:
+	friend class MovetextCursor;
+
 	std::string* findStandardTag(std::string_view tag);
 
 	GameHeader header_;
