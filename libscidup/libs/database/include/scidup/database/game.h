@@ -152,8 +152,6 @@ public:
     void Clear();
     void strip(bool variations, bool comments, bool NAGs);
 
-    bool HasNonStandardStart(char* outFEN = nullptr, size_t outFENLen = 0) const;
-
     /// Setup the start position from a FEN string and remove all the moves.
     /// If the FEN is invalid the game is not changed.
     errorT SetStartFen(const char* fenStr);

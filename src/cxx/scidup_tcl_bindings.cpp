@@ -3138,7 +3138,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (game.AtStart()  &&  game.AtEnd()) {
         return errorResult (ti, "The current game has no moves.");
     }
-    if (game.HasNonStandardStart()) {
+    if (game.coreGame().hasNonStandardStart()) {
         return errorResult (ti, "The current game has a non-standard start position.");
     }
 
@@ -3151,7 +3151,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         scid::database::OK) {
         return errorResult (ti, "Error decoding game.");
     }
-    if (merge->HasNonStandardStart()) {
+    if (merge->coreGame().hasNonStandardStart()) {
         return errorResult (ti, "The merge game has a non-standard start position.");
     }
 
@@ -3637,7 +3637,8 @@ sc_game_startBoard (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     auto editor = scidup::app::editor::gameSession(*db);
     if (argc == 2) {
-        return UI_Result(ti, scid::database::OK, editor.game().HasNonStandardStart());
+        return UI_Result(ti, scid::database::OK,
+                         editor.game().coreGame().hasNonStandardStart());
     } else if (argc != 3) {
         return errorResult (ti, "Usage: sc_game startBoard <fenString>");
     }

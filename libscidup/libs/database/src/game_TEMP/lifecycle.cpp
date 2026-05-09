@@ -20,12 +20,6 @@ const scid::core::Game& Game::coreGame() const {
 	return coreGame_;
 }
 
-// TODO [Game]: Keep start-position lifecycle on the future core Game, but keep
-// PGN/UCI/export projections of the starting position outside the aggregate.
-bool Game::HasNonStandardStart(char* outFEN, size_t outFENLen) const {
-	return coreGame_.hasNonStandardStart(outFEN, outFENLen);
-}
-
 errorT Game::SetStartFen(const char* fenStr) {
 	Position pos;
 	if (auto err = pos.ReadFromFEN(fenStr))

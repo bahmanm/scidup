@@ -48,7 +48,7 @@ std::string game_notation::currentPositionUci(const Game& game) {
 		moves.emplace_back(move);
 	}
 
-		if (*FEN || game.HasNonStandardStart(FEN, sizeof(FEN))) {
+		if (*FEN || game.coreGame().hasNonStandardStart(FEN, sizeof(FEN))) {
 			res.replace(9, 4, "fen ");
 			res.replace(13, 4, FEN);
 		}

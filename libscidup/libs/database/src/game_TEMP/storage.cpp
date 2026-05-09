@@ -534,7 +534,7 @@ std::pair<IndexEntry, TagRoster> Game::Encode(std::vector<byte>& dest) const {
     ie.SetBlackElo(header.black.rating.value);
     ie.SetWhiteRatingType(header.white.rating.type);
     ie.SetBlackRatingType(header.black.rating.type);
-    if (HasNonStandardStart()) {
+    if (coreGame_.hasNonStandardStart()) {
         ie.SetStartFlag(true);
         if (coreGame_.startPosition()->isChess960()) {
             ie.setChess960();
@@ -554,7 +554,10 @@ std::pair<IndexEntry, TagRoster> Game::Encode(std::vector<byte>& dest) const {
 	    // Encode the promotion flags and the start position
 	    char FEN[256];
 	    encodeStartBoard(promo, underPromo,
-	                     HasNonStandardStart(FEN, sizeof(FEN)) ? FEN : nullptr, dest);
+	                     coreGame_.hasNonStandardStart(FEN, sizeof(FEN))
+	                         ? FEN
+	                         : nullptr,
+	                     dest);
 
     auto [commentCount, markComments] = countComments(FirstMove);
 
