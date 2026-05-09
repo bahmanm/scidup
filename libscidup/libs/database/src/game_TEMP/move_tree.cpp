@@ -194,7 +194,7 @@ unsigned Game::GetPgnOffset() const {
 errorT Game::addMove(simpleMoveT const& sm) {
 	// We must be at the end of a game/variation to add a move:
 	if (!CurrentMove->endMarker())
-		Truncate();
+		truncate();
 
 	CurrentMove->setNext(NewMove(END_MARKER));
 	CurrentMove->marker = NO_MARKER;
@@ -303,12 +303,12 @@ errorT Game::deleteVariation() {
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::Truncate():
-//      Truncate game at the current move.
+// Game::truncate():
+//      Remove moves from the current move to the end of this line.
 //      For speed and simplicity, moves and comments are not freed.
 //      So repeatedly adding moves and truncating a game will waste
 //      memory until the game is cleared.
-void Game::Truncate() {
+void Game::truncate() {
 	if (CurrentMove->endMarker())
 		return;
 
@@ -326,9 +326,9 @@ void Game::Truncate() {
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::TruncateStart():
-//      Truncate all moves leading to current position.
-void Game::TruncateStart() {
+// Game::truncateStart():
+//      Remove all moves leading to the current position.
+void Game::truncateStart() {
 	    // It is necessary to rebuild the current position using ReadFromFEN()
 	    // because the order of pieces is important when encoding to SCIDv4 format.
 	    char tempStr[256];

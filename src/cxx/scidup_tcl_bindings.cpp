@@ -2125,10 +2125,10 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         if (argc > 2 && scid::database::strIsPrefix (argv[2], "-start")) {
             // "sc_game truncate -start" truncates the moves up to the
             // current position:
-            editor.game().TruncateStart();
+            editor.game().truncateStart();
         } else {
-            // Truncate from the current position to the end of the game
-            editor.game().Truncate();
+            // Remove moves from the current position to the end of the game.
+            editor.game().truncate();
         }
         editor.setDirty();
         scid::database::language = old_language;

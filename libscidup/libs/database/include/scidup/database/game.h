@@ -167,8 +167,8 @@ public:
     errorT deleteVariation();
     errorT promoteVariationToFirst();
     errorT promoteVariationToMainline();
-    void Truncate();
-    void TruncateStart();
+    void truncate();
+    void truncateStart();
 
     //////////////////////////////////////////////////////////////
     // Functions that move the current location (only CurrentPos,
