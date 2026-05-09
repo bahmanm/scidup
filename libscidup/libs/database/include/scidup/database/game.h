@@ -103,6 +103,7 @@ private:
     bool ExactMatch(Position* pos, ByteBuffer* buf, gameExactMatchT searchType);
     bool VarExactMatch(Position* searchPos, gameExactMatchT searchType);
     std::string& find_or_create_tag(std::string_view tag);
+    std::string& assignTagValue(std::string_view tag, std::string_view value);
     void TEMP_syncCoreMovetext();
 
     friend std::pair<IndexEntry, TagRoster> game_storage::encode(
@@ -259,12 +260,6 @@ public:
     // For the tags that cannot be duplicated (like Event or White), the
     // previous value will be overwritten.
     std::string& addTag(std::string_view tag, std::string_view value);
-
-    // Change the value of a tag (add the tag if it wasn't present).
-    template <typename... Args>
-    std::string& assignTagValue(std::string_view tag, Args&&... args) {
-        return find_or_create_tag(tag).assign(std::forward<Args>(args)...);
-    }
 
     const std::vector<std::pair<std::string, std::string>>& GetExtraTags() const;
     const char* FindExtraTag(const char* tag) const;

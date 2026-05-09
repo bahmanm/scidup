@@ -100,7 +100,8 @@ public:
 	 * If not overridden, adds a special tag and invoke gameAdd().
 	 */
 	errorT gameSave(Game* game, gamenumT replaced) {
-		game->assignTagValue(special_replace_tag, std::to_string(replaced));
+		game->RemoveExtraTag(special_replace_tag);
+		game->addTag(special_replace_tag, std::to_string(replaced));
 		return getDerived()->gameAdd(game);
 	}
 
