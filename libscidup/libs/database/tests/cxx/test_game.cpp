@@ -444,6 +444,57 @@ TEST(Test_Game, coreGameMovetextMirrorsProgrammaticVariationAdds) {
 	EXPECT_EQ("d2d4", variation[0].action.longNotation());
 }
 
+TEST(Test_Game, coreGameMoveMetadataMirrorsProgrammaticNagMutation) {
+	scid::database::Game game;
+
+	ASSERT_EQ(scid::database::OK,
+	          game.addMove(makeCurrentMove(game, scid::database::E2,
+	                                       scid::database::E4)));
+	ASSERT_EQ(scid::database::OK, game.addNag(scid::core::NAG_GoodMove));
+	ASSERT_EQ(scid::database::OK, game.addNag(scid::core::NAG_PoorMove));
+	ASSERT_EQ(scid::database::OK, game.addNag(scid::core::NAG_Equal));
+
+	auto const& firstNags =
+	    game.coreGame().movetext().mainline.moves[0].metadata.nags;
+	ASSERT_EQ(2U, firstNags.size());
+	EXPECT_EQ(scid::core::NAG_PoorMove, firstNags[0]);
+	EXPECT_EQ(scid::core::NAG_Equal, firstNags[1]);
+
+	ASSERT_EQ(scid::database::OK, game.removeNag(true));
+	auto const& afterRemove =
+	    game.coreGame().movetext().mainline.moves[0].metadata.nags;
+	ASSERT_EQ(1U, afterRemove.size());
+	EXPECT_EQ(scid::core::NAG_Equal, afterRemove[0]);
+
+	game.clearNags();
+	EXPECT_TRUE(
+	    game.coreGame().movetext().mainline.moves[0].metadata.nags.empty());
+}
+
+TEST(Test_Game, coreGameVariationMetadataMirrorsProgrammaticNagMutation) {
+	scid::database::Game game;
+
+	ASSERT_EQ(scid::database::OK,
+	          game.addMove(makeCurrentMove(game, scid::database::E2,
+	                                       scid::database::E4)));
+	ASSERT_EQ(scid::database::OK, game.addVariation());
+	ASSERT_EQ(scid::database::OK,
+	          game.addMove(makeCurrentMove(game, scid::database::D2,
+	                                       scid::database::D4)));
+	ASSERT_EQ(scid::database::OK,
+	          game.addNag(scid::core::NAG_InterestingMove));
+
+	auto const& variationMove =
+	    game.coreGame()
+	        .movetext()
+	        .mainline.moves[0]
+	        .childVariations[0]
+	        .line.moves[0];
+	ASSERT_EQ(1U, variationMove.metadata.nags.size());
+	EXPECT_EQ(scid::core::NAG_InterestingMove,
+	          variationMove.metadata.nags[0]);
+}
+
 TEST(Test_Game, coreGameMirrorsInitialMovetextComment) {
 	using namespace std::literals;
 

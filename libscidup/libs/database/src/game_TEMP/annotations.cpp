@@ -1,6 +1,8 @@
 #include "scidup/database/game.h"
 
+#include "scidup/core/movetext_cursor.h"
 #include "scidup/database/common.h"
+#include "movetext_cursor_bridge.h"
 #include "movetree.h"
 
 namespace scid::database {
@@ -39,6 +41,27 @@ void copyMoveData(moveT const& source, scid::core::Move& dest) {
 	copyVariations(source, dest);
 }
 
+bool syncCoreMoveMetadata(scid::core::Game& coreGame,
+                          const moveT* firstMove,
+                          const moveT* legacyMove) {
+	if (!legacyMove || legacyMove->startMarker() || legacyMove->endMarker())
+		return false;
+
+	scid::core::MovetextCursor cursor(coreGame);
+	if (!legacy_movetext::moveCursorToLegacyLocation(cursor, firstMove,
+	                                                 legacyMove))
+		return false;
+
+	auto move = cursor.nextMove();
+	if (!move)
+		return false;
+
+	move->metadata.comment = legacyMove->comment;
+	move->metadata.nags.assign(legacyMove->nags,
+	                           legacyMove->nags + legacyMove->nagCount);
+	return true;
+}
+
 } // namespace
 
 void Game::TEMP_syncCoreMovetext() {
@@ -60,7 +83,8 @@ void Game::TEMP_syncCoreMovetext() {
 void Game::clearNags() {
 	currentMove_->prev->nagCount = 0;
 	currentMove_->prev->nags[0] = 0;
-	TEMP_syncCoreMovetext();
+	if (!syncCoreMoveMetadata(coreGame_, firstMove_, currentMove_->prev))
+		TEMP_syncCoreMovetext();
 }
 
 byte* Game::nags() const {
@@ -100,7 +124,8 @@ errorT Game::addNag (byte nag) {
 			if( m->nags[i] >= 1 && m->nags[i] <= 6)
 			{
 				m->nags[i] = nag;
-				TEMP_syncCoreMovetext();
+				if (!syncCoreMoveMetadata(coreGame_, firstMove_, m))
+					TEMP_syncCoreMovetext();
 				return OK;
 			}
 	// If it is a position nag replace an existing
@@ -109,7 +134,8 @@ errorT Game::addNag (byte nag) {
 			if( m->nags[i] >= 10 && m->nags[i] <= 21)
 			{
 				m->nags[i] = nag;
-				TEMP_syncCoreMovetext();
+				if (!syncCoreMoveMetadata(coreGame_, firstMove_, m))
+					TEMP_syncCoreMovetext();
 				return OK;
 			}
 	if( nag >= 1 && nag <= 6)
@@ -122,7 +148,8 @@ errorT Game::addNag (byte nag) {
 		m->nags[m->nagCount] = nag;
 	m->nagCount += 1;
 	m->nags[m->nagCount] = 0;
-	TEMP_syncCoreMovetext();
+	if (!syncCoreMoveMetadata(coreGame_, firstMove_, m))
+		TEMP_syncCoreMovetext();
     return OK;
 }
 
@@ -136,7 +163,8 @@ errorT Game::removeNag (bool isMoveNag) {
 				m->nagCount -= 1;
 				for( int j=i; j<m->nagCount; j++)  m->nags[j] =  m->nags[j+1];
 				m->nags[m->nagCount] = 0;
-				TEMP_syncCoreMovetext();
+				if (!syncCoreMoveMetadata(coreGame_, firstMove_, m))
+					TEMP_syncCoreMovetext();
 				return OK;
 			}
 	}
@@ -148,7 +176,8 @@ errorT Game::removeNag (bool isMoveNag) {
 				m->nagCount -= 1;
 				for( int j=i; j<m->nagCount; j++)  m->nags[j] =  m->nags[j+1];
 				m->nags[m->nagCount] = 0;
-				TEMP_syncCoreMovetext();
+				if (!syncCoreMoveMetadata(coreGame_, firstMove_, m))
+					TEMP_syncCoreMovetext();
 				return OK;
 			}
 	}
