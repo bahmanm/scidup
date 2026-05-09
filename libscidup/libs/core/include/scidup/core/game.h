@@ -43,6 +43,7 @@ struct GameHeader {
 	Player white;
 	Player black;
 	scid::database::resultT result = scid::database::RESULT_None;
+	std::string eco;
 	std::vector<TagPair> tags;
 };
 
@@ -101,6 +102,7 @@ public:
 	scid::database::dateT eventDate() const;
 	scid::database::resultT result() const;
 	std::string_view resultString() const;
+	const std::string& eco() const;
 	scid::database::ratingT averageRating() const;
 
 	void setEvent(std::string_view value);
@@ -115,6 +117,7 @@ public:
 	void setDate(scid::database::dateT value);
 	void setEventDate(scid::database::dateT value);
 	void setResult(scid::database::resultT value);
+	void setEco(std::string_view value);
 
 	std::string& addTag(std::string_view tag, std::string_view value);
 	std::string& findOrCreateTag(std::string_view tag);

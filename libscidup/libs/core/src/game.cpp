@@ -88,6 +88,10 @@ std::string_view Game::resultString() const {
 	return values[header_.result];
 }
 
+const std::string& Game::eco() const {
+	return header_.eco;
+}
+
 scid::database::ratingT Game::averageRating() const {
 	auto white = header_.white.rating.value;
 	auto black = header_.black.rating.value;
@@ -140,6 +144,10 @@ void Game::setEventDate(scid::database::dateT value) {
 
 void Game::setResult(scid::database::resultT value) {
 	header_.result = value;
+}
+
+void Game::setEco(std::string_view value) {
+	header_.eco.assign(value.begin(), value.end());
 }
 
 std::string* Game::findStandardTag(std::string_view tag) {

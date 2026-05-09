@@ -330,6 +330,8 @@ void encode_core_tag_pairs(Game const& game, TCont& dest) {
 		tag.append(scid::database::ratingTypeNames[game.black().rating.type]);
 		encode_tag_pair(tag, std::to_string(rating), dest);
 	}
+	if (!game.eco().empty())
+		encode_tag_pair("ECO", game.eco(), dest);
 	if (game.eventDate() != scid::database::ZERO_DATE) {
 		scid::database::date_DecodeToString(game.eventDate(), str_buf);
 		encode_tag_pair("EventDate", str_buf, dest);

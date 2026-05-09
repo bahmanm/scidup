@@ -45,6 +45,7 @@ TEST(Test_PgnEncodeCore, EncodeCoreGame) {
 	game.setBlackName("Player B");
 	game.setWhiteRating({2800, scid::database::RATING_Rapid});
 	game.setResult(scid::database::RESULT_White);
+	game.setEco("A01");
 	game.setInitialComment("Before the first move");
 
 	auto& first = game.appendMainlineMove(
@@ -85,6 +86,7 @@ TEST(Test_PgnEncodeCore, EncodeCoreGame) {
 	                "[Black\0\"Player B\"]\n"sv
 	                "[Result\0\"1-0\"]\n"sv
 	                "[WhiteRapid\0\"2800\"]\n"sv
+	                "[ECO\0\"A01\"]\n"sv
 	                "\n"sv
 	                "{Before the first move}\0"sv
 	                "1.d4\0$1\0{Best by test}\0"sv

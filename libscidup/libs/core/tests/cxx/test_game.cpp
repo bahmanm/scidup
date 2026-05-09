@@ -15,6 +15,7 @@ TEST(CoreGameTest, DefaultsToEmptyMetadataAndStandardStart) {
 	EXPECT_EQ(scid::database::ZERO_DATE, game.date());
 	EXPECT_EQ(scid::database::ZERO_DATE, game.eventDate());
 	EXPECT_EQ(scid::database::RESULT_None, game.result());
+	EXPECT_TRUE(game.eco().empty());
 	EXPECT_TRUE(game.extraTags().empty());
 	EXPECT_FALSE(game.hasNonStandardStart());
 	EXPECT_EQ(nullptr, game.startPosition());
@@ -76,6 +77,7 @@ TEST(CoreGameTest, StoresRatingsDatesAndResult) {
 	game.setDate(scid::database::date_parsePGNTag("2018.06.11", 10));
 	game.setEventDate(scid::database::date_parsePGNTag("2018.06.01", 10));
 	game.setResult(scid::database::RESULT_White);
+	game.setEco("A01");
 
 	EXPECT_EQ("Player A", game.white().name);
 	EXPECT_EQ(2800, game.white().rating.value);
@@ -87,6 +89,7 @@ TEST(CoreGameTest, StoresRatingsDatesAndResult) {
 	          game.eventDate());
 	EXPECT_EQ(scid::database::RESULT_White, game.result());
 	EXPECT_EQ("1-0", game.resultString());
+	EXPECT_EQ("A01", game.eco());
 	EXPECT_EQ(2725, game.averageRating());
 	EXPECT_EQ(game.date(), game.header().event.date);
 	EXPECT_EQ(game.white().rating.value, game.header().white.rating.value);

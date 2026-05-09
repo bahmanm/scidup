@@ -200,6 +200,7 @@ TEST(Test_PgnEncode, encode_game) {
 	}
 	{
 		scid::database::Game game;
+		game.SetEco(scidup::eco::fromString("A01"));
 		game.SetMoveComment("before the move");
 		scid::database::simpleMoveT sm;
 		game.currentPos()->makeMove(scid::database::E2, scid::database::E4, scid::database::EMPTY, sm);
@@ -213,6 +214,7 @@ TEST(Test_PgnEncode, encode_game) {
 		                "[White\0\"\"]\n"sv
 		                "[Black\0\"\"]\n"sv
 		                "[Result\0\"*\"]\n"sv
+		                "[ECO\0\"A01\"]\n"sv
 		                "\n"sv
 		                "{before the move}\0"sv
 		                "1.e4\0{after the move}\n"sv
@@ -262,6 +264,7 @@ TEST(Test_PgnEncode, encode) {
 	}
 	{
 		std::string_view src =
+		    "[ECO \"B01\"]\n"
 		    "{pre} 1. e4 {comm} ({pre var} 1. d4 d5 {end var with comm}) 1... "
 		    "e5 $1 {nag} (1... c5 $2) 2. Nf3 {last}";
 		scid::database::Game game;
@@ -276,6 +279,7 @@ TEST(Test_PgnEncode, encode) {
 		    "[White \"\"]\n"
 		    "[Black \"\"]\n"
 		    "[Result \"*\"]\n"
+		    "[ECO \"B01\"]\n"
 		    "\n"
 		    "{pre} 1.e4 {comm} ({pre var} 1.d4 d5 {end var with comm}) 1...e5 "
 		    "$1 {nag}\n(1...c5 $2) 2.Nf3 {last}\n"
