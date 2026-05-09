@@ -71,7 +71,7 @@ Game::Game(const Game& obj) {
 	coreGame_ = obj.coreGame_;
 	std::copy_n(obj.scidFlags_, sizeof(obj.scidFlags_), scidFlags_);
 
-	NumHalfMoves = obj.NumHalfMoves;
+	numHalfMoves_ = obj.numHalfMoves_;
 
 	moveChunkUsed_ = MOVE_CHUNKSIZE;
 	FirstMove = obj.FirstMove->cloneLine(nullptr,
@@ -130,7 +130,7 @@ void Game::clearMoves() {
 	FirstMove->setNext(CurrentMove);
 
 	VarDepth = 0;
-	NumHalfMoves = 0;
+	numHalfMoves_ = 0;
 }
 
 void Game::clear() {

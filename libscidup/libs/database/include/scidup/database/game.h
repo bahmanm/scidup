@@ -76,7 +76,7 @@ class Game {
     moveT*      FirstMove;
     moveT*      CurrentMove;
     uint        VarDepth;     // Current variation depth.
-    ushort      NumHalfMoves; // Total half moves in the main line.
+    ushort      numHalfMoves_; // Total half moves in the main line.
 
 private:
     Game(const Game&);

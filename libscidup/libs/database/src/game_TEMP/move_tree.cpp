@@ -200,7 +200,7 @@ errorT Game::addMove(simpleMoveT const& sm) {
 	CurrentMove->marker = NO_MARKER;
 	CurrentMove->moveData = sm;
 	if (VarDepth == 0)
-		++NumHalfMoves;
+		++numHalfMoves_;
 
 	auto err = next();
 	if (err == OK)
@@ -267,7 +267,7 @@ errorT Game::promoteVariationToMainline() {
 	root->swapLine(*parent.second->next);
 
 	ASSERT(VarDepth);
-	if (--VarDepth == 0) { // Recalculate NumHalfMoves
+	if (--VarDepth == 0) { // Recalculate mainline half-move count.
 		const auto count_moves = [](auto move) {
 			int res = 0;
 			while (!move->endMarker()) {
@@ -277,7 +277,7 @@ errorT Game::promoteVariationToMainline() {
 			return res;
 		};
 		ASSERT(FirstMove->startMarker() && FirstMove->next);
-		NumHalfMoves = count_moves(FirstMove->next);
+		numHalfMoves_ = count_moves(FirstMove->next);
 	}
 
 	TEMP_syncCoreMovetext();
@@ -317,7 +317,7 @@ void Game::truncate() {
 
 	CurrentMove = endMove;
 	if (VarDepth == 0)
-		NumHalfMoves = currentPly();
+		numHalfMoves_ = currentPly();
 	TEMP_syncCoreMovetext();
 
 	// Invariants
@@ -340,7 +340,7 @@ void Game::truncateStart() {
     if (VarDepth != 0 && promoteVariationToMainline() != OK)
 		return;
 
-    NumHalfMoves -= currentPly();
+    numHalfMoves_ -= currentPly();
     coreGame_.setStartPosition(*pos);
     *CurrentPos = *pos;
     FirstMove->setNext(CurrentMove);
