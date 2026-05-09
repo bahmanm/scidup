@@ -145,7 +145,7 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
     scid::database::uint i = 0;
     ShortGame = false;
     while (i < columnMoves) {
-        scid::database::simpleMoveT * sm = g->GetCurrentMove();
+        scid::database::simpleMoveT * sm = g->currentMove();
         if (sm == NULL) {
             Move[i][0] = 0;
             ShortGame = true;
@@ -161,7 +161,7 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
 
     // Now read in all the extra note moves:
     while (i < maxLineMoves) {
-        scid::database::simpleMoveT * sm = g->GetCurrentMove();
+        scid::database::simpleMoveT * sm = g->currentMove();
         if (sm == NULL) {
             Move[i][0] = 0;
             ShortGame = true;
@@ -174,7 +174,7 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
         }
         i++;
     }
-    if (g->GetCurrentMove() == NULL) { ShortGame = true; }
+    if (g->currentMove() == NULL) { ShortGame = true; }
 
     // Now set positional themes:
     scid::database::uint maxThemePly = maxThemeMoveNumber * 2;
@@ -509,7 +509,7 @@ OpTable::Init (const char * type, scid::database::Game * g, scidup::eco::Book * 
                 ECOstr_.append(eco);
         }
         g->MoveBackup();
-        scid::database::simpleMoveT * sm = g->GetCurrentMove();
+        scid::database::simpleMoveT * sm = g->currentMove();
         if (sm == NULL) { break; }
         g->currentPos()->MakeSANString (sm, StartLine[StartLength],
                                            scid::database::SAN_CHECKTEST);

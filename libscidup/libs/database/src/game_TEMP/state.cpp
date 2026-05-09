@@ -22,7 +22,7 @@ const Position* Game::currentPos() const {
 	return CurrentPos.get();
 }
 
-simpleMoveT* Game::GetCurrentMove() {
+simpleMoveT* Game::currentMove() {
 	return CurrentMove->endMarker() ? nullptr : &CurrentMove->moveData;
 }
 

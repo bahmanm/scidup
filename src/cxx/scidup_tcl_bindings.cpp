@@ -3205,7 +3205,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         // At end of game, so remember final game move for replicating
         // at the start of the variation:
         game.MoveBackup();
-        sm = game.GetCurrentMove();
+        sm = game.currentMove();
         ASSERT(sm);
         game.MoveForward();
     }
@@ -3219,7 +3219,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     merge->MoveToPly (mergePly);
     ply = mergePly;
     while (ply < endPly) {
-        scid::database::simpleMoveT * mergeMove = merge->GetCurrentMove();
+        scid::database::simpleMoveT * mergeMove = merge->currentMove();
         if (merge->MoveForward() != scid::database::OK) { break; }
         if (mergeMove == NULL) { break; }
         if (game.AddMove(*mergeMove) != scid::database::OK) { break; }
@@ -3286,7 +3286,7 @@ sc_game_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             continue;
         }
         g->MoveBackup();
-        scid::database::simpleMoveT * sm = g->GetCurrentMove();
+        scid::database::simpleMoveT * sm = g->currentMove();
         if (sm == NULL) { break; }
         char * s = moveStrings[plyCount];
         if (sanFormat) {

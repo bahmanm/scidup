@@ -194,7 +194,7 @@ public:
     //
     Position* currentPos();
     const Position* currentPos() const;
-    simpleMoveT* GetCurrentMove();
+    simpleMoveT* currentMove();
     ushort GetCurrentPly() const;
     uint GetNumVariations() const;
 
