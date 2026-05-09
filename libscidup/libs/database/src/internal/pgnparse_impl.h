@@ -83,7 +83,7 @@ public:
 			return true;
 
 		auto nag_code = game_parseNag(token);
-		if (nag_code == 0 || game.AddNag(nag_code) != OK)
+		if (nag_code == 0 || game.addNag(nag_code) != OK)
 			return logErr("Invalid annotation symbol: ", token);
 
 		return true;

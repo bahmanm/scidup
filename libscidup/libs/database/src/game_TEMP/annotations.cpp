@@ -58,17 +58,17 @@ void Game::TEMP_syncCoreMovetext() {
 // TODO [Game]: Move NAG/comment storage behind Move.metadata once the core
 // Move shape exists. These methods are compatibility accessors around legacy
 // moveT fields at the current cursor location.
-void Game::ClearNags() {
+void Game::clearNags() {
 	CurrentMove->prev->nagCount = 0;
 	CurrentMove->prev->nags[0] = 0;
 	TEMP_syncCoreMovetext();
 }
 
-byte* Game::GetNags() const {
+byte* Game::nags() const {
 	return CurrentMove->prev->nags;
 }
 
-byte* Game::GetNextNags() const {
+byte* Game::nextNags() const {
 	return CurrentMove->nags;
 }
 
@@ -91,7 +91,7 @@ const char* Game::moveComment() const {
 	return CurrentMove->prev->comment.c_str();
 }
 
-errorT Game::AddNag (byte nag) {
+errorT Game::addNag (byte nag) {
     moveT * m = CurrentMove->prev;
     if (m->nagCount + 1 >= MAX_NAGS) { return ERROR_GameFull; }
     if (nag == 0) { /* Nags cannot be zero! */ return OK; }
@@ -127,7 +127,7 @@ errorT Game::AddNag (byte nag) {
     return OK;
 }
 
-errorT Game::RemoveNag (bool isMoveNag) {
+errorT Game::removeNag (bool isMoveNag) {
     moveT * m = CurrentMove->prev;
 	if( isMoveNag)
 	{

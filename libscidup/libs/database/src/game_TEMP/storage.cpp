@@ -344,7 +344,7 @@ errorT Game::DecodeVariation(ByteBuffer& buf,
 			    return (exitVariation() == OK && next() == OK);
 		    },
 		    [&](auto nag) {
-			    return this->AddNag(nag) == OK;
+			    return this->addNag(nag) == OK;
 		    });
 		if (err)
 			return (err == ERROR_EndOfMoveList) ? OK : err;

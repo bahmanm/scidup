@@ -2912,7 +2912,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
     AppendResult (ti, translate (ti, "LastMove", "Last move"), NULL);
     AppendResult (ti, ": <darkblue>", temp, "</darkblue>", NULL);
-    nags = g.GetNags();
+    nags = g.nags();
     if (printNags  &&  *nags != 0  &&  !hideNextMove) {
         AppendResult (ti, "<red>", NULL);
         for (scid::database::uint nagCount = 0 ; nags[nagCount] != 0; nagCount++) {
@@ -2951,7 +2951,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
     AppendResult (ti, "   ", translate (ti, "NextMove", "Next"), NULL);
     AppendResult (ti, ": <darkblue>", temp, "</darkblue>", NULL);
-    nags = g.GetNextNags();
+    nags = g.nextNags();
     if (printNags  &&  !hideNextMove  &&  *nags != 0) {
         AppendResult (ti, "<red>", NULL);
         for (scid::database::uint nagCount = 0 ; nags[nagCount] != 0; nagCount++) {
@@ -3007,7 +3007,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 	                         moveCount, toMove == scid::database::WHITE ? "" : "..", tempTrans);//s);
             }
             AppendResult (ti, temp, NULL);
-            scid::database::byte * firstNag = g.GetNextNags();
+            scid::database::byte * firstNag = g.nextNags();
             if (*firstNag >= scid::core::NAG_GoodMove  &&  *firstNag <= scid::core::NAG_DubiousMove) {
                 game_printNag (*firstNag, s, true, scid::database::PGN_FORMAT_Plain);
                 AppendResult (ti, "<red>", s, "</red>", NULL);
@@ -3750,7 +3750,7 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
 	                } else {
 	                    scid::database::strCopy (temp, san);
 	                }
-                scid::database::byte * nags = g->GetNextNags();
+                scid::database::byte * nags = g->nextNags();
                 if (*nags != 0) {
                     for (scid::database::uint nagCount = 0 ; nags[nagCount] != 0; nagCount++) {
                         char nagstr[20];
@@ -4767,7 +4767,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return UI_Result(ti, scid::database::ERROR_BadArg, "sc_pos board [startpos moves]");
 
     case POS_CLEARNAGS:
-        g.ClearNags();
+        g.clearNags();
         editor.setDirty();
         break;
 
@@ -4921,14 +4921,14 @@ sc_pos_addNag (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
     const char * nagStr = argv[2];
 	if( strcmp(nagStr, "X") == 0)
-		editor.game().RemoveNag( true);
+		editor.game().removeNag( true);
 	else if( strcmp(nagStr, "Y") == 0)
-		editor.game().RemoveNag( false);
+		editor.game().removeNag( false);
 	else
 	{
 		scid::database::byte nag = scid::database::game_parseNag({nagStr, nagStr + std::strlen(nagStr)});
 		if (nag != 0) {
-			editor.game().AddNag ((scid::database::byte) nag);
+			editor.game().addNag ((scid::database::byte) nag);
 		}
 		editor.setDirty();
 	}
@@ -5114,7 +5114,7 @@ int
 sc_pos_getNags(ClientData, Tcl_Interp* ti, int, const char**)
 {
     auto editor = scidup::app::editor::gameSession(*db);
-    scid::database::byte * nag = editor.game().GetNags();
+    scid::database::byte * nag = editor.game().nags();
     if (nag[0] == 0) {
         return setResult (ti, "0");
     }

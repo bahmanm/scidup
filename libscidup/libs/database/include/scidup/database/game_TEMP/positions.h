@@ -52,7 +52,7 @@ inline void collectPositions(Game& game, TCont& dest) {
 		char strBuf[256];
 		game.currentPos()->PrintFEN(strBuf, sizeof(strBuf));
 		gamepos.FEN = strBuf;
-		for (byte* nag = game.GetNags(); *nag; nag++) {
+		for (byte* nag = game.nags(); *nag; nag++) {
 			gamepos.NAGs.push_back(*nag);
 		}
 		gamepos.comment = game.moveComment();

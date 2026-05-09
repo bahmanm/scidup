@@ -225,11 +225,11 @@ public:
     // TODO [Game]: Replace this compatibility surface with Move.metadata,
     // MoveAction notation helpers, and GameCursor traversal.
     //
-    errorT AddNag(byte nag);
-    errorT RemoveNag(bool isMoveNag);
-    void ClearNags();
-    byte* GetNags() const;
-    byte* GetNextNags() const;
+    errorT addNag(byte nag);
+    errorT removeNag(bool isMoveNag);
+    void clearNags();
+    byte* nags() const;
+    byte* nextNags() const;
 
     /// Return the comments of the previous 2 moves (useful to compute clocks).
     /// If there are no previous moves, return an empty comment.
