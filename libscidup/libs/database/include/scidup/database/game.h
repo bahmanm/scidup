@@ -106,6 +106,7 @@ private:
     std::string& find_or_create_tag(std::string_view tag);
     std::string& assignTagValue(std::string_view tag, std::string_view value);
     void TEMP_syncCoreMovetext();
+    ushort GetCurrentPly() const;
 
     friend std::pair<IndexEntry, TagRoster> game_storage::encode(
         const Game& game, std::vector<byte>& dest);
@@ -197,7 +198,6 @@ public:
     const Position* currentPos() const;
     Position* GetCurrentPos(); // Deprecated, use the const version
     simpleMoveT* GetCurrentMove();
-    ushort GetCurrentPly() const;
     uint GetNumVariations() const;
 
     // Each variation has a "level" and a "number".
