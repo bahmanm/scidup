@@ -204,7 +204,7 @@ TEST(Test_Game, locationInPGN) {
 			}
 
 			ASSERT_EQ(location, game.GetLocationInPGN());
-			if (!game.AtVarStart()) {
+			if (!game.isAtVariationStart()) {
 				ASSERT_EQ(location, game.GetPgnOffset());
 			}
 

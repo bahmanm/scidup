@@ -76,7 +76,7 @@ errorT game_notation::writePartialMoveList(Game& game, DString& out,
     game.MoveToStart();
     char temp [80];
     for (uint i=0; i < plyCount; i++) {
-        if (game.AtEnd()) {
+        if (game.isAtEnd()) {
             break;
         }
         const auto* pos = game.currentPos();

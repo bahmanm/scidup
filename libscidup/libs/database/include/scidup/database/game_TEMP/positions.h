@@ -42,7 +42,7 @@ struct GamePos {
 template <typename TCont>
 inline void collectPositions(Game& game, TCont& dest) {
 	do {
-		if (game.AtVarStart() && !game.AtStart())
+		if (game.isAtVariationStart() && !game.isAtStart())
 			continue;
 
 		dest.emplace_back();

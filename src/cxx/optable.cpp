@@ -498,8 +498,8 @@ OpTable::Init (const char * type, scid::database::Game * g, scidup::eco::Book * 
 
     // Generate the text for each move up to the current position:
     auto location = g->currentLocation();
-    while (! g->AtStart()) {
-        if (g->AtVarStart()) {
+    while (! g->isAtStart()) {
+        if (g->isAtVariationStart()) {
             g->MoveExitVariation();
             continue;
         }

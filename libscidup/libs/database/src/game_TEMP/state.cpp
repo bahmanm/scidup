@@ -53,24 +53,24 @@ uint Game::variationNumber() const {
 	return 0;
 }
 
-bool Game::AtVarStart() const {
+bool Game::isAtVariationStart() const {
 	return CurrentMove->prev->startMarker();
 }
 
-bool Game::AtVarEnd() const {
+bool Game::isAtVariationEnd() const {
 	return CurrentMove->endMarker();
 }
 
-bool Game::AtStart() const {
-	return VarDepth == 0 && AtVarStart();
+bool Game::isAtStart() const {
+	return VarDepth == 0 && isAtVariationStart();
 }
 
-bool Game::AtEnd() const {
-	return VarDepth == 0 && AtVarEnd();
+bool Game::isAtEnd() const {
+	return VarDepth == 0 && isAtVariationEnd();
 }
 
-bool Game::AtEmptyVar() const {
-	return VarDepth != 0 && AtVarStart() && AtVarEnd();
+bool Game::isAtEmptyVariation() const {
+	return VarDepth != 0 && isAtVariationStart() && isAtVariationEnd();
 }
 
 } // namespace scid::database

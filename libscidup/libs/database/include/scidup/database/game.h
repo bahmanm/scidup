@@ -212,11 +212,11 @@ public:
     unsigned GetLocationInPGN() const;
     unsigned GetPgnOffset() const;
 
-    bool AtVarStart() const;
-    bool AtVarEnd() const;
-    bool AtStart() const;
-    bool AtEnd() const;
-    bool AtEmptyVar() const;
+    bool isAtVariationStart() const;
+    bool isAtVariationEnd() const;
+    bool isAtStart() const;
+    bool isAtEnd() const;
+    bool isAtEmptyVariation() const;
 
     //////////////////////////////////////////////////////////////
     // Functions that get/set information about the last/next move.
