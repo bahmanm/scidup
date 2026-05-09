@@ -64,6 +64,8 @@ struct MoveMetadata {
 struct Variation;
 
 struct Move {
+	Variation& addVariation(std::string_view initialComment = {});
+
 	MoveAction action;
 	std::string san;
 	MoveMetadata metadata;
@@ -71,6 +73,8 @@ struct Move {
 };
 
 struct MoveSequence {
+	Move& appendMove(MoveAction action);
+
 	std::vector<Move> moves;
 };
 

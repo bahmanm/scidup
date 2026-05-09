@@ -265,10 +265,20 @@ long long Game::initialPlyCounter() const {
 	return startPosition_ ? startPosition_->GetPlyCounter() : 0;
 }
 
-Move& Game::appendMainlineMove(MoveAction action) {
-	auto& move = movetext_.mainline.moves.emplace_back();
+Variation& Move::addVariation(std::string_view initialComment) {
+	auto& variation = childVariations.emplace_back();
+	variation.initialComment.assign(initialComment.begin(), initialComment.end());
+	return variation;
+}
+
+Move& MoveSequence::appendMove(MoveAction action) {
+	auto& move = moves.emplace_back();
 	move.action = action;
 	return move;
+}
+
+Move& Game::appendMainlineMove(MoveAction action) {
+	return movetext_.mainline.appendMove(action);
 }
 
 void Game::setInitialComment(std::string_view value) {

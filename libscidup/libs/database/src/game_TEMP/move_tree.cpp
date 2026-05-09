@@ -9,6 +9,14 @@
 
 namespace scid::database {
 
+namespace {
+
+scid::core::MoveAction toCoreMoveAction(simpleMoveT const& sm) {
+	return {sm.from, sm.to, sm.promote};
+}
+
+} // namespace
+
 ///////////////////////////////////////////////////////////////////////////
 // A "location" in the game is represented by a position (Game::currentPos_), the
 // next move to be played (Game::currentMove_) and the number of parent variations
@@ -199,12 +207,21 @@ errorT Game::addMove(simpleMoveT const& sm) {
 	currentMove_->setNext(newMove(END_MARKER));
 	currentMove_->marker = NO_MARKER;
 	currentMove_->moveData = sm;
-	if (varDepth_ == 0)
+	const bool mainlineMove = varDepth_ == 0;
+	if (mainlineMove)
 		++numHalfMoves_;
 
 	auto err = next();
-	if (err == OK)
-		TEMP_syncCoreMovetext();
+	if (err == OK) {
+		// TODO [Game]: Remove this branch once core variation mutation can
+		// update nested movetext directly; then all addMove paths should update
+		// core incrementally instead of falling back to TEMP_syncCoreMovetext.
+		if (mainlineMove) {
+			coreGame_.appendMainlineMove(toCoreMoveAction(sm));
+		} else {
+			TEMP_syncCoreMovetext();
+		}
+	}
 	return err;
 }
 

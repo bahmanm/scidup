@@ -18,7 +18,7 @@ void copyLine(moveT const* source, scid::core::MoveSequence& dest) {
 		if (move->startMarker())
 			continue;
 
-		auto& destMove = dest.moves.emplace_back();
+		auto& destMove = dest.appendMove(toMoveAction(move->moveData));
 		copyMoveData(*move, destMove);
 	}
 }
@@ -26,8 +26,7 @@ void copyLine(moveT const* source, scid::core::MoveSequence& dest) {
 void copyVariations(moveT const& source, scid::core::Move& dest) {
 	for (auto variation = source.varChild; variation;
 	     variation = variation->varChild) {
-		auto& destVariation = dest.childVariations.emplace_back();
-		destVariation.initialComment = variation->comment;
+		auto& destVariation = dest.addVariation(variation->comment);
 		copyLine(variation->next, destVariation.line);
 	}
 }
