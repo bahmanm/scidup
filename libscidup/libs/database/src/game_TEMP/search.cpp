@@ -213,7 +213,7 @@ Game::ExactMatch (Position * searchPos, ByteBuffer * buf,
     errorT err = OK;
 
     if (buf == NULL) {
-        MoveToStart();
+        toStart();
     } else {
         err = DecodeSkipTags(buf);
     }

@@ -177,7 +177,7 @@ TEST(Test_PgnEncode, encode_comment) {
 static void SAN_hack(scid::database::Game& game) {
 	// TODO: we need this to fill in all the moveT->san
 	// It would be better to do this when the game is decoded.
-	game.MoveToStart();
+	game.toStart();
 	do {
 		scid::database::game_notation::nextSan(game);
 	} while (game.MoveForwardInPGN() == scid::database::OK);

@@ -1293,7 +1293,7 @@ sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (!ecoBook) { return TCL_OK; }
 
     auto location = game.currentLocation();
-    game.MoveToEnd();
+    game.toEnd();
     scidup::eco::Code ecoCode = scidup::eco::ECO_None;
     do {
         ecoCode = ecoBook->findEco(*game.currentPos());
@@ -3167,7 +3167,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::uint nMergePos = merge->coreGame().mainlineHalfMoveCount() + 1;
     typedef char compactBoardStr [36];
     compactBoardStr * mergeBoards = new compactBoardStr [nMergePos];
-    merge->MoveToStart();
+    merge->toStart();
     for (scid::database::uint i=0; i < nMergePos; i++) {
         merge->currentPos()->PrintCompactStr (mergeBoards[i]);
         merge->next();
@@ -3175,7 +3175,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Now find the deepest position in the current game that occurs
     // in the merge game:
-    game.MoveToStart();
+    game.toStart();
     scid::database::uint matchPly = 0;
     scid::database::uint mergePly = 0;
     scid::database::uint ply = 0;
@@ -3198,7 +3198,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // Now the games match at the locations matchPly in the current
     // game and mergePly in the merge game.
     // Create a new variation and add merge-game moves to it:
-    game.MoveToPly (matchPly);
+    game.toPly (matchPly);
     bool atLastMove = game.isAtEnd();
     scid::database::simpleMoveT * sm = NULL;
     if (atLastMove) {
@@ -3216,7 +3216,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         // We need to replicate the last move of the current game.
         game.AddMove(*sm);
     }
-    merge->MoveToPly (mergePly);
+    merge->toPly (mergePly);
     ply = mergePly;
     while (ply < endPly) {
         scid::database::simpleMoveT * mergeMove = merge->currentMove();
@@ -3732,7 +3732,7 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
     UI_List boards(n_moves);
     UI_List moves(n_moves);
     auto location = g->currentLocation();
-    g->MoveToStart();
+    g->toStart();
     do {
             char boardStr[100];
             g->currentPos()->MakeLongStr (boardStr);
@@ -4539,7 +4539,7 @@ sc_move (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_move_back (cd, ti, argc, argv);
 
     case MOVE_END:
-        editor.game().MoveToEnd();
+        editor.game().toEnd();
         break;
 
     case MOVE_ENDVAR:
@@ -4555,13 +4555,13 @@ sc_move (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case MOVE_PLY:
         if (argc == 3) {
-            editor.game().MoveToPly(scid::database::strGetUnsigned(argv[2]));
+            editor.game().toPly(scid::database::strGetUnsigned(argv[2]));
             return UI_Result(ti, scid::database::OK);
         }
         return errorResult (ti, "Usage: sc_move ply <plynumber>");
 
     case MOVE_START:
-        editor.game().MoveToStart();
+        editor.game().toStart();
         break;
 
     default:
@@ -4756,7 +4756,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                     return UI_Result(ti, scid::database::ERROR_InvalidMove);
             }
 
-            game.MoveToEnd();
+            game.toEnd();
             game.currentPos()->MakeLongStr(boardStr);
             auto lastmove = scid::database::game_notation::previousMoveUci(game);
             UI_List result(2);
@@ -7131,7 +7131,7 @@ sc_report_create (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             if (db->getGame(*ie, *scratchGame) != scid::database::OK) {
                 return errorResult (ti, "Error reading game file.");
             }
-            scratchGame->MoveToPly (ply - 1);
+            scratchGame->toPly (ply - 1);
             if (scratchGame->isAtEnd()) ply = 0;
             if (ply != 0) {
                 scid::database::uint moveOrderID = report->AddMoveOrder (scratchGame);
@@ -7644,14 +7644,14 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
                 }
             }
             if (ply == 0  &&  possibleMatch) {
-                g->MoveToStart();
+                g->toStart();
                 if (scid::database::game_search::varExactMatch(
                         *g, pos, searchType)) {
                     ply = g->currentPly() + 1;
                 }
             }
             if (ply == 0  &&  possibleFlippedMatch) {
-                g->MoveToStart();
+                g->toStart();
                 if (scid::database::game_search::varExactMatch(
                         *g, posFlip, searchType)) {
                     ply = g->currentPly() + 1;

@@ -97,7 +97,7 @@ errorT Game::exitVariation(void) {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Move to the beginning of the game.
 //
-void Game::MoveToStart() {
+void Game::toStart() {
 	if (auto startPos = coreGame_.startPosition()) {
 		*CurrentPos = *startPos;
 	} else {
@@ -111,14 +111,14 @@ void Game::MoveToStart() {
 	ASSERT(!CurrentMove->startMarker());
 }
 
-void Game::MoveToEnd() {
-	MoveToStart();
+void Game::toEnd() {
+	toStart();
 	while (next() == OK) {
 	}
 }
 
-void Game::MoveToPly(int hmNumber) {
-	MoveToStart();
+void Game::toPly(int hmNumber) {
+	toStart();
 	for (int i = 0; i < hmNumber; ++i)
 		next();
 }
@@ -146,7 +146,7 @@ errorT Game::MoveForwardInPGN() {
 // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
 // instead of keeping it on the generic Game cursor surface.
 errorT Game::MoveToLocationInPGN(unsigned stopLocation) {
-	MoveToStart();
+	toStart();
 	for (unsigned loc = 1; loc < stopLocation; ++loc) {
 		errorT err = MoveForwardInPGN();
 		if (err != OK)
@@ -351,7 +351,7 @@ void Game::TruncateStart() {
             CurrentPos->fillMove(CurrentMove->moveData);
         }
     } while (MoveForwardInPGN() == OK);
-    MoveToStart();
+    toStart();
     TEMP_syncCoreMovetext();
 }
 

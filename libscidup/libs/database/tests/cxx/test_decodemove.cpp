@@ -25,8 +25,8 @@ void expect_roundtrip(std::string_view pgn) {
 	ASSERT_EQ(scid::database::OK,
 	          scid::database::game_storage::decodeMovesOnly(decoded, bbuf));
 
-	original.MoveToStart();
-	decoded.MoveToStart();
+	original.toStart();
+	decoded.toStart();
 
 	for (;;) {
 		char originalFen[256];

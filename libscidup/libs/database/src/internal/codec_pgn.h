@@ -147,7 +147,7 @@ public:
 	errorT gameAdd(Game* game) {
 		// TODO: we need this to fill in all the moveT->san
 		// It would be better to do this when the game is decoded.
-		game->MoveToStart();
+		game->toStart();
 		do {
 			game_notation::nextSan(*game);
 		} while (game->MoveForwardInPGN() == OK);

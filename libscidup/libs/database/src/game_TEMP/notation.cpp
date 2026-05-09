@@ -73,7 +73,7 @@ errorT game_notation::writePartialMoveList(Game& game, DString& out,
     // unaltered:
     auto location = game.currentLocation();
 
-    game.MoveToStart();
+    game.toStart();
     char temp [80];
     for (uint i=0; i < plyCount; i++) {
         if (game.isAtEnd()) {

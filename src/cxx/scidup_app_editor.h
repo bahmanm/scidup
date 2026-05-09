@@ -110,9 +110,9 @@ public:
 			return err;
 
 		if (base_->defaultFilterGet(gameId) > 0) {
-			s.game->MoveToPly(base_->defaultFilterGet(gameId) - 1);
+			s.game->toPly(base_->defaultFilterGet(gameId) - 1);
 		} else {
-			s.game->MoveToStart();
+			s.game->toStart();
 		}
 		s.loadedGameId = gameId;
 		s.dirty = false;
@@ -131,7 +131,7 @@ public:
 		const auto err = base_->loadGame(*s.loadedGameId, *s.game);
 		if (err != scid::database::OK)
 			return err;
-		s.game->MoveToStart();
+		s.game->toStart();
 		return scid::database::OK;
 	}
 

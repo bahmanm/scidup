@@ -69,7 +69,7 @@ inline void collectPositions(Game& game, TCont& dest) {
  */
 inline std::vector<GamePos> collectPositions(Game& game) {
 	std::vector<GamePos> res;
-	game.MoveToStart();
+	game.toStart();
 	collectPositions(game, res);
 	return res;
 }

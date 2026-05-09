@@ -602,7 +602,7 @@ errorT LegacyGamePgnEncoder::encode() {
     auto roundStr = [&] { return game.coreGame().round().c_str(); };
     auto siteStr = [&] { return game.coreGame().site().c_str(); };
     auto whiteStr = [&] { return game.coreGame().white().name.c_str(); };
-    auto MoveToStart = [&] { game.MoveToStart(); };
+    auto toStart = [&] { game.toStart(); };
 
     char temp[256];
     char dateStr [20];
@@ -836,7 +836,7 @@ errorT LegacyGamePgnEncoder::encode() {
         tb->PrintString (newline);
     }
 
-    MoveToStart();
+    toStart();
 
     if (options.isHtmlFormat()) { tb->PrintString ("<p>"); }
     numMovesPrinted = 1;

@@ -179,7 +179,7 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
     // Now set positional themes:
     scid::database::uint maxThemePly = maxThemeMoveNumber * 2;
     for (i=0; i < NUM_POSTHEMES; i++) { Theme[i] = 0; }
-    g->MoveToStart();
+    g->toStart();
     for (i=0; i < maxThemePly; i++) {
         if (g->next() != scid::database::OK) { break; }
         SetPositionalThemes (g->currentPos());

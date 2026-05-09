@@ -182,10 +182,10 @@ public:
     // instead of keeping it on the generic Game cursor surface.
     errorT MoveForwardInPGN();
     errorT MoveToLocationInPGN(unsigned stopLocation);
-    void MoveToStart();
+    void toStart();
     /// Move to the end of the main line.
-    void MoveToEnd();
-    void MoveToPly(int hmNumber);
+    void toEnd();
+    void toPly(int hmNumber);
     GameSavedPos currentLocation() const;
     void restoreLocation(const GameSavedPos& savedPos);
 
