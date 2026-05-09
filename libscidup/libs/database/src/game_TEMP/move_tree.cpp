@@ -11,29 +11,29 @@ namespace scid::database {
 
 ///////////////////////////////////////////////////////////////////////////
 // A "location" in the game is represented by a position (Game::CurrentPos), the
-// next move to be played (Game::CurrentMove) and the number of parent variations
-// (Game::varDepth_). Since CurrentMove is the next move to be played, some
+// next move to be played (Game::currentMove_) and the number of parent variations
+// (Game::varDepth_). Since currentMove_ is the next move to be played, some
 // invariants must hold: it is never nullptr and it never points to a
 // START_MARKER (it will point to a END_MARKER if there are no more moves). This
-// also means that CurrentMove->prev is always valid: it will point to a
+// also means that currentMove_->prev is always valid: it will point to a
 // previous move or to a START_MARKER.
 // The following functions modify ONLY the current location of the game.
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Move current position forward one move.
 // Also update all the necessary fields in the simpleMove structure
-// (CurrentMove->moveData) so it can be undone.
+// (currentMove_->moveData) so it can be undone.
 //
 errorT Game::next(void) {
-	if (CurrentMove->endMarker())
+	if (currentMove_->endMarker())
 		return ERROR_EndOfMoveList;
 
-	CurrentPos->DoSimpleMove(CurrentMove->moveData);
-	CurrentMove = CurrentMove->next;
+	CurrentPos->DoSimpleMove(currentMove_->moveData);
+	currentMove_ = currentMove_->next;
 
 	// Invariants
-	ASSERT(CurrentMove && CurrentMove->prev);
-	ASSERT(!CurrentMove->startMarker());
+	ASSERT(currentMove_ && currentMove_->prev);
+	ASSERT(!currentMove_->startMarker());
 	return OK;
 }
 
@@ -42,15 +42,15 @@ errorT Game::next(void) {
 //      Backup one move.
 //
 errorT Game::previous(void) {
-	if (CurrentMove->prev->startMarker())
+	if (currentMove_->prev->startMarker())
 		return ERROR_StartOfMoveList;
 
-	CurrentMove = CurrentMove->prev;
-	CurrentPos->UndoSimpleMove(CurrentMove->moveData);
+	currentMove_ = currentMove_->prev;
+	CurrentPos->UndoSimpleMove(currentMove_->moveData);
 
 	// Invariants
-	ASSERT(CurrentMove && CurrentMove->prev);
-	ASSERT(!CurrentMove->startMarker());
+	ASSERT(currentMove_ && currentMove_->prev);
+	ASSERT(!currentMove_->startMarker());
 	return OK;
 }
 
@@ -58,15 +58,15 @@ errorT Game::previous(void) {
 // Game::enterVariation():
 //      Move into a subvariation. Variations are numbered from 0.
 errorT Game::enterVariation(uint varNumber) {
-	for (auto subVar = CurrentMove; subVar->varChild; --varNumber) {
+	for (auto subVar = currentMove_; subVar->varChild; --varNumber) {
 		subVar = subVar->varChild;
 		if (varNumber == 0) {
-			CurrentMove = subVar->next; // skip the START_MARKER
+			currentMove_ = subVar->next; // skip the START_MARKER
 			++varDepth_;
 
 			// Invariants
-			ASSERT(CurrentMove && CurrentMove->prev);
-			ASSERT(!CurrentMove->startMarker());
+			ASSERT(currentMove_ && currentMove_->prev);
+			ASSERT(!currentMove_->startMarker());
 			return OK;
 		}
 	}
@@ -85,12 +85,12 @@ errorT Game::exitVariation(void) {
 	// go up to the parent of the variation.
 	while (previous() == OK) {
 	}
-	CurrentMove = CurrentMove->getParent().first;
+	currentMove_ = currentMove_->getParent().first;
 	--varDepth_;
 
 	// Invariants
-	ASSERT(CurrentMove && CurrentMove->prev);
-	ASSERT(!CurrentMove->startMarker());
+	ASSERT(currentMove_ && currentMove_->prev);
+	ASSERT(!currentMove_->startMarker());
 	return OK;
 }
 
@@ -104,11 +104,11 @@ void Game::toStart() {
 		CurrentPos->StdStart();
 	}
 	varDepth_ = 0;
-	CurrentMove = firstMove_->next;
+	currentMove_ = firstMove_->next;
 
 	// Invariants
-	ASSERT(CurrentMove && CurrentMove->prev);
-	ASSERT(!CurrentMove->startMarker());
+	ASSERT(currentMove_ && currentMove_->prev);
+	ASSERT(!currentMove_->startMarker());
 }
 
 void Game::toEnd() {
@@ -126,7 +126,7 @@ void Game::toPly(int hmNumber) {
 // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
 // instead of keeping it on the generic Game cursor surface.
 errorT Game::nextPgn() {
-	if (CurrentMove->prev->varChild && previous() == OK)
+	if (currentMove_->prev->varChild && previous() == OK)
 		return enterVariation(0);
 
 	while (next() != OK) {
@@ -159,7 +159,7 @@ errorT Game::toPgnLocation(unsigned stopLocation) {
 // instead of keeping it on the generic Game cursor surface.
 unsigned Game::pgnLocation() const {
 	unsigned res = 1;
-	const moveT* last_move = CurrentMove->prev;
+	const moveT* last_move = currentMove_->prev;
 	const moveT* move = firstMove_;
 	for (; move != last_move; move = move->nextMoveInPGN()) {
 		if (!move->endMarker())
@@ -172,7 +172,7 @@ unsigned Game::pgnLocation() const {
 // instead of keeping it on the generic Game cursor surface.
 unsigned Game::pgnOffset() const {
 	unsigned res = 1;
-	const moveT* last_move = CurrentMove->getPrevMove();
+	const moveT* last_move = currentMove_->getPrevMove();
 	if (last_move) {
 		const moveT* move = firstMove_;
 		for (; move != last_move; move = move->nextMoveInPGN()) {
@@ -193,12 +193,12 @@ unsigned Game::pgnOffset() const {
 //
 errorT Game::addMove(simpleMoveT const& sm) {
 	// We must be at the end of a game/variation to add a move:
-	if (!CurrentMove->endMarker())
+	if (!currentMove_->endMarker())
 		truncate();
 
-	CurrentMove->setNext(newMove(END_MARKER));
-	CurrentMove->marker = NO_MARKER;
-	CurrentMove->moveData = sm;
+	currentMove_->setNext(newMove(END_MARKER));
+	currentMove_->marker = NO_MARKER;
+	currentMove_->moveData = sm;
 	if (varDepth_ == 0)
 		++numHalfMoves_;
 
@@ -219,15 +219,15 @@ errorT Game::addVariation() {
 
 	auto newVar = newMove(START_MARKER);
 	newVar->setNext(newMove(END_MARKER));
-	CurrentMove->appendChild(newVar);
+	currentMove_->appendChild(newVar);
 
 	// Move into variation
-	CurrentMove = newVar->next;
+	currentMove_ = newVar->next;
 	++varDepth_;
 
 	// Invariants
-	ASSERT(CurrentMove && CurrentMove->prev);
-	ASSERT(!CurrentMove->startMarker());
+	ASSERT(currentMove_ && currentMove_->prev);
+	ASSERT(!currentMove_->startMarker());
 	TEMP_syncCoreMovetext();
 	return OK;
 }
@@ -236,7 +236,7 @@ errorT Game::addVariation() {
 // Game::promoteVariationToFirst():
 // Promotes the current variation to first variation.
 errorT Game::promoteVariationToFirst() {
-	auto parent = CurrentMove->getParent();
+	auto parent = currentMove_->getParent();
 	auto root = parent.first;
 	if (!root)
 		return ERROR_NoVariation;
@@ -252,7 +252,7 @@ errorT Game::promoteVariationToFirst() {
 //    Like promoteVariationToFirst, but promotes the variation to the main line,
 //    demoting the main line to be the first variation.
 errorT Game::promoteVariationToMainline() {
-	auto parent = CurrentMove->getParent();
+	auto parent = currentMove_->getParent();
 	auto root = parent.first;
 	if (!root)
 		return ERROR_NoVariation;
@@ -292,7 +292,7 @@ errorT Game::promoteVariationToMainline() {
 //      deleting variations will waste memory until the game is cleared.
 //
 errorT Game::deleteVariation() {
-	auto parent = CurrentMove->getParent();
+	auto parent = currentMove_->getParent();
 	auto root = parent.first;
 	if (!root || exitVariation() != OK)
 		return ERROR_NoVariation;
@@ -309,20 +309,20 @@ errorT Game::deleteVariation() {
 //      So repeatedly adding moves and truncating a game will waste
 //      memory until the game is cleared.
 void Game::truncate() {
-	if (CurrentMove->endMarker())
+	if (currentMove_->endMarker())
 		return;
 
 	auto endMove = newMove(END_MARKER);
-	CurrentMove->prev->setNext(endMove);
+	currentMove_->prev->setNext(endMove);
 
-	CurrentMove = endMove;
+	currentMove_ = endMove;
 	if (varDepth_ == 0)
 		numHalfMoves_ = currentPly();
 	TEMP_syncCoreMovetext();
 
 	// Invariants
-	ASSERT(CurrentMove && CurrentMove->prev);
-	ASSERT(!CurrentMove->startMarker());
+	ASSERT(currentMove_ && currentMove_->prev);
+	ASSERT(!currentMove_->startMarker());
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -343,12 +343,12 @@ void Game::truncateStart() {
     numHalfMoves_ -= currentPly();
     coreGame_.setStartPosition(*pos);
     *CurrentPos = *pos;
-    firstMove_->setNext(CurrentMove);
+    firstMove_->setNext(currentMove_);
 
     // Do all the moves to update moveData.pieceNum to the new start position.
     do {
-        if (!CurrentMove->startMarker() && !CurrentMove->endMarker()) {
-            CurrentPos->fillMove(CurrentMove->moveData);
+        if (!currentMove_->startMarker() && !currentMove_->endMarker()) {
+            CurrentPos->fillMove(currentMove_->moveData);
         }
     } while (nextPgn() == OK);
     toStart();

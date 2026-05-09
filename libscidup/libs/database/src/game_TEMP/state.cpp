@@ -5,12 +5,12 @@
 namespace scid::database {
 
 Game::GameSavedPos Game::currentLocation() const {
-	return GameSavedPos{*CurrentPos, CurrentMove, varDepth_};
+	return GameSavedPos{*CurrentPos, currentMove_, varDepth_};
 }
 
 void Game::restoreLocation(const GameSavedPos& savedPos) {
 	*CurrentPos = savedPos.pos;
-	CurrentMove = savedPos.move;
+	currentMove_ = savedPos.move;
 	varDepth_ = savedPos.varDepth;
 }
 
@@ -23,7 +23,7 @@ const Position* Game::currentPos() const {
 }
 
 simpleMoveT* Game::currentMove() {
-	return CurrentMove->endMarker() ? nullptr : &CurrentMove->moveData;
+	return currentMove_->endMarker() ? nullptr : &currentMove_->moveData;
 }
 
 ushort Game::currentPly() const {
@@ -33,7 +33,7 @@ ushort Game::currentPly() const {
 }
 
 uint Game::variationCount() const {
-	return CurrentMove->numVariations;
+	return currentMove_->numVariations;
 }
 
 uint Game::variationLevel() const {
@@ -43,7 +43,7 @@ uint Game::variationLevel() const {
 uint Game::variationNumber() const {
 	if (varDepth_ != 0) {
 		uint varNumber = 0;
-		auto moves = CurrentMove->getParent();
+		auto moves = currentMove_->getParent();
 		for (auto parent = moves.first; parent; varNumber++) {
 			parent = parent->varChild;
 			if (parent == moves.second)
@@ -54,11 +54,11 @@ uint Game::variationNumber() const {
 }
 
 bool Game::isAtVariationStart() const {
-	return CurrentMove->prev->startMarker();
+	return currentMove_->prev->startMarker();
 }
 
 bool Game::isAtVariationEnd() const {
-	return CurrentMove->endMarker();
+	return currentMove_->endMarker();
 }
 
 bool Game::isAtStart() const {

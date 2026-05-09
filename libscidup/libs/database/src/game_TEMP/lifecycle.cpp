@@ -126,8 +126,8 @@ void Game::clearMoves() {
 	CurrentPos->StdStart();
 
 	firstMove_ = newMove(START_MARKER);
-	CurrentMove = newMove(END_MARKER);
-	firstMove_->setNext(CurrentMove);
+	currentMove_ = newMove(END_MARKER);
+	firstMove_->setNext(currentMove_);
 
 	varDepth_ = 0;
 	numHalfMoves_ = 0;

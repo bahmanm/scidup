@@ -35,7 +35,7 @@ std::string game_notation::currentPositionUci(const Game& game) {
 	char FEN[256] = {};
 
 	std::vector<const moveT*> moves;
-	const moveT* move = game.CurrentMove;
+	const moveT* move = game.currentMove_;
 	while ((move = move->getPrevMove())) {
 		if (move->moveData.isNullMove()) {
 			Position lastValidPos = *game.currentPos();
@@ -100,21 +100,21 @@ errorT game_notation::writePartialMoveList(Game& game, DString& out,
 std::string game_notation::nextSan(Game& game) {
 	// TODO [Game]: Move SAN generation/caching to notation helpers and
 	// Move.metadata once Move owns SAN and GameCursor owns the current position.
-	ASSERT(!game.CurrentMove->endMarker() || *game.CurrentMove->san == '\0');
+	ASSERT(!game.currentMove_->endMarker() || *game.currentMove_->san == '\0');
 
-	if (!game.CurrentMove->endMarker() && *game.CurrentMove->san == '\0') {
+	if (!game.currentMove_->endMarker() && *game.currentMove_->san == '\0') {
 		game.CurrentPos->MakeSANString(
-		    &game.CurrentMove->moveData, game.CurrentMove->san,
-		    game.CurrentMove->next->endMarker() ? SAN_MATETEST : SAN_CHECKTEST);
+		    &game.currentMove_->moveData, game.currentMove_->san,
+		    game.currentMove_->next->endMarker() ? SAN_MATETEST : SAN_CHECKTEST);
 		game.TEMP_syncCoreMovetext();
 	}
-	return game.CurrentMove->san;
+	return game.currentMove_->san;
 }
 
 std::string game_notation::previousSan(Game& game) {
     // TODO [Game]: Move SAN generation/caching to notation helpers and
     // Move.metadata once Move owns SAN and GameCursor owns the current position.
-    moveT * m = game.CurrentMove->prev;
+    moveT * m = game.currentMove_->prev;
     if (m->startMarker()  ||  m->endMarker()) {
         return {};
     }
@@ -130,7 +130,7 @@ std::string game_notation::previousSan(Game& game) {
 std::string game_notation::previousMoveUci(const Game& game) {
 	// TODO [Game]: Move UCI move rendering to a notation helper over
 	// MoveAction once GameCursor owns previous/next move traversal.
-	const auto move = game.CurrentMove->prev;
+	const auto move = game.currentMove_->prev;
 	if (move->startMarker()) {
 		return {};
 	}
@@ -140,7 +140,7 @@ std::string game_notation::previousMoveUci(const Game& game) {
 std::string game_notation::nextMoveUci(const Game& game) {
 	// TODO [Game]: Move UCI move rendering to a notation helper over
 	// MoveAction once GameCursor owns previous/next move traversal.
-	const auto move = game.CurrentMove;
+	const auto move = game.currentMove_;
 	if (move->endMarker()) {
 		return {};
 	}

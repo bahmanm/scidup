@@ -59,22 +59,22 @@ void Game::TEMP_syncCoreMovetext() {
 // Move shape exists. These methods are compatibility accessors around legacy
 // moveT fields at the current cursor location.
 void Game::clearNags() {
-	CurrentMove->prev->nagCount = 0;
-	CurrentMove->prev->nags[0] = 0;
+	currentMove_->prev->nagCount = 0;
+	currentMove_->prev->nags[0] = 0;
 	TEMP_syncCoreMovetext();
 }
 
 byte* Game::nags() const {
-	return CurrentMove->prev->nags;
+	return currentMove_->prev->nags;
 }
 
 byte* Game::nextNags() const {
-	return CurrentMove->nags;
+	return currentMove_->nags;
 }
 
 std::pair<const char*, const char*> Game::previousComments() const {
 	std::pair<const char*, const char*> res = {"", ""};
-	auto move = CurrentMove->getPrevMove();
+	auto move = currentMove_->getPrevMove();
 	if (move)
 		move = move->getPrevMove();
 	if (move) {
@@ -88,11 +88,11 @@ std::pair<const char*, const char*> Game::previousComments() const {
 }
 
 const char* Game::moveComment() const {
-	return CurrentMove->prev->comment.c_str();
+	return currentMove_->prev->comment.c_str();
 }
 
 errorT Game::addNag (byte nag) {
-    moveT * m = CurrentMove->prev;
+    moveT * m = currentMove_->prev;
     if (m->nagCount + 1 >= MAX_NAGS) { return ERROR_GameFull; }
     if (nag == 0) { /* Nags cannot be zero! */ return OK; }
 	// If it is a move nag replace an existing
@@ -128,7 +128,7 @@ errorT Game::addNag (byte nag) {
 }
 
 errorT Game::removeNag (bool isMoveNag) {
-    moveT * m = CurrentMove->prev;
+    moveT * m = currentMove_->prev;
 	if( isMoveNag)
 	{
 		for( int i=0; i<m->nagCount; i++)
@@ -158,8 +158,8 @@ errorT Game::removeNag (bool isMoveNag) {
 
 
 void Game::setMoveComment(const char* comment) {
-	ASSERT(CurrentMove != NULL && CurrentMove->prev != NULL);
-	moveT* m = CurrentMove->prev;
+	ASSERT(currentMove_ != NULL && currentMove_->prev != NULL);
+	moveT* m = currentMove_->prev;
 	if (comment == NULL) {
 		m->comment.clear();
 	} else {

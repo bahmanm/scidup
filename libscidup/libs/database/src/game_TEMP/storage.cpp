@@ -335,7 +335,7 @@ errorT Game::decodeVariation(ByteBuffer& buf,
 		    this->varDepth_, [&](auto) { return true; },
 		    [&] {
 			    // Mark this comment as needing to be read
-			    comment_marks.push_back(this->CurrentMove->prev);
+			    comment_marks.push_back(this->currentMove_->prev);
 		    },
 		    [&](auto newVariation) {
 			    if (newVariation)

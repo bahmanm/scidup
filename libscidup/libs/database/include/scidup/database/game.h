@@ -74,7 +74,7 @@ class Game {
     std::forward_list<std::unique_ptr<moveT[]> > moveChunks_;
     std::unique_ptr<Position> CurrentPos{new Position};
     moveT*      firstMove_;
-    moveT*      CurrentMove;
+    moveT*      currentMove_;
     uint        varDepth_;     // Current variation depth.
     ushort      numHalfMoves_; // Total half moves in the main line.
 
@@ -172,7 +172,7 @@ public:
 
     //////////////////////////////////////////////////////////////
     // Functions that move the current location (only CurrentPos,
-    // CurrentMove and varDepth_ are modified by these functions):
+    // currentMove_ and varDepth_ are modified by these functions):
     //
     errorT next();
     errorT previous();

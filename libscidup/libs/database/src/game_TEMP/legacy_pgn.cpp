@@ -89,7 +89,7 @@ struct LegacyGamePgnEncoder {
 //      Recursive; calls itself to write variations.
 //
 errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
-    auto& CurrentMove = game.CurrentMove;
+    auto& currentMove_ = game.currentMove_;
     auto& CurrentPos = game.CurrentPos;
     auto& firstMove_ = game.firstMove_;
     auto& varDepth_ = game.varDepth_;
@@ -144,7 +144,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
         preCommentStr = "";
         postCommentStr = "";
     }
-    moveT * m = CurrentMove;
+    moveT * m = currentMove_;
 
     // Print null moves:
     if ((options.style & PGN_STYLE_NO_NULL_MOVES) && !inComment &&
@@ -157,9 +157,9 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
 
     std::string strippedComment;
     // If this is a variation and it starts with a comment, print it:
-    if ((varDepth_ > 0 || CurrentMove->prev == firstMove_) &&
+    if ((varDepth_ > 0 || currentMove_->prev == firstMove_) &&
         (options.style & PGN_STYLE_COMMENTS)) {
-        const char* comment = CurrentMove->prev->comment.c_str();
+        const char* comment = currentMove_->prev->comment.c_str();
         if (*comment && (options.style & PGN_STYLE_STRIP_MARKS)) {
             strippedComment = comment;
             strTrimMarkCodes(strippedComment.data());
@@ -179,8 +179,8 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
         }
     }
 
-    while (CurrentMove->marker != END_MARKER) {
-        moveT *m = CurrentMove;
+    while (currentMove_->marker != END_MARKER) {
+        moveT *m = currentMove_;
         bool commentLine = false;
 
         if (m->san[0] == 0) {
@@ -392,7 +392,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment) {
                     // is a null move, enter inComment mode:
                     if (m->next->isNull()  &&
                           ((!(options.style & PGN_STYLE_VARS))  ||
-                            (CurrentMove->next->numVariations == 0))) {
+                            (currentMove_->next->numVariations == 0))) {
                         inComment = true;
                         tb->PrintString(preCommentStr);
                         preCommentStr = "";
