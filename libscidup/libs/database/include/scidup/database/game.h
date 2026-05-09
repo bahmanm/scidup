@@ -161,8 +161,6 @@ public:
 
     void SetScidFlags(const char* s, size_t len);
 
-    ushort GetNumHalfMoves();
-
     //////////////////////////////////////////////////////////////
     // Functions to add or delete moves:
     //

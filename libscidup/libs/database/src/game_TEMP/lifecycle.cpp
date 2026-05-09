@@ -43,10 +43,6 @@ void Game::SetScidFlags(const char* s, size_t len) {
 	std::copy_n(s, std::min(size - 1, len), ScidFlags);
 }
 
-ushort Game::GetNumHalfMoves() {
-	return NumHalfMoves;
-}
-
 moveT* Game::allocMove() {
 	// TODO [Game]: Hide legacy moveT chunk allocation behind the future core
 	// move-tree representation.

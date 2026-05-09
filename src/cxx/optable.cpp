@@ -18,6 +18,7 @@
 #include "scidup/database/game_id.h"
 #include "scidup/database/game_TEMP/notation.h"
 #include "scidup/database/game_TEMP/piece_translation.h"
+#include "scidup/database/game_TEMP/state.h"
 #include "scidup/eco/book.h"
 #include <algorithm>
 #include <cstdio>
@@ -124,7 +125,7 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
 
     Date = g->GetDate();
     Result = g->GetResult();
-    NumMoves = (g->GetNumHalfMoves() + 1) / 2;
+    NumMoves = (scid::database::game_state::mainlineHalfMoveCount(*g) + 1) / 2;
     EcoCode = g->GetEco();
     WhiteElo = g->GetWhiteElo();
     BlackElo = g->GetBlackElo();

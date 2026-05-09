@@ -37,6 +37,7 @@
 #include "scidup/database/game_TEMP/notation.h"
 #include "scidup/database/game_TEMP/piece_translation.h"
 #include "scidup/database/game_TEMP/search.h"
+#include "scidup/database/game_TEMP/state.h"
 #include "scidup/database/game_TEMP/storage.h"
 #include "optable.h"
 #include "scidup/eco/book.h"
@@ -2796,7 +2797,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     } else {
         std::snprintf(temp, sizeof(temp), "<br>%s <red>(%u)</red>",
                  scid::database::RESULT_LONGSTR[g.GetResult()],
-                 (g.GetNumHalfMoves() + 1) / 2);
+                 (scid::database::game_state::mainlineHalfMoveCount(g) + 1) / 2);
     }
     AppendResult (ti, temp, NULL);
 
@@ -3156,7 +3157,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     // Set up an array of all the game positions in the merge game:
-    scid::database::uint nMergePos = merge->GetNumHalfMoves() + 1;
+    scid::database::uint nMergePos = scid::database::game_state::mainlineHalfMoveCount(*merge) + 1;
     typedef char compactBoardStr [36];
     compactBoardStr * mergeBoards = new compactBoardStr [nMergePos];
     merge->MoveToStart();
@@ -3224,8 +3225,9 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     const auto belo = ie->GetBlackElo();
     auto dstr = scid::database::DString();
     dstr.Append(scid::database::RESULT_LONGSTR[ie->GetResult()]);
-    if (ply < merge->GetNumHalfMoves()) {
-        dstr.Append("(", (merge->GetNumHalfMoves() + 1) / 2, ")");
+    const auto mergeHalfMoves = scid::database::game_state::mainlineHalfMoveCount(*merge);
+    if (ply < mergeHalfMoves) {
+        dstr.Append("(", (mergeHalfMoves + 1) / 2, ")");
     }
     dstr.Append(" ", tags.white);
     if (welo > 0) {
@@ -3391,7 +3393,7 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         }
 
         auto work_done = g->GetCurrentPly() + 1;
-        if (!progress.report(work_done, g->GetNumHalfMoves())) {
+        if (!progress.report(work_done, scid::database::game_state::mainlineHalfMoveCount(*g))) {
             base->deleteFilter(filtername.c_str());
             return UI_Result(ti, scid::database::ERROR_UserCancel);
         }
@@ -3722,7 +3724,7 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
         res.push_back(dstr.Data());
 
     // Here, a list of the boards or moves is requested:
-    const auto n_moves = g->GetNumHalfMoves() + 1;
+    const auto n_moves = scid::database::game_state::mainlineHalfMoveCount(*g) + 1;
     UI_List boards(n_moves);
     UI_List moves(n_moves);
     auto location = g->currentLocation();
