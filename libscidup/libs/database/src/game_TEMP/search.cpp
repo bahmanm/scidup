@@ -30,9 +30,9 @@ int calcHomePawnMask (pieceT pawn, const pieceT* board)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // patternsMatch():
 //      Used by Game::materialMatch() to test patterns.
-//      Returns 1 if all the patterns in the list match, 0 otherwise.
+//      Returns true if all the patterns in the list match.
 //
-int patternsMatch(const Position* pos, patternT* patterns, size_t patternCount) {
+bool patternsMatch(const Position* pos, patternT* patterns, size_t patternCount) {
     const pieceT* board = pos->GetBoard();
     for (auto pattern = patterns, patternEnd = patterns + patternCount;
          pattern != patternEnd; ++pattern) {
@@ -41,33 +41,33 @@ int patternsMatch(const Position* pos, patternT* patterns, size_t patternCount) 
             if (pattern->fyleMatch == NO_FYLE) { // Nothing to test!
             } else {  // Test this fyle:
                 squareT sq = square_Make (pattern->fyleMatch, RANK_1);
-                int found = 0;
+                bool found = false;
                 for (uint i=0; i < 8; i++, sq += 8) {
-                    if (board[sq] == pattern->pieceMatch) { found = 1; break; }
+                    if (board[sq] == pattern->pieceMatch) { found = true; break; }
                 }
-                if (found != pattern->flag) { return 0; }
+                if (found != pattern->flag) { return false; }
             }
 
         } else { // rankMatch is a rank from 1 to 8:
 
             if (pattern->fyleMatch == NO_FYLE) { // Test the whole rank:
-                int found = 0;
+                bool found = false;
                 squareT sq = square_Make (A_FYLE, pattern->rankMatch);
                 for (uint i=0; i < 8; i++, sq++) {
-                    if (board[sq] == pattern->pieceMatch) { found = 1; break; }
+                    if (board[sq] == pattern->pieceMatch) { found = true; break; }
                 }
-                if (found != pattern->flag) { return 0; }
+                if (found != pattern->flag) { return false; }
             } else {  // Just test one square:
                 squareT sq = square_Make(pattern->fyleMatch, pattern->rankMatch);
-                int found = 0;
-                if (board[sq] == pattern->pieceMatch) { found = 1; }
-                if (found != pattern->flag) { return 0; }
+                bool found = false;
+                if (board[sq] == pattern->pieceMatch) { found = true; }
+                if (found != pattern->flag) { return false; }
             }
         }
     }
 
     // If we reach here, all patterns matched:
-    return 1;
+    return true;
 }
 } // end of anonymous namespace
 
