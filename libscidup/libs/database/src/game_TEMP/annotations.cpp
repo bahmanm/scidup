@@ -87,7 +87,7 @@ std::pair<const char*, const char*> Game::previousComments() const {
 	return res;
 }
 
-const char* Game::GetMoveComment() const {
+const char* Game::moveComment() const {
 	return CurrentMove->prev->comment.c_str();
 }
 
@@ -157,7 +157,7 @@ errorT Game::RemoveNag (bool isMoveNag) {
 }
 
 
-void Game::SetMoveComment(const char* comment) {
+void Game::setMoveComment(const char* comment) {
 	ASSERT(CurrentMove != NULL && CurrentMove->prev != NULL);
 	moveT* m = CurrentMove->prev;
 	if (comment == NULL) {

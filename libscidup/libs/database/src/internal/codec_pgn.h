@@ -118,7 +118,7 @@ public:
 
 		nParsed_ += parse.first;
 		pgn_impl::logGame(parseLog_, parse.first, visitor);
-		if (eof && !parse.second && *game.GetMoveComment() == '\0')
+		if (eof && !parse.second && *game.moveComment() == '\0')
 			return ERROR_NotFound;
 
 		return OK;

@@ -167,7 +167,7 @@ TEST(Test_PgnParser, EPD) {
 	game.currentPos()->PrintFEN(buf, sizeof(buf));
 	EXPECT_STREQ(
 	    "rnbqkb1r/1ppppppp/5n2/p7/2P5/4P3/PP1P1PPP/RNBQKBNR b KQkq - 0 1", buf);
-	EXPECT_STREQ("0 1;", game.GetMoveComment());
+	EXPECT_STREQ("0 1;", game.moveComment());
 
 	game.Clear();
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
@@ -177,7 +177,7 @@ TEST(Test_PgnParser, EPD) {
 	EXPECT_STREQ(
 	    "rq2r1k1/1bbn1pp1/1pp2n1p/p2p4/N2P3B/P2BP2P/1PQ1NPP1/2R2R1K b - - 0 1",
 	    buf);
-	EXPECT_STREQ("", game.GetMoveComment());
+	EXPECT_STREQ("", game.moveComment());
 
 	game.Clear();
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
@@ -186,7 +186,7 @@ TEST(Test_PgnParser, EPD) {
 	game.currentPos()->PrintFEN(buf, sizeof(buf));
 	EXPECT_STREQ("1B2K3/4b3/3pk3/5R2/8/7B/8/8 w - - 0 1", buf);
 	EXPECT_STREQ("bm Bb8-c7; ce +M3; pv Bb8-c7 Be7-f8 Ke8xf8 d6-d5 Rf5-f7+;",
-	             game.GetMoveComment());
+	             game.moveComment());
 
 	game.Clear();
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
@@ -194,13 +194,13 @@ TEST(Test_PgnParser, EPD) {
 	EXPECT_TRUE(parseLog.log.empty());
 	game.currentPos()->PrintFEN(buf, sizeof(buf));
 	EXPECT_STREQ("1B2K3/4b3/3pk3/5R2/8/7B/8/8 w - - 0 1", buf);
-	EXPECT_STREQ("bm Bc7 Rf3+", game.GetMoveComment());
+	EXPECT_STREQ("bm Bc7 Rf3+", game.moveComment());
 
 	game.Clear();
 	ASSERT_FALSE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                          game, parseLog));
 	EXPECT_FALSE(parseLog.log.empty());
-	EXPECT_NE(game.GetMoveComment(), nullptr);
+	EXPECT_NE(game.moveComment(), nullptr);
 
 	game.Clear();
 	std::string last_log = parseLog.log;

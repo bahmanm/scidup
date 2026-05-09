@@ -234,8 +234,8 @@ public:
     /// Return the comments of the previous 2 moves (useful to compute clocks).
     /// If there are no previous moves, return an empty comment.
     std::pair<const char*, const char*> previousComments() const;
-    const char* GetMoveComment() const;
-    void SetMoveComment(const char* comment);
+    const char* moveComment() const;
+    void setMoveComment(const char* comment);
 
     Game* clone();
 };

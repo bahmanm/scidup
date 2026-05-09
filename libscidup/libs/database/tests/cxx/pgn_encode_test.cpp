@@ -202,11 +202,11 @@ TEST(Test_PgnEncode, encode_game) {
 	{
 		scid::database::Game game;
 		game.coreGame().setEco("A01");
-		game.SetMoveComment("before the move");
+		game.setMoveComment("before the move");
 		scid::database::simpleMoveT sm;
 		game.currentPos()->makeMove(scid::database::E2, scid::database::E4, scid::database::EMPTY, sm);
 		game.addMove(sm);
-		game.SetMoveComment("after the move");
+		game.setMoveComment("after the move");
 		SAN_hack(game);
 		auto expected = "[Event\0\"\"]\n"sv
 		                "[Site\0\"\"]\n"sv
@@ -243,11 +243,11 @@ TEST(Test_PgnEncode, encode) {
 	}
 	{
 		scid::database::Game game;
-		game.SetMoveComment("before the move");
+		game.setMoveComment("before the move");
 		scid::database::simpleMoveT sm;
 		game.currentPos()->makeMove(scid::database::E2, scid::database::E4, scid::database::EMPTY, sm);
 		game.addMove(sm);
-		game.SetMoveComment("after the move");
+		game.setMoveComment("after the move");
 		SAN_hack(game);
 		auto expected = "[Event \"\"]\n"
 		                "[Site \"\"]\n"

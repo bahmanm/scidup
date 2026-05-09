@@ -130,7 +130,7 @@ private:
 			res->addMove(move);
 
 			if (rand(0, 6) == 0)
-				res->SetMoveComment(rand_comment().c_str());
+				res->setMoveComment(rand_comment().c_str());
 
 			int varOp = rand(0, 80 + int(res->variationLevel()) * 20);
 			if (varOp < 20) {

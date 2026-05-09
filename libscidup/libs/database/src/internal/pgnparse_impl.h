@@ -47,11 +47,11 @@ public:
 		}
 
 		linenum_ += pgn::trim(comment);
-		auto str = std::string(game.GetMoveComment());
+		auto str = std::string(game.moveComment());
 		auto prevSz = str.size();
 		str.append(comment.first, comment.second);
 		linenum_ += pgn::normalize(str, prevSz);
-		game.SetMoveComment(str.c_str());
+		game.setMoveComment(str.c_str());
 		return true;
 	}
 

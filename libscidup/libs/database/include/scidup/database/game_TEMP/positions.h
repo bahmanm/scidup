@@ -55,7 +55,7 @@ inline void collectPositions(Game& game, TCont& dest) {
 		for (byte* nag = game.GetNags(); *nag; nag++) {
 			gamepos.NAGs.push_back(*nag);
 		}
-		gamepos.comment = game.GetMoveComment();
+		gamepos.comment = game.moveComment();
 		gamepos.lastMoveSAN = game_notation::previousSan(game);
 
 	} while (game.MoveForwardInPGN() == OK);

@@ -14,7 +14,7 @@ bool pgnParseGame(const char* input, size_t inputLen, Game& game,
 		return false;
 
 	if (parse.first == inputLen && !parse.second &&
-	    *game.GetMoveComment() == '\0')
+	    *game.moveComment() == '\0')
 		return false;
 
 	return true;

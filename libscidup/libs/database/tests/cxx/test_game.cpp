@@ -419,7 +419,7 @@ TEST(Test_Game, coreGameMirrorsInitialMovetextComment) {
 	using namespace std::literals;
 
 	scid::database::Game game;
-	game.SetMoveComment("Before the first move");
+	game.setMoveComment("Before the first move");
 
 	EXPECT_EQ("Before the first move"sv, game.coreGame().initialComment());
 

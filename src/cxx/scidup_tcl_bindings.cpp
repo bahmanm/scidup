@@ -3019,10 +3019,10 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Check if this move has a comment:
 
-    if (g.GetMoveComment() != NULL) {
+    if (g.moveComment() != NULL) {
         AppendResult (ti, "<br>", translate(ti, "Comment"),
                           " <green><run makeCommentWin>", NULL);
-        char * str = scid::database::strDuplicate(g.GetMoveComment());
+        char * str = scid::database::strDuplicate(g.moveComment());
         scid::database::strTrimMarkCodes (str);
         const char * s = str;
         scid::database::uint len;
@@ -3249,7 +3249,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     dstr.Append(" (", tags.round, ")");
     dstr.Append(", ", tags.site);
     dstr.Append(" ", ie->GetYear());
-    game.SetMoveComment(dstr.Data());
+    game.setMoveComment(dstr.Data());
 
     // And exit the new variation:
     game.exitVariation();
@@ -4778,7 +4778,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case POS_GETCOMMENT:
         const char * tempStr;
-        tempStr = g.GetMoveComment();
+        tempStr = g.moveComment();
         if (tempStr) {
             AppendResult (ti, tempStr, NULL);
         }
@@ -5314,18 +5314,18 @@ sc_pos_setComment (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: sc_pos setComment <comment-text>");
     }
     const char * str = argv[2];
-    const char * oldComment = editor.game().GetMoveComment();
+    const char * oldComment = editor.game().moveComment();
 
     if (str[0] == 0  || (isspace((char)str[0]) && str[1] == 0)) {
         // No comment: nullify comment if necessary:
         if (oldComment != NULL) {
-            editor.game().SetMoveComment (NULL);
+            editor.game().setMoveComment (NULL);
             editor.setDirty();
         }
     } else {
         // Only set the comment if it has actually changed:
         if (oldComment == NULL  ||  !scid::database::strEqual (str, oldComment)) {
-            editor.game().SetMoveComment (str);
+            editor.game().setMoveComment (str);
             editor.setDirty();
         }
     }
