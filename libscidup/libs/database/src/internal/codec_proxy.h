@@ -100,8 +100,9 @@ public:
 	 * If not overridden, adds a special tag and invoke gameAdd().
 	 */
 	errorT gameSave(Game* game, gamenumT replaced) {
-		game->RemoveExtraTag(special_replace_tag);
-		game->addTag(special_replace_tag, std::to_string(replaced));
+		game->coreGame().removeExtraTag(special_replace_tag);
+		game->coreGame().addTag(special_replace_tag,
+		                         std::to_string(replaced));
 		return getDerived()->gameAdd(game);
 	}
 
@@ -167,7 +168,7 @@ private:
 			        game.coreGame().findExtraTag(special_replace_tag)) {
 				auto gnum = std::strtoul(replace_game->c_str(), NULL, 10);
 				if (gnum < CodecMemory::numGames()) {
-					game.RemoveExtraTag(special_replace_tag);
+					game.coreGame().removeExtraTag(special_replace_tag);
 					auto [ie, tags] = game_storage::encode(game, buf);
 					return CodecMemory::saveGame(
 					    ie, tags, {buf.data(), buf.size()}, gnum);

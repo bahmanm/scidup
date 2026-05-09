@@ -243,13 +243,6 @@ public:
     // Functions that get/set the tag pairs:
     //
 
-    // Add a tag.
-    // For the tags that cannot be duplicated (like Event or White), the
-    // previous value will be overwritten.
-    std::string& addTag(std::string_view tag, std::string_view value);
-
-    void RemoveExtraTag(std::string_view tag);
-
     Game* clone();
 };
 

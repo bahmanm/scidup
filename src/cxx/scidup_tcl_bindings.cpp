@@ -3998,14 +3998,14 @@ sc_game_tags_set (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         arg += 2;
 
         switch (index) {
-            case T_EVENT: game.addTag("Event", value); break;
-            case T_SITE: game.addTag("Site", value); break;
+            case T_EVENT: game.coreGame().addTag("Event", value); break;
+            case T_SITE: game.coreGame().addTag("Site", value); break;
             case T_DATE:
                 game.coreGame().setDate(scid::database::date_EncodeFromString(value));
                 break;
-            case T_ROUND: game.addTag("Round", value); break;
-            case T_WHITE: game.addTag("White", value); break;
-            case T_BLACK: game.addTag("Black", value); break;
+            case T_ROUND: game.coreGame().addTag("Round", value); break;
+            case T_WHITE: game.coreGame().addTag("White", value); break;
+            case T_BLACK: game.coreGame().addTag("Black", value); break;
             case T_RESULT: game.coreGame().setResult(scid::database::strGetResult(value)); break;
             case T_WHITE_ELO:
                 {
@@ -4053,7 +4053,7 @@ sc_game_tags_set (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                         extraTags.push_back(tag.first);
                     }
                     for (auto const& tag : extraTags) {
-                        game.RemoveExtraTag(tag);
+                        game.coreGame().removeExtraTag(tag);
                     }
 
                     Tcl_Obj* list = Tcl_NewStringObj(value, -1);
@@ -4072,7 +4072,7 @@ sc_game_tags_set (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                         decltype(objv) v;
                         // We expect a pair. Invalid entries are ignored.
                         if (Tcl_ListObjGetElements(ti, *it, &n, &v) == TCL_OK && n == 2) {
-                            game.addTag(Tcl_GetString(v[0]), Tcl_GetString(v[1]));
+                            game.coreGame().addTag(Tcl_GetString(v[0]), Tcl_GetString(v[1]));
                         }
                     }
                     Tcl_DecrRefCount(list);

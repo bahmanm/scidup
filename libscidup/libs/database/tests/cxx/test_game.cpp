@@ -254,21 +254,21 @@ TEST(Test_Game, coreGamePgnEncodingIncludesLegacyMetadataTags) {
 
 	scid::database::Game game;
 
-	game.addTag("White", "white player");
-	game.addTag("Black", "black player");
+	game.coreGame().addTag("White", "white player");
+	game.coreGame().addTag("Black", "black player");
 	game.coreGame().setDate(scid::database::date_parsePGNTag("2018.06.11", 10));
 	game.coreGame().setWhiteRating({2800, scid::database::RATING_Rapid});
 	game.coreGame().setBlackRating({2650, scid::database::RATING_Elo});
 	game.coreGame().setEco("A01");
 	game.coreGame().setEventDate(scid::database::date_parsePGNTag("2018.06.01", 10));
-	game.addTag("UTCDate", "2018.06.10");
-	game.addTag("Annotator", "Example");
+	game.coreGame().addTag("UTCDate", "2018.06.10");
+	game.coreGame().addTag("Annotator", "Example");
 	game.coreGame().setResult(scid::database::RESULT_Black);
 	const char* fen = "8/N2P1pk1/2n2q2/1P2pp2/5PN1/QKPp1P2/8/8 w - - 0 1";
 	game.SetStartFen(fen);
-	game.addTag("Event", "event nAme");
-	game.addTag("Round", "round 4");
-	game.addTag("Site", "a long site maybe in a long country");
+	game.coreGame().addTag("Event", "event nAme");
+	game.coreGame().addTag("Round", "round 4");
+	game.coreGame().addTag("Site", "a long site maybe in a long country");
 
 	std::string pgn;
 	scid::core::pgn::encode_game(game.coreGame(), pgn);
@@ -297,9 +297,9 @@ TEST(Test_Game, empty_tag_name) {
 	std::vector<unsigned char> encodedGame;
 	{
 		scid::database::Game game;
-		game.addTag("Normal tag ", "normal  value");
-		game.addTag("", "empty tag name");
-		game.addTag("Annotator", "common tag");
+		game.coreGame().addTag("Normal tag ", "normal  value");
+		game.coreGame().addTag("", "empty tag name");
+		game.coreGame().addTag("Annotator", "common tag");
 		EXPECT_EQ(game.coreGame().extraTags().size(), 3);
 
 		scid::database::game_storage::encode(game, encodedGame);
