@@ -213,6 +213,13 @@ inline bool move_action_to_simple_move(scid::database::Position& position,
 		position.makeMove(action.from, action.to, scid::database::PAWN, move);
 		return true;
 	}
+	if (action.castling) {
+		position.makeMove(action.from, action.from,
+		                  action.to > action.from ? scid::database::KING
+		                                          : scid::database::QUEEN,
+		                  move);
+		return true;
+	}
 
 	const auto notation = action.longNotation();
 	return position.ReadCoordMove(&move, notation.data(), notation.size(),

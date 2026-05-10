@@ -53,6 +53,7 @@ struct MoveAction {
 	scid::database::squareT from = scid::database::NULL_SQUARE;
 	scid::database::squareT to = scid::database::NULL_SQUARE;
 	scid::database::pieceT promotion = scid::database::EMPTY;
+	bool castling = false;
 
 	bool isNull() const;
 	std::string longNotation() const;

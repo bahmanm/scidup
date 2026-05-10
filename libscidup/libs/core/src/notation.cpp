@@ -21,6 +21,13 @@ std::optional<scid::database::simpleMoveT> toSimpleMove(
 		position.makeMove(action.from, action.to, scid::database::PAWN, move);
 		return move;
 	}
+	if (action.castling) {
+		position.makeMove(action.from, action.from,
+		                  action.to > action.from ? scid::database::KING
+		                                          : scid::database::QUEEN,
+		                  move);
+		return move;
+	}
 
 	const auto notation = action.longNotation();
 	const auto err =

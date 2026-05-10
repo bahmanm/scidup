@@ -15,7 +15,7 @@ namespace {
 constexpr int MOVE_CHUNKSIZE = 128;
 
 scid::core::MoveAction toMoveAction(simpleMoveT const& sm) {
-	return {sm.from, sm.to, sm.promote};
+	return {sm.from, sm.to, sm.promote, sm.isCastle() != 0};
 }
 
 simpleMoveT toLegacyMove(Position& position,
@@ -23,6 +23,11 @@ simpleMoveT toLegacyMove(Position& position,
 	simpleMoveT move = {};
 	if (action.isNull()) {
 		position.makeMove(action.from, action.to, PAWN, move);
+		return move;
+	}
+	if (action.castling) {
+		position.makeMove(action.from, action.from,
+		                  action.to > action.from ? KING : QUEEN, move);
 		return move;
 	}
 

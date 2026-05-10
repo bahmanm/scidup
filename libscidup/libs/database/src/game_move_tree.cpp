@@ -4,10 +4,8 @@
 #include "scidup/core/movetext_cursor.h"
 #include "scidup/core/position.h"
 #include "scidup/database/common.h"
-#include "movetext_projection.h"
 #include "movetree.h"
 
-#include <memory>
 #include <utility>
 
 namespace scid::database {
@@ -15,7 +13,7 @@ namespace scid::database {
 namespace {
 
 scid::core::MoveAction toCoreMoveAction(simpleMoveT const& sm) {
-	return {sm.from, sm.to, sm.promote};
+	return {sm.from, sm.to, sm.promote, sm.isCastle() != 0};
 }
 
 void restoreCoreCursor(scid::core::MovetextCursor& cursor,
@@ -252,18 +250,9 @@ errorT Game::addMove(simpleMoveT const& sm) {
 
 	scid::core::MovetextCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
-
-	currentMove_->setNext(newMove(END_MARKER));
-	currentMove_->marker = NO_MARKER;
-	currentMove_->moveData = sm;
-	const bool mainlineMove = varDepth_ == 0;
-	if (mainlineMove)
-		++numHalfMoves_;
-
-	currentPos_->DoSimpleMove(currentMove_->moveData);
-	currentMove_ = currentMove_->next;
 	coreCursor.addMove(toCoreMoveAction(sm));
 	coreLocation_ = coreCursor.location();
+	TEMP_syncLegacyMovetextFromCore();
 
 	// Invariants
 	ASSERT(currentMove_ && currentMove_->prev);
@@ -282,24 +271,14 @@ errorT Game::addVariation() {
 
 	scid::core::MovetextCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
-
-	auto newVar = newMove(START_MARKER);
-	newVar->setNext(newMove(END_MARKER));
-	currentMove_->appendChild(newVar);
-
-	// Move into variation
-	currentMove_ = newVar->next;
-	++varDepth_;
+	if (!coreCursor.addVariation())
+		return ERROR_NoVariation;
+	coreLocation_ = coreCursor.location();
+	TEMP_syncLegacyMovetextFromCore();
 
 	// Invariants
 	ASSERT(currentMove_ && currentMove_->prev);
 	ASSERT(!currentMove_->startMarker());
-	if (coreCursor.addVariation()) {
-		coreLocation_ = coreCursor.location();
-	} else {
-		TEMP_movetext::syncCoreMovetextAndLocation(
-		    coreGame_, firstMove_, currentMove_, coreLocation_);
-	}
 	return OK;
 }
 
@@ -309,20 +288,11 @@ errorT Game::addVariation() {
 errorT Game::promoteVariationToFirst() {
 	scid::core::MovetextCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
-
-	auto parent = currentMove_->getParent();
-	auto root = parent.first;
-	if (!root)
+	if (!coreCursor.promoteVariationToFirst())
 		return ERROR_NoVariation;
 
-	root->detachChild(parent.second);
-	root->insertChild(parent.second, 0);
-	if (coreCursor.promoteVariationToFirst()) {
-		coreLocation_ = coreCursor.location();
-	} else {
-		TEMP_movetext::syncCoreMovetextAndLocation(
-		    coreGame_, firstMove_, currentMove_, coreLocation_);
-	}
+	coreLocation_ = coreCursor.location();
+	TEMP_syncLegacyMovetextFromCore();
 	return OK;
 }
 
@@ -333,41 +303,11 @@ errorT Game::promoteVariationToFirst() {
 errorT Game::promoteVariationToMainline() {
 	scid::core::MovetextCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
-
-	auto parent = currentMove_->getParent();
-	auto root = parent.first;
-	if (!root)
+	if (!coreCursor.promoteVariationToMainline())
 		return ERROR_NoVariation;
-	if (parent.second->next->endMarker()) // Do not promote empty variations
-		return OK;
 
-	// Make the current variation the first variation
-	root->detachChild(parent.second);
-	root->insertChild(parent.second, 0);
-
-	// Swap the mainline with the current variation
-	root->swapLine(*parent.second->next);
-
-	ASSERT(varDepth_);
-	if (--varDepth_ == 0) { // Recalculate mainline half-move count.
-		const auto count_moves = [](auto move) {
-			int res = 0;
-			while (!move->endMarker()) {
-				++res;
-				move = move->next;
-			}
-			return res;
-		};
-		ASSERT(firstMove_->startMarker() && firstMove_->next);
-		numHalfMoves_ = count_moves(firstMove_->next);
-	}
-
-	if (coreCursor.promoteVariationToMainline()) {
-		coreLocation_ = coreCursor.location();
-	} else {
-		TEMP_movetext::syncCoreMovetextAndLocation(
-		    coreGame_, firstMove_, currentMove_, coreLocation_);
-	}
+	coreLocation_ = coreCursor.location();
+	TEMP_syncLegacyMovetextFromCore();
 	return OK;
 }
 
@@ -381,19 +321,11 @@ errorT Game::promoteVariationToMainline() {
 errorT Game::deleteVariation() {
 	scid::core::MovetextCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
-
-	auto parent = currentMove_->getParent();
-	auto root = parent.first;
-	if (!root || exitVariation() != OK)
+	if (!coreCursor.deleteVariation())
 		return ERROR_NoVariation;
 
-	root->detachChild(parent.second);
-	if (coreCursor.deleteVariation()) {
-		coreLocation_ = coreCursor.location();
-	} else {
-		TEMP_movetext::syncCoreMovetextAndLocation(
-		    coreGame_, firstMove_, currentMove_, coreLocation_);
-	}
+	coreLocation_ = coreCursor.location();
+	TEMP_syncLegacyMovetextFromCore();
 	return OK;
 }
 
@@ -409,15 +341,9 @@ void Game::truncate() {
 
 	scid::core::MovetextCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
-
-	auto endMove = newMove(END_MARKER);
-	currentMove_->prev->setNext(endMove);
-
-	currentMove_ = endMove;
-	if (varDepth_ == 0)
-		numHalfMoves_ = static_cast<ushort>(coreCursor.ply());
 	coreCursor.truncate();
 	coreLocation_ = coreCursor.location();
+	TEMP_syncLegacyMovetextFromCore();
 
 	// Invariants
 	ASSERT(currentMove_ && currentMove_->prev);
@@ -432,8 +358,8 @@ void Game::truncateStart() {
 	    // because the order of pieces is important when encoding to SCIDv4 format.
 	    char tempStr[256];
 	    currentPos_->PrintFEN(tempStr, sizeof(tempStr));
-	    auto pos = std::make_unique<Position>();
-	    if (pos->ReadFromFEN(tempStr) != OK)
+	    Position pos;
+	    if (pos.ReadFromFEN(tempStr) != OK)
 	        return;
 
     if (varDepth_ != 0 && promoteVariationToMainline() != OK)
@@ -442,20 +368,10 @@ void Game::truncateStart() {
 	scid::core::MovetextCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
 
-    numHalfMoves_ -= static_cast<ushort>(coreCursor.ply());
-    coreGame_.setStartPosition(*pos);
-    *currentPos_ = *pos;
-    firstMove_->setNext(currentMove_);
-
-    // Do all the moves to update moveData.pieceNum to the new start position.
-    do {
-        if (!currentMove_->startMarker() && !currentMove_->endMarker()) {
-            currentPos_->fillMove(currentMove_->moveData);
-        }
-    } while (nextPgn() == OK);
-    toStart();
+    coreGame_.setStartPosition(pos);
 	coreCursor.truncateBeforeCursor();
 	coreLocation_ = coreCursor.location();
+	TEMP_syncLegacyMovetextFromCore();
 }
 
 } // namespace scid::database

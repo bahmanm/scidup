@@ -38,7 +38,7 @@ void stripMoveSequence(MoveSequence& sequence,
 } // namespace
 
 bool MoveAction::isNull() const {
-	return from == to;
+	return from == to && !castling;
 }
 
 std::string MoveAction::longNotation() const {
