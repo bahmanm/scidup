@@ -99,6 +99,27 @@ TEST(CoreNotationTest, ReturnsEmptySanForIllegalAction) {
 	EXPECT_EQ("", scid::core::notation::nextSan(game, cursor.location()));
 }
 
+TEST(CoreNotationTest, WritesPartialMoveListFromMainlineStart) {
+	scid::core::Game game;
+	game.appendMainlineMove(quiet(scid::database::D2, scid::database::D4));
+	game.appendMainlineMove(quiet(scid::database::D7, scid::database::D5));
+	game.appendMainlineMove(quiet(scid::database::C2, scid::database::C4));
+
+	EXPECT_EQ("1. d4 d5 2. c4",
+	          scid::core::notation::partialMoveList(game, 3));
+}
+
+TEST(CoreNotationTest, WritesPartialMoveListWithInitialBlackMoveNumber) {
+	scid::core::Game game;
+	ASSERT_EQ(scid::database::OK,
+	          game.setStartFen("8/8/8/8/2p5/1k1p4/p4N2/2K5 b - - 0 198"));
+	game.appendMainlineMove(
+	    {scid::database::A2, scid::database::A1, scid::database::QUEEN});
+
+	EXPECT_EQ("198... a1=Q+",
+	          scid::core::notation::partialMoveList(game, 1));
+}
+
 TEST(CoreNotationTest, WritesCurrentPositionUciFromVariationCursor) {
 	scid::core::Game game;
 	auto& first = game.appendMainlineMove(

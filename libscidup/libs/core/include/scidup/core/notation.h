@@ -15,6 +15,7 @@ std::string previousMoveUci(const Game& game, MovetextLocation location);
 std::string nextMoveUci(const Game& game, MovetextLocation location);
 std::string previousSan(const Game& game, MovetextLocation location);
 std::string nextSan(const Game& game, MovetextLocation location);
+std::string partialMoveList(const Game& game, std::size_t plyCount);
 
 } // namespace notation
 } // namespace scid::core

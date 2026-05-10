@@ -152,4 +152,45 @@ std::string nextSan(const Game& game, MovetextLocation location) {
 	return makeSan(*position, *move, flag);
 }
 
+std::string partialMoveList(const Game& game, std::size_t plyCount) {
+	std::string out;
+	auto position = startPosition(game);
+	GameCursor cursor(game);
+
+	for (std::size_t i = 0; i < plyCount && !cursor.isAtLineEnd(); ++i) {
+		const auto* move = cursor.nextMove();
+		assert(move);
+
+		std::string entry;
+		if (i == 0 || position.GetToMove() == scid::database::WHITE) {
+			entry += std::to_string(position.GetFullMoveCount());
+			entry += position.GetToMove() == scid::database::WHITE ? "." : "...";
+			entry.push_back(' ');
+		}
+
+		auto afterMove = cursor;
+		[[maybe_unused]] const bool advanced = afterMove.next();
+		assert(advanced);
+		const auto flag = afterMove.isAtLineEnd()
+		                      ? scid::database::SAN_MATETEST
+		                      : scid::database::SAN_CHECKTEST;
+		const auto san = makeSan(position, *move, flag);
+		if (san.empty())
+			break;
+		entry += san;
+
+		if (!out.empty())
+			out.push_back(' ');
+		out += entry;
+
+		auto simpleMove = toSimpleMove(position, move->action);
+		if (!simpleMove)
+			break;
+		position.DoSimpleMove(*simpleMove);
+		cursor.next();
+	}
+
+	return out;
+}
+
 } // namespace scid::core::notation

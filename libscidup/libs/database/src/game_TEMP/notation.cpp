@@ -44,33 +44,8 @@ std::string game_notation::currentPositionUci(const Game& game) {
 
 errorT game_notation::writePartialMoveList(Game& game, DString& out,
                                            uint plyCount) {
-    // TODO [Game]: Rebuild this UI compatibility helper on GameCursor plus SAN
-    // notation once cursor traversal is no longer stored directly on Game.
-    // First, copy the relevant data so we can leave the game state
-    // unaltered:
-    auto location = game.currentLocation();
-
-    game.toStart();
-    char temp [80];
-    for (uint i=0; i < plyCount; i++) {
-        if (game.isAtEnd()) {
-            break;
-        }
-        const auto* pos = game.currentPos();
-        if (i != 0) { out.Append (" "); }
-        if (i == 0  ||  pos->GetToMove() == WHITE) {
-            std::snprintf(temp, sizeof(temp), "%d%s", pos->GetFullMoveCount(),
-                     (pos->GetToMove() == WHITE ? "." : "..."));
-            out.Append (temp);
-        }
-        // add one space for indenting to work out right
-        out.Append (" ");
-        out.Append (game_notation::nextSan(game).c_str());
-        game.next();
-    }
-
-    // Now reconstruct the original game state:
-    game.restoreLocation(location);
+	out.Append(scid::core::notation::partialMoveList(game.coreGame(), plyCount)
+	               .c_str());
     return OK;
 }
 
