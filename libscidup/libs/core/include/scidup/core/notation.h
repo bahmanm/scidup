@@ -2,6 +2,18 @@
 
 #include "scidup/core/primitives.h"
 #include <cstddef>
+#include <string>
+
+namespace scid::core {
+class Game;
+class MovetextLocation;
+
+namespace notation {
+
+std::string currentPositionUci(const Game& game, MovetextLocation location);
+
+} // namespace notation
+} // namespace scid::core
 
 namespace scid::database {
 

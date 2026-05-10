@@ -1,0 +1,73 @@
+#include "scidup/core/game.h"
+#include "scidup/core/game_cursor.h"
+#include "scidup/core/notation.h"
+
+#include <gtest/gtest.h>
+
+namespace {
+
+scid::core::MoveAction quiet(scid::database::squareT from,
+                             scid::database::squareT to) {
+	return {from, to, scid::database::EMPTY};
+}
+
+TEST(CoreNotationTest, WritesCurrentPositionUciFromMainlineCursor) {
+	scid::core::Game game;
+	game.appendMainlineMove(quiet(scid::database::D2, scid::database::D4));
+	game.appendMainlineMove(quiet(scid::database::D7, scid::database::D5));
+	scid::core::GameCursor cursor(game);
+	ASSERT_TRUE(cursor.toPly(2));
+
+	EXPECT_EQ("position startpos moves d2d4 d7d5",
+	          scid::core::notation::currentPositionUci(game,
+	                                                   cursor.location()));
+}
+
+TEST(CoreNotationTest, WritesCurrentPositionUciFromVariationCursor) {
+	scid::core::Game game;
+	auto& first = game.appendMainlineMove(
+	    quiet(scid::database::D2, scid::database::D4));
+	first.childVariations.emplace_back().line.moves.push_back(
+	    {quiet(scid::database::E2, scid::database::E4), "e4", {}, {}});
+	first.childVariations[0].line.moves.push_back(
+	    {quiet(scid::database::E7, scid::database::E5), "e5", {}, {}});
+
+	scid::core::GameCursor cursor(game);
+	ASSERT_TRUE(cursor.enterVariation(0));
+	ASSERT_TRUE(cursor.next());
+	ASSERT_TRUE(cursor.next());
+
+	EXPECT_EQ("position startpos moves e2e4 e7e5",
+	          scid::core::notation::currentPositionUci(game,
+	                                                   cursor.location()));
+}
+
+TEST(CoreNotationTest, WritesCurrentPositionUciFromNonStandardStart) {
+	scid::core::Game game;
+	ASSERT_EQ(scid::database::OK,
+	          game.setStartFen("8/8/8/8/2p5/1k1p4/p4N2/2K5 w - - 0 198"));
+	game.appendMainlineMove(quiet(scid::database::C1, scid::database::D2));
+	scid::core::GameCursor cursor(game);
+	ASSERT_TRUE(cursor.next());
+
+	EXPECT_EQ(
+	    "position fen 8/8/8/8/2p5/1k1p4/p4N2/2K5 w - - 0 198 moves c1d2",
+	    scid::core::notation::currentPositionUci(game, cursor.location()));
+}
+
+TEST(CoreNotationTest, ResetsCurrentPositionUciAtNullMove) {
+	scid::core::Game game;
+	game.appendMainlineMove(quiet(scid::database::E2, scid::database::E4));
+	game.appendMainlineMove({});
+	game.appendMainlineMove(quiet(scid::database::G1, scid::database::F3));
+	scid::core::GameCursor cursor(game);
+	ASSERT_TRUE(cursor.toPly(3));
+
+	EXPECT_EQ("position fen "
+	          "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 1 2"
+	          " moves g1f3",
+	          scid::core::notation::currentPositionUci(game,
+	                                                   cursor.location()));
+}
+
+} // namespace

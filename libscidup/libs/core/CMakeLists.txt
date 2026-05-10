@@ -9,6 +9,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_cursor.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/movetext_cursor.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/movetext_location.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/notation.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/position.cpp" )
 
