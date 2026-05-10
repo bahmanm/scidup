@@ -18,13 +18,20 @@ bool moveCoreCursorToCurrentLocation(const scid::core::Game& coreGame,
 } // namespace
 
 Game::GameSavedPos Game::currentLocation() const {
-	return GameSavedPos{*currentPos_, currentMove_, varDepth_};
+	GameSavedPos result{*currentPos_, currentMove_, varDepth_, std::nullopt};
+	scid::core::GameCursor cursor(coreGame_);
+	if (moveCoreCursorToCurrentLocation(coreGame_, firstMove_, currentMove_,
+	                                    cursor))
+		result.coreLocation = cursor.location();
+	return result;
 }
 
 void Game::restoreLocation(const GameSavedPos& savedPos) {
 	*currentPos_ = savedPos.pos;
 	currentMove_ = savedPos.move;
 	varDepth_ = savedPos.varDepth;
+	// TODO [Game]: Use savedPos.coreLocation once database::Game owns a core
+	// cursor instead of restoring legacy moveT pointers directly.
 }
 
 Position* Game::currentPos() {

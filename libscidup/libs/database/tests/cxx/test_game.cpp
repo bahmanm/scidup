@@ -480,6 +480,28 @@ TEST(Test_Game, stateQueriesMirrorCoreCursorForProgrammaticVariation) {
 	EXPECT_FALSE(game.isAtEnd());
 }
 
+TEST(Test_Game, savedLocationRestoresProgrammaticVariationState) {
+	scid::database::Game game;
+
+	ASSERT_EQ(scid::database::OK,
+	          game.addMove(makeCurrentMove(game, scid::database::E2,
+	                                       scid::database::E4)));
+	ASSERT_EQ(scid::database::OK, game.addVariation());
+	ASSERT_EQ(scid::database::OK,
+	          game.addMove(makeCurrentMove(game, scid::database::D2,
+	                                       scid::database::D4)));
+
+	auto location = game.currentLocation();
+	ASSERT_EQ(scid::database::OK, game.exitVariation());
+	ASSERT_TRUE(game.isAtStart());
+
+	game.restoreLocation(location);
+	EXPECT_EQ(1U, game.currentPly());
+	EXPECT_EQ(1U, game.variationLevel());
+	EXPECT_TRUE(game.isAtVariationEnd());
+	EXPECT_FALSE(game.isAtEmptyVariation());
+}
+
 TEST(Test_Game, coreGameMoveMetadataMirrorsProgrammaticNagMutation) {
 	scid::database::Game game;
 

@@ -20,6 +20,7 @@
 #include "scidup/core/game_result.h"
 #include "scidup/database/common.h"
 #include "scidup/core/date.h"
+#include "scidup/core/game_cursor.h"
 #include "scidup/eco/code.h"
 #include "scidup/core/nags.h"
 #include "scidup/database/game_TEMP/search.h"
@@ -28,6 +29,7 @@
 #include "scidup/core/position.h"
 #include <forward_list>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -141,6 +143,7 @@ private:
         Position pos;
         moveT* move;
         uint varDepth;
+        std::optional<scid::core::GameCursor::Location> coreLocation;
     };
 
 public:
