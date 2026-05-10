@@ -10,11 +10,6 @@ class MovetextCursor;
 
 class MovetextLocation {
 public:
-	MovetextLocation() = default;
-
-	bool operator==(const MovetextLocation&) const = default;
-
-private:
 	struct Step {
 		bool operator==(const Step&) const = default;
 
@@ -22,6 +17,14 @@ private:
 		std::size_t variationIndex = 0;
 	};
 
+	MovetextLocation() = default;
+
+	bool operator==(const MovetextLocation&) const = default;
+
+	const std::vector<Step>& path() const { return path_; }
+	std::size_t nextIndex() const { return nextIndex_; }
+
+private:
 	MovetextLocation(std::vector<Step> path, std::size_t nextIndex);
 
 	std::vector<Step> path_;

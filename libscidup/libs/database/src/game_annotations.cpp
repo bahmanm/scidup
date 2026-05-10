@@ -2,155 +2,118 @@
 
 #include "scidup/core/movetext_cursor.h"
 #include "scidup/database/common.h"
-#include "movetext_projection.h"
 #include "movetree.h"
 
-#include <utility>
+#include <algorithm>
 
 namespace scid::database {
 
 namespace {
 
-bool syncCoreMoveMetadata(scid::core::Game& coreGame,
-                          scid::core::MovetextLocation location,
-                          const moveT* legacyMove) {
-	if (!legacyMove || legacyMove->startMarker() || legacyMove->endMarker())
-		return false;
-
-	scid::core::MovetextCursor cursor(coreGame);
-	[[maybe_unused]] const bool restored = cursor.restore(location);
-	ASSERT(restored);
-
-	scid::core::MoveMetadata metadata;
-	metadata.comment = legacyMove->comment;
-	metadata.nags.assign(legacyMove->nags,
-	                      legacyMove->nags + legacyMove->nagCount);
-	return cursor.setPreviousMoveMetadata(std::move(metadata));
+bool isMoveNagValue(byte nag) {
+	return nag >= 1 && nag <= 6;
 }
 
-bool syncCoreComment(scid::core::Game& coreGame,
-                     scid::core::MovetextLocation location,
-                     const moveT* firstMove,
-                     const moveT* legacyMove) {
-	if (!legacyMove)
-		return false;
-
-	if (legacyMove == firstMove) {
-		coreGame.setInitialComment(legacyMove->comment);
-		return true;
-	}
-
-	if (!legacyMove->startMarker()) {
-		return syncCoreMoveMetadata(coreGame, location, legacyMove);
-	}
-
-	scid::core::MovetextCursor cursor(coreGame);
-	[[maybe_unused]] const bool restored = cursor.restore(location);
-	ASSERT(restored);
-
-	return cursor.setCurrentVariationInitialComment(legacyMove->comment);
+bool isPositionNagValue(byte nag) {
+	return nag >= 10 && nag <= 21;
 }
 
 } // namespace
 
 // TODO [Game]: Move NAG/comment storage behind Move.metadata once the core
-// Move shape exists. These methods are compatibility accessors around legacy
-// moveT fields at the current cursor location.
+// Move shape exists. These methods write core metadata first, then rebuild the
+// legacy moveT cache for compatibility readers.
 void Game::clearNags() {
-	currentMove_->prev->nagCount = 0;
-	currentMove_->prev->nags[0] = 0;
-	if (!syncCoreMoveMetadata(coreGame_, coreLocation_, currentMove_->prev))
-		TEMP_movetext::syncCoreMovetextAndLocation(
-		    coreGame_, firstMove_, currentMove_, coreLocation_);
+	scid::core::MovetextCursor cursor(coreGame_);
+	[[maybe_unused]] const bool restored = cursor.restore(coreLocation_);
+	ASSERT(restored);
+	if (auto* move = cursor.previousMove()) {
+		move->metadata.nags.clear();
+		TEMP_syncLegacyMovetextFromCore();
+	}
 }
 
 errorT Game::addNag (byte nag) {
-    moveT * m = currentMove_->prev;
-    if (m->nagCount + 1 >= MAX_NAGS) { return ERROR_GameFull; }
+	scid::core::MovetextCursor cursor(coreGame_);
+	[[maybe_unused]] const bool restored = cursor.restore(coreLocation_);
+	ASSERT(restored);
+	auto* move = cursor.previousMove();
+	if (!move)
+		return OK;
+	auto& nags = move->metadata.nags;
+
+    if (nags.size() + 1 >= MAX_NAGS) { return ERROR_GameFull; }
     if (nag == 0) { /* Nags cannot be zero! */ return OK; }
 	// If it is a move nag replace an existing
 	if( nag >= 1 && nag <= 6)
-		for( int i=0; i<m->nagCount; i++)
-			if( m->nags[i] >= 1 && m->nags[i] <= 6)
+		for(auto& existingNag : nags)
+			if(isMoveNagValue(existingNag))
 			{
-				m->nags[i] = nag;
-				if (!syncCoreMoveMetadata(coreGame_, coreLocation_, m))
-					TEMP_movetext::syncCoreMovetextAndLocation(
-					    coreGame_, firstMove_, currentMove_, coreLocation_);
+				existingNag = nag;
+				TEMP_syncLegacyMovetextFromCore();
 				return OK;
 			}
 	// If it is a position nag replace an existing
 	if( nag >= 10 && nag <= 21)
-		for( int i=0; i<m->nagCount; i++)
-			if( m->nags[i] >= 10 && m->nags[i] <= 21)
+		for(auto& existingNag : nags)
+			if(isPositionNagValue(existingNag))
 			{
-				m->nags[i] = nag;
-				if (!syncCoreMoveMetadata(coreGame_, coreLocation_, m))
-					TEMP_movetext::syncCoreMovetextAndLocation(
-					    coreGame_, firstMove_, currentMove_, coreLocation_);
+				existingNag = nag;
+				TEMP_syncLegacyMovetextFromCore();
 				return OK;
 			}
 	if( nag >= 1 && nag <= 6)
 	{
 		// Put Move Nags at the beginning
-		for( int i=m->nagCount; i>0; i--)  m->nags[i] =  m->nags[i-1];
-		m->nags[0] = nag;
+		nags.insert(nags.begin(), nag);
 	}
 	else
-		m->nags[m->nagCount] = nag;
-	m->nagCount += 1;
-	m->nags[m->nagCount] = 0;
-	if (!syncCoreMoveMetadata(coreGame_, coreLocation_, m))
-		TEMP_movetext::syncCoreMovetextAndLocation(
-		    coreGame_, firstMove_, currentMove_, coreLocation_);
+		nags.push_back(nag);
+	TEMP_syncLegacyMovetextFromCore();
     return OK;
 }
 
 errorT Game::removeNag (bool isMoveNag) {
-    moveT * m = currentMove_->prev;
-	if( isMoveNag)
-	{
-		for( int i=0; i<m->nagCount; i++)
-			if( m->nags[i] >= 1 && m->nags[i] <= 6)
-			{
-				m->nagCount -= 1;
-				for( int j=i; j<m->nagCount; j++)  m->nags[j] =  m->nags[j+1];
-				m->nags[m->nagCount] = 0;
-				if (!syncCoreMoveMetadata(coreGame_, coreLocation_, m))
-					TEMP_movetext::syncCoreMovetextAndLocation(
-					    coreGame_, firstMove_, currentMove_, coreLocation_);
-				return OK;
-			}
-	}
-	else
-	{
-		for( int i=0; i<m->nagCount; i++)
-			if( m->nags[i] >= 10 && m->nags[i] <= 21)
-			{
-				m->nagCount -= 1;
-				for( int j=i; j<m->nagCount; j++)  m->nags[j] =  m->nags[j+1];
-				m->nags[m->nagCount] = 0;
-				if (!syncCoreMoveMetadata(coreGame_, coreLocation_, m))
-					TEMP_movetext::syncCoreMovetextAndLocation(
-					    coreGame_, firstMove_, currentMove_, coreLocation_);
-				return OK;
-			}
+	scid::core::MovetextCursor cursor(coreGame_);
+	[[maybe_unused]] const bool restored = cursor.restore(coreLocation_);
+	ASSERT(restored);
+	auto* move = cursor.previousMove();
+	if (!move)
+		return OK;
+
+	auto& nags = move->metadata.nags;
+	auto match = [isMoveNag](byte nag) {
+		return isMoveNag ? isMoveNagValue(nag)
+		                 : isPositionNagValue(nag);
+	};
+	auto it = std::find_if(nags.begin(), nags.end(), match);
+	if (it != nags.end()) {
+		nags.erase(it);
+		TEMP_syncLegacyMovetextFromCore();
 	}
     return OK;
 }
 
 
 void Game::setMoveComment(const char* comment) {
-	ASSERT(currentMove_ != NULL && currentMove_->prev != NULL);
-	moveT* m = currentMove_->prev;
-	if (comment == NULL) {
-		m->comment.clear();
+	const std::string_view value = comment ? std::string_view(comment)
+	                                       : std::string_view();
+	scid::core::MovetextCursor cursor(coreGame_);
+	[[maybe_unused]] const bool restored = cursor.restore(coreLocation_);
+	ASSERT(restored);
+	if (cursor.isAtLineStart()) {
+		if (cursor.variationDepth() == 0) {
+			coreGame_.setInitialComment(value);
+		} else {
+			[[maybe_unused]] const bool updated =
+			    cursor.setCurrentVariationInitialComment(value);
+			ASSERT(updated);
+		}
 	} else {
-		m->comment = comment;
-		// CommentsFlag = 1;
+		auto* move = cursor.previousMove();
+		ASSERT(move);
+		move->metadata.comment.assign(value.begin(), value.end());
 	}
-	if (!syncCoreComment(coreGame_, coreLocation_, firstMove_, m))
-		TEMP_movetext::syncCoreMovetextAndLocation(
-		    coreGame_, firstMove_, currentMove_, coreLocation_);
+	TEMP_syncLegacyMovetextFromCore();
 }
 } // namespace scid::database
