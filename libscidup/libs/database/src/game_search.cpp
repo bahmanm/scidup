@@ -6,6 +6,7 @@
 #include "movetree.h"
 
 #include <array>
+#include <cstddef>
 
 namespace scid::database {
 
@@ -216,6 +217,11 @@ bool varExactMatchLine(scid::core::MoveSequence const& line,
            positionMatches(searchPos, currentPosition, searchType,
                            whitePawnFyles, blackPawnFyles);
 }
+
+Position startPositionFor(const scid::core::Game& game) {
+    return game.startPosition() ? *game.startPosition()
+                                : Position::getStdStart();
+}
 } // end of anonymous namespace
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -366,13 +372,15 @@ Game::exactMatch (Position * searchPos, ByteBuffer * buf,
     // the necessary moves:
     errorT err = OK;
     Position decodedPosition;
-    Position* currentPosition = currentPos_.get();
+    Position* currentPosition = &decodedPosition;
+    const scid::core::MoveSequence* memoryLine = nullptr;
+    std::size_t memoryMoveIndex = 0;
 
     if (buf == NULL) {
-        toStart();
+        decodedPosition = startPositionFor(coreGame_);
+        memoryLine = &coreGame_.movetext().mainline;
     } else {
         err = decodeSearchStart(*buf, decodedPosition);
-        currentPosition = &decodedPosition;
     }
 
     uint search_whiteHPawns = 0;
@@ -514,15 +522,27 @@ Game::exactMatch (Position * searchPos, ByteBuffer * buf,
         }
 
     Move_Forward:
-        if (buf == NULL) {
-            err = next();
-        } else {
+        {
             simpleMoveT nextMove;
-            auto [errMove, val] = buf->nextLineMove();
-            err = errMove;
-            if (err == OK) {
-                err = decodeMove(buf, &nextMove, val, currentPosition);
+            if (buf == NULL) {
+                if (memoryLine == nullptr ||
+                    memoryMoveIndex >= memoryLine->moves.size()) {
+                    err = ERROR_EndOfMoveList;
+                } else {
+                    nextMove = toSimpleMove(
+                        *currentPosition,
+                        memoryLine->moves[memoryMoveIndex].action);
+                    memoryMoveIndex++;
+                    err = OK;
+                }
+            } else {
+                auto [errMove, val] = buf->nextLineMove();
+                err = errMove;
+                if (err == OK) {
+                    err = decodeMove(buf, &nextMove, val, currentPosition);
+                }
             }
+
             if (err == OK) {
                 currentPosition->DoSimpleMove(nextMove);
                 if (doHomePawnChecks) {
@@ -557,9 +577,7 @@ Game::varExactMatch (Position * searchPos, gameExactMatchT searchType)
     const auto blackPawnFyles = searchType == GAME_EXACT_MATCH_Fyles
                                     ? pawnFylesFor(*searchPos, BP)
                                     : std::array<uint, 8>{};
-    Position startPosition = coreGame_.startPosition()
-                                 ? *coreGame_.startPosition()
-                                 : Position::getStdStart();
+    Position startPosition = startPositionFor(coreGame_);
     return varExactMatchLine(coreGame_.movetext().mainline, startPosition,
                              searchPos, searchType, whitePawnFyles,
                              blackPawnFyles);
