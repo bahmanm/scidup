@@ -54,6 +54,7 @@ public:
 	bool promoteVariationToMainline();
 	bool deleteVariation();
 	void truncate();
+	void truncateBeforeCursor();
 
 private:
 	MoveSequence& currentLine();

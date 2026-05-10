@@ -410,6 +410,11 @@ void Game::truncateStart() {
     if (varDepth_ != 0 && promoteVariationToMainline() != OK)
 		return;
 
+	scid::core::MovetextCursor coreCursor(coreGame_);
+	const bool coreCursorReady =
+	    legacy_movetext::moveCursorToLegacyLocation(coreCursor, firstMove_,
+	                                                currentMove_);
+
     numHalfMoves_ -= currentPly();
     coreGame_.setStartPosition(*pos);
     *currentPos_ = *pos;
@@ -422,7 +427,13 @@ void Game::truncateStart() {
         }
     } while (nextPgn() == OK);
     toStart();
-    TEMP_syncCoreMovetext();
+	if (coreCursorReady) {
+		coreCursor.truncateBeforeCursor();
+	} else {
+		// TODO [Game]: Remove this fallback once legacy cursor state is
+		// represented directly by MovetextCursor.
+		TEMP_syncCoreMovetext();
+	}
 }
 
 } // namespace scid::database

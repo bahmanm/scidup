@@ -275,4 +275,43 @@ TEST(CoreMovetextCursorTest, RefusesToPromoteEmptyVariationToMainlineAsNoOp) {
 	          game.movetext().mainline.moves[0].action.longNotation());
 }
 
+TEST(CoreMovetextCursorTest, TruncatesBeforeMainlineCursor) {
+	scid::core::Game game;
+	scid::core::MovetextCursor cursor(game);
+
+	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.addMove(quiet(scid::database::E7, scid::database::E5));
+	cursor.addMove(quiet(scid::database::G1, scid::database::F3));
+	ASSERT_TRUE(cursor.toPly(1));
+
+	cursor.truncateBeforeCursor();
+
+	EXPECT_EQ(0U, cursor.variationDepth());
+	EXPECT_TRUE(cursor.isAtGameStart());
+	auto const& mainline = game.movetext().mainline.moves;
+	ASSERT_EQ(2U, mainline.size());
+	EXPECT_EQ("e7e5", mainline[0].action.longNotation());
+	EXPECT_EQ("g1f3", mainline[1].action.longNotation());
+}
+
+TEST(CoreMovetextCursorTest, TruncatesBeforeVariationCursor) {
+	scid::core::Game game;
+	scid::core::MovetextCursor cursor(game);
+
+	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.toStart();
+	ASSERT_NE(nullptr, cursor.addVariation());
+	cursor.addMove(quiet(scid::database::C2, scid::database::C4));
+	cursor.addMove(quiet(scid::database::C7, scid::database::C5));
+	ASSERT_TRUE(cursor.previous());
+
+	cursor.truncateBeforeCursor();
+
+	EXPECT_EQ(0U, cursor.variationDepth());
+	EXPECT_TRUE(cursor.isAtGameStart());
+	auto const& mainline = game.movetext().mainline.moves;
+	ASSERT_EQ(1U, mainline.size());
+	EXPECT_EQ("c7c5", mainline[0].action.longNotation());
+}
+
 } // namespace

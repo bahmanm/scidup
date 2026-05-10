@@ -314,6 +314,19 @@ void MovetextCursor::truncate() {
 	line.moves.erase(line.moves.begin() + nextIndex_, line.moves.end());
 }
 
+void MovetextCursor::truncateBeforeCursor() {
+	auto& line = currentLine();
+	std::vector<Move> suffix;
+	suffix.reserve(line.moves.size() - nextIndex_);
+	for (auto i = nextIndex_; i < line.moves.size(); ++i)
+		suffix.push_back(std::move(line.moves[i]));
+
+	game_.movetext_.mainline.moves = std::move(suffix);
+	currentLine_ = &game_.movetext_.mainline;
+	parents_.clear();
+	nextIndex_ = 0;
+}
+
 MoveSequence& MovetextCursor::currentLine() {
 	return *currentLine_;
 }
