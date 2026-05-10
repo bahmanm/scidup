@@ -17,7 +17,7 @@
 #include "scidup/database/game_id.h"
 #include "game_positions.h"
 #include "scidup/database/scidbase.h"
-#include "scidup/database/game_TEMP/pgnparse.h"
+#include "scidup/database/pgnparse.h"
 #include <string>
 #include <vector>
 #include <map>

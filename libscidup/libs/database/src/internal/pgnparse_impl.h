@@ -3,7 +3,7 @@
 
 #include "pgn_lexer.h"
 #include "nag_format.h"
-#include "scidup/database/game_TEMP/pgnparse.h"
+#include "scidup/database/pgnparse.h"
 #include "scidup/database/misc.h"
 #include <algorithm>
 #include <optional>

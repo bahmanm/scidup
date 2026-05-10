@@ -38,7 +38,6 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/common.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_id.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_TEMP/pgnparse.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/gameview.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/hfilter.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/index.h"
@@ -46,6 +45,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/matsig.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/misc.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/namebase.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/pgnparse.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/scidbase.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/searchpos.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/tree.h" )
