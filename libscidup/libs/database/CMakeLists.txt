@@ -17,7 +17,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/move_tree.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/movetext_cursor_bridge.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/movetext_projection.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/state.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/game_state.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/index.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/legacy_pgn.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/matsig.cpp"
