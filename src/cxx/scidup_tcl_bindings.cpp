@@ -34,7 +34,6 @@
 #include "scidup/database/game.h"
 #include "scidup/database/game_TEMP/legacy_pgn.h"
 #include "scidup/database/game_TEMP/nag_format.h"
-#include "scidup/database/game_TEMP/notation.h"
 #include "scidup/database/game_TEMP/piece_translation.h"
 #include "scidup/database/game_TEMP/search.h"
 #include "scidup/database/game_TEMP/storage.h"

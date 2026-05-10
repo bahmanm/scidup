@@ -1,7 +1,7 @@
 #pragma once
 
+#include "scidup/core/notation.h"
 #include "scidup/database/game.h"
-#include "scidup/database/game_TEMP/notation.h"
 
 #include <cstdint>
 #include <string>
@@ -56,7 +56,8 @@ inline void collectPositions(Game& game, TCont& dest) {
 			gamepos.NAGs.push_back(*nag);
 		}
 		gamepos.comment = game.moveComment();
-		gamepos.lastMoveSAN = game_notation::previousSan(game);
+		gamepos.lastMoveSAN = scid::core::notation::previousSan(
+		    game.coreGame(), game.coreLocation());
 
 	} while (game.nextPgn() == OK);
 }
