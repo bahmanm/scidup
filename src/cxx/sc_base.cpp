@@ -20,7 +20,7 @@
 #include "dbasepool.h"
 #include "game_positions.h"
 #include "scidup/database/game_id.h"
-#include "scidup/database/game_TEMP/nag_format.h"
+#include "nag_format.h"
 #include "scidup/database/misc.h"
 #include "scidup/database/scidbase.h"
 #include "scidup/eco/code.h"

@@ -2,7 +2,7 @@
 #define SCIDUP_DATABASE_INTERNAL_PGNPARSE_IMPL_H
 
 #include "pgn_lexer.h"
-#include "scidup/database/game_TEMP/nag_format.h"
+#include "nag_format.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
 #include "scidup/database/misc.h"
 #include <algorithm>

@@ -1,4 +1,4 @@
-#include "scidup/database/game_TEMP/nag_format.h"
+#include "nag_format.h"
 
 #include "scidup/core/nags.h"
 #include "scidup/database/common.h"

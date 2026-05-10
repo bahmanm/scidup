@@ -20,9 +20,9 @@
 #include "scidup/core/notation.h"
 #include "scidup/core/pgn/encode.h"
 #include "scidup/database/game_TEMP/legacy_pgn.h"
-#include "scidup/database/game_TEMP/nag_format.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
 #include "scidup/database/scidbase.h"
+#include "nag_format.h"
 #include "piece_translation.h"
 #include "pgnparse_impl.h"
 #include <algorithm>

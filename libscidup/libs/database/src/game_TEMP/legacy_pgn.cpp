@@ -1,4 +1,4 @@
-#include "scidup/database/game_TEMP/nag_format.h"
+#include "nag_format.h"
 #include "scidup/database/game_TEMP/legacy_pgn.h"
 #include "piece_translation.h"
 #include "scidup/database/common.h"
