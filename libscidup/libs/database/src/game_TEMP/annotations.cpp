@@ -66,7 +66,8 @@ void Game::clearNags() {
 	currentMove_->prev->nagCount = 0;
 	currentMove_->prev->nags[0] = 0;
 	if (!syncCoreMoveMetadata(coreGame_, coreLocation_, currentMove_->prev))
-		TEMP_movetext::syncCoreMovetext(coreGame_, firstMove_);
+		TEMP_movetext::syncCoreMovetextAndLocation(
+		    coreGame_, firstMove_, currentMove_, coreLocation_);
 }
 
 byte* Game::nags() const {
@@ -107,7 +108,8 @@ errorT Game::addNag (byte nag) {
 			{
 				m->nags[i] = nag;
 				if (!syncCoreMoveMetadata(coreGame_, coreLocation_, m))
-					TEMP_movetext::syncCoreMovetext(coreGame_, firstMove_);
+					TEMP_movetext::syncCoreMovetextAndLocation(
+					    coreGame_, firstMove_, currentMove_, coreLocation_);
 				return OK;
 			}
 	// If it is a position nag replace an existing
@@ -117,7 +119,8 @@ errorT Game::addNag (byte nag) {
 			{
 				m->nags[i] = nag;
 				if (!syncCoreMoveMetadata(coreGame_, coreLocation_, m))
-					TEMP_movetext::syncCoreMovetext(coreGame_, firstMove_);
+					TEMP_movetext::syncCoreMovetextAndLocation(
+					    coreGame_, firstMove_, currentMove_, coreLocation_);
 				return OK;
 			}
 	if( nag >= 1 && nag <= 6)
@@ -131,7 +134,8 @@ errorT Game::addNag (byte nag) {
 	m->nagCount += 1;
 	m->nags[m->nagCount] = 0;
 	if (!syncCoreMoveMetadata(coreGame_, coreLocation_, m))
-		TEMP_movetext::syncCoreMovetext(coreGame_, firstMove_);
+		TEMP_movetext::syncCoreMovetextAndLocation(
+		    coreGame_, firstMove_, currentMove_, coreLocation_);
     return OK;
 }
 
@@ -146,7 +150,8 @@ errorT Game::removeNag (bool isMoveNag) {
 				for( int j=i; j<m->nagCount; j++)  m->nags[j] =  m->nags[j+1];
 				m->nags[m->nagCount] = 0;
 				if (!syncCoreMoveMetadata(coreGame_, coreLocation_, m))
-					TEMP_movetext::syncCoreMovetext(coreGame_, firstMove_);
+					TEMP_movetext::syncCoreMovetextAndLocation(
+					    coreGame_, firstMove_, currentMove_, coreLocation_);
 				return OK;
 			}
 	}
@@ -159,7 +164,8 @@ errorT Game::removeNag (bool isMoveNag) {
 				for( int j=i; j<m->nagCount; j++)  m->nags[j] =  m->nags[j+1];
 				m->nags[m->nagCount] = 0;
 				if (!syncCoreMoveMetadata(coreGame_, coreLocation_, m))
-					TEMP_movetext::syncCoreMovetext(coreGame_, firstMove_);
+					TEMP_movetext::syncCoreMovetextAndLocation(
+					    coreGame_, firstMove_, currentMove_, coreLocation_);
 				return OK;
 			}
 	}
@@ -177,6 +183,7 @@ void Game::setMoveComment(const char* comment) {
 		// CommentsFlag = 1;
 	}
 	if (!syncCoreComment(coreGame_, coreLocation_, firstMove_, m))
-		TEMP_movetext::syncCoreMovetext(coreGame_, firstMove_);
+		TEMP_movetext::syncCoreMovetextAndLocation(
+		    coreGame_, firstMove_, currentMove_, coreLocation_);
 }
 } // namespace scid::database

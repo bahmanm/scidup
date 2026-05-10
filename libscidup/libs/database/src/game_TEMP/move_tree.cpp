@@ -4,7 +4,6 @@
 #include "scidup/core/movetext_cursor.h"
 #include "scidup/core/position.h"
 #include "scidup/database/common.h"
-#include "movetext_cursor_bridge.h"
 #include "movetext_projection.h"
 #include "movetree.h"
 
@@ -27,17 +26,6 @@ bool restoreCoreCursor(scid::core::MovetextCursor& cursor,
 bool restoreCoreCursor(scid::core::GameCursor& cursor,
                        scid::core::MovetextLocation location) {
 	return cursor.restore(location);
-}
-
-void TEMP_syncCoreMovetextAndLocation(scid::core::Game& coreGame,
-                                      const moveT* firstMove,
-                                      const moveT* currentMove,
-                                      scid::core::MovetextLocation& location) {
-	TEMP_movetext::syncCoreMovetext(coreGame, firstMove);
-	scid::core::MovetextCursor cursor(coreGame);
-	if (TEMP_movetext::moveCursorToLegacyLocation(cursor, firstMove,
-	                                                currentMove))
-		location = cursor.location();
 }
 
 } // namespace
@@ -272,8 +260,8 @@ errorT Game::addMove(simpleMoveT const& sm) {
 		} else {
 			// TODO [Game]: Remove this fallback once coreLocation_ is the authoritative
 			// cursor state and legacy moveT mapping is gone.
-			TEMP_syncCoreMovetextAndLocation(coreGame_, firstMove_,
-			                                 currentMove_, coreLocation_);
+			TEMP_movetext::syncCoreMovetextAndLocation(
+			    coreGame_, firstMove_, currentMove_, coreLocation_);
 		}
 	}
 	return err;
@@ -306,13 +294,13 @@ errorT Game::addVariation() {
 		if (coreCursor.addVariation())
 			coreLocation_ = coreCursor.location();
 		else
-			TEMP_syncCoreMovetextAndLocation(coreGame_, firstMove_,
-			                                 currentMove_, coreLocation_);
+			TEMP_movetext::syncCoreMovetextAndLocation(
+			    coreGame_, firstMove_, currentMove_, coreLocation_);
 	} else {
 		// TODO [Game]: Remove this fallback once coreLocation_ is the authoritative
 		// cursor state and legacy moveT mapping is gone.
-		TEMP_syncCoreMovetextAndLocation(coreGame_, firstMove_,
-		                                 currentMove_, coreLocation_);
+		TEMP_movetext::syncCoreMovetextAndLocation(
+		    coreGame_, firstMove_, currentMove_, coreLocation_);
 	}
 	return OK;
 }
@@ -335,13 +323,13 @@ errorT Game::promoteVariationToFirst() {
 		if (coreCursor.promoteVariationToFirst())
 			coreLocation_ = coreCursor.location();
 		else
-			TEMP_syncCoreMovetextAndLocation(coreGame_, firstMove_,
-			                                 currentMove_, coreLocation_);
+			TEMP_movetext::syncCoreMovetextAndLocation(
+			    coreGame_, firstMove_, currentMove_, coreLocation_);
 	} else {
 		// TODO [Game]: Remove this fallback once coreLocation_ is the authoritative
 		// cursor state and legacy moveT mapping is gone.
-		TEMP_syncCoreMovetextAndLocation(coreGame_, firstMove_,
-		                                 currentMove_, coreLocation_);
+		TEMP_movetext::syncCoreMovetextAndLocation(
+		    coreGame_, firstMove_, currentMove_, coreLocation_);
 	}
 	return OK;
 }
@@ -386,13 +374,13 @@ errorT Game::promoteVariationToMainline() {
 		if (coreCursor.promoteVariationToMainline())
 			coreLocation_ = coreCursor.location();
 		else
-			TEMP_syncCoreMovetextAndLocation(coreGame_, firstMove_,
-			                                 currentMove_, coreLocation_);
+			TEMP_movetext::syncCoreMovetextAndLocation(
+			    coreGame_, firstMove_, currentMove_, coreLocation_);
 	} else {
 		// TODO [Game]: Remove this fallback once coreLocation_ is the authoritative
 		// cursor state and legacy moveT mapping is gone.
-		TEMP_syncCoreMovetextAndLocation(coreGame_, firstMove_,
-		                                 currentMove_, coreLocation_);
+		TEMP_movetext::syncCoreMovetextAndLocation(
+		    coreGame_, firstMove_, currentMove_, coreLocation_);
 	}
 	return OK;
 }
@@ -418,13 +406,13 @@ errorT Game::deleteVariation() {
 		if (coreCursor.deleteVariation())
 			coreLocation_ = coreCursor.location();
 		else
-			TEMP_syncCoreMovetextAndLocation(coreGame_, firstMove_,
-			                                 currentMove_, coreLocation_);
+			TEMP_movetext::syncCoreMovetextAndLocation(
+			    coreGame_, firstMove_, currentMove_, coreLocation_);
 	} else {
 		// TODO [Game]: Remove this fallback once coreLocation_ is the authoritative
 		// cursor state and legacy moveT mapping is gone.
-		TEMP_syncCoreMovetextAndLocation(coreGame_, firstMove_,
-		                                 currentMove_, coreLocation_);
+		TEMP_movetext::syncCoreMovetextAndLocation(
+		    coreGame_, firstMove_, currentMove_, coreLocation_);
 	}
 	return OK;
 }
@@ -454,8 +442,8 @@ void Game::truncate() {
 	} else {
 		// TODO [Game]: Remove this fallback once coreLocation_ is the authoritative
 		// cursor state and legacy moveT mapping is gone.
-		TEMP_syncCoreMovetextAndLocation(coreGame_, firstMove_,
-		                                 currentMove_, coreLocation_);
+		TEMP_movetext::syncCoreMovetextAndLocation(
+		    coreGame_, firstMove_, currentMove_, coreLocation_);
 	}
 
 	// Invariants
@@ -499,8 +487,8 @@ void Game::truncateStart() {
 	} else {
 		// TODO [Game]: Remove this fallback once coreLocation_ is the authoritative
 		// cursor state and legacy moveT mapping is gone.
-		TEMP_syncCoreMovetextAndLocation(coreGame_, firstMove_,
-		                                 currentMove_, coreLocation_);
+		TEMP_movetext::syncCoreMovetextAndLocation(
+		    coreGame_, firstMove_, currentMove_, coreLocation_);
 	}
 }
 

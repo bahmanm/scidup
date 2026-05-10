@@ -129,8 +129,9 @@ std::string game_notation::nextSan(Game& game) {
 		    game.currentMove_->next->endMarker() ? SAN_MATETEST : SAN_CHECKTEST);
 		if (!syncCoreMoveSan(game.coreGame_, game.coreLocation_,
 		                     game.currentMove_, true))
-			TEMP_movetext::syncCoreMovetext(game.coreGame_,
-			                                  game.firstMove_);
+			TEMP_movetext::syncCoreMovetextAndLocation(
+			    game.coreGame_, game.firstMove_, game.currentMove_,
+			    game.coreLocation_);
 	}
 	return game.currentMove_->san;
 }
@@ -144,11 +145,12 @@ std::string game_notation::previousSan(Game& game) {
     }
     if (m->san[0] == 0) {
         game.previous();
-        game.currentPos_->MakeSANString (&(m->moveData), m->san, SAN_MATETEST);
+		game.currentPos_->MakeSANString (&(m->moveData), m->san, SAN_MATETEST);
         game.next();
 		if (!syncCoreMoveSan(game.coreGame_, game.coreLocation_, m, false))
-			TEMP_movetext::syncCoreMovetext(game.coreGame_,
-			                                  game.firstMove_);
+			TEMP_movetext::syncCoreMovetextAndLocation(
+			    game.coreGame_, game.firstMove_, game.currentMove_,
+			    game.coreLocation_);
     }
     return m->san;
 }

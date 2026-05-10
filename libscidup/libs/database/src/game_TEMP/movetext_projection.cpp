@@ -1,7 +1,9 @@
 #include "movetext_projection.h"
 
+#include "movetext_cursor_bridge.h"
 #include "movetree.h"
 #include "scidup/core/game.h"
+#include "scidup/core/movetext_cursor.h"
 
 namespace scid::database {
 namespace {
@@ -52,6 +54,17 @@ void TEMP_movetext::syncCoreMovetext(scid::core::Game& coreGame,
 		auto& dest = coreGame.appendMainlineMove(toMoveAction(move->moveData));
 		copyMoveData(*move, dest);
 	}
+}
+
+void TEMP_movetext::syncCoreMovetextAndLocation(
+    scid::core::Game& coreGame,
+    const moveT* firstMove,
+    const moveT* currentMove,
+    scid::core::MovetextLocation& location) {
+	syncCoreMovetext(coreGame, firstMove);
+	scid::core::MovetextCursor cursor(coreGame);
+	if (moveCursorToLegacyLocation(cursor, firstMove, currentMove))
+		location = cursor.location();
 }
 
 } // namespace scid::database
