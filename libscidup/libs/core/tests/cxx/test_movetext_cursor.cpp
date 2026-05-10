@@ -88,4 +88,24 @@ TEST(CoreMovetextCursorTest, RefusesToAddVariationAtLineEnd) {
 	EXPECT_EQ(nullptr, cursor.addVariation());
 }
 
+TEST(CoreMovetextCursorTest, SavesAndRestoresVariationLocation) {
+	scid::core::Game game;
+	scid::core::MovetextCursor cursor(game);
+
+	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.toStart();
+	ASSERT_NE(nullptr, cursor.addVariation());
+	cursor.addMove(quiet(scid::database::D2, scid::database::D4));
+	auto variationLocation = cursor.location();
+
+	ASSERT_TRUE(cursor.exitVariation());
+	cursor.toEnd();
+	ASSERT_TRUE(cursor.restore(variationLocation));
+
+	EXPECT_EQ(1U, cursor.variationDepth());
+	EXPECT_EQ(1U, cursor.ply());
+	ASSERT_NE(nullptr, cursor.previousMove());
+	EXPECT_EQ("d2d4", cursor.previousMove()->action.longNotation());
+}
+
 } // namespace

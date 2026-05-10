@@ -1,5 +1,7 @@
 #include "scidup/core/movetext_cursor.h"
 
+#include <utility>
+
 namespace scid::core {
 
 MovetextCursor::MovetextCursor(Game& game)
@@ -65,6 +67,38 @@ std::size_t MovetextCursor::variationDepth() const {
 
 std::size_t MovetextCursor::variationIndex() const {
 	return parents_.empty() ? 0 : parents_.back().variationIndex;
+}
+
+MovetextLocation MovetextCursor::location() const {
+	std::vector<MovetextLocation::Step> path;
+	path.reserve(parents_.size());
+	for (auto const& parent : parents_)
+		path.push_back({parent.nextIndex, parent.variationIndex});
+	return MovetextLocation(std::move(path), nextIndex_);
+}
+
+bool MovetextCursor::restore(MovetextLocation location) {
+	auto* line = &game_.movetext_.mainline;
+	std::vector<ParentFrame> parents;
+	parents.reserve(location.path_.size());
+	for (auto const& step : location.path_) {
+		if (step.nextIndex >= line->moves.size())
+			return false;
+		auto& move = line->moves[step.nextIndex];
+		if (step.variationIndex >= move.childVariations.size())
+			return false;
+
+		parents.push_back({line, step.nextIndex, step.variationIndex});
+		line = &move.childVariations[step.variationIndex].line;
+	}
+
+	if (location.nextIndex_ > line->moves.size())
+		return false;
+
+	currentLine_ = line;
+	parents_ = std::move(parents);
+	nextIndex_ = location.nextIndex_;
+	return true;
 }
 
 bool MovetextCursor::isAtLineStart() const {

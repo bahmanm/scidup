@@ -1,6 +1,7 @@
 #pragma once
 
 #include "scidup/core/game.h"
+#include "scidup/core/movetext_location.h"
 
 #include <cstddef>
 #include <vector>
@@ -9,13 +10,6 @@ namespace scid::core {
 
 class GameCursor {
 private:
-	struct LocationStep {
-		bool operator==(const LocationStep&) const = default;
-
-		std::size_t nextIndex = 0;
-		std::size_t variationIndex = 0;
-	};
-
 	struct ParentFrame {
 		const MoveSequence* line = nullptr;
 		std::size_t nextIndex = 0;
@@ -23,19 +17,6 @@ private:
 	};
 
 public:
-	class Location {
-	public:
-		bool operator==(const Location&) const = default;
-
-	private:
-		friend class GameCursor;
-
-		Location(std::vector<LocationStep> path, std::size_t nextIndex);
-
-		std::vector<LocationStep> path_;
-		std::size_t nextIndex_ = 0;
-	};
-
 	explicit GameCursor(const Game& game);
 
 	const Move* previousMove() const;
@@ -61,8 +42,8 @@ public:
 	void toEnd();
 	bool toPly(std::size_t ply);
 
-	Location location() const;
-	bool restore(Location location);
+	MovetextLocation location() const;
+	bool restore(MovetextLocation location);
 
 private:
 	const MoveSequence& currentLine() const;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "scidup/core/game.h"
+#include "scidup/core/movetext_location.h"
 
 #include <cstddef>
 #include <vector>
@@ -28,6 +29,8 @@ public:
 	std::size_t variationCount() const;
 	std::size_t variationDepth() const;
 	std::size_t variationIndex() const;
+	MovetextLocation location() const;
+	bool restore(MovetextLocation location);
 
 	bool isAtLineStart() const;
 	bool isAtLineEnd() const;

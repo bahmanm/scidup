@@ -18,9 +18,9 @@
 
 #include "scidup/core/game.h"
 #include "scidup/core/game_result.h"
+#include "scidup/core/movetext_location.h"
 #include "scidup/database/common.h"
 #include "scidup/core/date.h"
-#include "scidup/core/game_cursor.h"
 #include "scidup/eco/code.h"
 #include "scidup/core/nags.h"
 #include "scidup/database/game_TEMP/search.h"
@@ -143,7 +143,7 @@ private:
         Position pos;
         moveT* move;
         uint varDepth;
-        std::optional<scid::core::GameCursor::Location> coreLocation;
+        std::optional<scid::core::MovetextLocation> coreLocation;
     };
 
 public:

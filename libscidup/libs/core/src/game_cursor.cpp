@@ -4,10 +4,6 @@
 
 namespace scid::core {
 
-GameCursor::Location::Location(std::vector<LocationStep> path,
-                               std::size_t nextIndex)
-    : path_(std::move(path)), nextIndex_(nextIndex) {}
-
 GameCursor::GameCursor(const Game& game)
     : game_(game), currentLine_(&game.movetext().mainline) {}
 
@@ -130,15 +126,15 @@ bool GameCursor::toPly(std::size_t ply) {
 	return true;
 }
 
-GameCursor::Location GameCursor::location() const {
-	std::vector<LocationStep> path;
+MovetextLocation GameCursor::location() const {
+	std::vector<MovetextLocation::Step> path;
 	path.reserve(parents_.size());
 	for (auto const& parent : parents_)
 		path.push_back({parent.nextIndex, parent.variationIndex});
-	return Location(std::move(path), nextIndex_);
+	return MovetextLocation(std::move(path), nextIndex_);
 }
 
-bool GameCursor::restore(Location location) {
+bool GameCursor::restore(MovetextLocation location) {
 	auto line = &game_.movetext().mainline;
 	std::vector<ParentFrame> parents;
 	parents.reserve(location.path_.size());
