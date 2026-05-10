@@ -268,6 +268,11 @@ errorT Game::addVariation() {
 // Game::promoteVariationToFirst():
 // Promotes the current variation to first variation.
 errorT Game::promoteVariationToFirst() {
+	scid::core::MovetextCursor coreCursor(coreGame_);
+	const bool coreCursorReady =
+	    legacy_movetext::moveCursorToLegacyLocation(coreCursor, firstMove_,
+	                                                currentMove_);
+
 	auto parent = currentMove_->getParent();
 	auto root = parent.first;
 	if (!root)
@@ -275,7 +280,11 @@ errorT Game::promoteVariationToFirst() {
 
 	root->detachChild(parent.second);
 	root->insertChild(parent.second, 0);
-	TEMP_syncCoreMovetext();
+	if (!coreCursorReady || !coreCursor.promoteVariationToFirst()) {
+		// TODO [Game]: Remove this fallback once legacy cursor state is
+		// represented directly by MovetextCursor.
+		TEMP_syncCoreMovetext();
+	}
 	return OK;
 }
 

@@ -183,4 +183,43 @@ TEST(CoreMovetextCursorTest, RefusesToDeleteVariationFromMainline) {
 	          game.movetext().mainline.moves[0].action.longNotation());
 }
 
+TEST(CoreMovetextCursorTest, PromotesCurrentVariationToFirst) {
+	scid::core::Game game;
+	scid::core::MovetextCursor cursor(game);
+
+	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.toStart();
+	auto queenPawn = cursor.addVariation("Queen pawn alternative");
+	ASSERT_NE(nullptr, queenPawn);
+	cursor.addMove(quiet(scid::database::D2, scid::database::D4));
+	ASSERT_TRUE(cursor.exitVariation());
+	auto english = cursor.addVariation("English alternative");
+	ASSERT_NE(nullptr, english);
+	cursor.addMove(quiet(scid::database::C2, scid::database::C4));
+
+	ASSERT_TRUE(cursor.promoteVariationToFirst());
+
+	EXPECT_EQ(1U, cursor.variationDepth());
+	EXPECT_EQ(0U, cursor.variationIndex());
+	ASSERT_NE(nullptr, cursor.previousMove());
+	EXPECT_EQ("c2c4", cursor.previousMove()->action.longNotation());
+	auto const& variations =
+	    game.movetext().mainline.moves[0].childVariations;
+	ASSERT_EQ(2U, variations.size());
+	EXPECT_EQ("English alternative", variations[0].initialComment);
+	EXPECT_EQ("Queen pawn alternative", variations[1].initialComment);
+}
+
+TEST(CoreMovetextCursorTest, RefusesToPromoteVariationFromMainline) {
+	scid::core::Game game;
+	scid::core::MovetextCursor cursor(game);
+
+	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+
+	EXPECT_FALSE(cursor.promoteVariationToFirst());
+	ASSERT_EQ(1U, game.movetext().mainline.moves.size());
+	EXPECT_EQ("e2e4",
+	          game.movetext().mainline.moves[0].action.longNotation());
+}
+
 } // namespace

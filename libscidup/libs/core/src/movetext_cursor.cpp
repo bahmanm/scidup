@@ -211,6 +211,28 @@ Variation* MovetextCursor::addVariation(std::string_view initialComment) {
 	return &variation;
 }
 
+bool MovetextCursor::promoteVariationToFirst() {
+	if (parents_.empty())
+		return false;
+
+	auto& parent = parents_.back();
+	if (parent.nextIndex >= parent.line->moves.size())
+		return false;
+
+	auto& variations = parent.line->moves[parent.nextIndex].childVariations;
+	if (parent.variationIndex >= variations.size())
+		return false;
+
+	if (parent.variationIndex != 0) {
+		auto variation = std::move(variations[parent.variationIndex]);
+		variations.erase(variations.begin() + parent.variationIndex);
+		variations.insert(variations.begin(), std::move(variation));
+		parent.variationIndex = 0;
+		currentLine_ = &variations.front().line;
+	}
+	return true;
+}
+
 bool MovetextCursor::deleteVariation() {
 	if (parents_.empty())
 		return false;
