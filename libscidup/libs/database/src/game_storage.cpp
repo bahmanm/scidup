@@ -731,48 +731,6 @@ std::pair<IndexEntry, TagRoster> Game::encode(std::vector<byte>& dest) const {
     return {ie, tags};
 }
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::decode():
-//      Decodes a game from its on-disk representation in a bytebuffer.
-//      Decodes all the information: comments, variations, non-standard
-//      tags, etc.
-//
-errorT Game::decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf) {
-    clear();
-    game_storage::loadStandardTags(*this, ie, tags);
-
-    errorT err = buf.decodeTags([&](const auto& tag, const auto& value) {
-        auto& dest = coreGame_.findOrCreateTag(tag);
-        dest.assign(value.begin(), value.end());
-    });
-    if (err)
-        return err;
-
-    const auto [err_startpos, fen] = buf.decodeStartBoard();
-    if (err_startpos)
-        return err_startpos;
-
-    if (fen)
-        err = setStartFen(fen);
-
-	std::vector<scid::core::MovetextLocation> comment_marks;
-	if (err == OK)
-		err = decodeMovelist(buf, coreGame_, comment_marks);
-
-    if (err != OK) {
-        TEMP_syncLegacyMovetextFromCore();
-        return err;
-    }
-
-    if (err == OK)
-        err = decodeComments(buf, coreGame_, comment_marks);
-
-    if (err == OK)
-        TEMP_syncLegacyMovetextFromCore();
-
-    return err;
-}
-
 std::pair<IndexEntry, TagRoster> game_storage::encode(
     const Game& game, std::vector<byte>& dest) {
 	return game.encode(dest);
@@ -780,7 +738,40 @@ std::pair<IndexEntry, TagRoster> game_storage::encode(
 
 errorT game_storage::decode(Game& game, IndexEntry const& ie,
                             TagRoster const& tags, ByteBuffer buf) {
-	return game.decode(ie, tags, buf);
+	game.clear();
+	game_storage::loadStandardTags(game, ie, tags);
+	auto& coreGame = game.coreGame();
+
+	errorT err = buf.decodeTags([&](const auto& tag, const auto& value) {
+		auto& dest = coreGame.findOrCreateTag(tag);
+		dest.assign(value.begin(), value.end());
+	});
+	if (err)
+		return err;
+
+	const auto [errStartPos, fen] = buf.decodeStartBoard();
+	if (errStartPos)
+		return errStartPos;
+
+	if (fen)
+		err = game.setStartFen(fen);
+
+	std::vector<scid::core::MovetextLocation> comment_marks;
+	if (err == OK)
+		err = decodeMovelist(buf, coreGame, comment_marks);
+
+	if (err != OK) {
+		game.TEMP_syncLegacyMovetextFromCore();
+		return err;
+	}
+
+	if (err == OK)
+		err = decodeComments(buf, coreGame, comment_marks);
+
+	if (err == OK)
+		game.TEMP_syncLegacyMovetextFromCore();
+
+	return err;
 }
 
 errorT game_storage::decodeMovesOnly(Game& game, ByteBuffer& buf) {
