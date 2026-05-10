@@ -43,7 +43,11 @@ struct GamePos {
 template <typename TCont>
 inline void collectPositions(Game& game, TCont& dest) {
 	do {
-		if (game.isAtVariationStart() && !game.isAtStart())
+		scid::core::GameCursor cursor(game.coreGame());
+		[[maybe_unused]] const bool restored = cursor.restore(
+		    game.coreLocation());
+		ASSERT(restored);
+		if (cursor.isAtVariationStart() && !cursor.isAtGameStart())
 			continue;
 
 		dest.emplace_back();
@@ -51,10 +55,6 @@ inline void collectPositions(Game& game, TCont& dest) {
 		char strBuf[256];
 		game.currentPos()->PrintFEN(strBuf, sizeof(strBuf));
 		gamepos.FEN = strBuf;
-		scid::core::GameCursor cursor(game.coreGame());
-		[[maybe_unused]] const bool restored = cursor.restore(
-		    game.coreLocation());
-		ASSERT(restored);
 		gamepos.RAVdepth = cursor.variationDepth();
 		gamepos.RAVnum = cursor.variationIndex();
 		if (auto move = cursor.previousMove()) {

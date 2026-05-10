@@ -201,6 +201,31 @@ static scid::database::uint variationNumber(
 	return static_cast<scid::database::uint>(cursor.variationIndex());
 }
 
+static bool isAtVariationStart(const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	return cursor.restore(game.coreLocation()) && cursor.isAtVariationStart();
+}
+
+static bool isAtVariationEnd(const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	return cursor.restore(game.coreLocation()) && cursor.isAtVariationEnd();
+}
+
+static bool isAtStart(const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	return cursor.restore(game.coreLocation()) && cursor.isAtGameStart();
+}
+
+static bool isAtEnd(const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	return cursor.restore(game.coreLocation()) && cursor.isAtGameEnd();
+}
+
+static bool isAtEmptyVariation(const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	return cursor.restore(game.coreLocation()) && cursor.isAtEmptyVariation();
+}
+
 //////////////////////////////////////////////////////////////////////
 //
 // Inline routines for setting Tcl result strings:
@@ -2695,7 +2720,7 @@ int sc_game_import(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 	scid::database::PgnParseLog pgn;
 	auto ok = scid::database::pgnParseGame(argv[2], std::strlen(argv[2]), editor.game(), pgn);
 
-	if (new_variation && editor.game().isAtEmptyVariation()) {
+	if (new_variation && isAtEmptyVariation(editor.game())) {
 		editor.game().deleteVariation();
 	}
 
@@ -3239,7 +3264,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (base == db && editor.matchesLoadedGame(gnum)) {
         return errorResult (ti, "This game cannot be merged into itself.");
     }
-    if (game.isAtStart()  &&  game.isAtEnd()) {
+    if (isAtStart(game)  &&  isAtEnd(game)) {
         return errorResult (ti, "The current game has no moves.");
     }
     if (game.coreGame().hasNonStandardStart()) {
@@ -3295,7 +3320,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // game and mergePly in the merge game.
     // Create a new variation and add merge-game moves to it:
     game.toPly (matchPly);
-    bool atLastMove = game.isAtEnd();
+    bool atLastMove = isAtEnd(game);
     scid::database::simpleMoveT * sm = NULL;
     if (atLastMove) {
         // At end of game, so remember final game move for replicating
@@ -3376,8 +3401,8 @@ sc_game_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     auto location = g->currentLocation();
-    while (! g->isAtStart()) {
-        if (g->isAtVariationStart()) {
+    while (! isAtStart(*g)) {
+        if (isAtVariationStart(*g)) {
             g->exitVariation();
             continue;
         }
@@ -5308,16 +5333,16 @@ sc_pos_isAt (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     switch (index) {
     case OPT_START:
-        return UI_Result(ti, scid::database::OK, editor.game().isAtStart());
+        return UI_Result(ti, scid::database::OK, isAtStart(editor.game()));
 
     case OPT_END:
-        return UI_Result(ti, scid::database::OK, editor.game().isAtEnd());
+        return UI_Result(ti, scid::database::OK, isAtEnd(editor.game()));
 
     case OPT_VSTART:
-        return UI_Result(ti, scid::database::OK, editor.game().isAtVariationStart());
+        return UI_Result(ti, scid::database::OK, isAtVariationStart(editor.game()));
 
     case OPT_VEND:
-        return UI_Result(ti, scid::database::OK, editor.game().isAtVariationEnd());
+        return UI_Result(ti, scid::database::OK, isAtVariationEnd(editor.game()));
 
     default:
         return errorResult (ti, "Usage: sc_pos isAt start|end|vstart|vend");
@@ -7226,7 +7251,7 @@ sc_report_create (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 return errorResult (ti, "Error reading game file.");
             }
             scratchGame->toPly (ply - 1);
-            if (scratchGame->isAtEnd()) ply = 0;
+            if (isAtEnd(*scratchGame)) ply = 0;
             if (ply != 0) {
                 scid::database::uint moveOrderID = report->AddMoveOrder (scratchGame);
                 OpLine * line = new OpLine (scratchGame, ie, gnum+1,
@@ -8507,7 +8532,7 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return setUintResult (ti, variationNumber(game));
 
     case VAR_CREATE:
-        if (! (game.isAtVariationStart()  &&  game.isAtVariationEnd())) {
+        if (! (isAtVariationStart(game)  &&  isAtVariationEnd(game))) {
             game.next();
             game.addVariation();
             editor.setDirty();

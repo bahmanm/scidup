@@ -225,7 +225,7 @@ TEST(Test_Game, locationInPGN) {
 			}
 
 			ASSERT_EQ(location, game.pgnLocation());
-			if (!game.isAtVariationStart()) {
+			if (!coreCursor(game).isAtVariationStart()) {
 				ASSERT_EQ(location, game.pgnOffset());
 			}
 
@@ -470,11 +470,11 @@ TEST(Test_Game, stateQueriesMirrorCoreCursorForProgrammaticVariation) {
 	EXPECT_EQ(1U, cursor.variationDepth());
 	EXPECT_EQ(0U, cursor.variationIndex());
 	EXPECT_EQ(0U, cursor.variationCount());
-	EXPECT_TRUE(game.isAtVariationStart());
-	EXPECT_TRUE(game.isAtVariationEnd());
-	EXPECT_TRUE(game.isAtEmptyVariation());
-	EXPECT_FALSE(game.isAtStart());
-	EXPECT_FALSE(game.isAtEnd());
+	EXPECT_TRUE(cursor.isAtVariationStart());
+	EXPECT_TRUE(cursor.isAtVariationEnd());
+	EXPECT_TRUE(cursor.isAtEmptyVariation());
+	EXPECT_FALSE(cursor.isAtGameStart());
+	EXPECT_FALSE(cursor.isAtGameEnd());
 
 	ASSERT_EQ(scid::database::OK,
 	          game.addMove(makeCurrentMove(game, scid::database::D2,
@@ -483,9 +483,9 @@ TEST(Test_Game, stateQueriesMirrorCoreCursorForProgrammaticVariation) {
 	EXPECT_EQ(1U, game.currentPly());
 	EXPECT_EQ(1U, cursorAfterMove.variationDepth());
 	EXPECT_EQ(0U, cursorAfterMove.variationIndex());
-	EXPECT_FALSE(game.isAtVariationStart());
-	EXPECT_TRUE(game.isAtVariationEnd());
-	EXPECT_FALSE(game.isAtEmptyVariation());
+	EXPECT_FALSE(cursorAfterMove.isAtVariationStart());
+	EXPECT_TRUE(cursorAfterMove.isAtVariationEnd());
+	EXPECT_FALSE(cursorAfterMove.isAtEmptyVariation());
 
 	ASSERT_EQ(scid::database::OK, game.exitVariation());
 	auto cursorAfterExit = coreCursor(game);
@@ -493,8 +493,8 @@ TEST(Test_Game, stateQueriesMirrorCoreCursorForProgrammaticVariation) {
 	EXPECT_EQ(0U, cursorAfterExit.variationDepth());
 	EXPECT_EQ(0U, cursorAfterExit.variationIndex());
 	EXPECT_EQ(1U, cursorAfterExit.variationCount());
-	EXPECT_TRUE(game.isAtStart());
-	EXPECT_FALSE(game.isAtEnd());
+	EXPECT_TRUE(cursorAfterExit.isAtGameStart());
+	EXPECT_FALSE(cursorAfterExit.isAtGameEnd());
 }
 
 TEST(Test_Game, savedLocationRestoresProgrammaticVariationState) {
@@ -510,14 +510,14 @@ TEST(Test_Game, savedLocationRestoresProgrammaticVariationState) {
 
 	auto location = game.currentLocation();
 	ASSERT_EQ(scid::database::OK, game.exitVariation());
-	ASSERT_TRUE(game.isAtStart());
+	ASSERT_TRUE(coreCursor(game).isAtGameStart());
 
 	game.restoreLocation(location);
 	auto cursor = coreCursor(game);
 	EXPECT_EQ(1U, game.currentPly());
 	EXPECT_EQ(1U, cursor.variationDepth());
-	EXPECT_TRUE(game.isAtVariationEnd());
-	EXPECT_FALSE(game.isAtEmptyVariation());
+	EXPECT_TRUE(cursor.isAtVariationEnd());
+	EXPECT_FALSE(cursor.isAtEmptyVariation());
 }
 
 TEST(Test_Game, coreGameMoveMetadataMirrorsProgrammaticNagMutation) {

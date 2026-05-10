@@ -47,24 +47,4 @@ ushort Game::currentPly() const {
 	    currentCoreCursor(coreGame_, coreLocation_).ply());
 }
 
-bool Game::isAtVariationStart() const {
-	return currentCoreCursor(coreGame_, coreLocation_).isAtVariationStart();
-}
-
-bool Game::isAtVariationEnd() const {
-	return currentCoreCursor(coreGame_, coreLocation_).isAtVariationEnd();
-}
-
-bool Game::isAtStart() const {
-	return currentCoreCursor(coreGame_, coreLocation_).isAtGameStart();
-}
-
-bool Game::isAtEnd() const {
-	return currentCoreCursor(coreGame_, coreLocation_).isAtGameEnd();
-}
-
-bool Game::isAtEmptyVariation() const {
-	return currentCoreCursor(coreGame_, coreLocation_).isAtEmptyVariation();
-}
-
 } // namespace scid::database

@@ -184,12 +184,6 @@ public:
     unsigned pgnLocation() const;
     unsigned pgnOffset() const;
 
-    bool isAtVariationStart() const;
-    bool isAtVariationEnd() const;
-    bool isAtStart() const;
-    bool isAtEnd() const;
-    bool isAtEmptyVariation() const;
-
     //////////////////////////////////////////////////////////////
     // Functions that get/set information about the last/next move.
     // Notice: when location is at the start of the game or a variation,

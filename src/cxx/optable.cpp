@@ -15,12 +15,32 @@
 #include "optable.h"
 #include "crosstab.h"
 #include "scidup/core/dstring.h"
+#include "scidup/core/game_cursor.h"
 #include "scidup/core/notation.h"
 #include "scidup/database/game_id.h"
 #include "piece_translation.h"
 #include "scidup/eco/book.h"
 #include <algorithm>
 #include <cstdio>
+
+namespace {
+
+scid::core::GameCursor currentCursor(const scid::database::Game& game) {
+    scid::core::GameCursor cursor(game.coreGame());
+    [[maybe_unused]] const bool restored = cursor.restore(game.coreLocation());
+    ASSERT(restored);
+    return cursor;
+}
+
+bool isAtStart(const scid::database::Game& game) {
+    return currentCursor(game).isAtGameStart();
+}
+
+bool isAtVariationStart(const scid::database::Game& game) {
+    return currentCursor(game).isAtVariationStart();
+}
+
+} // namespace
 
 scid::database::uint
 endgameTheme (scid::database::matSigT msig)
@@ -498,8 +518,8 @@ OpTable::Init (const char * type, scid::database::Game * g, scidup::eco::Book * 
 
     // Generate the text for each move up to the current position:
     auto location = g->currentLocation();
-    while (! g->isAtStart()) {
-        if (g->isAtVariationStart()) {
+    while (! isAtStart(*g)) {
+        if (isAtVariationStart(*g)) {
             g->exitVariation();
             continue;
         }
