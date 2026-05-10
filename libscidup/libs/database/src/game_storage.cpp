@@ -359,21 +359,36 @@ errorT Game::decodeVariation(ByteBuffer& buf,
 	}
 }
 
-// Return the number of comments and true if comment marks are useful
-template <typename MoveT> auto countComments(const MoveT* m) {
-	unsigned n_comments = 0;
-	unsigned n_empty = 0;
-	for (; m; m = m->nextMoveInPGN()) {
-		if (m->endMarker())
-			continue;
+struct CommentStats {
+	unsigned comments = 0;
+	unsigned empty = 0;
+};
 
-		if (m->comment.empty()) {
-			++n_empty;
-		} else {
-			++n_comments;
+void countComment(std::string_view comment, CommentStats& stats) {
+	if (comment.empty()) {
+		++stats.empty;
+	} else {
+		++stats.comments;
+	}
+}
+
+void countComments(scid::core::MoveSequence const& line,
+                   CommentStats& stats) {
+	for (auto const& move : line.moves) {
+		countComment(move.metadata.comment, stats);
+		for (auto const& variation : move.childVariations) {
+			countComment(variation.initialComment, stats);
+			countComments(variation.line, stats);
 		}
 	}
-	return std::make_pair(n_comments, n_comments < n_empty);
+}
+
+// Return the number of comments and true if comment marks are useful.
+auto countComments(scid::core::Movetext const& movetext) {
+	CommentStats stats;
+	countComment(movetext.initialComment, stats);
+	countComments(movetext.mainline, stats);
+	return std::make_pair(stats.comments, stats.comments < stats.empty);
 }
 
 /**
@@ -382,18 +397,33 @@ template <typename MoveT> auto countComments(const MoveT* m) {
  * {C1} 1.d4 {C2} (1.b4 {C3} 1...e5 {C4} (1...Na6 {C5}) 2.e4 {C6})
  * ({C7} 1.g4 {C8}) 1...d5 {C9}
  */
-template <typename MoveT, typename DestT>
-void encodeComments(bool mark_comments, const MoveT* m, DestT& dest) {
-	for (; m; m = m->nextMoveInPGN()) {
-		if (m->endMarker())
-			continue;
+template <typename DestT>
+void encodeComment(bool markComments, std::string_view comment, DestT& dest) {
+	if (!comment.empty() || !markComments) {
+		dest.insert(dest.end(), comment.begin(), comment.end());
+		dest.emplace_back(0);
+	}
+}
 
-		if (!m->comment.empty() || !mark_comments) {
-			const auto len = m->comment.size() + 1; // Include the null char
-			const auto data = m->comment.c_str();
-			dest.insert(dest.end(), data, data + len);
+template <typename DestT>
+void encodeComments(bool markComments,
+                    scid::core::MoveSequence const& line,
+                    DestT& dest) {
+	for (auto const& move : line.moves) {
+		encodeComment(markComments, move.metadata.comment, dest);
+		for (auto const& variation : move.childVariations) {
+			encodeComment(markComments, variation.initialComment, dest);
+			encodeComments(markComments, variation.line, dest);
 		}
 	}
+}
+
+template <typename DestT>
+void encodeComments(bool markComments,
+                    scid::core::Movetext const& movetext,
+                    DestT& dest) {
+	encodeComment(markComments, movetext.initialComment, dest);
+	encodeComments(markComments, movetext.mainline, dest);
 }
 
 
@@ -624,7 +654,7 @@ std::pair<IndexEntry, TagRoster> Game::encode(std::vector<byte>& dest) const {
 	                         : nullptr,
 	                     dest);
 
-    auto [commentCount, markComments] = countComments(firstMove_);
+    auto [commentCount, markComments] = countComments(coreGame_.movetext());
 
     // Compatibility: SCID4 requires the markers
     markComments = true;
@@ -633,7 +663,7 @@ std::pair<IndexEntry, TagRoster> Game::encode(std::vector<byte>& dest) const {
     auto [varCount, nagCount] = encodeMovelist(markComments, firstMove_, dest);
 
     // Now do the comments
-    encodeComments(markComments, firstMove_, dest);
+    encodeComments(markComments, coreGame_.movetext(), dest);
 
     ie.SetCommentCount(commentCount);
     ie.SetVariationCount(varCount);
