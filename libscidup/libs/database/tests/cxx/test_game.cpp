@@ -423,6 +423,23 @@ TEST(Test_Game, coreGameMovetextMirrorsLegacyMoveTree) {
 	EXPECT_EQ("d4", game.coreGame().movetext().mainline.moves[0].san);
 }
 
+TEST(Test_Game, coreGameMirrorsPreviousSanMaterialization) {
+	scid::database::Game game;
+
+	ASSERT_EQ(scid::database::OK,
+	          game.addMove(makeCurrentMove(game, scid::database::E2,
+	                                       scid::database::E4)));
+	ASSERT_EQ(scid::database::OK,
+	          game.addMove(makeCurrentMove(game, scid::database::E7,
+	                                       scid::database::E5)));
+	auto const& mainline = game.coreGame().movetext().mainline.moves;
+	ASSERT_EQ(2U, mainline.size());
+	EXPECT_TRUE(mainline[1].san.empty());
+
+	EXPECT_EQ("e5", scid::database::game_notation::previousSan(game));
+	EXPECT_EQ("e5", mainline[1].san);
+}
+
 TEST(Test_Game, coreGameMovetextMirrorsProgrammaticVariationAdds) {
 	scid::database::Game game;
 

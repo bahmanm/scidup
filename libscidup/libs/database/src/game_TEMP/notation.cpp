@@ -3,8 +3,10 @@
 #include "scidup/database/common.h"
 #include "scidup/database/game_TEMP/notation.h"
 #include "scidup/core/dstring.h"
+#include "scidup/core/movetext_cursor.h"
 #include "scidup/core/notation.h"
 #include "scidup/core/position.h"
+#include "movetext_cursor_bridge.h"
 #include "movetree.h"
 
 #include <algorithm>
@@ -24,6 +26,25 @@ template <typename OutputIt>
 OutputIt TEMP_copyLongNotation(OutputIt dest, simpleMoveT const& move) {
 	const auto notation = TEMP_moveActionFromLegacyMove(move).longNotation();
 	return std::copy(notation.begin(), notation.end(), dest);
+}
+
+bool syncCoreMoveSan(scid::core::Game& coreGame,
+                     const moveT* firstMove,
+                     const moveT* legacyMove) {
+	if (!legacyMove || legacyMove->startMarker() || legacyMove->endMarker())
+		return false;
+
+	scid::core::MovetextCursor cursor(coreGame);
+	if (!legacy_movetext::moveCursorToLegacyLocation(cursor, firstMove,
+	                                                 legacyMove))
+		return false;
+
+	auto move = cursor.nextMove();
+	if (!move)
+		return false;
+
+	move->san = legacyMove->san;
+	return true;
 }
 
 } // namespace
@@ -106,7 +127,9 @@ std::string game_notation::nextSan(Game& game) {
 		game.currentPos_->MakeSANString(
 		    &game.currentMove_->moveData, game.currentMove_->san,
 		    game.currentMove_->next->endMarker() ? SAN_MATETEST : SAN_CHECKTEST);
-		game.TEMP_syncCoreMovetext();
+		if (!syncCoreMoveSan(game.coreGame_, game.firstMove_,
+		                     game.currentMove_))
+			game.TEMP_syncCoreMovetext();
 	}
 	return game.currentMove_->san;
 }
@@ -122,7 +145,8 @@ std::string game_notation::previousSan(Game& game) {
         game.previous();
         game.currentPos_->MakeSANString (&(m->moveData), m->san, SAN_MATETEST);
         game.next();
-        game.TEMP_syncCoreMovetext();
+		if (!syncCoreMoveSan(game.coreGame_, game.firstMove_, m))
+			game.TEMP_syncCoreMovetext();
     }
     return m->san;
 }
