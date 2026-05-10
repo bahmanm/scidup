@@ -1,6 +1,6 @@
 #pragma once
 
-#include "scidup/database/game_TEMP/legacy_encode_options.h"
+#include "legacy_encode_options.h"
 
 #include <utility>
 
