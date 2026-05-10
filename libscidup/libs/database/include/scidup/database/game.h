@@ -105,8 +105,6 @@ private:
                        int maxDiff);
     bool exactMatch(Position* pos, ByteBuffer* buf, gameExactMatchT searchType);
     bool varExactMatch(Position* searchPos, gameExactMatchT searchType);
-    void TEMP_syncCoreMovetext();
-
     friend std::pair<IndexEntry, TagRoster> game_storage::encode(
         const Game& game, std::vector<byte>& dest);
     friend void game_storage::loadStandardTags(Game& game,

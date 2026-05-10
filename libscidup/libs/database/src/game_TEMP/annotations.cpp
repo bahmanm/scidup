@@ -3,43 +3,12 @@
 #include "scidup/core/movetext_cursor.h"
 #include "scidup/database/common.h"
 #include "movetext_cursor_bridge.h"
+#include "movetext_projection.h"
 #include "movetree.h"
 
 namespace scid::database {
 
 namespace {
-
-scid::core::MoveAction toMoveAction(simpleMoveT const& sm) {
-	return {sm.from, sm.to, sm.promote};
-}
-
-void copyMoveData(moveT const& source, scid::core::Move& dest);
-
-void copyLine(moveT const* source, scid::core::MoveSequence& dest) {
-	for (auto move = source; move && !move->endMarker(); move = move->next) {
-		if (move->startMarker())
-			continue;
-
-		auto& destMove = dest.appendMove(toMoveAction(move->moveData));
-		copyMoveData(*move, destMove);
-	}
-}
-
-void copyVariations(moveT const& source, scid::core::Move& dest) {
-	for (auto variation = source.varChild; variation;
-	     variation = variation->varChild) {
-		auto& destVariation = dest.addVariation(variation->comment);
-		copyLine(variation->next, destVariation.line);
-	}
-}
-
-void copyMoveData(moveT const& source, scid::core::Move& dest) {
-	dest.action = toMoveAction(source.moveData);
-	dest.san = source.san;
-	dest.metadata.comment = source.comment;
-	dest.metadata.nags.assign(source.nags, source.nags + source.nagCount);
-	copyVariations(source, dest);
-}
 
 bool syncCoreMoveMetadata(scid::core::Game& coreGame,
                           const moveT* firstMove,
@@ -48,7 +17,7 @@ bool syncCoreMoveMetadata(scid::core::Game& coreGame,
 		return false;
 
 	scid::core::MovetextCursor cursor(coreGame);
-	if (!legacy_movetext::moveCursorToLegacyLocation(cursor, firstMove,
+	if (!TEMP_movetext::moveCursorToLegacyLocation(cursor, firstMove,
 	                                                 legacyMove))
 		return false;
 
@@ -78,7 +47,7 @@ bool syncCoreComment(scid::core::Game& coreGame,
 	}
 
 	scid::core::MovetextCursor cursor(coreGame);
-	if (!legacy_movetext::moveCursorToLegacyLocation(cursor, firstMove,
+	if (!TEMP_movetext::moveCursorToLegacyLocation(cursor, firstMove,
 	                                                 legacyMove))
 		return false;
 
@@ -92,19 +61,6 @@ bool syncCoreComment(scid::core::Game& coreGame,
 
 } // namespace
 
-void Game::TEMP_syncCoreMovetext() {
-	coreGame_.clearMovetext();
-	coreGame_.setInitialComment(firstMove_->comment);
-	for (auto move = firstMove_->next; move && !move->endMarker();
-	     move = move->next) {
-		if (move->startMarker())
-			continue;
-
-		auto& dest = coreGame_.appendMainlineMove(toMoveAction(move->moveData));
-		copyMoveData(*move, dest);
-	}
-}
-
 // TODO [Game]: Move NAG/comment storage behind Move.metadata once the core
 // Move shape exists. These methods are compatibility accessors around legacy
 // moveT fields at the current cursor location.
@@ -112,7 +68,7 @@ void Game::clearNags() {
 	currentMove_->prev->nagCount = 0;
 	currentMove_->prev->nags[0] = 0;
 	if (!syncCoreMoveMetadata(coreGame_, firstMove_, currentMove_->prev))
-		TEMP_syncCoreMovetext();
+		TEMP_movetext::syncCoreMovetext(coreGame_, firstMove_);
 }
 
 byte* Game::nags() const {
@@ -153,7 +109,7 @@ errorT Game::addNag (byte nag) {
 			{
 				m->nags[i] = nag;
 				if (!syncCoreMoveMetadata(coreGame_, firstMove_, m))
-					TEMP_syncCoreMovetext();
+					TEMP_movetext::syncCoreMovetext(coreGame_, firstMove_);
 				return OK;
 			}
 	// If it is a position nag replace an existing
@@ -163,7 +119,7 @@ errorT Game::addNag (byte nag) {
 			{
 				m->nags[i] = nag;
 				if (!syncCoreMoveMetadata(coreGame_, firstMove_, m))
-					TEMP_syncCoreMovetext();
+					TEMP_movetext::syncCoreMovetext(coreGame_, firstMove_);
 				return OK;
 			}
 	if( nag >= 1 && nag <= 6)
@@ -177,7 +133,7 @@ errorT Game::addNag (byte nag) {
 	m->nagCount += 1;
 	m->nags[m->nagCount] = 0;
 	if (!syncCoreMoveMetadata(coreGame_, firstMove_, m))
-		TEMP_syncCoreMovetext();
+		TEMP_movetext::syncCoreMovetext(coreGame_, firstMove_);
     return OK;
 }
 
@@ -192,7 +148,7 @@ errorT Game::removeNag (bool isMoveNag) {
 				for( int j=i; j<m->nagCount; j++)  m->nags[j] =  m->nags[j+1];
 				m->nags[m->nagCount] = 0;
 				if (!syncCoreMoveMetadata(coreGame_, firstMove_, m))
-					TEMP_syncCoreMovetext();
+					TEMP_movetext::syncCoreMovetext(coreGame_, firstMove_);
 				return OK;
 			}
 	}
@@ -205,7 +161,7 @@ errorT Game::removeNag (bool isMoveNag) {
 				for( int j=i; j<m->nagCount; j++)  m->nags[j] =  m->nags[j+1];
 				m->nags[m->nagCount] = 0;
 				if (!syncCoreMoveMetadata(coreGame_, firstMove_, m))
-					TEMP_syncCoreMovetext();
+					TEMP_movetext::syncCoreMovetext(coreGame_, firstMove_);
 				return OK;
 			}
 	}
@@ -223,6 +179,6 @@ void Game::setMoveComment(const char* comment) {
 		// CommentsFlag = 1;
 	}
 	if (!syncCoreComment(coreGame_, firstMove_, m))
-		TEMP_syncCoreMovetext();
+		TEMP_movetext::syncCoreMovetext(coreGame_, firstMove_);
 }
 } // namespace scid::database

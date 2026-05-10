@@ -54,7 +54,7 @@ bool findLegacyMovetextLocation(const moveT* lineStart,
 
 } // namespace
 
-bool legacy_movetext::moveCursorToLegacyLocation(
+bool TEMP_movetext::moveCursorToLegacyLocation(
     scid::core::MovetextCursor& cursor,
     const moveT* lineStart,
     const moveT* target) {
@@ -79,7 +79,7 @@ bool legacy_movetext::moveCursorToLegacyLocation(
 	return true;
 }
 
-bool legacy_movetext::moveCursorToLegacyLocation(
+bool TEMP_movetext::moveCursorToLegacyLocation(
     scid::core::GameCursor& cursor,
     const moveT* lineStart,
     const moveT* target) {

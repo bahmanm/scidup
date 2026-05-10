@@ -6,6 +6,7 @@
 #include "scidup/database/indexentry.h"
 #include "scidup/database/matsig.h"
 #include "scidup/database/namebase.h"
+#include "movetext_projection.h"
 #include "movetree.h"
 #include "stored.h"
 
@@ -633,7 +634,7 @@ errorT Game::decodeMovesOnly(ByteBuffer& buf) {
 	std::vector<moveT*> comment_marks;
 	auto err = decodeVariation(buf, comment_marks);
 	if (err == OK)
-		TEMP_syncCoreMovetext();
+		TEMP_movetext::syncCoreMovetext(coreGame_, firstMove_);
 	return err;
 }
 
@@ -669,7 +670,7 @@ errorT Game::decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf)
         err = decodeComments(buf, firstMove_, comment_marks);
 
     if (err == OK)
-        TEMP_syncCoreMovetext();
+        TEMP_movetext::syncCoreMovetext(coreGame_, firstMove_);
 
     return err;
 }

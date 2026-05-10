@@ -9,7 +9,7 @@ namespace scid::database {
 
 struct moveT;
 
-namespace legacy_movetext {
+namespace TEMP_movetext {
 
 bool moveCursorToLegacyLocation(scid::core::MovetextCursor& cursor,
                                 const moveT* lineStart,
@@ -18,6 +18,6 @@ bool moveCursorToLegacyLocation(scid::core::GameCursor& cursor,
                                 const moveT* lineStart,
                                 const moveT* target);
 
-} // namespace legacy_movetext
+} // namespace TEMP_movetext
 
 } // namespace scid::database

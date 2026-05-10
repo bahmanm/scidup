@@ -11,7 +11,7 @@ bool moveCoreCursorToCurrentLocation(const scid::core::Game& coreGame,
                                      const moveT* firstMove,
                                      const moveT* currentMove,
                                      scid::core::GameCursor& cursor) {
-	return legacy_movetext::moveCursorToLegacyLocation(cursor, firstMove,
+	return TEMP_movetext::moveCursorToLegacyLocation(cursor, firstMove,
 	                                                   currentMove);
 }
 
