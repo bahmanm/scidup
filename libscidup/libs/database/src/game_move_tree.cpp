@@ -28,6 +28,44 @@ void restoreCoreCursor(scid::core::GameCursor& cursor,
 	ASSERT(restored);
 }
 
+bool nextPgnCore(scid::core::GameCursor& cursor) {
+	if (cursor.previousMove() &&
+	    !cursor.previousMove()->childVariations.empty() &&
+	    cursor.previous()) {
+		return cursor.enterVariation(0);
+	}
+
+	while (!cursor.next()) {
+		if (cursor.variationDepth() == 0)
+			return false;
+
+		auto variationIndex = cursor.variationIndex();
+		if (!cursor.exitVariation())
+			return false;
+		if (cursor.enterVariation(variationIndex + 1))
+			return true;
+		[[maybe_unused]] const bool skippedParent = cursor.next();
+		ASSERT(skippedParent);
+	}
+	return true;
+}
+
+unsigned pgnLocationOf(const scid::core::Game& game,
+                       scid::core::MovetextLocation location) {
+	scid::core::GameCursor cursor(game);
+	unsigned result = 1;
+	if (cursor.location() == location)
+		return result;
+
+	while (nextPgnCore(cursor)) {
+		++result;
+		if (cursor.location() == location)
+			return result;
+	}
+	ASSERT(false);
+	return result;
+}
+
 } // namespace
 
 ///////////////////////////////////////////////////////////////////////////
@@ -170,22 +208,46 @@ void Game::toPly(int hmNumber) {
 // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
 // instead of keeping it on the generic Game cursor surface.
 errorT Game::nextPgn() {
-	if (currentMove_->prev->varChild && previous() == OK)
-		return enterVariation(0);
+	scid::core::GameCursor coreCursor(coreGame_);
+	restoreCoreCursor(coreCursor, coreLocation_);
+	if (coreCursor.previousMove() &&
+	    !coreCursor.previousMove()->childVariations.empty() &&
+	    coreCursor.previous()) {
+		[[maybe_unused]] const bool entered = coreCursor.enterVariation(0);
+		ASSERT(entered);
+		auto err = previous();
+		if (err == OK)
+			err = enterVariation(0);
+		ASSERT(coreLocation_ == coreCursor.location());
+		return err;
+	}
 
-	while (next() != OK) {
-		if (varDepth_ == 0)
+	while (!coreCursor.next()) {
+		if (coreCursor.variationDepth() == 0)
 			return ERROR_EndOfMoveList;
 
-		scid::core::GameCursor coreCursor(coreGame_);
-		restoreCoreCursor(coreCursor, coreLocation_);
 		auto varnum = static_cast<uint>(coreCursor.variationIndex());
-		exitVariation();
-		if (enterVariation(varnum + 1) == OK)
-			return OK;
+		[[maybe_unused]] const bool exited = coreCursor.exitVariation();
+		ASSERT(exited);
+		auto err = exitVariation();
+		ASSERT(err == OK);
 
-		next();
+		if (coreCursor.enterVariation(varnum + 1)) {
+			err = enterVariation(varnum + 1);
+			ASSERT(err == OK);
+			ASSERT(coreLocation_ == coreCursor.location());
+			return OK;
+		}
+
+		[[maybe_unused]] const bool skippedParent = coreCursor.next();
+		ASSERT(skippedParent);
+		err = next();
+		ASSERT(err == OK);
 	}
+
+	auto err = next();
+	ASSERT(err == OK);
+	ASSERT(coreLocation_ == coreCursor.location());
 	return OK;
 }
 
@@ -204,14 +266,7 @@ errorT Game::toPgnLocation(unsigned stopLocation) {
 // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
 // instead of keeping it on the generic Game cursor surface.
 unsigned Game::pgnLocation() const {
-	unsigned res = 1;
-	const moveT* last_move = currentMove_->prev;
-	const moveT* move = firstMove_;
-	for (; move != last_move; move = move->nextMoveInPGN()) {
-		if (!move->endMarker())
-			++res;
-	}
-	return res;
+	return pgnLocationOf(coreGame_, coreLocation_);
 }
 
 // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
