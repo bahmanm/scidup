@@ -30,6 +30,10 @@ bool syncCoreMoveSan(scid::core::Game& coreGame,
 	                : cursor.setPreviousMoveSan(legacyMove->san);
 }
 
+void cacheLegacySan(char* dest, const std::string& san) {
+	std::snprintf(dest, SAN_STRING_SIZE, "%s", san.c_str());
+}
+
 } // namespace
 
 std::string game_notation::currentPositionUci(const Game& game) {
@@ -76,9 +80,16 @@ std::string game_notation::nextSan(Game& game) {
 	ASSERT(!game.currentMove_->endMarker() || *game.currentMove_->san == '\0');
 
 	if (!game.currentMove_->endMarker() && *game.currentMove_->san == '\0') {
-		game.currentPos_->MakeSANString(
-		    &game.currentMove_->moveData, game.currentMove_->san,
-		    game.currentMove_->next->endMarker() ? SAN_MATETEST : SAN_CHECKTEST);
+		const auto san =
+		    scid::core::notation::nextSan(game.coreGame_, game.coreLocation_);
+		if (!san.empty()) {
+			cacheLegacySan(game.currentMove_->san, san);
+		} else {
+			game.currentPos_->MakeSANString(
+			    &game.currentMove_->moveData, game.currentMove_->san,
+			    game.currentMove_->next->endMarker() ? SAN_MATETEST
+			                                         : SAN_CHECKTEST);
+		}
 		if (!syncCoreMoveSan(game.coreGame_, game.coreLocation_,
 		                     game.currentMove_, true))
 			TEMP_movetext::syncCoreMovetextAndLocation(
@@ -96,9 +107,16 @@ std::string game_notation::previousSan(Game& game) {
         return {};
     }
     if (m->san[0] == 0) {
-        game.previous();
-		game.currentPos_->MakeSANString (&(m->moveData), m->san, SAN_MATETEST);
-        game.next();
+		const auto san =
+		    scid::core::notation::previousSan(game.coreGame_, game.coreLocation_);
+		if (!san.empty()) {
+			cacheLegacySan(m->san, san);
+		} else {
+			game.previous();
+			game.currentPos_->MakeSANString(&(m->moveData), m->san,
+			                                SAN_MATETEST);
+			game.next();
+		}
 		if (!syncCoreMoveSan(game.coreGame_, game.coreLocation_, m, false))
 			TEMP_movetext::syncCoreMovetextAndLocation(
 			    game.coreGame_, game.firstMove_, game.currentMove_,

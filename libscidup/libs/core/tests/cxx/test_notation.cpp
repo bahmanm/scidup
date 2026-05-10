@@ -91,6 +91,14 @@ TEST(CoreNotationTest, PrefersStoredSanWhenPresent) {
 	          scid::core::notation::previousSan(game, cursor.location()));
 }
 
+TEST(CoreNotationTest, ReturnsEmptySanForIllegalAction) {
+	scid::core::Game game;
+	game.appendMainlineMove(quiet(scid::database::A1, scid::database::A2));
+	scid::core::GameCursor cursor(game);
+
+	EXPECT_EQ("", scid::core::notation::nextSan(game, cursor.location()));
+}
+
 TEST(CoreNotationTest, WritesCurrentPositionUciFromVariationCursor) {
 	scid::core::Game game;
 	auto& first = game.appendMainlineMove(
