@@ -222,4 +222,57 @@ TEST(CoreMovetextCursorTest, RefusesToPromoteVariationFromMainline) {
 	          game.movetext().mainline.moves[0].action.longNotation());
 }
 
+TEST(CoreMovetextCursorTest, PromotesCurrentVariationToMainline) {
+	scid::core::Game game;
+	scid::core::MovetextCursor cursor(game);
+
+	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.addMove(quiet(scid::database::E7, scid::database::E5));
+	cursor.toStart();
+	auto queenPawn = cursor.addVariation("Queen pawn alternative");
+	ASSERT_NE(nullptr, queenPawn);
+	cursor.addMove(quiet(scid::database::D2, scid::database::D4));
+	ASSERT_TRUE(cursor.exitVariation());
+	auto english = cursor.addVariation("English alternative");
+	ASSERT_NE(nullptr, english);
+	cursor.addMove(quiet(scid::database::C2, scid::database::C4));
+	cursor.addMove(quiet(scid::database::C7, scid::database::C5));
+
+	ASSERT_TRUE(cursor.promoteVariationToMainline());
+
+	EXPECT_EQ(0U, cursor.variationDepth());
+	EXPECT_TRUE(cursor.isAtGameEnd());
+	ASSERT_NE(nullptr, cursor.previousMove());
+	EXPECT_EQ("c7c5", cursor.previousMove()->action.longNotation());
+	auto const& mainline = game.movetext().mainline.moves;
+	ASSERT_EQ(2U, mainline.size());
+	EXPECT_EQ("c2c4", mainline[0].action.longNotation());
+	EXPECT_EQ("c7c5", mainline[1].action.longNotation());
+
+	auto const& variations = mainline[0].childVariations;
+	ASSERT_EQ(2U, variations.size());
+	EXPECT_EQ("English alternative", variations[0].initialComment);
+	ASSERT_EQ(2U, variations[0].line.moves.size());
+	EXPECT_EQ("e2e4", variations[0].line.moves[0].action.longNotation());
+	EXPECT_EQ("e7e5", variations[0].line.moves[1].action.longNotation());
+	EXPECT_EQ("Queen pawn alternative", variations[1].initialComment);
+	ASSERT_EQ(1U, variations[1].line.moves.size());
+	EXPECT_EQ("d2d4", variations[1].line.moves[0].action.longNotation());
+}
+
+TEST(CoreMovetextCursorTest, RefusesToPromoteEmptyVariationToMainlineAsNoOp) {
+	scid::core::Game game;
+	scid::core::MovetextCursor cursor(game);
+
+	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.toStart();
+	ASSERT_NE(nullptr, cursor.addVariation());
+
+	EXPECT_TRUE(cursor.promoteVariationToMainline());
+	EXPECT_EQ(1U, cursor.variationDepth());
+	ASSERT_EQ(1U, game.movetext().mainline.moves.size());
+	EXPECT_EQ("e2e4",
+	          game.movetext().mainline.moves[0].action.longNotation());
+}
+
 } // namespace

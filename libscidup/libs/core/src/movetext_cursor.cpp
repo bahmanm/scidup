@@ -233,6 +233,63 @@ bool MovetextCursor::promoteVariationToFirst() {
 	return true;
 }
 
+bool MovetextCursor::promoteVariationToMainline() {
+	if (parents_.empty())
+		return false;
+
+	auto parent = parents_.back();
+	if (parent.nextIndex >= parent.line->moves.size())
+		return false;
+
+	auto& parentMoves = parent.line->moves;
+	auto& rootMove = parentMoves[parent.nextIndex];
+	if (parent.variationIndex >= rootMove.childVariations.size())
+		return false;
+	if (rootMove.childVariations[parent.variationIndex].line.moves.empty())
+		return true;
+
+	auto selectedVariation =
+	    std::move(rootMove.childVariations[parent.variationIndex]);
+	rootMove.childVariations.erase(rootMove.childVariations.begin() +
+	                               parent.variationIndex);
+	auto siblingVariations = std::move(rootMove.childVariations);
+	auto promotedMoves = std::move(selectedVariation.line.moves);
+	auto promotedFirstChildren = std::move(promotedMoves.front().childVariations);
+
+	std::vector<Move> demotedMainlineMoves;
+	demotedMainlineMoves.reserve(parentMoves.size() - parent.nextIndex);
+	auto demotedRootMove = std::move(rootMove);
+	demotedRootMove.childVariations = std::move(promotedFirstChildren);
+	demotedMainlineMoves.push_back(std::move(demotedRootMove));
+	for (auto i = parent.nextIndex + 1; i < parentMoves.size(); ++i)
+		demotedMainlineMoves.push_back(std::move(parentMoves[i]));
+
+	Variation demotedMainline;
+	demotedMainline.initialComment =
+	    std::move(selectedVariation.initialComment);
+	demotedMainline.line.moves = std::move(demotedMainlineMoves);
+
+	std::vector<Variation> promotedFirstVariations;
+	promotedFirstVariations.reserve(siblingVariations.size() + 1);
+	promotedFirstVariations.push_back(std::move(demotedMainline));
+	for (auto& variation : siblingVariations)
+		promotedFirstVariations.push_back(std::move(variation));
+	promotedMoves.front().childVariations = std::move(promotedFirstVariations);
+
+	std::vector<Move> newParentMoves;
+	newParentMoves.reserve(parent.nextIndex + promotedMoves.size());
+	for (std::size_t i = 0; i < parent.nextIndex; ++i)
+		newParentMoves.push_back(std::move(parentMoves[i]));
+	for (auto& move : promotedMoves)
+		newParentMoves.push_back(std::move(move));
+
+	parent.line->moves = std::move(newParentMoves);
+	currentLine_ = parent.line;
+	nextIndex_ = parent.nextIndex + nextIndex_;
+	parents_.pop_back();
+	return true;
+}
+
 bool MovetextCursor::deleteVariation() {
 	if (parents_.empty())
 		return false;

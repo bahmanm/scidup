@@ -51,6 +51,7 @@ public:
 	Move& addMove(MoveAction action);
 	Variation* addVariation(std::string_view initialComment = {});
 	bool promoteVariationToFirst();
+	bool promoteVariationToMainline();
 	bool deleteVariation();
 	void truncate();
 
