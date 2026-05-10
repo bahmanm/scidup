@@ -144,4 +144,43 @@ TEST(CoreMovetextCursorTest, TruncatesVariationLineAtCursor) {
 	EXPECT_EQ("d2d4", variation->line.moves[0].action.longNotation());
 }
 
+TEST(CoreMovetextCursorTest, DeletesCurrentVariationAndExitsToParent) {
+	scid::core::Game game;
+	scid::core::MovetextCursor cursor(game);
+
+	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.toStart();
+	auto firstVariation = cursor.addVariation("Queen pawn alternative");
+	ASSERT_NE(nullptr, firstVariation);
+	cursor.addMove(quiet(scid::database::D2, scid::database::D4));
+	ASSERT_TRUE(cursor.exitVariation());
+	auto secondVariation = cursor.addVariation("English alternative");
+	ASSERT_NE(nullptr, secondVariation);
+	cursor.addMove(quiet(scid::database::C2, scid::database::C4));
+
+	ASSERT_TRUE(cursor.deleteVariation());
+
+	EXPECT_EQ(0U, cursor.variationDepth());
+	ASSERT_NE(nullptr, cursor.nextMove());
+	EXPECT_EQ("e2e4", cursor.nextMove()->action.longNotation());
+	auto const& variations =
+	    game.movetext().mainline.moves[0].childVariations;
+	ASSERT_EQ(1U, variations.size());
+	EXPECT_EQ("Queen pawn alternative", variations[0].initialComment);
+	ASSERT_EQ(1U, variations[0].line.moves.size());
+	EXPECT_EQ("d2d4", variations[0].line.moves[0].action.longNotation());
+}
+
+TEST(CoreMovetextCursorTest, RefusesToDeleteVariationFromMainline) {
+	scid::core::Game game;
+	scid::core::MovetextCursor cursor(game);
+
+	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+
+	EXPECT_FALSE(cursor.deleteVariation());
+	ASSERT_EQ(1U, game.movetext().mainline.moves.size());
+	EXPECT_EQ("e2e4",
+	          game.movetext().mainline.moves[0].action.longNotation());
+}
+
 } // namespace

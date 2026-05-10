@@ -50,6 +50,7 @@ public:
 
 	Move& addMove(MoveAction action);
 	Variation* addVariation(std::string_view initialComment = {});
+	bool deleteVariation();
 	void truncate();
 
 private:

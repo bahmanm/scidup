@@ -324,13 +324,22 @@ errorT Game::promoteVariationToMainline() {
 //      deleting variations will waste memory until the game is cleared.
 //
 errorT Game::deleteVariation() {
+	scid::core::MovetextCursor coreCursor(coreGame_);
+	const bool coreCursorReady =
+	    legacy_movetext::moveCursorToLegacyLocation(coreCursor, firstMove_,
+	                                                currentMove_);
+
 	auto parent = currentMove_->getParent();
 	auto root = parent.first;
 	if (!root || exitVariation() != OK)
 		return ERROR_NoVariation;
 
 	root->detachChild(parent.second);
-	TEMP_syncCoreMovetext();
+	if (!coreCursorReady || !coreCursor.deleteVariation()) {
+		// TODO [Game]: Remove this fallback once legacy cursor state is
+		// represented directly by MovetextCursor.
+		TEMP_syncCoreMovetext();
+	}
 	return OK;
 }
 
