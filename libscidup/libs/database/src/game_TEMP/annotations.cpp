@@ -16,8 +16,8 @@ bool syncCoreMoveMetadata(scid::core::Game& coreGame,
 		return false;
 
 	scid::core::MovetextCursor cursor(coreGame);
-	if (!cursor.restore(location))
-		return false;
+	[[maybe_unused]] const bool restored = cursor.restore(location);
+	ASSERT(restored);
 
 	auto move = cursor.previousMove();
 	if (!move)
@@ -46,8 +46,8 @@ bool syncCoreComment(scid::core::Game& coreGame,
 	}
 
 	scid::core::MovetextCursor cursor(coreGame);
-	if (!cursor.restore(location))
-		return false;
+	[[maybe_unused]] const bool restored = cursor.restore(location);
+	ASSERT(restored);
 
 	auto variation = cursor.currentVariation();
 	if (!variation)
