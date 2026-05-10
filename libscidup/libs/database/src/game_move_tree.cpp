@@ -66,6 +66,17 @@ unsigned pgnLocationOf(const scid::core::Game& game,
 	return result;
 }
 
+unsigned pgnOffsetOf(const scid::core::Game& game,
+                     scid::core::MovetextLocation location) {
+	scid::core::GameCursor cursor(game);
+	restoreCoreCursor(cursor, location);
+	while (cursor.isAtVariationStart() && cursor.variationDepth() != 0) {
+		[[maybe_unused]] const bool exited = cursor.exitVariation();
+		ASSERT(exited);
+	}
+	return pgnLocationOf(game, cursor.location());
+}
+
 } // namespace
 
 ///////////////////////////////////////////////////////////////////////////
@@ -272,16 +283,7 @@ unsigned Game::pgnLocation() const {
 // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
 // instead of keeping it on the generic Game cursor surface.
 unsigned Game::pgnOffset() const {
-	unsigned res = 1;
-	const moveT* last_move = currentMove_->getPrevMove();
-	if (last_move) {
-		const moveT* move = firstMove_;
-		for (; move != last_move; move = move->nextMoveInPGN()) {
-			if (!move->endMarker())
-				++res;
-		}
-	}
-	return res;
+	return pgnOffsetOf(coreGame_, coreLocation_);
 }
 
 ///////////////////////////////////////////////////////////////////////////
