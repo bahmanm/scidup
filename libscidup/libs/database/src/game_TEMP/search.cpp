@@ -2,6 +2,7 @@
 
 #include "scidup/database/bytebuf.h"
 #include "scidup/database/common.h"
+#include "game_search.h"
 #include "movetree.h"
 
 namespace scid::database {
@@ -483,18 +484,40 @@ bool game_search::materialMatch(Game& game, bool promotionsFlag,
                                 int minPly, int maxPly, int matchLength,
                                 bool oppBishops, bool sameBishops, int minDiff,
                                 int maxDiff) {
-    return game.materialMatch(promotionsFlag, buf, min, max, patterns, patternCount,
-                              minPly, maxPly, matchLength, oppBishops,
-                              sameBishops, minDiff, maxDiff);
+    return GameSearchAccess::materialMatch(
+        game, promotionsFlag, buf, min, max, patterns, patternCount, minPly,
+        maxPly, matchLength, oppBishops, sameBishops, minDiff, maxDiff);
 }
 
 bool game_search::exactMatch(Game& game, Position* pos, ByteBuffer* buf,
                              gameExactMatchT searchType) {
-    return game.exactMatch(pos, buf, searchType);
+    return GameSearchAccess::exactMatch(game, pos, buf, searchType);
 }
 
 bool game_search::varExactMatch(Game& game, Position* pos,
                                 gameExactMatchT searchType) {
+    return GameSearchAccess::varExactMatch(game, pos, searchType);
+}
+
+bool GameSearchAccess::materialMatch(Game& game, bool promotionsFlag,
+                                     ByteBuffer& buf, byte* min, byte* max,
+                                     patternT* patterns,
+                                     std::size_t patternCount, int minPly,
+                                     int maxPly, int matchLength,
+                                     bool oppBishops, bool sameBishops,
+                                     int minDiff, int maxDiff) {
+    return game.materialMatch(promotionsFlag, buf, min, max, patterns,
+                              patternCount, minPly, maxPly, matchLength,
+                              oppBishops, sameBishops, minDiff, maxDiff);
+}
+
+bool GameSearchAccess::exactMatch(Game& game, Position* pos, ByteBuffer* buf,
+                                  gameExactMatchT searchType) {
+    return game.exactMatch(pos, buf, searchType);
+}
+
+bool GameSearchAccess::varExactMatch(Game& game, Position* pos,
+                                     gameExactMatchT searchType) {
     return game.varExactMatch(pos, searchType);
 }
 

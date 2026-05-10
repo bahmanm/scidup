@@ -20,11 +20,23 @@ struct patternT {
 	byte flag; // 0 means this pattern must not occur.
 };
 
-enum gameExactMatchT {
+enum gameExactMatchT : int {
 	GAME_EXACT_MATCH_Exact = 0,
 	GAME_EXACT_MATCH_Pawns,
 	GAME_EXACT_MATCH_Fyles,
 	GAME_EXACT_MATCH_Material
+};
+
+struct GameSearchAccess {
+	static bool materialMatch(Game& game, bool promotionsFlag, ByteBuffer& buf,
+	                          byte* min, byte* max, patternT* patterns,
+	                          std::size_t patternCount, int minPly, int maxPly,
+	                          int matchLength, bool oppBishops,
+	                          bool sameBishops, int minDiff, int maxDiff);
+	static bool exactMatch(Game& game, Position* pos, ByteBuffer* buf,
+	                       gameExactMatchT searchType);
+	static bool varExactMatch(Game& game, Position* pos,
+	                          gameExactMatchT searchType);
 };
 
 namespace game_search {

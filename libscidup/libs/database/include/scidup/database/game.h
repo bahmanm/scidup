@@ -23,7 +23,6 @@
 #include "scidup/core/date.h"
 #include "scidup/eco/code.h"
 #include "scidup/core/nags.h"
-#include "scidup/database/game_TEMP/search.h"
 #include "scidup/database/indexentry.h"
 #include "scidup/database/namebase.h"
 #include "scidup/core/position.h"
@@ -37,8 +36,11 @@ namespace scid::database {
 
 class ByteBuffer;
 class Game;
+struct GameSearchAccess;
 class TextBuffer;
 struct moveT;
+struct patternT;
+enum gameExactMatchT : int;
 enum markerT : byte;
 
 namespace game_storage {
@@ -108,16 +110,7 @@ private:
     friend errorT game_storage::decodeSkipTags(Game& game, ByteBuffer* buf);
     friend errorT game_storage::decodeNextMove(Game& game, ByteBuffer* buf,
                                                simpleMoveT& sm);
-    friend bool game_search::materialMatch(
-        Game& game, bool promotionsFlag, ByteBuffer& buf, byte* min, byte* max,
-        patternT* patterns, std::size_t patternCount, int minPly, int maxPly,
-        int matchLength, bool oppBishops, bool sameBishops, int minDiff,
-        int maxDiff);
-    friend bool game_search::exactMatch(Game& game, Position* pos,
-                                        ByteBuffer* buf,
-                                        gameExactMatchT searchType);
-    friend bool game_search::varExactMatch(Game& game, Position* pos,
-                                           gameExactMatchT searchType);
+    friend struct GameSearchAccess;
     friend struct LegacyGamePgnEncoder;
     /**
      * Contains the information of the current position in the game, so that
