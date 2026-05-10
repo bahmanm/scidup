@@ -69,19 +69,11 @@ moveT* Game::newMove(markerT marker) {
 }
 
 Game::Game(const Game& obj) {
-	// TODO [Game]: Revisit clone/copy after GameCursor exists. This currently
-	// copies aggregate data and restores PGN-order cursor location in one
-	// compatibility operation.
 	coreGame_ = obj.coreGame_;
+	coreLocation_ = obj.coreLocation_;
 	std::copy_n(obj.scidFlags_, sizeof(obj.scidFlags_), scidFlags_);
-
-	numHalfMoves_ = obj.numHalfMoves_;
-
 	moveChunkUsed_ = MOVE_CHUNKSIZE;
-	firstMove_ = obj.firstMove_->cloneLine(nullptr,
-	                                     [this]() { return allocMove(); });
-
-	toPgnLocation(obj.pgnLocation());
+	TEMP_syncLegacyMovetextFromCore();
 }
 
 Game* Game::clone() {
@@ -94,25 +86,8 @@ void Game::strip(bool variations, bool comments, bool NAGs) {
 	while (variations && exitVariation() == OK) {
 	}
 
-	for (auto& chunk : moveChunks_) {
-		moveT* move = chunk.get();
-		moveT* end = (chunk == moveChunks_.front()) ? move + moveChunkUsed_
-		                                            : move + MOVE_CHUNKSIZE;
-		for (; move != end; ++move) {
-			if (variations) {
-				move->numVariations = 0;
-				move->varChild = nullptr;
-			}
-			if (comments)
-				move->comment.clear();
-
-			if (NAGs) {
-				move->nagCount = 0;
-				std::fill_n(move->nags, sizeof(move->nags), 0);
-			}
-		}
-	}
 	coreGame_.stripMovetext(variations, comments, NAGs);
+	TEMP_syncLegacyMovetextFromCore();
 }
 
 void Game::clearMoves() {
