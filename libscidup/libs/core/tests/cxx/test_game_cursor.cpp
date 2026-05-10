@@ -85,6 +85,65 @@ TEST(CoreGameCursorTest, SavesAndRestoresLocation) {
 	EXPECT_EQ("d7d5", cursor.nextMove()->action.longNotation());
 }
 
+TEST(CoreGameCursorTest, ReturnsMainlineMovesToCursor) {
+	scid::core::Game game;
+	game.appendMainlineMove(quiet(scid::database::D2, scid::database::D4));
+	game.appendMainlineMove(quiet(scid::database::D7, scid::database::D5));
+	scid::core::GameCursor cursor(game);
+	ASSERT_TRUE(cursor.toPly(2));
+
+	auto moves = cursor.movesToCursor();
+
+	ASSERT_EQ(2U, moves.size());
+	EXPECT_EQ("d2d4", moves[0]->action.longNotation());
+	EXPECT_EQ("d7d5", moves[1]->action.longNotation());
+}
+
+TEST(CoreGameCursorTest, ReturnsVariationMovesToCursor) {
+	scid::core::Game game;
+	auto& first = game.appendMainlineMove(
+	    quiet(scid::database::D2, scid::database::D4));
+	first.childVariations.emplace_back().line.moves.push_back(
+	    {quiet(scid::database::E2, scid::database::E4), "e4", {}, {}});
+	first.childVariations[0].line.moves.push_back(
+	    {quiet(scid::database::E7, scid::database::E5), "e5", {}, {}});
+
+	scid::core::GameCursor cursor(game);
+	ASSERT_TRUE(cursor.enterVariation(0));
+	ASSERT_TRUE(cursor.next());
+	ASSERT_TRUE(cursor.next());
+
+	auto moves = cursor.movesToCursor();
+
+	ASSERT_EQ(2U, moves.size());
+	EXPECT_EQ("e2e4", moves[0]->action.longNotation());
+	EXPECT_EQ("e7e5", moves[1]->action.longNotation());
+}
+
+TEST(CoreGameCursorTest, ReturnsNestedVariationMovesToCursor) {
+	scid::core::Game game;
+	auto& first = game.appendMainlineMove(
+	    quiet(scid::database::D2, scid::database::D4));
+	auto& variation = first.childVariations.emplace_back();
+	variation.line.appendMove(quiet(scid::database::E2, scid::database::E4));
+	auto& variationSecond = variation.line.appendMove(
+	    quiet(scid::database::E7, scid::database::E5));
+	variationSecond.childVariations.emplace_back().line.moves.push_back(
+	    {quiet(scid::database::C7, scid::database::C5), "c5", {}, {}});
+
+	scid::core::GameCursor cursor(game);
+	ASSERT_TRUE(cursor.enterVariation(0));
+	ASSERT_TRUE(cursor.next());
+	ASSERT_TRUE(cursor.enterVariation(0));
+	ASSERT_TRUE(cursor.next());
+
+	auto moves = cursor.movesToCursor();
+
+	ASSERT_EQ(2U, moves.size());
+	EXPECT_EQ("e2e4", moves[0]->action.longNotation());
+	EXPECT_EQ("c7c5", moves[1]->action.longNotation());
+}
+
 TEST(CoreGameCursorTest, SeeksToMainlineStartAndEnd) {
 	scid::core::Game game;
 	auto& first = game.appendMainlineMove(

@@ -10,24 +10,12 @@
 #include "movetext_projection.h"
 #include "movetree.h"
 
-#include <algorithm>
 #include <cstdio>
-#include <cstring>
 #include <vector>
 
 namespace scid::database {
 
 namespace {
-
-scid::core::MoveAction TEMP_moveActionFromLegacyMove(simpleMoveT const& move) {
-	return {move.from, move.to, move.promote};
-}
-
-template <typename OutputIt>
-OutputIt TEMP_copyLongNotation(OutputIt dest, simpleMoveT const& move) {
-	const auto notation = TEMP_moveActionFromLegacyMove(move).longNotation();
-	return std::copy(notation.begin(), notation.end(), dest);
-}
 
 bool syncCoreMoveSan(scid::core::Game& coreGame,
                      scid::core::MovetextLocation location,
@@ -44,41 +32,56 @@ bool syncCoreMoveSan(scid::core::Game& coreGame,
 	                : cursor.setPreviousMoveSan(legacyMove->san);
 }
 
+simpleMoveT toSimpleMove(Position& position, scid::core::MoveAction action) {
+	simpleMoveT move;
+	if (action.isNull()) {
+		position.makeMove(action.from, action.to, PAWN, move);
+		return move;
+	}
+
+	const auto notation = action.longNotation();
+	[[maybe_unused]] const auto err =
+	    position.ReadCoordMove(&move, notation.data(), notation.size(), false);
+	ASSERT(err == OK);
+	return move;
+}
+
 } // namespace
 
 std::string game_notation::currentPositionUci(const Game& game) {
-	// TODO [Game]: Move UCI position rendering to a notation helper over
-	// GameCursor.
-	std::string res = "position startpos moves";
 	char FEN[256] = {};
+	std::vector<std::string> moves;
+	Position position = game.coreGame().startPosition()
+	                        ? *game.coreGame().startPosition()
+	                        : Position::getStdStart();
 
-	std::vector<const moveT*> moves;
-	const moveT* move = game.currentMove_;
-	while ((move = move->getPrevMove())) {
-		if (move->moveData.isNullMove()) {
-			Position lastValidPos = *game.currentPos();
-				for (const moveT* m : moves) {
-					lastValidPos.UndoSimpleMove(m->moveData);
-				}
-				lastValidPos.PrintFEN(FEN, sizeof(FEN));
-				break;
-			}
-		moves.emplace_back(move);
-	}
+	scid::core::GameCursor cursor(game.coreGame_);
+	[[maybe_unused]] const bool restored = cursor.restore(game.coreLocation_);
+	ASSERT(restored);
 
-		if (*FEN || game.coreGame().hasNonStandardStart(FEN, sizeof(FEN))) {
-			res.replace(9, 4, "fen ");
-			res.replace(13, 4, FEN);
+	for (const auto* move : cursor.movesToCursor()) {
+		auto simpleMove = toSimpleMove(position, move->action);
+		position.DoSimpleMove(simpleMove);
+		if (move->action.isNull()) {
+			position.PrintFEN(FEN, sizeof(FEN));
+			moves.clear();
+		} else {
+			moves.push_back(move->action.longNotation());
 		}
-
-	const auto allocSpeedup = res.size();
-	res.resize(allocSpeedup + moves.size() * 6);
-	auto it = res.data() + allocSpeedup;
-	for (auto m = moves.crbegin(), end = moves.crend(); m != end; ++m) {
-		*it++ = ' ';
-		it = TEMP_copyLongNotation(it, (*m)->moveData);
 	}
-	res.resize(std::distance(res.data(), it)); // shrink
+
+	std::string res = "position ";
+	if (*FEN || game.coreGame().hasNonStandardStart(FEN, sizeof(FEN))) {
+		res += "fen ";
+		res += FEN;
+	} else {
+		res += "startpos";
+	}
+	res += " moves";
+	for (auto const& move : moves) {
+		res.push_back(' ');
+		res += move;
+	}
 	return res;
 }
 

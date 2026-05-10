@@ -19,6 +19,20 @@ const Move* GameCursor::nextMove() const {
 	return &currentLine().moves[nextIndex_];
 }
 
+std::vector<const Move*> GameCursor::movesToCursor() const {
+	std::vector<const Move*> result;
+	result.reserve(ply());
+
+	for (auto const& parent : parents_) {
+		for (std::size_t i = 0; i < parent.nextIndex; ++i)
+			result.push_back(&parent.line->moves[i]);
+	}
+	for (std::size_t i = 0; i < nextIndex_; ++i)
+		result.push_back(&currentLine().moves[i]);
+
+	return result;
+}
+
 std::size_t GameCursor::ply() const {
 	std::size_t result = nextIndex_;
 	for (auto const& parent : parents_)
