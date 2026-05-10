@@ -739,33 +739,18 @@ std::pair<IndexEntry, TagRoster> Game::encode(std::vector<byte>& dest) const {
     return {ie, tags};
 }
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::DecodeStart():
-//      Decodes the starting information from the game's on-disk
-//      representation in the bytebuffer. After this is called,
-//      storage helpers can be called to decode successive mainline moves.
-//
-errorT Game::decodeSkipTags(ByteBuffer* buf) {
-    ASSERT(buf != NULL);
-
-    clear();
-    errorT err = buf->decodeTags([](auto, auto) {});
-    if (err != OK)
-        return err;
-
-    const auto [err_startpos, fen] = buf->decodeStartBoard();
-    if (err_startpos)
-        return err_startpos;
-
-    if (fen)
-        return setStartFen(fen);
-
-    return OK;
-}
-
 errorT Game::decodeMovesOnly(ByteBuffer& buf) {
-	if (errorT err = decodeSkipTags(&buf))
+	clear();
+	if (errorT err = buf.decodeTags([](auto, auto) {}))
 		return err;
+
+	const auto [errStartPos, fen] = buf.decodeStartBoard();
+	if (errStartPos)
+		return errStartPos;
+	if (fen) {
+		if (errorT err = setStartFen(fen))
+			return err;
+	}
 
 	std::vector<scid::core::MovetextLocation> comment_marks;
 	auto err = decodeVariation(buf, comment_marks);

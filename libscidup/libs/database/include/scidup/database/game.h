@@ -88,7 +88,6 @@ private:
     // once the database wrapper around the future core Game exists.
     void loadStandardTags(IndexEntry const& ie, TagRoster const& tags);
     std::pair<IndexEntry, TagRoster> encode(std::vector<byte>& dest) const;
-    errorT decodeSkipTags(ByteBuffer* buf);
     errorT decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf);
     errorT decodeMovesOnly(ByteBuffer& buf);
     // TODO [Game]: Move these database search operations out of Game once the
