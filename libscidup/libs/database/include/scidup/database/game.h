@@ -78,7 +78,6 @@ private:
     Game(const Game&);
     moveT* allocMove();
     moveT* newMove(markerT marker);
-    void clearMoves();
     // TODO [Game]: Delete this reverse compatibility projection once legacy
     // moveT is no longer needed by database/app readers.
     void TEMP_syncLegacyMovetextFromCore();
