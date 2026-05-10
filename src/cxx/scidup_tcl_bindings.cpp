@@ -177,6 +177,30 @@ static std::string currentMoveComment(const scid::database::Game& game) {
 	return std::string(game.coreGame().movetext().initialComment);
 }
 
+static scid::database::uint variationCount(
+    const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	if (!cursor.restore(game.coreLocation()))
+		return 0;
+	return static_cast<scid::database::uint>(cursor.variationCount());
+}
+
+static scid::database::uint variationLevel(
+    const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	if (!cursor.restore(game.coreLocation()))
+		return 0;
+	return static_cast<scid::database::uint>(cursor.variationDepth());
+}
+
+static scid::database::uint variationNumber(
+    const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	if (!cursor.restore(game.coreLocation()))
+		return 0;
+	return static_cast<scid::database::uint>(cursor.variationIndex());
+}
+
 //////////////////////////////////////////////////////////////////////
 //
 // Inline routines for setting Tcl result strings:
@@ -2966,7 +2990,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     bool printNags = true;
     if (san[0] == 0) {
         scid::database::strCopy (temp, "(");
-        scid::database::strAppend (temp, g.variationLevel() == 0 ?
+        scid::database::strAppend (temp, variationLevel(g) == 0 ?
                    translate (ti, "GameStart", "Start of game") :
                    translate (ti, "LineStart", "Start of line"));
         scid::database::strAppend (temp, ")");
@@ -3001,7 +3025,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::transPieces(tempTrans);
     if (san[0] == 0) {
         scid::database::strCopy (temp, "(");
-        scid::database::strAppend (temp, g.variationLevel() == 0 ?
+        scid::database::strAppend (temp, variationLevel(g) == 0 ?
                    translate (ti, "GameEnd", "End of game") :
                    translate (ti, "LineEnd", "End of line"));
         scid::database::strAppend (temp, ")");
@@ -3032,7 +3056,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         AppendResult (ti, "</red>", NULL);
     }
 
-    if (g.variationLevel() > 0) {
+    if (variationLevel(g) > 0) {
         AppendResult (ti, "   <green><run sc_var exit; updateBoard -animate>",
                           "(<lt>-Var)", "</run></green>", NULL);
     }
@@ -3054,7 +3078,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Print first few variations if there are any:
 
-    scid::database::uint varCount = g.variationCount();
+    scid::database::uint varCount = variationCount(g);
     if (!hideNextMove  &&  varCount > 0) {
         AppendResult (ti, "<br>", translate (ti, "Variations"), ":", NULL);
         for (scid::database::uint vnum = 0; vnum < varCount && vnum < 5; vnum++) {
@@ -8477,10 +8501,10 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     switch (index) {
     case VAR_COUNT:
-        return setUintResult (ti, game.variationCount());
+        return setUintResult (ti, variationCount(game));
 
     case VAR_NUMBER:
-        return setUintResult (ti, game.variationNumber());
+        return setUintResult (ti, variationNumber(game));
 
     case VAR_CREATE:
         if (! (game.isAtVariationStart()  &&  game.isAtVariationEnd())) {
@@ -8504,7 +8528,7 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_var_first (cd, ti, argc, argv);
 
     case VAR_LEVEL:
-        return setUintResult (ti, game.variationLevel());
+        return setUintResult (ti, variationLevel(game));
 
     case VAR_LIST:
         return sc_var_list (cd, ti, argc, argv);
@@ -8554,7 +8578,7 @@ sc_var_list (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     auto editor = scidup::app::editor::gameSession(*db);
     scid::database::Game& game = editor.game();
     bool uci = (argc > 2) && ! scid::database::strCompare("UCI", argv[2]);
-    scid::database::uint varCount = game.variationCount();
+    scid::database::uint varCount = variationCount(game);
     char s[100];
     for (scid::database::uint varNumber = 0; varNumber < varCount; varNumber++) {
         game.enterVariation (varNumber);
@@ -8589,7 +8613,7 @@ sc_var_enter (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     scid::database::uint varNumber = scid::database::strGetUnsigned (argv[2]);
-    if (varNumber >= game.variationCount()) {
+    if (varNumber >= variationCount(game)) {
         return errorResult (ti, "No such variation!");
     }
 

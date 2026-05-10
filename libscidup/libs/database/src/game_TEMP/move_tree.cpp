@@ -185,7 +185,9 @@ errorT Game::nextPgn() {
 		if (varDepth_ == 0)
 			return ERROR_EndOfMoveList;
 
-		auto varnum = variationNumber();
+		scid::core::GameCursor coreCursor(coreGame_);
+		restoreCoreCursor(coreCursor, coreLocation_);
+		auto varnum = static_cast<uint>(coreCursor.variationIndex());
 		exitVariation();
 		if (enterVariation(varnum + 1) == OK)
 			return OK;

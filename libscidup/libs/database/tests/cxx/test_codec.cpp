@@ -16,6 +16,7 @@
 
 #include "scidup/database/bytebuf.h"
 #include "codec.h"
+#include "scidup/core/game_cursor.h"
 #include "scidup/database/game.h"
 #include "scidup/database/index.h"
 #include "scidup/database/misc.h"
@@ -131,7 +132,11 @@ private:
 			if (rand(0, 6) == 0)
 				res->setMoveComment(rand_comment().c_str());
 
-			int varOp = rand(0, 80 + int(res->variationLevel()) * 20);
+			scid::core::GameCursor cursor(res->coreGame());
+			[[maybe_unused]] const bool restored = cursor.restore(
+			    res->coreLocation());
+			ASSERT(restored);
+			int varOp = rand(0, 80 + int(cursor.variationDepth()) * 20);
 			if (varOp < 20) {
 				res->addVariation();
 			} else if (varOp > 80) {

@@ -47,21 +47,6 @@ ushort Game::currentPly() const {
 	    currentCoreCursor(coreGame_, coreLocation_).ply());
 }
 
-uint Game::variationCount() const {
-	return static_cast<uint>(
-	    currentCoreCursor(coreGame_, coreLocation_).variationCount());
-}
-
-uint Game::variationLevel() const {
-	return static_cast<uint>(
-	    currentCoreCursor(coreGame_, coreLocation_).variationDepth());
-}
-
-uint Game::variationNumber() const {
-	return static_cast<uint>(
-	    currentCoreCursor(coreGame_, coreLocation_).variationIndex());
-}
-
 bool Game::isAtVariationStart() const {
 	return currentCoreCursor(coreGame_, coreLocation_).isAtVariationStart();
 }

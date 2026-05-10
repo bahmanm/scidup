@@ -48,8 +48,6 @@ inline void collectPositions(Game& game, TCont& dest) {
 
 		dest.emplace_back();
 		auto& gamepos = dest.back();
-		gamepos.RAVdepth = game.variationLevel();
-		gamepos.RAVnum = game.variationNumber();
 		char strBuf[256];
 		game.currentPos()->PrintFEN(strBuf, sizeof(strBuf));
 		gamepos.FEN = strBuf;
@@ -57,6 +55,8 @@ inline void collectPositions(Game& game, TCont& dest) {
 		[[maybe_unused]] const bool restored = cursor.restore(
 		    game.coreLocation());
 		ASSERT(restored);
+		gamepos.RAVdepth = cursor.variationDepth();
+		gamepos.RAVnum = cursor.variationIndex();
 		if (auto move = cursor.previousMove()) {
 			for (auto nag : move->metadata.nags)
 				gamepos.NAGs.push_back(nag);

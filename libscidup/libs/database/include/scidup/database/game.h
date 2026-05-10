@@ -178,16 +178,6 @@ public:
     const Position* currentPos() const;
     simpleMoveT* currentMove();
     ushort currentPly() const;
-    uint variationCount() const;
-
-    // Each variation has a "level" and a "number".
-    // - "level" is the number of times that is necessary to call
-    //   exitVariation() to reach the main line.
-    // - "number" is the ordered position in the list of variations for the
-    // current root position (first variation is number 0).
-    // The main line is 0,0.
-    uint variationLevel() const;
-    uint variationNumber() const;
 
     // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
     // instead of keeping it on the generic Game cursor surface.

@@ -71,6 +71,13 @@ std::string nextCoreSan(const scid::database::Game& game) {
 	return scid::core::notation::nextSan(game.coreGame(), game.coreLocation());
 }
 
+scid::core::GameCursor coreCursor(const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	[[maybe_unused]] const bool restored = cursor.restore(game.coreLocation());
+	EXPECT_TRUE(restored);
+	return cursor;
+}
+
 std::string nextLegacySan(scid::database::Game& game) {
 	auto* move = game.currentMove();
 	if (!move)
@@ -458,10 +465,11 @@ TEST(Test_Game, stateQueriesMirrorCoreCursorForProgrammaticVariation) {
 	          game.addMove(makeCurrentMove(game, scid::database::E2,
 	                                       scid::database::E4)));
 	ASSERT_EQ(scid::database::OK, game.addVariation());
+	auto cursor = coreCursor(game);
 	EXPECT_EQ(0U, game.currentPly());
-	EXPECT_EQ(1U, game.variationLevel());
-	EXPECT_EQ(0U, game.variationNumber());
-	EXPECT_EQ(0U, game.variationCount());
+	EXPECT_EQ(1U, cursor.variationDepth());
+	EXPECT_EQ(0U, cursor.variationIndex());
+	EXPECT_EQ(0U, cursor.variationCount());
 	EXPECT_TRUE(game.isAtVariationStart());
 	EXPECT_TRUE(game.isAtVariationEnd());
 	EXPECT_TRUE(game.isAtEmptyVariation());
@@ -471,18 +479,20 @@ TEST(Test_Game, stateQueriesMirrorCoreCursorForProgrammaticVariation) {
 	ASSERT_EQ(scid::database::OK,
 	          game.addMove(makeCurrentMove(game, scid::database::D2,
 	                                       scid::database::D4)));
+	auto cursorAfterMove = coreCursor(game);
 	EXPECT_EQ(1U, game.currentPly());
-	EXPECT_EQ(1U, game.variationLevel());
-	EXPECT_EQ(0U, game.variationNumber());
+	EXPECT_EQ(1U, cursorAfterMove.variationDepth());
+	EXPECT_EQ(0U, cursorAfterMove.variationIndex());
 	EXPECT_FALSE(game.isAtVariationStart());
 	EXPECT_TRUE(game.isAtVariationEnd());
 	EXPECT_FALSE(game.isAtEmptyVariation());
 
 	ASSERT_EQ(scid::database::OK, game.exitVariation());
+	auto cursorAfterExit = coreCursor(game);
 	EXPECT_EQ(0U, game.currentPly());
-	EXPECT_EQ(0U, game.variationLevel());
-	EXPECT_EQ(0U, game.variationNumber());
-	EXPECT_EQ(1U, game.variationCount());
+	EXPECT_EQ(0U, cursorAfterExit.variationDepth());
+	EXPECT_EQ(0U, cursorAfterExit.variationIndex());
+	EXPECT_EQ(1U, cursorAfterExit.variationCount());
 	EXPECT_TRUE(game.isAtStart());
 	EXPECT_FALSE(game.isAtEnd());
 }
@@ -503,8 +513,9 @@ TEST(Test_Game, savedLocationRestoresProgrammaticVariationState) {
 	ASSERT_TRUE(game.isAtStart());
 
 	game.restoreLocation(location);
+	auto cursor = coreCursor(game);
 	EXPECT_EQ(1U, game.currentPly());
-	EXPECT_EQ(1U, game.variationLevel());
+	EXPECT_EQ(1U, cursor.variationDepth());
 	EXPECT_TRUE(game.isAtVariationEnd());
 	EXPECT_FALSE(game.isAtEmptyVariation());
 }
