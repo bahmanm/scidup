@@ -29,7 +29,6 @@
 #include "scidup/core/position.h"
 #include <forward_list>
 #include <memory>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -142,7 +141,7 @@ private:
         Position pos;
         moveT* move;
         uint varDepth;
-        std::optional<scid::core::MovetextLocation> coreLocation;
+        scid::core::MovetextLocation coreLocation;
     };
 
 public:
