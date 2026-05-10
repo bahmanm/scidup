@@ -52,11 +52,6 @@ errorT decodeSkipTags(Game& game, ByteBuffer* buf);
 errorT decodeNextMove(Game& game, ByteBuffer* buf, simpleMoveT& sm);
 } // namespace game_storage
 
-namespace game_notation {
-std::string nextSan(Game& game);
-std::string previousSan(Game& game);
-} // namespace game_notation
-
 //////////////////////////////////////////////////////////////////////
 //  Game:  Class Definition
 
@@ -124,9 +119,6 @@ private:
     friend bool game_search::varExactMatch(Game& game, Position* pos,
                                            gameExactMatchT searchType);
     friend struct LegacyGamePgnEncoder;
-    friend std::string game_notation::nextSan(Game& game);
-    friend std::string game_notation::previousSan(Game& game);
-
     /**
      * Contains the information of the current position in the game, so that
      * after an operation that alters the location, it can be restored.

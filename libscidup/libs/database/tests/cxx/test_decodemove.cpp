@@ -1,6 +1,6 @@
 #include "scidup/database/bytebuf.h"
 #include "scidup/database/game.h"
-#include "scidup/database/game_TEMP/notation.h"
+#include "scidup/core/notation.h"
 #include "scidup/database/game_TEMP/storage.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
 
@@ -34,8 +34,10 @@ void expect_roundtrip(std::string_view pgn) {
 		original.currentPos()->PrintFEN(originalFen, sizeof(originalFen));
 		decoded.currentPos()->PrintFEN(decodedFen, sizeof(decodedFen));
 		EXPECT_STREQ(originalFen, decodedFen);
-		EXPECT_EQ(scid::database::game_notation::nextSan(original),
-		          scid::database::game_notation::nextSan(decoded));
+		EXPECT_EQ(scid::core::notation::nextSan(original.coreGame(),
+		                                        original.coreLocation()),
+		          scid::core::notation::nextSan(decoded.coreGame(),
+		                                        decoded.coreLocation()));
 
 		const auto originalErr = original.next();
 		const auto decodedErr = decoded.next();

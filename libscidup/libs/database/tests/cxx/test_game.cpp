@@ -21,7 +21,6 @@
 #include "scidup/core/pgn/encode.h"
 #include "scidup/database/game_TEMP/legacy_pgn.h"
 #include "scidup/database/game_TEMP/nag_format.h"
-#include "scidup/database/game_TEMP/notation.h"
 #include "scidup/database/game_TEMP/piece_translation.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
 #include "scidup/database/game_TEMP/storage.h"
@@ -49,15 +48,6 @@ void expectMoveAction(const scid::core::Move* move,
 	EXPECT_EQ(to, move->action.to);
 }
 
-void materializeCoreSan(scid::database::Game& game) {
-	auto location = game.currentLocation();
-	game.toStart();
-	do {
-		scid::database::game_notation::nextSan(game);
-	} while (game.nextPgn() == scid::database::OK);
-	game.restoreLocation(location);
-}
-
 scid::database::LegacyGameEncodeOptions scidFlagsPgnOptions() {
 	return {
 	    PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
@@ -73,6 +63,20 @@ scid::database::simpleMoveT makeCurrentMove(scid::database::Game& game,
 	scid::database::simpleMoveT move;
 	game.currentPos()->makeMove(from, to, scid::database::EMPTY, move);
 	return move;
+}
+
+std::string nextCoreSan(const scid::database::Game& game) {
+	return scid::core::notation::nextSan(game.coreGame(), game.coreLocation());
+}
+
+std::string nextLegacySan(scid::database::Game& game) {
+	auto* move = game.currentMove();
+	if (!move)
+		return {};
+
+	scid::database::sanStringT san = {};
+	game.currentPos()->MakeSANString(move, san, scid::database::SAN_MATETEST);
+	return san;
 }
 
 } // namespace
@@ -98,8 +102,7 @@ TEST(Test_Game, clone) {
 		ASSERT_TRUE(
 		    std::equal(board, board + 66, clone->currentPos()->GetBoard()));
 
-		ASSERT_EQ(scid::database::game_notation::nextSan(game),
-		          scid::database::game_notation::nextSan(*clone));
+		ASSERT_EQ(nextCoreSan(game), nextCoreSan(*clone));
 
 		auto pgnGame =
 		    scid::database::legacy_pgn::encode(game, scidFlagsPgnOptions(), 75,
@@ -217,13 +220,13 @@ TEST(Test_Game, locationInPGN) {
 				ASSERT_EQ(location, game.pgnOffset());
 			}
 
-			std::string san = scid::database::game_notation::nextSan(game);
+			std::string san = nextCoreSan(game);
 			auto ply1 = game.currentPly();
 			game.toPgnLocation(location);
 			auto ply2 = game.currentPly();
 			ASSERT_EQ(ply1, ply2);
 			ASSERT_EQ(location, game.pgnLocation());
-			ASSERT_EQ(san, scid::database::game_notation::nextSan(game));
+			ASSERT_EQ(san, nextCoreSan(game));
 		}
 	}
 }
@@ -421,25 +424,8 @@ TEST(Test_Game, coreGameMovetextMirrorsLegacyMoveTree) {
 	EXPECT_TRUE(cursor.isAtVariationEnd());
 
 	game.toStart();
-	EXPECT_EQ("d4", scid::database::game_notation::nextSan(game));
-	EXPECT_EQ("d4", game.coreGame().movetext().mainline.moves[0].san);
-}
-
-TEST(Test_Game, coreGameMirrorsPreviousSanMaterialization) {
-	scid::database::Game game;
-
-	ASSERT_EQ(scid::database::OK,
-	          game.addMove(makeCurrentMove(game, scid::database::E2,
-	                                       scid::database::E4)));
-	ASSERT_EQ(scid::database::OK,
-	          game.addMove(makeCurrentMove(game, scid::database::E7,
-	                                       scid::database::E5)));
-	auto const& mainline = game.coreGame().movetext().mainline.moves;
-	ASSERT_EQ(2U, mainline.size());
-	EXPECT_TRUE(mainline[1].san.empty());
-
-	EXPECT_EQ("e5", scid::database::game_notation::previousSan(game));
-	EXPECT_EQ("e5", mainline[1].san);
+	EXPECT_EQ("d4", nextCoreSan(game));
+	EXPECT_TRUE(game.coreGame().movetext().mainline.moves[0].san.empty());
 }
 
 TEST(Test_Game, coreGameMovetextMirrorsProgrammaticVariationAdds) {
@@ -651,7 +637,7 @@ TEST(Test_Game, coreGameMirrorsInitialMovetextComment) {
 	EXPECT_EQ(expected, encoded);
 }
 
-TEST(Test_Game, coreGameCanBeEncodedAsPlainPgnAfterSanMaterialization) {
+TEST(Test_Game, coreGameCanBeEncodedAsPlainPgnWithoutStoredSan) {
 	using namespace std::literals;
 
 	std::string_view pgn =
@@ -659,7 +645,6 @@ TEST(Test_Game, coreGameCanBeEncodedAsPlainPgnAfterSanMaterialization) {
 	scid::database::Game game;
 	scid::database::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()},
 	                                scid::database::PgnVisitor{game});
-	materializeCoreSan(game);
 
 	std::string encoded;
 	scid::core::pgn::encode_game(game.coreGame(), encoded);
@@ -775,7 +760,7 @@ template <typename DataT> std::string decode_game(DataT const& data) {
 	std::string moves;
 	do {
 		moves += ' ';
-		moves.append(scid::database::game_notation::nextSan(game));
+		moves.append(nextLegacySan(game));
 	} while (game.next() == scid::database::OK);
 	moves.erase(0, 1);
 	return moves;
