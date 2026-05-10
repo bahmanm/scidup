@@ -3,6 +3,7 @@
 #include "scidup/database/common.h"
 #include "scidup/database/game_TEMP/notation.h"
 #include "scidup/core/dstring.h"
+#include "scidup/core/game_cursor.h"
 #include "scidup/core/movetext_cursor.h"
 #include "scidup/core/notation.h"
 #include "scidup/core/position.h"
@@ -152,23 +153,25 @@ std::string game_notation::previousSan(Game& game) {
 }
 
 std::string game_notation::previousMoveUci(const Game& game) {
-	// TODO [Game]: Move UCI move rendering to a notation helper over
-	// MoveAction once GameCursor owns previous/next move traversal.
-	const auto move = game.currentMove_->prev;
-	if (move->startMarker()) {
+	scid::core::GameCursor cursor(game.coreGame_);
+	[[maybe_unused]] const bool restored = cursor.restore(game.coreLocation_);
+	ASSERT(restored);
+	const auto move = cursor.previousMove();
+	if (!move) {
 		return {};
 	}
-	return TEMP_moveActionFromLegacyMove(move->moveData).longNotation();
+	return move->action.longNotation();
 }
 
 std::string game_notation::nextMoveUci(const Game& game) {
-	// TODO [Game]: Move UCI move rendering to a notation helper over
-	// MoveAction once GameCursor owns previous/next move traversal.
-	const auto move = game.currentMove_;
-	if (move->endMarker()) {
+	scid::core::GameCursor cursor(game.coreGame_);
+	[[maybe_unused]] const bool restored = cursor.restore(game.coreLocation_);
+	ASSERT(restored);
+	const auto move = cursor.nextMove();
+	if (!move) {
 		return {};
 	}
-	return TEMP_moveActionFromLegacyMove(move->moveData).longNotation();
+	return move->action.longNotation();
 }
 
 } // namespace scid::database
