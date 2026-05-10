@@ -108,7 +108,7 @@ void Game::strip(bool variations, bool comments, bool NAGs) {
 			}
 		}
 	}
-	TEMP_syncCoreMovetext();
+	coreGame_.stripMovetext(variations, comments, NAGs);
 }
 
 void Game::clearMoves() {

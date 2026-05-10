@@ -208,4 +208,51 @@ TEST(CoreGameTest, ClearMovetextLeavesHeaderAndStartPositionIntact) {
 	EXPECT_EQ(0U, game.mainlineHalfMoveCount());
 }
 
+TEST(CoreGameTest, StripMovetextRemovesCommentsAndNagsButKeepsMoves) {
+	scid::core::Game game;
+	game.setInitialComment("Before the first move");
+	auto& move = game.appendMainlineMove(
+	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
+	move.san = "e4";
+	move.metadata.comment = "Best by test";
+	move.metadata.nags.push_back(scid::core::NAG_GoodMove);
+	auto& variation = move.addVariation("Alternative line");
+	auto& childMove = variation.line.appendMove(
+	    {scid::database::D2, scid::database::D4, scid::database::EMPTY});
+	childMove.metadata.comment = "Queen pawn";
+	childMove.metadata.nags.push_back(scid::core::NAG_InterestingMove);
+
+	game.stripMovetext(false, true, true);
+
+	EXPECT_TRUE(game.initialComment().empty());
+	auto const& savedMove = game.movetext().mainline.moves[0];
+	EXPECT_EQ("e4", savedMove.san);
+	EXPECT_TRUE(savedMove.metadata.comment.empty());
+	EXPECT_TRUE(savedMove.metadata.nags.empty());
+	ASSERT_EQ(1U, savedMove.childVariations.size());
+	EXPECT_TRUE(savedMove.childVariations[0].initialComment.empty());
+	auto const& savedChild = savedMove.childVariations[0].line.moves[0];
+	EXPECT_TRUE(savedChild.metadata.comment.empty());
+	EXPECT_TRUE(savedChild.metadata.nags.empty());
+}
+
+TEST(CoreGameTest, StripMovetextRemovesVariationsButKeepsMainlineMetadata) {
+	scid::core::Game game;
+	auto& move = game.appendMainlineMove(
+	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
+	move.metadata.comment = "Best by test";
+	move.metadata.nags.push_back(scid::core::NAG_GoodMove);
+	move.addVariation("Alternative line")
+	    .line.appendMove(
+	        {scid::database::D2, scid::database::D4, scid::database::EMPTY});
+
+	game.stripMovetext(true, false, false);
+
+	auto const& savedMove = game.movetext().mainline.moves[0];
+	EXPECT_EQ("Best by test", savedMove.metadata.comment);
+	ASSERT_EQ(1U, savedMove.metadata.nags.size());
+	EXPECT_EQ(scid::core::NAG_GoodMove, savedMove.metadata.nags[0]);
+	EXPECT_TRUE(savedMove.childVariations.empty());
+}
+
 } // namespace

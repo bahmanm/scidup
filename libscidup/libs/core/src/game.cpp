@@ -12,6 +12,29 @@ Rating normalizeRating(Rating rating) {
 		rating.type = scid::database::RATING_Elo;
 	return rating;
 }
+
+void stripMoveSequence(MoveSequence& sequence,
+                       bool variations,
+                       bool comments,
+                       bool nags) {
+	for (auto& move : sequence.moves) {
+		if (comments)
+			move.metadata.comment.clear();
+		if (nags)
+			move.metadata.nags.clear();
+
+		if (variations) {
+			move.childVariations.clear();
+			continue;
+		}
+
+		for (auto& variation : move.childVariations) {
+			if (comments)
+				variation.initialComment.clear();
+			stripMoveSequence(variation.line, variations, comments, nags);
+		}
+	}
+}
 } // namespace
 
 bool MoveAction::isNull() const {
@@ -287,6 +310,12 @@ void Game::setInitialComment(std::string_view value) {
 
 void Game::clearMovetext() {
 	movetext_ = {};
+}
+
+void Game::stripMovetext(bool variations, bool comments, bool nags) {
+	if (comments)
+		movetext_.initialComment.clear();
+	stripMoveSequence(movetext_.mainline, variations, comments, nags);
 }
 
 } // namespace scid::core

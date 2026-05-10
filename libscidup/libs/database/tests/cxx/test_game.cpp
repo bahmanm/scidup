@@ -600,6 +600,31 @@ TEST(Test_Game, coreGameMirrorsProgrammaticCommentMutation) {
 	EXPECT_EQ("After d4"sv, variationMove.metadata.comment);
 }
 
+TEST(Test_Game, coreGameMirrorsStrip) {
+	scid::database::Game game;
+	game.setMoveComment("Before the first move");
+	ASSERT_EQ(scid::database::OK,
+	          game.addMove(makeCurrentMove(game, scid::database::E2,
+	                                       scid::database::E4)));
+	ASSERT_EQ(scid::database::OK, game.addNag(scid::core::NAG_GoodMove));
+	game.setMoveComment("After e4");
+	ASSERT_EQ(scid::database::OK, game.addVariation());
+	game.setMoveComment("Alternative");
+	ASSERT_EQ(scid::database::OK,
+	          game.addMove(makeCurrentMove(game, scid::database::D2,
+	                                       scid::database::D4)));
+
+	game.strip(true, true, true);
+
+	auto const& movetext = game.coreGame().movetext();
+	EXPECT_TRUE(movetext.initialComment.empty());
+	ASSERT_EQ(1U, movetext.mainline.moves.size());
+	auto const& move = movetext.mainline.moves[0];
+	EXPECT_TRUE(move.metadata.comment.empty());
+	EXPECT_TRUE(move.metadata.nags.empty());
+	EXPECT_TRUE(move.childVariations.empty());
+}
+
 TEST(Test_Game, coreGameMirrorsInitialMovetextComment) {
 	using namespace std::literals;
 

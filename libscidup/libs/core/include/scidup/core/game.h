@@ -145,6 +145,7 @@ public:
 	Move& appendMainlineMove(MoveAction action);
 	void setInitialComment(std::string_view value);
 	void clearMovetext();
+	void stripMovetext(bool variations, bool comments, bool nags);
 
 private:
 	friend class MovetextCursor;
