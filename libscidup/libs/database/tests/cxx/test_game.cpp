@@ -17,6 +17,7 @@
 #include "scidup/database/game.h"
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/nags.h"
+#include "scidup/core/notation.h"
 #include "scidup/core/pgn/encode.h"
 #include "scidup/database/game_TEMP/legacy_pgn.h"
 #include "scidup/database/game_TEMP/nag_format.h"
@@ -368,7 +369,8 @@ TEST(Test_Game, currentPositionUci_startpos) {
 	    {11, "position startpos moves d2d4 d7d5 c2c4"}};
 	for (auto [pos, str] : expected) {
 		game.toPgnLocation(pos);
-		EXPECT_EQ(str, scid::database::game_notation::currentPositionUci(game));
+		EXPECT_EQ(str, scid::core::notation::currentPositionUci(
+		                   game.coreGame(), game.coreLocation()));
 	}
 }
 
@@ -704,7 +706,8 @@ TEST(Test_Game, currentPositionUci_fen) {
 	};
 	for (auto [pos, str] : expected) {
 		game.toPgnLocation(pos);
-		EXPECT_EQ(str, scid::database::game_notation::currentPositionUci(game));
+		EXPECT_EQ(str, scid::core::notation::currentPositionUci(
+		                   game.coreGame(), game.coreLocation()));
 	}
 }
 

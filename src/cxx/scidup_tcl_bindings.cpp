@@ -2142,8 +2142,9 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case GAME_UCI_CURRENTPOS:
         return UI_Result(ti, scid::database::OK,
-                         scid::database::game_notation::currentPositionUci(
-                             editor.game()));
+                         scid::core::notation::currentPositionUci(
+                             editor.game().coreGame(),
+                             editor.game().coreLocation()));
 
     case GAME_UNDO:
         if (argc > 2 && scid::database::strCompare("size", argv[2]) == 0) {
@@ -2733,7 +2734,10 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 // returns next move played in UCI format
         } else if (scid::database::strIsPrefix (argv[arg], "nextMoveUCI")) {
           AppendResult(
-              ti, scid::database::game_notation::nextMoveUci(g).c_str(),
+              ti,
+              scid::core::notation::nextMoveUci(g.coreGame(),
+                                                g.coreLocation())
+                  .c_str(),
               NULL);
           return TCL_OK;
         } else if (scid::database::strIsPrefix (argv[arg], "previousMove")) {
@@ -2751,7 +2755,10 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 // returns previous move played in UCI format
         } else if (scid::database::strIsPrefix (argv[arg], "previousMoveUCI")) {
             AppendResult(
-                ti, scid::database::game_notation::previousMoveUci(g).c_str(),
+                ti,
+                scid::core::notation::previousMoveUci(g.coreGame(),
+                                                      g.coreLocation())
+                    .c_str(),
                 NULL);
             return TCL_OK;
         } else if (scid::database::strIsPrefix (argv[arg], "duplicate")) {
@@ -4758,7 +4765,8 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
             game.toEnd();
             game.currentPos()->MakeLongStr(boardStr);
-            auto lastmove = scid::database::game_notation::previousMoveUci(game);
+            auto lastmove = scid::core::notation::previousMoveUci(
+                game.coreGame(), game.coreLocation());
             UI_List result(2);
             result.push_back(boardStr);
             result.push_back(lastmove);
@@ -8490,7 +8498,9 @@ sc_var_list (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         game.enterVariation (varNumber);
         if (uci) {
             scid::database::strCopy(
-                s, scid::database::game_notation::nextMoveUci(game).c_str());
+                s, scid::core::notation::nextMoveUci(game.coreGame(),
+                                                     game.coreLocation())
+                       .c_str());
         } else {
             scid::database::strCopy(
                 s, scid::database::game_notation::nextSan(game).c_str());

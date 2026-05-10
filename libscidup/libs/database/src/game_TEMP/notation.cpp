@@ -35,12 +35,6 @@ void cacheLegacySan(char* dest, const std::string& san) {
 
 } // namespace
 
-std::string game_notation::currentPositionUci(const Game& game) {
-	return scid::core::notation::currentPositionUci(game.coreGame_,
-	                                                game.coreLocation_);
-}
-
-
 std::string game_notation::nextSan(Game& game) {
 	// TODO [Game]: Move SAN generation/caching to notation helpers and
 	// Move.metadata once Move owns SAN and GameCursor owns the current position.
@@ -90,16 +84,6 @@ std::string game_notation::previousSan(Game& game) {
 			    game.coreLocation_);
     }
     return m->san;
-}
-
-std::string game_notation::previousMoveUci(const Game& game) {
-	return scid::core::notation::previousMoveUci(game.coreGame_,
-	                                             game.coreLocation_);
-}
-
-std::string game_notation::nextMoveUci(const Game& game) {
-	return scid::core::notation::nextMoveUci(game.coreGame_,
-	                                         game.coreLocation_);
 }
 
 } // namespace scid::database

@@ -53,11 +53,8 @@ errorT decodeNextMove(Game& game, ByteBuffer* buf, simpleMoveT& sm);
 } // namespace game_storage
 
 namespace game_notation {
-std::string currentPositionUci(const Game& game);
-std::string nextMoveUci(const Game& game);
 std::string nextSan(Game& game);
 std::string previousSan(Game& game);
-std::string previousMoveUci(const Game& game);
 } // namespace game_notation
 
 //////////////////////////////////////////////////////////////////////
@@ -127,11 +124,8 @@ private:
     friend bool game_search::varExactMatch(Game& game, Position* pos,
                                            gameExactMatchT searchType);
     friend struct LegacyGamePgnEncoder;
-    friend std::string game_notation::currentPositionUci(const Game& game);
-    friend std::string game_notation::nextMoveUci(const Game& game);
     friend std::string game_notation::nextSan(Game& game);
     friend std::string game_notation::previousSan(Game& game);
-    friend std::string game_notation::previousMoveUci(const Game& game);
 
     /**
      * Contains the information of the current position in the game, so that
@@ -149,6 +143,7 @@ public:
     ~Game();
     scid::core::Game& coreGame();
     const scid::core::Game& coreGame() const;
+    scid::core::MovetextLocation coreLocation() const;
     void clear();
     void strip(bool variations, bool comments, bool NAGs);
 

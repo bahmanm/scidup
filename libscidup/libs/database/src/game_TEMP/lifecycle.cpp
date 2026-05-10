@@ -24,6 +24,10 @@ const scid::core::Game& Game::coreGame() const {
 	return coreGame_;
 }
 
+scid::core::MovetextLocation Game::coreLocation() const {
+	return coreLocation_;
+}
+
 errorT Game::setStartFen(const char* fenStr) {
 	Position pos;
 	if (auto err = pos.ReadFromFEN(fenStr))
