@@ -82,7 +82,9 @@ private:
     // TODO [Game]: Delete this reverse compatibility projection once legacy
     // moveT is no longer needed by database/app readers.
     void TEMP_syncLegacyMovetextFromCore();
-    errorT decodeVariation(ByteBuffer& buf, std::vector<moveT*>& comment_marks);
+    errorT decodeVariation(
+        ByteBuffer& buf,
+        std::vector<scid::core::MovetextLocation>& comment_marks);
     static errorT decodeMove(ByteBuffer* buf, simpleMoveT* sm, byte val,
                              const Position* pos);
     // TODO [Game]: Move these database storage-codec operations out of Game

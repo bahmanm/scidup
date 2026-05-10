@@ -5,13 +5,14 @@
 #include "scidup/database/indexentry.h"
 #include "scidup/database/matsig.h"
 #include "scidup/database/namebase.h"
-#include "movetext_projection.h"
+#include "scidup/core/movetext_cursor.h"
 #include "movetree.h"
 #include "stored.h"
 
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 
@@ -328,14 +329,15 @@ std::pair<unsigned, unsigned> encodeMovelist(bool mark_comments, const MoveT* m,
 
 /// Decodes the game moves
 errorT Game::decodeVariation(ByteBuffer& buf,
-                             std::vector<moveT*>& comment_marks) {
+                             std::vector<scid::core::MovetextLocation>&
+                                 comment_marks) {
 	simpleMoveT sm;
 	for (;;) {
 		auto [err, val] = buf.nextMove(
 		    this->varDepth_, [&](auto) { return true; },
 		    [&] {
 			    // Mark this comment as needing to be read
-			    comment_marks.push_back(this->currentMove_->prev);
+			    comment_marks.push_back(this->coreLocation_);
 		    },
 		    [&](auto newVariation) {
 			    if (newVariation)
@@ -395,31 +397,94 @@ void encodeComments(bool mark_comments, const MoveT* m, DestT& dest) {
 }
 
 
-// Decodes the comments from @e buf and stores them into the marked moves.
-// If the number of comments is greater than the number of marked moves, they
-// are added sequentially after the last move that has a comment.
-// This way it is possible to not add encode marks for games that are almost
-// fully commented.
-template <typename SourceT, typename MoveT>
-static errorT decodeComments(SourceT& buf, MoveT* first_move,
-                             std::vector<MoveT*>& comment_marks) {
-    if (!comment_marks.empty()) {
-        for (auto m : comment_marks) {
-            if (auto str = buf.GetTerminatedString())
-                m->comment = str;
-            else
-                return ERROR_Decode;
-        }
-        first_move = comment_marks.back()->nextMoveInPGN();
-    }
-    while (auto str = buf.GetTerminatedString()) {
-        if (!first_move)
-            return ERROR_Decode;
+static bool nextPgnLocation(scid::core::MovetextCursor& cursor) {
+	if (cursor.previousMove() &&
+	    !cursor.previousMove()->childVariations.empty() &&
+	    cursor.previous()) {
+		return cursor.enterVariation(0);
+	}
 
-        first_move->comment = str;
-        first_move = first_move->nextMoveInPGN();
-    }
-    return OK;
+	while (!cursor.next()) {
+		if (cursor.variationDepth() == 0)
+			return false;
+
+		auto variationIndex = cursor.variationIndex();
+		if (!cursor.exitVariation())
+			return false;
+		if (cursor.enterVariation(variationIndex + 1))
+			return true;
+		if (!cursor.next())
+			return false;
+	}
+	return true;
+}
+
+static void setCoreCommentAt(scid::core::Game& game,
+                             scid::core::MovetextLocation location,
+                             std::string_view comment) {
+	scid::core::MovetextCursor cursor(game);
+	[[maybe_unused]] const bool restored = cursor.restore(location);
+	ASSERT(restored);
+
+	if (cursor.isAtLineStart()) {
+		if (cursor.variationDepth() == 0) {
+			game.setInitialComment(comment);
+		} else {
+			[[maybe_unused]] const bool updated =
+			    cursor.setCurrentVariationInitialComment(comment);
+			ASSERT(updated);
+		}
+		return;
+	}
+
+	auto* move = cursor.previousMove();
+	ASSERT(move);
+	move->metadata.comment.assign(comment.begin(), comment.end());
+}
+
+// Decodes the comments from @e buf and stores them into the marked core
+// movetext locations. If the number of comments is greater than the number of
+// marked locations, comments are added sequentially in PGN order after the last
+// marked location. This way it is possible to not add encode marks for games
+// that are almost fully commented.
+template <typename SourceT>
+static errorT decodeComments(
+    SourceT& buf,
+    scid::core::Game& game,
+    std::vector<scid::core::MovetextLocation>& comment_marks) {
+	scid::core::MovetextLocation firstCommentLocation;
+	bool hasFirstCommentLocation = true;
+	if (!comment_marks.empty()) {
+		for (auto location : comment_marks) {
+			if (auto str = buf.GetTerminatedString())
+				setCoreCommentAt(game, location, str);
+			else
+				return ERROR_Decode;
+		}
+
+		scid::core::MovetextCursor cursor(game);
+		[[maybe_unused]] const bool restored =
+		    cursor.restore(comment_marks.back());
+		ASSERT(restored);
+		hasFirstCommentLocation = nextPgnLocation(cursor);
+		if (hasFirstCommentLocation)
+			firstCommentLocation = cursor.location();
+	}
+
+	while (auto str = buf.GetTerminatedString()) {
+		if (!hasFirstCommentLocation)
+			return ERROR_Decode;
+
+		setCoreCommentAt(game, firstCommentLocation, str);
+		scid::core::MovetextCursor cursor(game);
+		[[maybe_unused]] const bool restored =
+		    cursor.restore(firstCommentLocation);
+		ASSERT(restored);
+		hasFirstCommentLocation = nextPgnLocation(cursor);
+		if (hasFirstCommentLocation)
+			firstCommentLocation = cursor.location();
+	}
+	return OK;
 }
 
 
@@ -630,11 +695,10 @@ errorT Game::decodeMovesOnly(ByteBuffer& buf) {
 	if (errorT err = decodeSkipTags(&buf))
 		return err;
 
-	std::vector<moveT*> comment_marks;
+	std::vector<scid::core::MovetextLocation> comment_marks;
 	auto err = decodeVariation(buf, comment_marks);
 	if (err == OK)
-		TEMP_movetext::syncCoreMovetextAndLocation(
-		    coreGame_, firstMove_, currentMove_, coreLocation_);
+		TEMP_syncLegacyMovetextFromCore();
 	return err;
 }
 
@@ -662,16 +726,15 @@ errorT Game::decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf)
     if (fen)
         err = setStartFen(fen);
 
-    std::vector<moveT*> comment_marks;
+    std::vector<scid::core::MovetextLocation> comment_marks;
     if (err == OK)
         err = decodeVariation(buf, comment_marks);
 
     if (err == OK)
-        err = decodeComments(buf, firstMove_, comment_marks);
+        err = decodeComments(buf, coreGame_, comment_marks);
 
     if (err == OK)
-        TEMP_movetext::syncCoreMovetextAndLocation(
-            coreGame_, firstMove_, currentMove_, coreLocation_);
+        TEMP_syncLegacyMovetextFromCore();
 
     return err;
 }
