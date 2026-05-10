@@ -10,6 +10,7 @@ set(
     SCIDUP_DATABASE_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/codec_scid4.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/filter.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/game_search.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/annotations.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/legacy_pgn.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/lifecycle.cpp"
@@ -18,7 +19,6 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/movetext_projection.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/nag_format.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/piece_translation.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/search.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/state.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_TEMP/storage.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/index.cpp"
