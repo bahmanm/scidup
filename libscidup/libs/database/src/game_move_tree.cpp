@@ -46,17 +46,15 @@ void restoreCoreCursor(scid::core::GameCursor& cursor,
 // (currentMove_->moveData) so it can be undone.
 //
 errorT Game::next(void) {
-	if (currentMove_->endMarker())
-		return ERROR_EndOfMoveList;
-
 	scid::core::GameCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
+	if (!coreCursor.next())
+		return ERROR_EndOfMoveList;
+	coreLocation_ = coreCursor.location();
 
+	ASSERT(!currentMove_->endMarker());
 	currentPos_->DoSimpleMove(currentMove_->moveData);
 	currentMove_ = currentMove_->next;
-	[[maybe_unused]] const bool moved = coreCursor.next();
-	ASSERT(moved);
-	coreLocation_ = coreCursor.location();
 
 	// Invariants
 	ASSERT(currentMove_ && currentMove_->prev);
@@ -69,17 +67,15 @@ errorT Game::next(void) {
 //      Backup one move.
 //
 errorT Game::previous(void) {
-	if (currentMove_->prev->startMarker())
-		return ERROR_StartOfMoveList;
-
 	scid::core::GameCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
+	if (!coreCursor.previous())
+		return ERROR_StartOfMoveList;
+	coreLocation_ = coreCursor.location();
 
+	ASSERT(!currentMove_->prev->startMarker());
 	currentMove_ = currentMove_->prev;
 	currentPos_->UndoSimpleMove(currentMove_->moveData);
-	[[maybe_unused]] const bool moved = coreCursor.previous();
-	ASSERT(moved);
-	coreLocation_ = coreCursor.location();
 
 	// Invariants
 	ASSERT(currentMove_ && currentMove_->prev);
@@ -93,17 +89,15 @@ errorT Game::previous(void) {
 errorT Game::enterVariation(uint varNumber) {
 	scid::core::GameCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
-	const auto requestedVariation = varNumber;
+	if (!coreCursor.enterVariation(varNumber))
+		return ERROR_NoVariation;
+	coreLocation_ = coreCursor.location();
 
 	for (auto subVar = currentMove_; subVar->varChild; --varNumber) {
 		subVar = subVar->varChild;
 		if (varNumber == 0) {
 			currentMove_ = subVar->next; // skip the START_MARKER
 			++varDepth_;
-			[[maybe_unused]] const bool entered =
-			    coreCursor.enterVariation(requestedVariation);
-			ASSERT(entered);
-			coreLocation_ = coreCursor.location();
 
 			// Invariants
 			ASSERT(currentMove_ && currentMove_->prev);
@@ -119,21 +113,20 @@ errorT Game::enterVariation(uint varNumber) {
 //      Move out of a variation, to the parent.
 //
 errorT Game::exitVariation(void) {
-	if (varDepth_ == 0) // not in a variation!
-		return ERROR_NoVariation;
-
 	scid::core::GameCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
+	if (!coreCursor.exitVariation())
+		return ERROR_NoVariation;
+	coreLocation_ = coreCursor.location();
 
 	// Algorithm: go back previous moves as far as possible, then
 	// go up to the parent of the variation.
-	while (previous() == OK) {
+	while (!currentMove_->prev->startMarker()) {
+		currentMove_ = currentMove_->prev;
+		currentPos_->UndoSimpleMove(currentMove_->moveData);
 	}
 	currentMove_ = currentMove_->getParent().first;
 	--varDepth_;
-	[[maybe_unused]] const bool exited = coreCursor.exitVariation();
-	ASSERT(exited);
-	coreLocation_ = coreCursor.location();
 
 	// Invariants
 	ASSERT(currentMove_ && currentMove_->prev);
@@ -145,6 +138,10 @@ errorT Game::exitVariation(void) {
 // Move to the beginning of the game.
 //
 void Game::toStart() {
+	scid::core::GameCursor coreCursor(coreGame_);
+	coreCursor.toStart();
+	coreLocation_ = coreCursor.location();
+
 	if (auto startPos = coreGame_.startPosition()) {
 		*currentPos_ = *startPos;
 	} else {
@@ -152,9 +149,6 @@ void Game::toStart() {
 	}
 	varDepth_ = 0;
 	currentMove_ = firstMove_->next;
-	scid::core::GameCursor coreCursor(coreGame_);
-	coreCursor.toStart();
-	coreLocation_ = coreCursor.location();
 
 	// Invariants
 	ASSERT(currentMove_ && currentMove_->prev);
