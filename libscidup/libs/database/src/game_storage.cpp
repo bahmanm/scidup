@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <optional>
 #include <string_view>
 #include <type_traits>
 #include <vector>
@@ -314,6 +315,10 @@ simpleMoveT toSimpleMove(Position& position,
 	return move;
 }
 
+scid::core::MoveAction toMoveAction(simpleMoveT const& move) {
+	return {move.from, move.to, move.promote, move.isCastle() != 0};
+}
+
 struct MovelistStats {
 	unsigned variations = 0;
 	unsigned nags = 0;
@@ -376,31 +381,63 @@ std::pair<unsigned, unsigned> encodeMovelist(
 errorT Game::decodeVariation(ByteBuffer& buf,
                              std::vector<scid::core::MovetextLocation>&
                                  comment_marks) {
+	struct VariationFrame {
+		Position resumePosition;
+		simpleMoveT resumeMove;
+	};
+
+	scid::core::MovetextCursor cursor(coreGame_);
+	Position position = coreGame_.startPosition()
+	                        ? *coreGame_.startPosition()
+	                        : Position::getStdStart();
+	std::vector<VariationFrame> variationStack;
+	std::optional<simpleMoveT> previousMove;
 	simpleMoveT sm;
+	int varDepth = 0;
 	for (;;) {
 		auto [err, val] = buf.nextMove(
-		    this->varDepth_, [&](auto) { return true; },
+		    varDepth, [&](auto) { return true; },
 		    [&] {
 			    // Mark this comment as needing to be read
-			    comment_marks.push_back(this->coreLocation_);
+			    comment_marks.push_back(cursor.location());
 		    },
 		    [&](auto newVariation) {
-			    if (newVariation)
-				    return addVariation() == OK;
+			    if (newVariation) {
+				    if (!previousMove || !cursor.previous())
+					    return false;
+				    variationStack.push_back({position, *previousMove});
+				    position.UndoSimpleMove(*previousMove);
+				    ++varDepth;
+				    return cursor.addVariation() != nullptr;
+			    }
 
-			    return (exitVariation() == OK && next() == OK);
+			    if (variationStack.empty() || !cursor.exitVariation() ||
+			        !cursor.next()) {
+				    return false;
+			    }
+			    auto frame = variationStack.back();
+			    variationStack.pop_back();
+			    position = frame.resumePosition;
+			    previousMove = frame.resumeMove;
+			    --varDepth;
+			    return true;
 		    },
 		    [&](auto nag) {
-			    return this->addNag(nag) == OK;
+			    auto move = cursor.previousMove();
+			    if (!move)
+				    return false;
+			    move->metadata.nags.push_back(nag);
+			    return true;
 		    });
 		if (err)
 			return (err == ERROR_EndOfMoveList) ? OK : err;
 
-		auto errMove = decodeMove(&buf, &sm, val, currentPos());
-		if (!errMove)
-			errMove = addMove(sm);
+		auto errMove = decodeMove(&buf, &sm, val, &position);
 		if (errMove)
 			return errMove;
+		cursor.addMove(toMoveAction(sm));
+		position.DoSimpleMove(sm);
+		previousMove = sm;
 	}
 }
 
@@ -777,8 +814,7 @@ errorT Game::decodeMovesOnly(ByteBuffer& buf) {
 
 	std::vector<scid::core::MovetextLocation> comment_marks;
 	auto err = decodeVariation(buf, comment_marks);
-	if (err == OK)
-		TEMP_syncLegacyMovetextFromCore();
+	TEMP_syncLegacyMovetextFromCore();
 	return err;
 }
 
@@ -809,6 +845,11 @@ errorT Game::decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf)
     std::vector<scid::core::MovetextLocation> comment_marks;
     if (err == OK)
         err = decodeVariation(buf, comment_marks);
+
+    if (err != OK) {
+        TEMP_syncLegacyMovetextFromCore();
+        return err;
+    }
 
     if (err == OK)
         err = decodeComments(buf, coreGame_, comment_marks);
