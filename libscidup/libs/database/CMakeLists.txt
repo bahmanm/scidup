@@ -44,7 +44,6 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_TEMP/piece_translation.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_TEMP/pgnparse.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_TEMP/search.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_TEMP/storage.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/gameview.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/hfilter.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/index.h"

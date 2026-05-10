@@ -36,7 +36,6 @@
 #include "scidup/database/game_TEMP/nag_format.h"
 #include "scidup/database/game_TEMP/piece_translation.h"
 #include "scidup/database/game_TEMP/search.h"
-#include "scidup/database/game_TEMP/storage.h"
 #include "optable.h"
 #include "scidup/eco/book.h"
 #include "scidup/database/game_TEMP/pgnparse.h"

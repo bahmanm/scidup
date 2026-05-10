@@ -2,7 +2,6 @@
 
 #include "scidup/database/bytebuf.h"
 #include "scidup/database/common.h"
-#include "scidup/database/game_TEMP/storage.h"
 #include "scidup/database/indexentry.h"
 #include "scidup/database/matsig.h"
 #include "scidup/database/namebase.h"

@@ -23,7 +23,6 @@
 #include "codec_scid5.h"
 #include "scidup/database/common.h"
 #include "scidup/database/game_id.h"
-#include "scidup/database/game_TEMP/storage.h"
 #include "sortcache.h"
 #include "stored.h"
 #include <algorithm>

@@ -15,7 +15,6 @@
 */
 
 #include "scidup/database/bytebuf.h"
-#include "scidup/database/game_TEMP/storage.h"
 #include "codec.h"
 #include "scidup/database/game.h"
 #include "scidup/database/index.h"

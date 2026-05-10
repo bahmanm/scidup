@@ -23,7 +23,6 @@
 #include "scidup/database/bytebuf.h"
 #include "scidup/database/game.h"
 #include "scidup/database/game_id.h"
-#include "scidup/database/game_TEMP/storage.h"
 #include "scidup/database/gameview.h"
 #include "scidup/database/hfilter.h"
 #include "scidup/database/index.h"

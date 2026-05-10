@@ -23,7 +23,6 @@
 #include "scidup/database/game_TEMP/nag_format.h"
 #include "scidup/database/game_TEMP/piece_translation.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
-#include "scidup/database/game_TEMP/storage.h"
 #include "scidup/database/scidbase.h"
 #include "pgnparse_impl.h"
 #include <algorithm>
