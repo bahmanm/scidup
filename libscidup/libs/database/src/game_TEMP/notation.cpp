@@ -6,7 +6,6 @@
 #include "scidup/core/movetext_cursor.h"
 #include "scidup/core/notation.h"
 #include "scidup/core/position.h"
-#include "movetext_cursor_bridge.h"
 #include "movetext_projection.h"
 #include "movetree.h"
 
@@ -30,17 +29,17 @@ OutputIt TEMP_copyLongNotation(OutputIt dest, simpleMoveT const& move) {
 }
 
 bool syncCoreMoveSan(scid::core::Game& coreGame,
-                     const moveT* firstMove,
-                     const moveT* legacyMove) {
+                     scid::core::MovetextLocation location,
+                     const moveT* legacyMove,
+                     bool nextMove) {
 	if (!legacyMove || legacyMove->startMarker() || legacyMove->endMarker())
 		return false;
 
 	scid::core::MovetextCursor cursor(coreGame);
-	if (!TEMP_movetext::moveCursorToLegacyLocation(cursor, firstMove,
-	                                                 legacyMove))
+	if (!cursor.restore(location))
 		return false;
 
-	auto move = cursor.nextMove();
+	auto move = nextMove ? cursor.nextMove() : cursor.previousMove();
 	if (!move)
 		return false;
 
@@ -128,8 +127,8 @@ std::string game_notation::nextSan(Game& game) {
 		game.currentPos_->MakeSANString(
 		    &game.currentMove_->moveData, game.currentMove_->san,
 		    game.currentMove_->next->endMarker() ? SAN_MATETEST : SAN_CHECKTEST);
-		if (!syncCoreMoveSan(game.coreGame_, game.firstMove_,
-		                     game.currentMove_))
+		if (!syncCoreMoveSan(game.coreGame_, game.coreLocation_,
+		                     game.currentMove_, true))
 			TEMP_movetext::syncCoreMovetext(game.coreGame_,
 			                                  game.firstMove_);
 	}
@@ -147,7 +146,7 @@ std::string game_notation::previousSan(Game& game) {
         game.previous();
         game.currentPos_->MakeSANString (&(m->moveData), m->san, SAN_MATETEST);
         game.next();
-		if (!syncCoreMoveSan(game.coreGame_, game.firstMove_, m))
+		if (!syncCoreMoveSan(game.coreGame_, game.coreLocation_, m, false))
 			TEMP_movetext::syncCoreMovetext(game.coreGame_,
 			                                  game.firstMove_);
     }
