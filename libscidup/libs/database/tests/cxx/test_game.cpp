@@ -21,9 +21,9 @@
 #include "scidup/core/pgn/encode.h"
 #include "scidup/database/game_TEMP/legacy_pgn.h"
 #include "scidup/database/game_TEMP/nag_format.h"
-#include "scidup/database/game_TEMP/piece_translation.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
 #include "scidup/database/scidbase.h"
+#include "piece_translation.h"
 #include "pgnparse_impl.h"
 #include <algorithm>
 #include "scidup/database/bytebuf.h"

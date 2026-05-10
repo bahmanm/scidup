@@ -1,4 +1,4 @@
-#include "scidup/database/game_TEMP/piece_translation.h"
+#include "piece_translation.h"
 
 namespace scid::database {
 

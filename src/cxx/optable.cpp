@@ -17,7 +17,7 @@
 #include "scidup/core/dstring.h"
 #include "scidup/core/notation.h"
 #include "scidup/database/game_id.h"
-#include "scidup/database/game_TEMP/piece_translation.h"
+#include "piece_translation.h"
 #include "scidup/eco/book.h"
 #include <algorithm>
 #include <cstdio>
