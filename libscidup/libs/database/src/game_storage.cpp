@@ -222,19 +222,6 @@ static byte encodePawn(squareT from, squareT to, pieceT promo) {
 // a game must end with the end-game token.
 
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// decodeMove():
-//      Decode a move from a bytebuffer. Assumes the byte val is an
-//      actual move, not the value of a "special" (non-move) token.
-//      This function needs to be passed the bytebuffer because some
-//      moves (only Queen diagonal moves) are encoded in two bytes, so
-//      it may be necessary to read the next byte as well.
-//
-errorT Game::decodeMove(ByteBuffer* buf, simpleMoveT* sm, byte val,
-                        const Position* pos) {
-	return game_storage::decodeEncodedMove(*buf, val, *pos, *sm);
-}
-
 template <typename DestT>
 void encodeMove(const simpleMoveT& sm, DestT& dest) {
 	byte multibyte = 0;
@@ -412,7 +399,7 @@ errorT Game::decodeVariation(ByteBuffer& buf,
 		if (err)
 			return (err == ERROR_EndOfMoveList) ? OK : err;
 
-		auto errMove = decodeMove(&buf, &sm, val, &position);
+		auto errMove = game_storage::decodeEncodedMove(buf, val, position, sm);
 		if (errMove)
 			return errMove;
 		cursor.addMove(toMoveAction(sm));

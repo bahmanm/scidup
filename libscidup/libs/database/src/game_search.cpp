@@ -3,6 +3,7 @@
 #include "scidup/database/bytebuf.h"
 #include "scidup/database/common.h"
 #include "game_search.h"
+#include "game_storage.h"
 #include "movetree.h"
 
 #include <array>
@@ -342,7 +343,8 @@ bool Game::materialMatch(bool promotionsFlag, ByteBuffer& buf, byte* min,
             auto [errMove, val] = buf.nextLineMove();
             err = errMove;
             if (err == OK) {
-                err = decodeMove(&buf, &sm, val, &currentPosition);
+                err = game_storage::decodeEncodedMove(buf, val,
+                                                      currentPosition, sm);
             }
             if (err == OK) {
                 currentPosition.DoSimpleMove(sm);
@@ -539,7 +541,9 @@ Game::exactMatch (Position * searchPos, ByteBuffer * buf,
                 auto [errMove, val] = buf->nextLineMove();
                 err = errMove;
                 if (err == OK) {
-                    err = decodeMove(buf, &nextMove, val, currentPosition);
+                    err = game_storage::decodeEncodedMove(*buf, val,
+                                                          *currentPosition,
+                                                          nextMove);
                 }
             }
 

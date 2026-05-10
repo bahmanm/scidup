@@ -82,8 +82,6 @@ private:
     errorT decodeVariation(
         ByteBuffer& buf,
         std::vector<scid::core::MovetextLocation>& comment_marks);
-    static errorT decodeMove(ByteBuffer* buf, simpleMoveT* sm, byte val,
-                             const Position* pos);
     // TODO [Game]: Move these database storage-codec operations out of Game
     // once the database wrapper around the future core Game exists.
     void loadStandardTags(IndexEntry const& ie, TagRoster const& tags);
