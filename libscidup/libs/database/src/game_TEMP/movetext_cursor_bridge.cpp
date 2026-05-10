@@ -1,6 +1,5 @@
 #include "movetext_cursor_bridge.h"
 
-#include "scidup/core/game_cursor.h"
 #include "scidup/core/movetext_cursor.h"
 #include "movetree.h"
 
@@ -56,31 +55,6 @@ bool findLegacyMovetextLocation(const moveT* lineStart,
 
 bool TEMP_movetext::moveCursorToLegacyLocation(
     scid::core::MovetextCursor& cursor,
-    const moveT* lineStart,
-    const moveT* target) {
-	std::vector<LegacyMovetextStep> path;
-	std::size_t nextIndex = 0;
-	if (!findLegacyMovetextLocation(lineStart, target, path, nextIndex))
-		return false;
-
-	cursor.toStart();
-	for (auto const& step : path) {
-		for (std::size_t i = 0; i < step.nextIndex; ++i) {
-			if (!cursor.next())
-				return false;
-		}
-		if (!cursor.enterVariation(step.variationIndex))
-			return false;
-	}
-	for (std::size_t i = 0; i < nextIndex; ++i) {
-		if (!cursor.next())
-			return false;
-	}
-	return true;
-}
-
-bool TEMP_movetext::moveCursorToLegacyLocation(
-    scid::core::GameCursor& cursor,
     const moveT* lineStart,
     const moveT* target) {
 	std::vector<LegacyMovetextStep> path;
