@@ -29,6 +29,13 @@ scid::database::simpleMoveT toSimpleMove(scid::database::Position& position,
 
 } // namespace
 
+GameCursor cursorAt(const Game& game, MovetextLocation location) {
+	GameCursor cursor(game);
+	[[maybe_unused]] const bool restored = cursor.restore(location);
+	assert(restored);
+	return cursor;
+}
+
 std::string currentPositionUci(const Game& game, MovetextLocation location) {
 	char fen[256] = {};
 	std::vector<std::string> moves;
@@ -36,9 +43,7 @@ std::string currentPositionUci(const Game& game, MovetextLocation location) {
 	    game.startPosition() ? *game.startPosition()
 	                         : scid::database::Position::getStdStart();
 
-	GameCursor cursor(game);
-	[[maybe_unused]] const bool restored = cursor.restore(location);
-	assert(restored);
+	auto cursor = cursorAt(game, location);
 
 	for (const auto* move : cursor.movesToCursor()) {
 		auto simpleMove = toSimpleMove(position, move->action);
@@ -64,6 +69,22 @@ std::string currentPositionUci(const Game& game, MovetextLocation location) {
 		res += move;
 	}
 	return res;
+}
+
+std::string previousMoveUci(const Game& game, MovetextLocation location) {
+	auto cursor = cursorAt(game, location);
+	const auto move = cursor.previousMove();
+	if (!move)
+		return {};
+	return move->action.longNotation();
+}
+
+std::string nextMoveUci(const Game& game, MovetextLocation location) {
+	auto cursor = cursorAt(game, location);
+	const auto move = cursor.nextMove();
+	if (!move)
+		return {};
+	return move->action.longNotation();
 }
 
 } // namespace scid::core::notation

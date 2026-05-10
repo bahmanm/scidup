@@ -23,6 +23,35 @@ TEST(CoreNotationTest, WritesCurrentPositionUciFromMainlineCursor) {
 	                                                   cursor.location()));
 }
 
+TEST(CoreNotationTest, WritesPreviousAndNextMoveUciAtCursor) {
+	scid::core::Game game;
+	game.appendMainlineMove(quiet(scid::database::D2, scid::database::D4));
+	game.appendMainlineMove(quiet(scid::database::D7, scid::database::D5));
+	scid::core::GameCursor cursor(game);
+	ASSERT_TRUE(cursor.toPly(1));
+
+	EXPECT_EQ("d2d4",
+	          scid::core::notation::previousMoveUci(game, cursor.location()));
+	EXPECT_EQ("d7d5",
+	          scid::core::notation::nextMoveUci(game, cursor.location()));
+}
+
+TEST(CoreNotationTest, WritesEmptyPreviousAndNextMoveUciAtBoundaries) {
+	scid::core::Game game;
+	game.appendMainlineMove(quiet(scid::database::D2, scid::database::D4));
+	scid::core::GameCursor cursor(game);
+
+	EXPECT_EQ("",
+	          scid::core::notation::previousMoveUci(game, cursor.location()));
+	EXPECT_EQ("d2d4",
+	          scid::core::notation::nextMoveUci(game, cursor.location()));
+
+	ASSERT_TRUE(cursor.next());
+	EXPECT_EQ("d2d4",
+	          scid::core::notation::previousMoveUci(game, cursor.location()));
+	EXPECT_EQ("", scid::core::notation::nextMoveUci(game, cursor.location()));
+}
+
 TEST(CoreNotationTest, WritesCurrentPositionUciFromVariationCursor) {
 	scid::core::Game game;
 	auto& first = game.appendMainlineMove(
