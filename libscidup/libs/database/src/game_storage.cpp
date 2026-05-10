@@ -314,43 +314,62 @@ simpleMoveT toSimpleMove(Position& position,
 	return move;
 }
 
-/// Encode the moves, the nags, the comment mark and the variations.
-template <typename MoveT, typename DestT>
-std::pair<unsigned, unsigned> encodeMovelist(bool mark_comments, const MoveT* m,
-                                             DestT& dest) {
-	ASSERT(m && m->startMarker());
+struct MovelistStats {
+	unsigned variations = 0;
+	unsigned nags = 0;
+};
 
+template <typename DestT>
+void encodeMovelistLine(bool markComments,
+                        scid::core::MoveSequence const& line,
+                        Position& position,
+                        DestT& dest,
+                        MovelistStats& stats) {
+	for (auto const& coreMove : line.moves) {
+		auto move = toSimpleMove(position, coreMove.action);
+		encodeMove(move, dest);
+
+		for (auto nag : coreMove.metadata.nags) {
+			dest.emplace_back(ENCODE_NAG);
+			dest.emplace_back(nag);
+			++stats.nags;
+		}
+		if (markComments && !coreMove.metadata.comment.empty())
+			dest.emplace_back(ENCODE_COMMENT);
+
+		for (auto const& variation : coreMove.childVariations) {
+			++stats.variations;
+			dest.emplace_back(ENCODE_START_MARKER);
+			if (markComments && !variation.initialComment.empty())
+				dest.emplace_back(ENCODE_COMMENT);
+
+			auto variationPosition = position;
+			encodeMovelistLine(markComments, variation.line, variationPosition,
+			                   dest, stats);
+			dest.emplace_back(ENCODE_END_MARKER);
+		}
+
+		position.DoSimpleMove(move);
+	}
+}
+
+/// Encode the moves, the nags, the comment mark and the variations.
+template <typename DestT>
+std::pair<unsigned, unsigned> encodeMovelist(
+    bool markComments,
+    scid::core::Game const& game,
+    DestT& dest) {
 	// Check if there is a pre-game comment
-	if (mark_comments && !m->comment.empty())
+	if (markComments && !game.initialComment().empty())
 		dest.emplace_back(ENCODE_COMMENT);
 
-	unsigned n_vars = 0;
-	unsigned n_nags = 0;
-	while ((m = m->nextMoveInPGN())) {
-		if (m->startMarker()) {
-			++n_vars;
-			dest.emplace_back(ENCODE_START_MARKER);
-			if (mark_comments && !m->comment.empty())
-				dest.emplace_back(ENCODE_COMMENT);
-
-		} else if (m->endMarker()) {
-			if (m->nextMoveInPGN())
-				dest.emplace_back(ENCODE_END_MARKER);
-
-		} else {
-			encodeMove(m->moveData, dest);
-
-			for (int i = 0, n = m->nagCount; i < n; ++i) {
-				dest.emplace_back(ENCODE_NAG);
-				dest.emplace_back(m->nags[i]);
-				++n_nags;
-			}
-			if (mark_comments && !m->comment.empty())
-				dest.emplace_back(ENCODE_COMMENT);
-		}
-	}
+	MovelistStats stats;
+	auto position =
+	    game.startPosition() ? *game.startPosition() : Position::getStdStart();
+	encodeMovelistLine(markComments, game.movetext().mainline, position, dest,
+	                   stats);
 	dest.emplace_back(ENCODE_END_GAME);
-	return {n_vars, n_nags};
+	return {stats.variations, stats.nags};
 }
 
 /// Decodes the game moves
@@ -691,7 +710,7 @@ std::pair<IndexEntry, TagRoster> Game::encode(std::vector<byte>& dest) const {
     markComments = true;
 
     // Now the movelist:
-    auto [varCount, nagCount] = encodeMovelist(markComments, firstMove_, dest);
+    auto [varCount, nagCount] = encodeMovelist(markComments, coreGame_, dest);
 
     // Now do the comments
     encodeComments(markComments, coreGame_.movetext(), dest);
