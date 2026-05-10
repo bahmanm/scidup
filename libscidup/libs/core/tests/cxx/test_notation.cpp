@@ -52,6 +52,45 @@ TEST(CoreNotationTest, WritesEmptyPreviousAndNextMoveUciAtBoundaries) {
 	EXPECT_EQ("", scid::core::notation::nextMoveUci(game, cursor.location()));
 }
 
+TEST(CoreNotationTest, WritesNextAndPreviousSanAtCursor) {
+	scid::core::Game game;
+	game.appendMainlineMove(quiet(scid::database::D2, scid::database::D4));
+	game.appendMainlineMove(quiet(scid::database::D7, scid::database::D5));
+	scid::core::GameCursor cursor(game);
+	ASSERT_TRUE(cursor.toPly(1));
+
+	EXPECT_EQ("d4",
+	          scid::core::notation::previousSan(game, cursor.location()));
+	EXPECT_EQ("d5", scid::core::notation::nextSan(game, cursor.location()));
+}
+
+TEST(CoreNotationTest, WritesEmptyPreviousAndNextSanAtBoundaries) {
+	scid::core::Game game;
+	game.appendMainlineMove(quiet(scid::database::D2, scid::database::D4));
+	scid::core::GameCursor cursor(game);
+
+	EXPECT_EQ("", scid::core::notation::previousSan(game, cursor.location()));
+	EXPECT_EQ("d4", scid::core::notation::nextSan(game, cursor.location()));
+
+	ASSERT_TRUE(cursor.next());
+	EXPECT_EQ("d4",
+	          scid::core::notation::previousSan(game, cursor.location()));
+	EXPECT_EQ("", scid::core::notation::nextSan(game, cursor.location()));
+}
+
+TEST(CoreNotationTest, PrefersStoredSanWhenPresent) {
+	scid::core::Game game;
+	auto& move = game.appendMainlineMove(
+	    quiet(scid::database::D2, scid::database::D4));
+	move.san = "SAN";
+	scid::core::GameCursor cursor(game);
+
+	EXPECT_EQ("SAN", scid::core::notation::nextSan(game, cursor.location()));
+	ASSERT_TRUE(cursor.next());
+	EXPECT_EQ("SAN",
+	          scid::core::notation::previousSan(game, cursor.location()));
+}
+
 TEST(CoreNotationTest, WritesCurrentPositionUciFromVariationCursor) {
 	scid::core::Game game;
 	auto& first = game.appendMainlineMove(

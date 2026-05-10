@@ -36,12 +36,39 @@ GameCursor cursorAt(const Game& game, MovetextLocation location) {
 	return cursor;
 }
 
+scid::database::Position startPosition(const Game& game) {
+	return game.startPosition() ? *game.startPosition()
+	                            : scid::database::Position::getStdStart();
+}
+
+scid::database::Position positionAfter(
+    const Game& game,
+    const std::vector<const Move*>& moves,
+    std::size_t count) {
+	auto position = startPosition(game);
+	for (std::size_t i = 0; i < count; ++i) {
+		auto simpleMove = toSimpleMove(position, moves[i]->action);
+		position.DoSimpleMove(simpleMove);
+	}
+	return position;
+}
+
+std::string makeSan(scid::database::Position& position,
+                    const Move& move,
+                    scid::database::sanFlagT flag) {
+	if (!move.san.empty())
+		return move.san;
+
+	scid::database::sanStringT san = {};
+	auto simpleMove = toSimpleMove(position, move.action);
+	position.MakeSANString(&simpleMove, san, flag);
+	return san;
+}
+
 std::string currentPositionUci(const Game& game, MovetextLocation location) {
 	char fen[256] = {};
 	std::vector<std::string> moves;
-	scid::database::Position position =
-	    game.startPosition() ? *game.startPosition()
-	                         : scid::database::Position::getStdStart();
+	auto position = startPosition(game);
 
 	auto cursor = cursorAt(game, location);
 
@@ -85,6 +112,32 @@ std::string nextMoveUci(const Game& game, MovetextLocation location) {
 	if (!move)
 		return {};
 	return move->action.longNotation();
+}
+
+std::string previousSan(const Game& game, MovetextLocation location) {
+	auto cursor = cursorAt(game, location);
+	auto moves = cursor.movesToCursor();
+	if (moves.empty())
+		return {};
+
+	auto position = positionAfter(game, moves, moves.size() - 1);
+	return makeSan(position, *moves.back(), scid::database::SAN_MATETEST);
+}
+
+std::string nextSan(const Game& game, MovetextLocation location) {
+	auto cursor = cursorAt(game, location);
+	const auto move = cursor.nextMove();
+	if (!move)
+		return {};
+
+	auto moves = cursor.movesToCursor();
+	auto position = positionAfter(game, moves, moves.size());
+	auto afterMove = cursor;
+	[[maybe_unused]] const bool advanced = afterMove.next();
+	assert(advanced);
+	const auto flag = afterMove.isAtLineEnd() ? scid::database::SAN_MATETEST
+	                                          : scid::database::SAN_CHECKTEST;
+	return makeSan(position, *move, flag);
 }
 
 } // namespace scid::core::notation

@@ -13,6 +13,8 @@ namespace notation {
 std::string currentPositionUci(const Game& game, MovetextLocation location);
 std::string previousMoveUci(const Game& game, MovetextLocation location);
 std::string nextMoveUci(const Game& game, MovetextLocation location);
+std::string previousSan(const Game& game, MovetextLocation location);
+std::string nextSan(const Game& game, MovetextLocation location);
 
 } // namespace notation
 } // namespace scid::core
