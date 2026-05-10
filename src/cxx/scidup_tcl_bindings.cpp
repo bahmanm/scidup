@@ -2722,14 +2722,19 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             return setResult (ti, scid::database::RESULT_STR[g.coreGame().result()]);
         } else if (scid::database::strIsPrefix (argv[arg], "nextMove")) {
             scid::database::strCopy(
-                temp, scid::database::game_notation::nextSan(g).c_str());
+                temp,
+                scid::core::notation::nextSan(g.coreGame(), g.coreLocation())
+                    .c_str());
             scid::database::transPieces(temp);
             AppendResult (ti, temp, NULL);
             return TCL_OK;
 // nextMoveNT is the same as nextMove, except that the move is not translated
         } else if (scid::database::strIsPrefix (argv[arg], "nextMoveNT")) {
             AppendResult(
-                ti, scid::database::game_notation::nextSan(g).c_str(), NULL);
+                ti,
+                scid::core::notation::nextSan(g.coreGame(), g.coreLocation())
+                    .c_str(),
+                NULL);
             return TCL_OK;
 // returns next move played in UCI format
         } else if (scid::database::strIsPrefix (argv[arg], "nextMoveUCI")) {
@@ -2742,14 +2747,19 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
           return TCL_OK;
         } else if (scid::database::strIsPrefix (argv[arg], "previousMove")) {
             scid::database::strCopy(
-                temp, scid::database::game_notation::previousSan(g).c_str());
+                temp, scid::core::notation::previousSan(g.coreGame(),
+                                                        g.coreLocation())
+                          .c_str());
             scid::database::transPieces(temp);
             AppendResult (ti, temp, NULL);
             return TCL_OK;
 // previousMoveNT is the same as previousMove, except that the move is not translated
         } else if (scid::database::strIsPrefix (argv[arg], "previousMoveNT")) {
             AppendResult(
-                ti, scid::database::game_notation::previousSan(g).c_str(),
+                ti,
+                scid::core::notation::previousSan(g.coreGame(),
+                                                  g.coreLocation())
+                    .c_str(),
                 NULL);
             return TCL_OK;
 // returns previous move played in UCI format
@@ -2901,7 +2911,8 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (toMove == scid::database::WHITE) { prevMoveCount--; }
 
     scid::database::strCopy(
-        san, scid::database::game_notation::previousSan(g).c_str());
+        san, scid::core::notation::previousSan(g.coreGame(), g.coreLocation())
+                 .c_str());
     strcpy(tempTrans, san);
     scid::database::transPieces(tempTrans);
     bool printNags = true;
@@ -2936,7 +2947,8 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // Now print next move:
 
     scid::database::strCopy(
-        san, scid::database::game_notation::nextSan(g).c_str());
+        san,
+        scid::core::notation::nextSan(g.coreGame(), g.coreLocation()).c_str());
     strcpy(tempTrans, san);
     scid::database::transPieces(tempTrans);
     if (san[0] == 0) {
@@ -3001,7 +3013,9 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             char s[20];
             g.enterVariation (vnum);
             scid::database::strCopy(
-                s, scid::database::game_notation::nextSan(g).c_str());
+                s,
+                scid::core::notation::nextSan(g.coreGame(), g.coreLocation())
+                    .c_str());
             strcpy(tempTrans, s);
             scid::database::transPieces(tempTrans);
             std::snprintf(temp, sizeof(temp), "   <run sc_var enter %u; updateBoard -animate>v%u",
@@ -3298,7 +3312,9 @@ sc_game_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         char * s = moveStrings[plyCount];
         if (sanFormat) {
             scid::database::strCopy(
-                s, scid::database::game_notation::nextSan(*g).c_str());
+                s,
+                scid::core::notation::nextSan(g->coreGame(), g->coreLocation())
+                    .c_str());
         } else {
             s = sm->toLongNotation(s);
             *s = 0;
@@ -3749,7 +3765,9 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
             scid::database::uint moveCount = g->currentPos()->GetFullMoveCount();
             char san [20];
             scid::database::strCopy(
-                san, scid::database::game_notation::nextSan(*g).c_str());
+                san,
+                scid::core::notation::nextSan(g->coreGame(), g->coreLocation())
+                    .c_str());
 	            if (san[0] != 0) {
 	                char temp[40];
 	                if (toMove == scid::database::WHITE) {
@@ -8503,7 +8521,9 @@ sc_var_list (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                        .c_str());
         } else {
             scid::database::strCopy(
-                s, scid::database::game_notation::nextSan(game).c_str());
+                s, scid::core::notation::nextSan(game.coreGame(),
+                                                 game.coreLocation())
+                       .c_str());
         }
         // if (s[0] == 0) { scid::database::strCopy (s, "(empty)"); }
         AppendElement (ti, s);
