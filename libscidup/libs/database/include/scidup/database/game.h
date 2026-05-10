@@ -79,9 +79,6 @@ private:
     // TODO [Game]: Delete this reverse compatibility projection once legacy
     // moveT is no longer needed by database/app readers.
     void TEMP_syncLegacyMovetextFromCore();
-    errorT decodeVariation(
-        ByteBuffer& buf,
-        std::vector<scid::core::MovetextLocation>& comment_marks);
     // TODO [Game]: Move these database storage-codec operations out of Game
     // once the database wrapper around the future core Game exists.
     void loadStandardTags(IndexEntry const& ie, TagRoster const& tags);

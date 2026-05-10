@@ -344,25 +344,26 @@ std::pair<unsigned, unsigned> encodeMovelist(
 	return {stats.variations, stats.nags};
 }
 
-/// Decodes the game moves
-errorT Game::decodeVariation(ByteBuffer& buf,
-                             std::vector<scid::core::MovetextLocation>&
-                                 comment_marks) {
+/// Decodes the game moves.
+errorT decodeMovelist(ByteBuffer& buf, scid::core::Game& game,
+                      std::vector<scid::core::MovetextLocation>&
+                          comment_marks) {
 	struct VariationFrame {
 		Position resumePosition;
 		simpleMoveT resumeMove;
 	};
 
-	scid::core::MovetextCursor cursor(coreGame_);
-	Position position = coreGame_.startPosition()
-	                        ? *coreGame_.startPosition()
+	scid::core::MovetextCursor cursor(game);
+	Position position = game.startPosition()
+	                        ? *game.startPosition()
 	                        : Position::getStdStart();
 	std::vector<VariationFrame> variationStack;
 	std::optional<simpleMoveT> previousMove;
 	simpleMoveT sm;
 	int varDepth = 0;
 	for (;;) {
-		auto [err, val] = buf.nextMove(
+		auto [err, val] = game_storage::ByteBufferAccess::nextMove(
+		    buf,
 		    varDepth, [&](auto) { return true; },
 		    [&] {
 			    // Mark this comment as needing to be read
@@ -740,7 +741,7 @@ errorT Game::decodeMovesOnly(ByteBuffer& buf) {
 	}
 
 	std::vector<scid::core::MovetextLocation> comment_marks;
-	auto err = decodeVariation(buf, comment_marks);
+	auto err = decodeMovelist(buf, coreGame_, comment_marks);
 	TEMP_syncLegacyMovetextFromCore();
 	return err;
 }
@@ -769,9 +770,9 @@ errorT Game::decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf)
     if (fen)
         err = setStartFen(fen);
 
-    std::vector<scid::core::MovetextLocation> comment_marks;
-    if (err == OK)
-        err = decodeVariation(buf, comment_marks);
+	std::vector<scid::core::MovetextLocation> comment_marks;
+	if (err == OK)
+		err = decodeMovelist(buf, coreGame_, comment_marks);
 
     if (err != OK) {
         TEMP_syncLegacyMovetextFromCore();
@@ -814,7 +815,8 @@ errorT game_storage::decodeEncodedMove(ByteBuffer& buf, byte val,
 		return ERROR_Decode;
 
 	const auto ptype = piece_Type(pos.GetPiece(from));
-	const auto [to, promo] = buf.decodeMove(toMove, ptype, from, val);
+	const auto [to, promo] = game_storage::ByteBufferAccess::decodeMove(
+	    buf, toMove, ptype, from, val);
 	if (to < 0 || to > 63)
 		return ERROR_Decode;
 
@@ -834,7 +836,7 @@ errorT game_storage::decodeEncodedMove(ByteBuffer& buf, byte val,
 
 errorT game_storage::decodeMainlineMove(ByteBuffer& buf, const Position& pos,
                                         simpleMoveT& sm) {
-	auto [err, val] = buf.nextLineMove();
+	auto [err, val] = ByteBufferAccess::nextLineMove(buf);
 	if (err)
 		return err;
 
