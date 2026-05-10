@@ -78,6 +78,54 @@ TEST(CoreMovetextCursorTest, AddsVariationToNextMoveAndEntersIt) {
 	EXPECT_EQ("e2e4", cursor.nextMove()->action.longNotation());
 }
 
+TEST(CoreMovetextCursorTest, SetsPreviousMoveMetadataAtCursor) {
+	scid::core::Game game;
+	scid::core::MovetextCursor cursor(game);
+	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+
+	scid::core::MoveMetadata metadata;
+	metadata.comment = "Best by test";
+	metadata.nags = {1, 14};
+
+	ASSERT_TRUE(cursor.setPreviousMoveMetadata(std::move(metadata)));
+
+	auto const& move = game.movetext().mainline.moves[0];
+	EXPECT_EQ("Best by test", move.metadata.comment);
+	ASSERT_EQ(2U, move.metadata.nags.size());
+	EXPECT_EQ(1, move.metadata.nags[0]);
+	EXPECT_EQ(14, move.metadata.nags[1]);
+}
+
+TEST(CoreMovetextCursorTest, RefusesToSetPreviousMoveMetadataAtLineStart) {
+	scid::core::Game game;
+	scid::core::MovetextCursor cursor(game);
+
+	EXPECT_FALSE(cursor.setPreviousMoveMetadata({}));
+}
+
+TEST(CoreMovetextCursorTest, SetsCurrentVariationInitialComment) {
+	scid::core::Game game;
+	scid::core::MovetextCursor cursor(game);
+	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.toStart();
+	ASSERT_NE(nullptr, cursor.addVariation("Old comment"));
+
+	ASSERT_TRUE(cursor.setCurrentVariationInitialComment("New comment"));
+
+	EXPECT_EQ("New comment",
+	          game.movetext()
+	              .mainline.moves[0]
+	              .childVariations[0]
+	              .initialComment);
+}
+
+TEST(CoreMovetextCursorTest, RefusesToSetVariationCommentFromMainline) {
+	scid::core::Game game;
+	scid::core::MovetextCursor cursor(game);
+
+	EXPECT_FALSE(cursor.setCurrentVariationInitialComment("No variation"));
+}
+
 TEST(CoreMovetextCursorTest, RefusesToAddVariationAtLineEnd) {
 	scid::core::Game game;
 	scid::core::MovetextCursor cursor(game);

@@ -211,6 +211,25 @@ Variation* MovetextCursor::addVariation(std::string_view initialComment) {
 	return &variation;
 }
 
+bool MovetextCursor::setPreviousMoveMetadata(MoveMetadata metadata) {
+	auto move = previousMove();
+	if (!move)
+		return false;
+
+	move->metadata = std::move(metadata);
+	return true;
+}
+
+bool MovetextCursor::setCurrentVariationInitialComment(
+    std::string_view comment) {
+	auto variation = currentVariation();
+	if (!variation)
+		return false;
+
+	variation->initialComment.assign(comment.begin(), comment.end());
+	return true;
+}
+
 bool MovetextCursor::promoteVariationToFirst() {
 	if (parents_.empty())
 		return false;

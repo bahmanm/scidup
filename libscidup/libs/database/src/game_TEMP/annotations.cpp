@@ -5,6 +5,8 @@
 #include "movetext_projection.h"
 #include "movetree.h"
 
+#include <utility>
+
 namespace scid::database {
 
 namespace {
@@ -19,14 +21,11 @@ bool syncCoreMoveMetadata(scid::core::Game& coreGame,
 	[[maybe_unused]] const bool restored = cursor.restore(location);
 	ASSERT(restored);
 
-	auto move = cursor.previousMove();
-	if (!move)
-		return false;
-
-	move->metadata.comment = legacyMove->comment;
-	move->metadata.nags.assign(legacyMove->nags,
-	                           legacyMove->nags + legacyMove->nagCount);
-	return true;
+	scid::core::MoveMetadata metadata;
+	metadata.comment = legacyMove->comment;
+	metadata.nags.assign(legacyMove->nags,
+	                      legacyMove->nags + legacyMove->nagCount);
+	return cursor.setPreviousMoveMetadata(std::move(metadata));
 }
 
 bool syncCoreComment(scid::core::Game& coreGame,
@@ -49,12 +48,7 @@ bool syncCoreComment(scid::core::Game& coreGame,
 	[[maybe_unused]] const bool restored = cursor.restore(location);
 	ASSERT(restored);
 
-	auto variation = cursor.currentVariation();
-	if (!variation)
-		return false;
-
-	variation->initialComment = legacyMove->comment;
-	return true;
+	return cursor.setCurrentVariationInitialComment(legacyMove->comment);
 }
 
 } // namespace
