@@ -16,6 +16,7 @@
 
 #include "scidup/database/game.h"
 #include "scidup/core/game_cursor.h"
+#include "scidup/core/movetext_cursor.h"
 #include "scidup/core/nags.h"
 #include "scidup/core/notation.h"
 #include "scidup/core/pgn/encode.h"
@@ -32,6 +33,7 @@
 #include <memory>
 #include <random>
 #include <string_view>
+#include <utility>
 
 namespace {
 
@@ -585,6 +587,30 @@ TEST(Test_Game, coreGameMirrorsProgrammaticCommentMutation) {
 	auto const& variationMove =
 	    mainlineMove.childVariations[0].line.moves[0];
 	EXPECT_EQ("After d4"sv, variationMove.metadata.comment);
+}
+
+TEST(Test_Game, moveCommentReadsCoreCommentAtCurrentLocation) {
+	scid::database::Game game;
+	game.setMoveComment("Before the first move");
+	game.coreGame().setInitialComment("Core initial comment");
+	EXPECT_STREQ("Core initial comment", game.moveComment());
+
+	ASSERT_EQ(scid::database::OK,
+	          game.addMove(makeCurrentMove(game, scid::database::E2,
+	                                       scid::database::E4)));
+	scid::core::MovetextCursor mainlineCursor(game.coreGame());
+	ASSERT_TRUE(mainlineCursor.restore(game.coreLocation()));
+	scid::core::MoveMetadata metadata;
+	metadata.comment = "Core previous move comment";
+	ASSERT_TRUE(mainlineCursor.setPreviousMoveMetadata(std::move(metadata)));
+	EXPECT_STREQ("Core previous move comment", game.moveComment());
+
+	ASSERT_EQ(scid::database::OK, game.addVariation());
+	scid::core::MovetextCursor variationCursor(game.coreGame());
+	ASSERT_TRUE(variationCursor.restore(game.coreLocation()));
+	ASSERT_TRUE(variationCursor.setCurrentVariationInitialComment(
+	    "Core variation comment"));
+	EXPECT_STREQ("Core variation comment", game.moveComment());
 }
 
 TEST(Test_Game, coreGameMirrorsStrip) {

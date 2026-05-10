@@ -19,6 +19,15 @@ const Move* GameCursor::nextMove() const {
 	return &currentLine().moves[nextIndex_];
 }
 
+const Variation* GameCursor::currentVariation() const {
+	if (parents_.empty())
+		return nullptr;
+
+	auto const& parent = parents_.back();
+	return &parent.line->moves[parent.nextIndex]
+	            .childVariations[parent.variationIndex];
+}
+
 std::vector<const Move*> GameCursor::movesToCursor() const {
 	std::vector<const Move*> result;
 	result.reserve(ply());

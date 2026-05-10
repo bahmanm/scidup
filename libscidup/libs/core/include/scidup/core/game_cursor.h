@@ -21,6 +21,7 @@ public:
 
 	const Move* previousMove() const;
 	const Move* nextMove() const;
+	const Variation* currentVariation() const;
 	std::vector<const Move*> movesToCursor() const;
 	std::size_t ply() const;
 	std::size_t variationCount() const;

@@ -213,7 +213,7 @@ TEST(CoreGameCursorTest, EntersAndExitsVariationFromNextMove) {
 	scid::core::Game game;
 	auto& first = game.appendMainlineMove(
 	    quiet(scid::database::E2, scid::database::E4));
-	first.childVariations.emplace_back().line.moves.push_back(
+	first.childVariations.emplace_back("Queen pawn alternative").line.moves.push_back(
 	    {quiet(scid::database::D2, scid::database::D4), "d4", {}, {}});
 	game.appendMainlineMove(quiet(scid::database::E7, scid::database::E5));
 
@@ -222,7 +222,11 @@ TEST(CoreGameCursorTest, EntersAndExitsVariationFromNextMove) {
 	EXPECT_EQ(1U, cursor.variationCount());
 	EXPECT_EQ(0U, cursor.variationDepth());
 	EXPECT_EQ(0U, cursor.variationIndex());
+	EXPECT_EQ(nullptr, cursor.currentVariation());
 	ASSERT_TRUE(cursor.enterVariation(0));
+	ASSERT_NE(nullptr, cursor.currentVariation());
+	EXPECT_EQ("Queen pawn alternative",
+	          cursor.currentVariation()->initialComment);
 	EXPECT_EQ(1U, cursor.variationDepth());
 	EXPECT_EQ(0U, cursor.variationIndex());
 	EXPECT_TRUE(cursor.isAtLineStart());
