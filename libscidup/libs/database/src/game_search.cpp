@@ -70,6 +70,22 @@ bool patternsMatch(const Position* pos, patternT* patterns, size_t patternCount)
     // If we reach here, all patterns matched:
     return true;
 }
+
+errorT decodeSearchStart(ByteBuffer& buf, Position& position) {
+    errorT err = buf.decodeTags([](auto, auto) {});
+    if (err != OK)
+        return err;
+
+    auto [errStartPos, fen] = buf.decodeStartBoard();
+    if (errStartPos)
+        return errStartPos;
+
+    if (fen)
+        return position.ReadFromFEN(fen);
+
+    position.StdStart();
+    return OK;
+}
 } // end of anonymous namespace
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -88,15 +104,16 @@ bool Game::materialMatch(bool promotionsFlag, ByteBuffer& buf, byte* min,
     int matchesNeeded = matchLength;
     int matDiff;
     uint plyCount = 0;
-    errorT err = decodeSkipTags(&buf);
+    Position currentPosition;
+    errorT err = decodeSearchStart(buf, currentPosition);
     while (err == OK) {
         bool foundMatch = false;
         byte wMinor, bMinor;
 
         // If current pos has LESS than the minimum of pawns, this
         // game can never match so return false;
-        if (currentPos_->PieceCount(WP) < min[WP]) { return false; }
-        if (currentPos_->PieceCount(BP) < min[BP]) { return false; }
+        if (currentPosition.PieceCount(WP) < min[WP]) { return false; }
+        if (currentPosition.PieceCount(BP) < min[BP]) { return false; }
 
         // If not in the valid move range, go to the next move or return:
         if ((int)plyCount > maxPly) { return false; }
@@ -105,44 +122,44 @@ bool Game::materialMatch(bool promotionsFlag, ByteBuffer& buf, byte* min,
 // For these comparisons, we really could only do half of them each move,
 // according to which side just moved.
         // For non-pawns, the count could be increased by promotions:
-        if (currentPos_->PieceCount(WQ) < min[WQ]) { goto Check_Promotions; }
-        if (currentPos_->PieceCount(BQ) < min[BQ]) { goto Check_Promotions; }
-        if (currentPos_->PieceCount(WR) < min[WR]) { goto Check_Promotions; }
-        if (currentPos_->PieceCount(BR) < min[BR]) { goto Check_Promotions; }
-        if (currentPos_->PieceCount(WB) < min[WB]) { goto Check_Promotions; }
-        if (currentPos_->PieceCount(BB) < min[BB]) { goto Check_Promotions; }
-        if (currentPos_->PieceCount(WN) < min[WN]) { goto Check_Promotions; }
-        if (currentPos_->PieceCount(BN) < min[BN]) { goto Check_Promotions; }
-        wMinor = currentPos_->PieceCount(WB) + currentPos_->PieceCount(WN);
-        bMinor = currentPos_->PieceCount(BB) + currentPos_->PieceCount(BN);
+        if (currentPosition.PieceCount(WQ) < min[WQ]) { goto Check_Promotions; }
+        if (currentPosition.PieceCount(BQ) < min[BQ]) { goto Check_Promotions; }
+        if (currentPosition.PieceCount(WR) < min[WR]) { goto Check_Promotions; }
+        if (currentPosition.PieceCount(BR) < min[BR]) { goto Check_Promotions; }
+        if (currentPosition.PieceCount(WB) < min[WB]) { goto Check_Promotions; }
+        if (currentPosition.PieceCount(BB) < min[BB]) { goto Check_Promotions; }
+        if (currentPosition.PieceCount(WN) < min[WN]) { goto Check_Promotions; }
+        if (currentPosition.PieceCount(BN) < min[BN]) { goto Check_Promotions; }
+        wMinor = currentPosition.PieceCount(WB) + currentPosition.PieceCount(WN);
+        bMinor = currentPosition.PieceCount(BB) + currentPosition.PieceCount(BN);
         if (wMinor < min[WM]) { goto Check_Promotions; }
         if (bMinor < min[BM]) { goto Check_Promotions; }
 
         // Now test maximum counts:
-        if (currentPos_->PieceCount(WQ) > max[WQ]) { goto Next_Move; }
-        if (currentPos_->PieceCount(BQ) > max[BQ]) { goto Next_Move; }
-        if (currentPos_->PieceCount(WR) > max[WR]) { goto Next_Move; }
-        if (currentPos_->PieceCount(BR) > max[BR]) { goto Next_Move; }
-        if (currentPos_->PieceCount(WB) > max[WB]) { goto Next_Move; }
-        if (currentPos_->PieceCount(BB) > max[BB]) { goto Next_Move; }
-        if (currentPos_->PieceCount(WN) > max[WN]) { goto Next_Move; }
-        if (currentPos_->PieceCount(BN) > max[BN]) { goto Next_Move; }
-        if (currentPos_->PieceCount(WP) > max[WP]) { goto Next_Move; }
-        if (currentPos_->PieceCount(BP) > max[BP]) { goto Next_Move; }
+        if (currentPosition.PieceCount(WQ) > max[WQ]) { goto Next_Move; }
+        if (currentPosition.PieceCount(BQ) > max[BQ]) { goto Next_Move; }
+        if (currentPosition.PieceCount(WR) > max[WR]) { goto Next_Move; }
+        if (currentPosition.PieceCount(BR) > max[BR]) { goto Next_Move; }
+        if (currentPosition.PieceCount(WB) > max[WB]) { goto Next_Move; }
+        if (currentPosition.PieceCount(BB) > max[BB]) { goto Next_Move; }
+        if (currentPosition.PieceCount(WN) > max[WN]) { goto Next_Move; }
+        if (currentPosition.PieceCount(BN) > max[BN]) { goto Next_Move; }
+        if (currentPosition.PieceCount(WP) > max[WP]) { goto Next_Move; }
+        if (currentPosition.PieceCount(BP) > max[BP]) { goto Next_Move; }
         if (wMinor > max[WM]) { goto Next_Move; }
         if (bMinor > max[BM]) { goto Next_Move; }
 
         // If both sides have ONE bishop, we need to check if the search
         // was restricted to same-color or opposite-color bishops:
-        if (currentPos_->PieceCount(WB) == 1
-                && currentPos_->PieceCount(BB) == 1) {
+        if (currentPosition.PieceCount(WB) == 1
+                && currentPosition.PieceCount(BB) == 1) {
             if (!oppBishops  ||  !sameBishops) { // Check the restriction:
                 colorT whiteBishCol = NOCOLOR;
                 colorT blackBishCol = NOCOLOR;
 
                 // Search for the white and black bishop, to find their
                 // square color:
-                const pieceT* bd = currentPos_->GetBoard();
+                const pieceT* bd = currentPosition.GetBoard();
                 for (squareT sq = A1; sq <= H8; sq++) {
                     if (bd[sq] == WB) {
                         whiteBishCol = BOARD_SQUARECOLOR [sq];
@@ -165,12 +182,13 @@ bool Game::materialMatch(bool promotionsFlag, ByteBuffer& buf, byte* min,
         }
 
         // Now check if the material difference is in-range:
-        matDiff = (int)currentPos_->MaterialValue(WHITE) -
-                  (int)currentPos_->MaterialValue(BLACK);
+        matDiff = (int)currentPosition.MaterialValue(WHITE) -
+                  (int)currentPosition.MaterialValue(BLACK);
         if (matDiff < minDiff  ||  matDiff > maxDiff) { goto Next_Move; }
 
         // At this point, the Material matches; do the patterns match?
-        if (patternCount == 0 || patternsMatch(currentPos(), patterns, patternCount)) {
+        if (patternCount == 0 ||
+            patternsMatch(&currentPosition, patterns, patternCount)) {
             foundMatch = true;
             matchesNeeded--;
             if (matchesNeeded <= 0) { return true; }
@@ -185,9 +203,13 @@ bool Game::materialMatch(bool promotionsFlag, ByteBuffer& buf, byte* min,
       Next_Move:
         {
             simpleMoveT sm;
-            err = decodeNextMove(&buf, sm);
+            auto [errMove, val] = buf.nextLineMove();
+            err = errMove;
             if (err == OK) {
-                currentPos_->DoSimpleMove(sm);
+                err = decodeMove(&buf, &sm, val, &currentPosition);
+            }
+            if (err == OK) {
+                currentPosition.DoSimpleMove(sm);
             }
         }
         plyCount++;
@@ -213,11 +235,14 @@ Game::exactMatch (Position * searchPos, ByteBuffer * buf,
     // If buf is NULL, the game is in memory. Otherwise, decode only
     // the necessary moves:
     errorT err = OK;
+    Position decodedPosition;
+    Position* currentPosition = currentPos_.get();
 
     if (buf == NULL) {
         toStart();
     } else {
-        err = decodeSkipTags(buf);
+        err = decodeSearchStart(*buf, decodedPosition);
+        currentPosition = &decodedPosition;
     }
 
     uint search_whiteHPawns = 0;
@@ -250,7 +275,7 @@ Game::exactMatch (Position * searchPos, ByteBuffer * buf,
     check_pawnMaskWhite = check_pawnMaskBlack = false;
 
     while (err == OK) {
-        const pieceT* currentBoard = currentPos_->GetBoard();
+        const pieceT* currentBoard = currentPosition->GetBoard();
         const pieceT* board = searchPos->GetBoard();
         const pieceT* b1 = currentBoard;
         const pieceT* b2 = board;
@@ -259,13 +284,13 @@ Game::exactMatch (Position * searchPos, ByteBuffer * buf,
         // optimisations that detect insufficient material.
 #ifndef NO_SPEEDUPS
         // Insufficient material optimisation:
-        if (searchPos->GetCount(WHITE) > currentPos_->GetCount(WHITE)  ||
-            searchPos->GetCount(BLACK) > currentPos_->GetCount(BLACK)) {
+        if (searchPos->GetCount(WHITE) > currentPosition->GetCount(WHITE)  ||
+            searchPos->GetCount(BLACK) > currentPosition->GetCount(BLACK)) {
             return false;
         }
         // Insufficient pawns optimisation:
-        if (searchPos->PieceCount(WP) > currentPos_->PieceCount(WP)  ||
-            searchPos->PieceCount(BP) > currentPos_->PieceCount(BP)) {
+        if (searchPos->PieceCount(WP) > currentPosition->PieceCount(WP)  ||
+            searchPos->PieceCount(BP) > currentPosition->PieceCount(BP)) {
             return false;
         }
 
@@ -296,35 +321,35 @@ Game::exactMatch (Position * searchPos, ByteBuffer * buf,
         bool found = true;
 
         // Not correct color: skip to next move
-        if (searchPos->GetToMove() != currentPos_->GetToMove()) {
+        if (searchPos->GetToMove() != currentPosition->GetToMove()) {
             //skip++;
             goto Move_Forward;
         }
 
         // Extra material: skip to next move
-        if (searchPos->GetCount(WHITE) < currentPos_->GetCount(WHITE)  ||
-            searchPos->GetCount(BLACK) < currentPos_->GetCount(BLACK)) {
+        if (searchPos->GetCount(WHITE) < currentPosition->GetCount(WHITE)  ||
+            searchPos->GetCount(BLACK) < currentPosition->GetCount(BLACK)) {
             //skip++;
             goto Move_Forward;
         }
         // Extra pawns/pieces: skip to next move
-        if (searchPos->PieceCount(WP) != currentPos_->PieceCount(WP)  ||
-            searchPos->PieceCount(BP) != currentPos_->PieceCount(BP)  ||
-            searchPos->PieceCount(WN) != currentPos_->PieceCount(WN)  ||
-            searchPos->PieceCount(BN) != currentPos_->PieceCount(BN)  ||
-            searchPos->PieceCount(WB) != currentPos_->PieceCount(WB)  ||
-            searchPos->PieceCount(BB) != currentPos_->PieceCount(BB)  ||
-            searchPos->PieceCount(WR) != currentPos_->PieceCount(WR)  ||
-            searchPos->PieceCount(BR) != currentPos_->PieceCount(BR)  ||
-            searchPos->PieceCount(WQ) != currentPos_->PieceCount(WQ)  ||
-            searchPos->PieceCount(BQ) != currentPos_->PieceCount(BQ)) {
+        if (searchPos->PieceCount(WP) != currentPosition->PieceCount(WP)  ||
+            searchPos->PieceCount(BP) != currentPosition->PieceCount(BP)  ||
+            searchPos->PieceCount(WN) != currentPosition->PieceCount(WN)  ||
+            searchPos->PieceCount(BN) != currentPosition->PieceCount(BN)  ||
+            searchPos->PieceCount(WB) != currentPosition->PieceCount(WB)  ||
+            searchPos->PieceCount(BB) != currentPosition->PieceCount(BB)  ||
+            searchPos->PieceCount(WR) != currentPosition->PieceCount(WR)  ||
+            searchPos->PieceCount(BR) != currentPosition->PieceCount(BR)  ||
+            searchPos->PieceCount(WQ) != currentPosition->PieceCount(WQ)  ||
+            searchPos->PieceCount(BQ) != currentPosition->PieceCount(BQ)) {
             //skip++;
             goto Move_Forward;
         }
 
         // NOW, compare the actual boards piece-by-piece.
         if (searchType == GAME_EXACT_MATCH_Exact) {
-            if (searchPos->HashValue() == currentPos_->HashValue()) {
+            if (searchPos->HashValue() == currentPosition->HashValue()) {
                 for (squareT sq = A1;  sq <= H8;  sq++, b1++, b2++) {
                     if (*b1 != *b2) { found = false; break; }
                 }
@@ -332,7 +357,7 @@ Game::exactMatch (Position * searchPos, ByteBuffer * buf,
                 found = false;
             }
         } else if (searchType == GAME_EXACT_MATCH_Pawns) {
-            if (searchPos->PawnHashValue() == currentPos_->PawnHashValue()) {
+            if (searchPos->PawnHashValue() == currentPosition->PawnHashValue()) {
                 for (squareT sq = A1;  sq <= H8;  sq++, b1++, b2++) {
                     if (*b1 != *b2  &&  (*b1 == WP  ||  *b1 == BP)) {
                         found = false;
@@ -344,8 +369,8 @@ Game::exactMatch (Position * searchPos, ByteBuffer * buf,
             }
         } else if (searchType == GAME_EXACT_MATCH_Fyles) {
             for (fyleT f = A_FYLE; f <= H_FYLE; f++) {
-                if (searchPos->FyleCount(WP,f) != currentPos_->FyleCount(WP,f)
-                      || searchPos->FyleCount(BP,f) != currentPos_->FyleCount(BP,f)) {
+                if (searchPos->FyleCount(WP,f) != currentPosition->FyleCount(WP,f)
+                      || searchPos->FyleCount(BP,f) != currentPosition->FyleCount(BP,f)) {
                     found = false;
                     break;
                 }
@@ -363,9 +388,13 @@ Game::exactMatch (Position * searchPos, ByteBuffer * buf,
             err = next();
         } else {
             simpleMoveT nextMove;
-            err = decodeNextMove(buf, nextMove);
+            auto [errMove, val] = buf->nextLineMove();
+            err = errMove;
             if (err == OK) {
-                currentPos_->DoSimpleMove(nextMove);
+                err = decodeMove(buf, &nextMove, val, currentPosition);
+            }
+            if (err == OK) {
+                currentPosition->DoSimpleMove(nextMove);
                 if (doHomePawnChecks) {
                     rankT rTo = square_Rank (nextMove.to);
                     rankT rFrom = square_Rank (nextMove.from);
