@@ -344,13 +344,24 @@ void Game::truncate() {
 	if (currentMove_->endMarker())
 		return;
 
+	scid::core::MovetextCursor coreCursor(coreGame_);
+	const bool coreCursorReady =
+	    legacy_movetext::moveCursorToLegacyLocation(coreCursor, firstMove_,
+	                                                currentMove_);
+
 	auto endMove = newMove(END_MARKER);
 	currentMove_->prev->setNext(endMove);
 
 	currentMove_ = endMove;
 	if (varDepth_ == 0)
 		numHalfMoves_ = currentPly();
-	TEMP_syncCoreMovetext();
+	if (coreCursorReady) {
+		coreCursor.truncate();
+	} else {
+		// TODO [Game]: Remove this fallback once legacy cursor state is
+		// represented directly by MovetextCursor.
+		TEMP_syncCoreMovetext();
+	}
 
 	// Invariants
 	ASSERT(currentMove_ && currentMove_->prev);

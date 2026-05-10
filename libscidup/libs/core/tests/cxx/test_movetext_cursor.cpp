@@ -108,4 +108,40 @@ TEST(CoreMovetextCursorTest, SavesAndRestoresVariationLocation) {
 	EXPECT_EQ("d2d4", cursor.previousMove()->action.longNotation());
 }
 
+TEST(CoreMovetextCursorTest, TruncatesMainlineAtCursor) {
+	scid::core::Game game;
+	scid::core::MovetextCursor cursor(game);
+
+	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.addMove(quiet(scid::database::E7, scid::database::E5));
+	cursor.addMove(quiet(scid::database::G1, scid::database::F3));
+	ASSERT_TRUE(cursor.toPly(1));
+
+	cursor.truncate();
+
+	ASSERT_EQ(1U, game.movetext().mainline.moves.size());
+	EXPECT_TRUE(cursor.isAtLineEnd());
+	EXPECT_EQ("e2e4",
+	          game.movetext().mainline.moves[0].action.longNotation());
+}
+
+TEST(CoreMovetextCursorTest, TruncatesVariationLineAtCursor) {
+	scid::core::Game game;
+	scid::core::MovetextCursor cursor(game);
+
+	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.toStart();
+	auto variation = cursor.addVariation();
+	ASSERT_NE(nullptr, variation);
+	cursor.addMove(quiet(scid::database::D2, scid::database::D4));
+	cursor.addMove(quiet(scid::database::D7, scid::database::D5));
+	ASSERT_TRUE(cursor.previous());
+
+	cursor.truncate();
+
+	ASSERT_EQ(1U, variation->line.moves.size());
+	EXPECT_TRUE(cursor.isAtLineEnd());
+	EXPECT_EQ("d2d4", variation->line.moves[0].action.longNotation());
+}
+
 } // namespace

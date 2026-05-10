@@ -211,6 +211,11 @@ Variation* MovetextCursor::addVariation(std::string_view initialComment) {
 	return &variation;
 }
 
+void MovetextCursor::truncate() {
+	auto& line = currentLine();
+	line.moves.erase(line.moves.begin() + nextIndex_, line.moves.end());
+}
+
 MoveSequence& MovetextCursor::currentLine() {
 	return *currentLine_;
 }
