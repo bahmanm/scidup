@@ -79,9 +79,6 @@ private:
     // TODO [Game]: Delete this reverse compatibility projection once legacy
     // moveT is no longer needed by database/app readers.
     void TEMP_syncLegacyMovetextFromCore();
-    // TODO [Game]: Move these database storage-codec operations out of Game
-    // once the database wrapper around the future core Game exists.
-    std::pair<IndexEntry, TagRoster> encode(std::vector<byte>& dest) const;
     // TODO [Game]: Move these database search operations out of Game once the
     // database wrapper around the future core Game exists.
     bool materialMatch(bool promotionsFlag, ByteBuffer& buf, byte* min,

@@ -654,86 +654,70 @@ std::pair<bool, bool> mainlineInfo(const Position* customStart,
 	return {PromoFlag, UnderPromosFlag};
 }
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::encode(): Encode the game to a buffer for disk storage.
-//      If passed a NON-null IndexEntry pointer, it will fill in the
-//      following fields of that index entry, which are computed as
-//      the game is encoded:
-//       -  result, ecoCode, whiteElo, blackElo
-//       -  promotion flag
-//       -  nMoves: the number of halfmoves
-//       -  finalMatSig: the material signature of the final position.
-//       -  homePawnData: the home pawn change list.
-//
-std::pair<IndexEntry, TagRoster> Game::encode(std::vector<byte>& dest) const {
-    // TODO [Game]: Keep IndexEntry/TagRoster projection in the database storage
-    // boundary. Core metadata should be projected here, not stored in database
-    // codec types.
-    auto tags = TagRoster();
-    tags.event = coreGame_.event().c_str();
-    tags.site = coreGame_.site().c_str();
-    tags.white = coreGame_.white().name.c_str();
-    tags.black = coreGame_.black().name.c_str();
-    tags.round = coreGame_.round().c_str();
-
-    auto ie = IndexEntry();
-    // Set the fields in the IndexEntry:
-    auto const& header = coreGame_.header();
-    ie.SetDate(header.event.date);
-    ie.SetEventDate(header.event.eventDate);
-    ie.SetResult(header.result);
-    ie.SetEcoCode(scidup::eco::fromString(header.eco.c_str()));
-    ie.SetWhiteElo(header.white.rating.value);
-    ie.SetBlackElo(header.black.rating.value);
-    ie.SetWhiteRatingType(header.white.rating.type);
-    ie.SetBlackRatingType(header.black.rating.type);
-    if (coreGame_.hasNonStandardStart()) {
-        ie.SetStartFlag(true);
-        if (coreGame_.startPosition()->isChess960()) {
-            ie.setChess960();
-        }
-    } else {
-        ie.SetStartFlag(false);
-    }
-    ie.SetFlag(IndexEntry::StrToFlagMask(scidFlags_), true);
-
-    const auto [promo, underPromo] =
-        mainlineInfo(coreGame_.startPosition(), coreGame_.movetext().mainline,
-                     ie);
-
-    // First, encode info not already stored in the index
-    // This will be the non-STR (non-"seven tag roster") PGN tags.
-    encodeTags(coreGame_.extraTags(), dest);
-
-	    // Encode the promotion flags and the start position
-	    char FEN[256];
-	    encodeStartBoard(promo, underPromo,
-	                     coreGame_.hasNonStandardStart(FEN, sizeof(FEN))
-	                         ? FEN
-	                         : nullptr,
-	                     dest);
-
-    auto [commentCount, markComments] = countComments(coreGame_.movetext());
-
-    // Compatibility: SCID4 requires the markers
-    markComments = true;
-
-    // Now the movelist:
-    auto [varCount, nagCount] = encodeMovelist(markComments, coreGame_, dest);
-
-    // Now do the comments
-    encodeComments(markComments, coreGame_.movetext(), dest);
-
-    ie.SetCommentCount(commentCount);
-    ie.SetVariationCount(varCount);
-    ie.SetNagCount(nagCount);
-
-    return {ie, tags};
-}
-
 std::pair<IndexEntry, TagRoster> game_storage::encode(
     const Game& game, std::vector<byte>& dest) {
-	return game.encode(dest);
+	// TODO [Game]: Keep IndexEntry/TagRoster projection in the database storage
+	// boundary. Core metadata should be projected here, not stored in database
+	// codec types.
+	const auto& coreGame = game.coreGame();
+	auto tags = TagRoster();
+	tags.event = coreGame.event().c_str();
+	tags.site = coreGame.site().c_str();
+	tags.white = coreGame.white().name.c_str();
+	tags.black = coreGame.black().name.c_str();
+	tags.round = coreGame.round().c_str();
+
+	auto ie = IndexEntry();
+	// Set the fields in the IndexEntry:
+	auto const& header = coreGame.header();
+	ie.SetDate(header.event.date);
+	ie.SetEventDate(header.event.eventDate);
+	ie.SetResult(header.result);
+	ie.SetEcoCode(scidup::eco::fromString(header.eco.c_str()));
+	ie.SetWhiteElo(header.white.rating.value);
+	ie.SetBlackElo(header.black.rating.value);
+	ie.SetWhiteRatingType(header.white.rating.type);
+	ie.SetBlackRatingType(header.black.rating.type);
+	if (coreGame.hasNonStandardStart()) {
+		ie.SetStartFlag(true);
+		if (coreGame.startPosition()->isChess960()) {
+			ie.setChess960();
+		}
+	} else {
+		ie.SetStartFlag(false);
+	}
+	ie.SetFlag(IndexEntry::StrToFlagMask(game.scidFlags_), true);
+
+	const auto [promo, underPromo] =
+	    mainlineInfo(coreGame.startPosition(), coreGame.movetext().mainline, ie);
+
+	// First, encode info not already stored in the index
+	// This will be the non-STR (non-"seven tag roster") PGN tags.
+	encodeTags(coreGame.extraTags(), dest);
+
+	// Encode the promotion flags and the start position.
+	char FEN[256];
+	encodeStartBoard(promo, underPromo,
+	                 coreGame.hasNonStandardStart(FEN, sizeof(FEN)) ? FEN
+	                                                                 : nullptr,
+	                 dest);
+
+	auto [commentCount, markComments] = countComments(coreGame.movetext());
+
+	// Compatibility: SCID4 requires the markers.
+	markComments = true;
+
+	// Now the movelist:
+	auto [varCount, nagCount] = encodeMovelist(markComments, coreGame, dest);
+
+	// Now do the comments
+	encodeComments(markComments, coreGame.movetext(), dest);
+
+	ie.SetCommentCount(commentCount);
+	ie.SetVariationCount(varCount);
+	ie.SetNagCount(nagCount);
+
+	return {ie, tags};
 }
 
 errorT game_storage::decode(Game& game, IndexEntry const& ie,
