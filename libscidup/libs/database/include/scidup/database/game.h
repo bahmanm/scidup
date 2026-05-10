@@ -77,6 +77,7 @@ class Game {
     std::unique_ptr<Position> currentPos_{new Position};
     moveT*      firstMove_;
     moveT*      currentMove_;
+    scid::core::MovetextLocation coreLocation_;
     uint        varDepth_;     // Current variation depth.
     ushort      numHalfMoves_; // Total half moves in the main line.
 

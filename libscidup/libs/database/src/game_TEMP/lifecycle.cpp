@@ -128,6 +128,7 @@ void Game::clearMoves() {
 	firstMove_ = newMove(START_MARKER);
 	currentMove_ = newMove(END_MARKER);
 	firstMove_->setNext(currentMove_);
+	coreLocation_ = scid::core::MovetextLocation();
 
 	varDepth_ = 0;
 	numHalfMoves_ = 0;
