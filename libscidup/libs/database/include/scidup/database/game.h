@@ -50,8 +50,6 @@ void loadStandardTags(Game& game, IndexEntry const& ie, TagRoster const& tags);
 errorT decode(Game& game, IndexEntry const& ie, TagRoster const& tags,
               ByteBuffer buf);
 errorT decodeMovesOnly(Game& game, ByteBuffer& buf);
-errorT decodeSkipTags(Game& game, ByteBuffer* buf);
-errorT decodeNextMove(Game& game, ByteBuffer* buf, simpleMoveT& sm);
 } // namespace game_storage
 
 //////////////////////////////////////////////////////////////////////
@@ -91,7 +89,6 @@ private:
     void loadStandardTags(IndexEntry const& ie, TagRoster const& tags);
     std::pair<IndexEntry, TagRoster> encode(std::vector<byte>& dest) const;
     errorT decodeSkipTags(ByteBuffer* buf);
-    errorT decodeNextMove(ByteBuffer* buf, simpleMoveT& sm);
     errorT decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf);
     errorT decodeMovesOnly(ByteBuffer& buf);
     // TODO [Game]: Move these database search operations out of Game once the
@@ -111,9 +108,6 @@ private:
     friend errorT game_storage::decode(Game& game, IndexEntry const& ie,
                                        TagRoster const& tags, ByteBuffer buf);
     friend errorT game_storage::decodeMovesOnly(Game& game, ByteBuffer& buf);
-    friend errorT game_storage::decodeSkipTags(Game& game, ByteBuffer* buf);
-    friend errorT game_storage::decodeNextMove(Game& game, ByteBuffer* buf,
-                                               simpleMoveT& sm);
     friend struct GameSearchAccess;
     friend struct LegacyGamePgnEncoder;
     /**

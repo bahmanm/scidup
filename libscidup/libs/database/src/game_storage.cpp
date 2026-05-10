@@ -6,6 +6,7 @@
 #include "scidup/database/matsig.h"
 #include "scidup/database/namebase.h"
 #include "scidup/core/movetext_cursor.h"
+#include "game_storage.h"
 #include "movetree.h"
 #include "stored.h"
 
@@ -231,28 +232,7 @@ static byte encodePawn(squareT from, squareT to, pieceT promo) {
 //
 errorT Game::decodeMove(ByteBuffer* buf, simpleMoveT* sm, byte val,
                         const Position* pos) {
-	const colorT toMove = pos->GetToMove();
-	const squareT from = pos->GetList(toMove)[val >> 4];
-	if (from > H8)
-		return ERROR_Decode;
-
-	const auto ptype = piece_Type(pos->GetPiece(from));
-	const auto [to, promo] = buf->decodeMove(toMove, ptype, from, val);
-	if (to < 0 || to > 63)
-		return ERROR_Decode;
-
-	if (to == from) {
-		if (promo == INVALID_PIECE)
-			return ERROR_Decode;
-
-		if (promo != PAWN && !pos->canCastle<false>(promo == KING))
-			return ERROR_Decode;
-	} else {
-		if (to == pos->GetKingSquare(WHITE) || to == pos->GetKingSquare(BLACK))
-			return ERROR_Decode;
-	}
-	pos->makeMove(from, to, promo, *sm);
-	return OK;
+	return game_storage::decodeEncodedMove(*buf, val, *pos, *sm);
 }
 
 template <typename DestT>
@@ -760,35 +740,10 @@ std::pair<IndexEntry, TagRoster> Game::encode(std::vector<byte>& dest) const {
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::decodeNextMove():
-//      Decodes one more mainline move of the game from the bytebuffer.
-//      Used in searches for speed, since it is usually possible to
-//      determine if a game matches the search criteria without decoding
-//      all of it.
-//      If the game flag KeepDecodedMoves is true, the move decodes is
-//      added normally. If it is false, only the current position is
-//      updated and the list of moves is not updated -- this is done
-//      in searches for speed.
-//      Returns OK if a move was found, or ERROR_EndOfMoveList if all the
-//      moves have been decoded. Returns ERROR_Game if some corruption was
-//      detected.
-//
-errorT Game::decodeNextMove(ByteBuffer* buf, simpleMoveT& sm) {
-	ASSERT(buf != NULL);
-
-	auto [err, val] = buf->nextLineMove();
-	if (err)
-		return err;
-
-	return decodeMove(buf, &sm, val, currentPos());
-}
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Game::DecodeStart():
 //      Decodes the starting information from the game's on-disk
 //      representation in the bytebuffer. After this is called,
-//      decodeNextMove() can be called to decode each successive
-//      mainline move.
+//      storage helpers can be called to decode successive mainline moves.
 //
 errorT Game::decodeSkipTags(ByteBuffer* buf) {
     ASSERT(buf != NULL);
@@ -879,13 +834,39 @@ errorT game_storage::decodeMovesOnly(Game& game, ByteBuffer& buf) {
 	return game.decodeMovesOnly(buf);
 }
 
-errorT game_storage::decodeSkipTags(Game& game, ByteBuffer* buf) {
-	return game.decodeSkipTags(buf);
+errorT game_storage::decodeEncodedMove(ByteBuffer& buf, byte val,
+                                       const Position& pos, simpleMoveT& sm) {
+	const colorT toMove = pos.GetToMove();
+	const squareT from = pos.GetList(toMove)[val >> 4];
+	if (from > H8)
+		return ERROR_Decode;
+
+	const auto ptype = piece_Type(pos.GetPiece(from));
+	const auto [to, promo] = buf.decodeMove(toMove, ptype, from, val);
+	if (to < 0 || to > 63)
+		return ERROR_Decode;
+
+	if (to == from) {
+		if (promo == INVALID_PIECE)
+			return ERROR_Decode;
+
+		if (promo != PAWN && !pos.canCastle<false>(promo == KING))
+			return ERROR_Decode;
+	} else {
+		if (to == pos.GetKingSquare(WHITE) || to == pos.GetKingSquare(BLACK))
+			return ERROR_Decode;
+	}
+	pos.makeMove(from, to, promo, sm);
+	return OK;
 }
 
-errorT game_storage::decodeNextMove(Game& game, ByteBuffer* buf,
-                                    simpleMoveT& sm) {
-	return game.decodeNextMove(buf, sm);
+errorT game_storage::decodeMainlineMove(ByteBuffer& buf, const Position& pos,
+                                        simpleMoveT& sm) {
+	auto [err, val] = buf.nextLineMove();
+	if (err)
+		return err;
+
+	return decodeEncodedMove(buf, val, pos, sm);
 }
 
 } // namespace scid::database

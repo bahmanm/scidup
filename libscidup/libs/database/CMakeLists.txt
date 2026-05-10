@@ -61,6 +61,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/filebuf.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_positions.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_search.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_storage.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/legacy_encode_options.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/legacy_pgn.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/movetree.h"

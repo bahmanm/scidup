@@ -36,6 +36,7 @@
 #include "optable.h"
 #include "scidup/eco/book.h"
 #include "game_search.h"
+#include "game_storage.h"
 #include "legacy_pgn.h"
 #include "nag_format.h"
 #include "piece_translation.h"
@@ -1332,28 +1333,36 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             return false;
 
         auto bbuf = dbase.getGame(ie);
-        scid::database::Game* g = scratchGame;
-        if (scid::database::game_storage::decodeSkipTags(*g, &bbuf) !=
-            scid::database::OK)
+        scid::database::Position currentPosition;
+        if (bbuf.decodeTags([](auto, auto) {}) != scid::database::OK)
             return false;
+
+        const auto [errStartPos, fen] = bbuf.decodeStartBoard();
+        if (errStartPos)
+            return false;
+        if (fen) {
+            if (currentPosition.ReadFromFEN(fen) != scid::database::OK)
+                return false;
+        } else {
+            currentPosition.StdStart();
+        }
 
         scidup::eco::Code ecoCode = scidup::eco::ECO_None;
         for (;;) {
-            auto pos = g->currentPos();
-            if (pos->TotalMaterial() < ecoBook->fewestPieces())
+            if (currentPosition.TotalMaterial() < ecoBook->fewestPieces())
                 break;
 
-            const auto eco = ecoBook->findEco(*pos);
+            const auto eco = ecoBook->findEco(currentPosition);
             if (eco != scidup::eco::ECO_None) {
                 ecoCode = eco;
             }
 
             scid::database::simpleMoveT sm;
-            if (scid::database::game_storage::decodeNextMove(*g, &bbuf, sm) !=
-                scid::database::OK)
+            if (scid::database::game_storage::decodeMainlineMove(
+                    bbuf, currentPosition, sm) != scid::database::OK)
                 break;
 
-            g->currentPos()->DoSimpleMove(sm);
+            currentPosition.DoSimpleMove(sm);
         }
 
         if (!extendedCodes) {

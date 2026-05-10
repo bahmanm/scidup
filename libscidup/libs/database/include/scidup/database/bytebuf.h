@@ -48,8 +48,21 @@
  */
 namespace scid::database {
 
+class ByteBuffer;
 class Game;
 class GameView;
+class Position;
+struct simpleMoveT;
+
+namespace game_storage {
+// TODO [Game]: Replace this friendship-based transitional storage decode
+// access with a proper database record reader once Game storage code is no
+// longer acting as the bridge between byte streams and core Position replay.
+errorT decodeEncodedMove(ByteBuffer& buf, byte val, const Position& pos,
+                         simpleMoveT& sm);
+errorT decodeMainlineMove(ByteBuffer& buf, const Position& pos,
+                          simpleMoveT& sm);
+} // namespace game_storage
 
 inline constexpr size_t MAX_TAG_LEN = 240;
 inline constexpr std::string_view commonTags[] = {
@@ -131,6 +144,12 @@ class ByteBuffer {
 
 	friend class Game;
 	friend class GameView;
+	friend errorT game_storage::decodeEncodedMove(ByteBuffer& buf, byte val,
+	                                              const Position& pos,
+	                                              simpleMoveT& sm);
+	friend errorT game_storage::decodeMainlineMove(ByteBuffer& buf,
+	                                               const Position& pos,
+	                                               simpleMoveT& sm);
 
 public:
 	ByteBuffer(const unsigned char* data, size_t length)
