@@ -36,8 +36,8 @@ bool syncCoreMoveSan(scid::core::Game& coreGame,
 		return false;
 
 	scid::core::MovetextCursor cursor(coreGame);
-	if (!cursor.restore(location))
-		return false;
+	[[maybe_unused]] const bool restored = cursor.restore(location);
+	ASSERT(restored);
 
 	auto move = nextMove ? cursor.nextMove() : cursor.previousMove();
 	if (!move)
