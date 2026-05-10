@@ -22,7 +22,6 @@
 
 #include "scidup/database/game.h"
 #include "scidup/core/pgn/encode.h"
-#include "scidup/database/game_TEMP/notation.h"
 #include "scidup/database/game_TEMP/pgnparse.h"
 #include "pgnparse_impl.h"
 #include <gtest/gtest.h>
@@ -174,15 +173,6 @@ TEST(Test_PgnEncode, encode_comment) {
 	}
 }
 
-static void SAN_hack(scid::database::Game& game) {
-	// TODO: we need this to fill in all the moveT->san
-	// It would be better to do this when the game is decoded.
-	game.toStart();
-	do {
-		scid::database::game_notation::nextSan(game);
-	} while (game.nextPgn() == scid::database::OK);
-};
-
 TEST(Test_PgnEncode, encode_game) {
 	using namespace std::literals;
 	{
@@ -207,7 +197,6 @@ TEST(Test_PgnEncode, encode_game) {
 		game.currentPos()->makeMove(scid::database::E2, scid::database::E4, scid::database::EMPTY, sm);
 		game.addMove(sm);
 		game.setMoveComment("after the move");
-		SAN_hack(game);
 		auto expected = "[Event\0\"\"]\n"sv
 		                "[Site\0\"\"]\n"sv
 		                "[Date\0\"????.??.??\"]\n"sv
@@ -248,7 +237,6 @@ TEST(Test_PgnEncode, encode) {
 		game.currentPos()->makeMove(scid::database::E2, scid::database::E4, scid::database::EMPTY, sm);
 		game.addMove(sm);
 		game.setMoveComment("after the move");
-		SAN_hack(game);
 		auto expected = "[Event \"\"]\n"
 		                "[Site \"\"]\n"
 		                "[Date \"????.??.??\"]\n"
@@ -271,7 +259,6 @@ TEST(Test_PgnEncode, encode) {
 		scid::database::Game game;
 		scid::database::pgn::parse_game({src.data(), src.data() + src.size()},
 		                scid::database::PgnVisitor{game});
-		SAN_hack(game);
 		auto expected =
 		    "[Event \"\"]\n"
 		    "[Site \"\"]\n"

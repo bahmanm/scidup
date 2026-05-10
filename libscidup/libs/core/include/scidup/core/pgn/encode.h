@@ -206,6 +206,33 @@ struct MovetextEntry {
 	std::span<const std::uint8_t> nags;
 };
 
+inline bool move_action_to_simple_move(scid::database::Position& position,
+                                       MoveAction action,
+                                       scid::database::simpleMoveT& move) {
+	if (action.isNull()) {
+		position.makeMove(action.from, action.to, scid::database::PAWN, move);
+		return true;
+	}
+
+	const auto notation = action.longNotation();
+	return position.ReadCoordMove(&move, notation.data(), notation.size(),
+	                              false) == scid::database::OK;
+}
+
+inline std::string san_for_move(scid::database::Position& position,
+                                const Move& move,
+                                scid::database::sanFlagT flag,
+                                scid::database::simpleMoveT* simpleMove) {
+	if (!move.san.empty())
+		return move.san;
+	if (!simpleMove)
+		return {};
+
+	scid::database::sanStringT san = {};
+	position.MakeSANString(simpleMove, san, flag);
+	return san;
+}
+
 template <int hard_len = 0, typename TCont>
 void encode_movetext_entry(MovetextEntry const& entry,
                            std::vector<long long>& ply,
@@ -262,12 +289,25 @@ void encode_movetext_entry(MovetextEntry const& entry,
 } // namespace detail
 
 template <int hard_len = 0, typename TCont>
-void encode_core_line(MoveSequence const& line, std::vector<long long>& ply,
+void encode_core_line(MoveSequence const& line,
+                      scid::database::Position position,
+                      std::vector<long long>& ply,
                       typename TCont::size_type& move_end, TCont& dest) {
-	for (auto const& move : line.moves) {
+	for (std::size_t i = 0; i < line.moves.size(); ++i) {
+		auto const& move = line.moves[i];
+		auto position_before_move = position;
+		scid::database::simpleMoveT simpleMove = {};
+		const bool hasSimpleMove = detail::move_action_to_simple_move(
+		    position, move.action, simpleMove);
+		const auto sanFlag = i + 1 == line.moves.size()
+		                         ? scid::database::SAN_MATETEST
+		                         : scid::database::SAN_CHECKTEST;
+		const auto san = detail::san_for_move(
+		    position, move, sanFlag, hasSimpleMove ? &simpleMove : nullptr);
+
 		detail::encode_movetext_entry<hard_len>(
 		    {detail::MovetextEntryKind::Move,
-		     move.san,
+		     san,
 		     move.metadata.comment,
 		     {move.metadata.nags.data(), move.metadata.nags.size()}},
 		    ply, move_end, dest);
@@ -279,11 +319,15 @@ void encode_core_line(MoveSequence const& line, std::vector<long long>& ply,
 			     variation.initialComment,
 			     {}},
 			    ply, move_end, dest);
-			encode_core_line<hard_len>(variation.line, ply, move_end, dest);
+			encode_core_line<hard_len>(variation.line, position_before_move,
+			                           ply, move_end, dest);
 			detail::encode_movetext_entry<hard_len>(
 			    {detail::MovetextEntryKind::VariationEnd, {}, {}, {}},
 			    ply, move_end, dest);
 		}
+
+		if (hasSimpleMove)
+			position.DoSimpleMove(simpleMove);
 	}
 }
 
@@ -302,7 +346,10 @@ void encode_movetext(Game const& game, TCont& dest) {
 		    ply, move_end, dest);
 	}
 
-	encode_core_line<hard_len>(game.movetext().mainline, ply, move_end, dest);
+	auto position = game.startPosition() ? *game.startPosition()
+	                                     : scid::database::Position::getStdStart();
+	encode_core_line<hard_len>(game.movetext().mainline, position, ply,
+	                           move_end, dest);
 
 	if (dest.back() == '\0')
 		dest.back() = '\n';

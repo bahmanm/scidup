@@ -29,7 +29,6 @@
 #include "pgnparse_impl.h"
 #include "filebuf.h"
 #include "scidup/core/pgn/encode.h"
-#include "scidup/database/game_TEMP/notation.h"
 #include <algorithm>
 #include <cstring>
 #include <vector>
@@ -145,13 +144,6 @@ public:
 	 * @returns OK in case of success, an @e errorT code otherwise.
 	 */
 	errorT gameAdd(Game* game) {
-		// TODO: we need this to fill in all the moveT->san
-		// It would be better to do this when the game is decoded.
-		game->toStart();
-		do {
-			game_notation::nextSan(*game);
-		} while (game->nextPgn() == OK);
-
 		buf_.clear();
 		scid::core::pgn::encode(game->coreGame(), buf_);
 		buf_.push_back('\n');

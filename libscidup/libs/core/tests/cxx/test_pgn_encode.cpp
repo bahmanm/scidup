@@ -50,30 +50,18 @@ TEST(Test_PgnEncodeCore, EncodeCoreGame) {
 
 	auto& first = game.appendMainlineMove(
 	    {scid::database::D2, scid::database::D4, scid::database::EMPTY});
-	first.san = "d4";
 	first.metadata.nags.push_back(scid::core::NAG_GoodMove);
 	first.metadata.comment = "Best by test";
 	auto& childVariation = first.childVariations.emplace_back();
 	childVariation.initialComment = "Queen pawn alternative";
-	auto& variation = childVariation.line.moves;
-	variation.push_back({{scid::database::E2,
-	                      scid::database::E4,
-	                      scid::database::EMPTY},
-	                     "e4",
-	                     {},
-	                     {}});
-	variation.push_back({{scid::database::E7,
-	                      scid::database::E5,
-	                      scid::database::EMPTY},
-	                     "e5",
-	                     {},
-	                     {}});
-	auto& second = game.appendMainlineMove(
+	childVariation.line.appendMove(
+	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
+	childVariation.line.appendMove(
+	    {scid::database::E7, scid::database::E5, scid::database::EMPTY});
+	game.appendMainlineMove(
 	    {scid::database::D7, scid::database::D5, scid::database::EMPTY});
-	second.san = "d5";
-	auto& third = game.appendMainlineMove(
+	game.appendMainlineMove(
 	    {scid::database::C2, scid::database::C4, scid::database::EMPTY});
-	third.san = "c4";
 
 	std::string pgn;
 	scid::core::pgn::encode_game(game, pgn);
@@ -103,12 +91,10 @@ TEST(Test_PgnEncodeCore, EncodeCoreGameWithLineBreaking) {
 
 	scid::core::Game game;
 	game.setEvent("Friendly");
-	auto& first = game.appendMainlineMove(
+	game.appendMainlineMove(
 	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
-	first.san = "e4";
-	auto& second = game.appendMainlineMove(
+	game.appendMainlineMove(
 	    {scid::database::E7, scid::database::E5, scid::database::EMPTY});
-	second.san = "e5";
 
 	std::string pgn;
 	scid::core::pgn::encode(game, pgn);
