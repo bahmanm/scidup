@@ -288,6 +288,32 @@ void encodeMove(const simpleMoveT& sm, DestT& dest) {
 	}
 }
 
+simpleMoveT toSimpleMove(Position& position,
+                         scid::core::MoveAction const& action) {
+	simpleMoveT move = {};
+	if (action.isNull()) {
+		position.makeMove(action.from, action.to, PAWN, move);
+		return move;
+	}
+	if (action.castling) {
+		position.makeMove(action.from, action.from,
+		                  action.to > action.from ? KING : QUEEN, move);
+		return move;
+	}
+
+	const auto notation = action.longNotation();
+	if (position.ReadCoordMove(&move, notation.data(), notation.size(),
+	                           false) == OK) {
+		return move;
+	}
+
+	move.from = action.from;
+	move.to = action.to;
+	move.promote = action.promotion;
+	position.fillMove(move);
+	return move;
+}
+
 /// Encode the moves, the nags, the comment mark and the variations.
 template <typename MoveT, typename DestT>
 std::pair<unsigned, unsigned> encodeMovelist(bool mark_comments, const MoveT* m,
@@ -524,28 +550,32 @@ static errorT decodeComments(
 /// - number of half moves
 /// - final material signature
 /// - stored line code
-template <typename MoveT>
 std::pair<bool, bool> mainlineInfo(const Position* customStart,
-                                   const MoveT* firstMove, IndexEntry& dest) {
+                                   scid::core::MoveSequence const& mainline,
+                                   IndexEntry& dest) {
 	ushort nHalfMoves = 0;
 	bool PromoFlag = false;
 	bool UnderPromosFlag = false;
 	unsigned hpCount = 0;
 	byte hpVal[8] = {};
 	Position pos = customStart ? *customStart : Position::getStdStart();
+	std::vector<simpleMoveT> moves;
+	moves.reserve(mainline.moves.size());
 
 	auto hpOld = HPSIG_StdStart; // All 16 pawns are on their home squares.
-	for (auto move = firstMove; !move->endMarker(); move = move->next) {
+	for (auto const& coreMove : mainline.moves) {
+		auto move = toSimpleMove(pos, coreMove.action);
 		++nHalfMoves;
 
-		if (move->moveData.promote != EMPTY) {
+		if (move.promote != EMPTY) {
 			PromoFlag = true;
-			if (piece_Type(move->moveData.promote) != QUEEN) {
+			if (piece_Type(move.promote) != QUEEN) {
 				UnderPromosFlag = true;
 			}
 		}
 
-		pos.DoSimpleMove(move->moveData);
+		pos.DoSimpleMove(move);
+		moves.push_back(move);
 		if (!customStart) {
 			const auto hpNew = pos.GetHPSig();
 			if (unsigned changed = hpOld - hpNew) {
@@ -568,19 +598,19 @@ std::pair<bool, bool> mainlineInfo(const Position* customStart,
 			if (std::distance(begin, end) > nHalfMoves)
 				return false;
 
-			const moveT* gameMove = firstMove;
+			auto gameMove = moves.begin();
 			for (; begin != end; ++begin) {
 				if (begin->isCastle()) {
 					auto side = begin->getTo() > begin->getFrom() ? 2 : -2;
-					if (gameMove->moveData.isCastle() != side)
+					if (gameMove->isCastle() != side)
 						return false;
 
-				} else if (gameMove->moveData.from != begin->getFrom() ||
-				           gameMove->moveData.to != begin->getTo()) {
+				} else if (gameMove->from != begin->getFrom() ||
+				           gameMove->to != begin->getTo()) {
 					return false;
 				}
 
-				gameMove = gameMove->next;
+				++gameMove;
 			}
 			return true;
 		});
@@ -639,8 +669,9 @@ std::pair<IndexEntry, TagRoster> Game::encode(std::vector<byte>& dest) const {
     }
     ie.SetFlag(IndexEntry::StrToFlagMask(scidFlags_), true);
 
-    const auto [promo, underPromo] = mainlineInfo(coreGame_.startPosition(),
-                                                  firstMove_->next, ie);
+    const auto [promo, underPromo] =
+        mainlineInfo(coreGame_.startPosition(), coreGame_.movetext().mainline,
+                     ie);
 
     // First, encode info not already stored in the index
     // This will be the non-STR (non-"seven tag roster") PGN tags.
