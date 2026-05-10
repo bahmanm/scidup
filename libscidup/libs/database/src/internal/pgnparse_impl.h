@@ -1,6 +1,7 @@
 #ifndef SCIDUP_DATABASE_INTERNAL_PGNPARSE_IMPL_H
 #define SCIDUP_DATABASE_INTERNAL_PGNPARSE_IMPL_H
 
+#include "scidup/core/game_cursor.h"
 #include "pgn_lexer.h"
 #include "nag_format.h"
 #include "scidup/database/pgnparse.h"
@@ -13,6 +14,19 @@
 #include <vector>
 
 namespace scid::database {
+
+inline std::string_view currentMoveComment(const Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	[[maybe_unused]] const bool restored = cursor.restore(
+	    game.coreLocation());
+	ASSERT(restored);
+
+	if (auto move = cursor.previousMove())
+		return move->metadata.comment;
+	if (auto variation = cursor.currentVariation())
+		return variation->initialComment;
+	return game.coreGame().movetext().initialComment;
+}
 
 class PgnVisitor {
 	Game& game;
@@ -47,7 +61,7 @@ public:
 		}
 
 		linenum_ += pgn::trim(comment);
-		auto str = std::string(game.moveComment());
+		auto str = std::string(currentMoveComment(game));
 		auto prevSz = str.size();
 		str.append(comment.first, comment.second);
 		linenum_ += pgn::normalize(str, prevSz);

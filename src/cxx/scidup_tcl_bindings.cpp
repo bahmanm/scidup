@@ -165,6 +165,18 @@ nextMoveNags(const scid::database::Game& game) {
 	return move ? move->metadata.nags : std::vector<std::uint8_t>{};
 }
 
+static std::string currentMoveComment(const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	if (!cursor.restore(game.coreLocation()))
+		return {};
+
+	if (auto move = cursor.previousMove())
+		return move->metadata.comment;
+	if (auto variation = cursor.currentVariation())
+		return variation->initialComment;
+	return std::string(game.coreGame().movetext().initialComment);
+}
+
 //////////////////////////////////////////////////////////////////////
 //
 // Inline routines for setting Tcl result strings:
@@ -3078,10 +3090,11 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Check if this move has a comment:
 
-    if (g.moveComment() != NULL) {
+    {
+        auto comment = currentMoveComment(g);
         AppendResult (ti, "<br>", translate(ti, "Comment"),
                           " <green><run makeCommentWin>", NULL);
-        char * str = scid::database::strDuplicate(g.moveComment());
+        char * str = scid::database::strDuplicate(comment.c_str());
         scid::database::strTrimMarkCodes (str);
         const char * s = str;
         scid::database::uint len;
@@ -4841,11 +4854,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         break;
 
     case POS_GETCOMMENT:
-        const char * tempStr;
-        tempStr = g.moveComment();
-        if (tempStr) {
-            AppendResult (ti, tempStr, NULL);
-        }
+        AppendResult (ti, currentMoveComment(g).c_str(), NULL);
         break;
 
     case POS_GETPREVCOMMENT: {
@@ -5377,17 +5386,15 @@ sc_pos_setComment (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: sc_pos setComment <comment-text>");
     }
     const char * str = argv[2];
-    const char * oldComment = editor.game().moveComment();
+    auto oldComment = currentMoveComment(editor.game());
 
     if (str[0] == 0  || (isspace((char)str[0]) && str[1] == 0)) {
         // No comment: nullify comment if necessary:
-        if (oldComment != NULL) {
-            editor.game().setMoveComment (NULL);
-            editor.setDirty();
-        }
+        editor.game().setMoveComment (NULL);
+        editor.setDirty();
     } else {
         // Only set the comment if it has actually changed:
-        if (oldComment == NULL  ||  !scid::database::strEqual (str, oldComment)) {
+        if (!scid::database::strEqual (str, oldComment.c_str())) {
             editor.game().setMoveComment (str);
             editor.setDirty();
         }

@@ -211,7 +211,6 @@ public:
     errorT removeNag(bool isMoveNag);
     void clearNags();
 
-    const char* moveComment() const;
     void setMoveComment(const char* comment);
 
     Game* clone();

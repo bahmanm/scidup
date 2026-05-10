@@ -57,10 +57,15 @@ inline void collectPositions(Game& game, TCont& dest) {
 		[[maybe_unused]] const bool restored = cursor.restore(
 		    game.coreLocation());
 		ASSERT(restored);
-		if (auto move = cursor.previousMove())
+		if (auto move = cursor.previousMove()) {
 			for (auto nag : move->metadata.nags)
 				gamepos.NAGs.push_back(nag);
-		gamepos.comment = game.moveComment();
+			gamepos.comment = move->metadata.comment;
+		} else if (auto variation = cursor.currentVariation()) {
+			gamepos.comment = variation->initialComment;
+		} else {
+			gamepos.comment = game.coreGame().movetext().initialComment;
+		}
 		gamepos.lastMoveSAN = scid::core::notation::previousSan(
 		    game.coreGame(), game.coreLocation());
 

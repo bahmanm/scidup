@@ -32,6 +32,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <random>
+#include <string>
 #include <string_view>
 #include <utility>
 
@@ -593,7 +594,8 @@ TEST(Test_Game, moveCommentReadsCoreCommentAtCurrentLocation) {
 	scid::database::Game game;
 	game.setMoveComment("Before the first move");
 	game.coreGame().setInitialComment("Core initial comment");
-	EXPECT_STREQ("Core initial comment", game.moveComment());
+	EXPECT_EQ("Core initial comment",
+	          std::string(scid::database::currentMoveComment(game)));
 
 	ASSERT_EQ(scid::database::OK,
 	          game.addMove(makeCurrentMove(game, scid::database::E2,
@@ -603,14 +605,16 @@ TEST(Test_Game, moveCommentReadsCoreCommentAtCurrentLocation) {
 	scid::core::MoveMetadata metadata;
 	metadata.comment = "Core previous move comment";
 	ASSERT_TRUE(mainlineCursor.setPreviousMoveMetadata(std::move(metadata)));
-	EXPECT_STREQ("Core previous move comment", game.moveComment());
+	EXPECT_EQ("Core previous move comment",
+	          std::string(scid::database::currentMoveComment(game)));
 
 	ASSERT_EQ(scid::database::OK, game.addVariation());
 	scid::core::MovetextCursor variationCursor(game.coreGame());
 	ASSERT_TRUE(variationCursor.restore(game.coreLocation()));
 	ASSERT_TRUE(variationCursor.setCurrentVariationInitialComment(
 	    "Core variation comment"));
-	EXPECT_STREQ("Core variation comment", game.moveComment());
+	EXPECT_EQ("Core variation comment",
+	          std::string(scid::database::currentMoveComment(game)));
 }
 
 TEST(Test_Game, coreGameMirrorsStrip) {

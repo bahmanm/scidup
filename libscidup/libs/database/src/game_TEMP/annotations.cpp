@@ -1,6 +1,5 @@
 #include "scidup/database/game.h"
 
-#include "scidup/core/game_cursor.h"
 #include "scidup/core/movetext_cursor.h"
 #include "scidup/database/common.h"
 #include "movetext_projection.h"
@@ -52,20 +51,6 @@ bool syncCoreComment(scid::core::Game& coreGame,
 	return cursor.setCurrentVariationInitialComment(legacyMove->comment);
 }
 
-const std::string& coreCommentAtLocation(
-    const scid::core::Game& coreGame,
-    scid::core::MovetextLocation location) {
-	scid::core::GameCursor cursor(coreGame);
-	[[maybe_unused]] const bool restored = cursor.restore(location);
-	ASSERT(restored);
-
-	if (auto move = cursor.previousMove())
-		return move->metadata.comment;
-	if (auto variation = cursor.currentVariation())
-		return variation->initialComment;
-	return coreGame.movetext().initialComment;
-}
-
 } // namespace
 
 // TODO [Game]: Move NAG/comment storage behind Move.metadata once the core
@@ -77,10 +62,6 @@ void Game::clearNags() {
 	if (!syncCoreMoveMetadata(coreGame_, coreLocation_, currentMove_->prev))
 		TEMP_movetext::syncCoreMovetextAndLocation(
 		    coreGame_, firstMove_, currentMove_, coreLocation_);
-}
-
-const char* Game::moveComment() const {
-	return coreCommentAtLocation(coreGame_, coreLocation_).c_str();
 }
 
 errorT Game::addNag (byte nag) {
