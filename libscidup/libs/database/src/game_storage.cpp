@@ -21,7 +21,7 @@
 namespace scid::database {
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::loadStandardTags():
+// game_storage::loadStandardTags():
 //      Sets the standard tag values for this game, given an
 //      index file entry and a namebase that stores the
 //      player/site/event/round names.
@@ -29,23 +29,27 @@ namespace scid::database {
 // boundary. The future core Game should not know about compact database
 // metadata records.
 //
-void Game::loadStandardTags(IndexEntry const& ie, TagRoster const& tags) {
-    coreGame_.setEvent(tags.event);
-    coreGame_.setSite(tags.site);
-    coreGame_.setWhiteName(tags.white);
-    coreGame_.setBlackName(tags.black);
-    coreGame_.setRound(tags.round);
-    coreGame_.setDate(ie.GetDate());
-    coreGame_.setEventDate(ie.GetEventDate());
-    coreGame_.setWhiteRating({ie.GetWhiteElo(), ie.GetWhiteRatingType()});
-    coreGame_.setBlackRating({ie.GetBlackElo(), ie.GetBlackRatingType()});
-    coreGame_.setResult(ie.GetResult());
+void game_storage::loadStandardTags(Game& game, IndexEntry const& ie,
+                                    TagRoster const& tags) {
+    auto& coreGame = game.coreGame();
+    coreGame.setEvent(tags.event);
+    coreGame.setSite(tags.site);
+    coreGame.setWhiteName(tags.white);
+    coreGame.setBlackName(tags.black);
+    coreGame.setRound(tags.round);
+    coreGame.setDate(ie.GetDate());
+    coreGame.setEventDate(ie.GetEventDate());
+    coreGame.setWhiteRating({ie.GetWhiteElo(), ie.GetWhiteRatingType()});
+    coreGame.setBlackRating({ie.GetBlackElo(), ie.GetBlackRatingType()});
+    coreGame.setResult(ie.GetResult());
     scidup::eco::String ecoStr;
     scidup::eco::toExtendedString(ie.GetEcoCode(), ecoStr);
-    coreGame_.setEco(ecoStr);
-    ie.GetFlagStr(scidFlags_, NULL);
+    coreGame.setEco(ecoStr);
+    char scidFlags[22];
+    ie.GetFlagStr(scidFlags, NULL);
+    game.setScidFlags(scidFlags, sizeof(scidFlags));
     if (!ie.isChessStd())
-        coreGame_.findOrCreateTag("Variant").assign("Chess960");
+        coreGame.findOrCreateTag("Variant").assign("Chess960");
 }
 
 
@@ -727,25 +731,6 @@ std::pair<IndexEntry, TagRoster> Game::encode(std::vector<byte>& dest) const {
     return {ie, tags};
 }
 
-errorT Game::decodeMovesOnly(ByteBuffer& buf) {
-	clear();
-	if (errorT err = buf.decodeTags([](auto, auto) {}))
-		return err;
-
-	const auto [errStartPos, fen] = buf.decodeStartBoard();
-	if (errStartPos)
-		return errStartPos;
-	if (fen) {
-		if (errorT err = setStartFen(fen))
-			return err;
-	}
-
-	std::vector<scid::core::MovetextLocation> comment_marks;
-	auto err = decodeMovelist(buf, coreGame_, comment_marks);
-	TEMP_syncLegacyMovetextFromCore();
-	return err;
-}
-
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Game::decode():
 //      Decodes a game from its on-disk representation in a bytebuffer.
@@ -754,7 +739,7 @@ errorT Game::decodeMovesOnly(ByteBuffer& buf) {
 //
 errorT Game::decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf) {
     clear();
-    loadStandardTags(ie, tags);
+    game_storage::loadStandardTags(*this, ie, tags);
 
     errorT err = buf.decodeTags([&](const auto& tag, const auto& value) {
         auto& dest = coreGame_.findOrCreateTag(tag);
@@ -793,18 +778,28 @@ std::pair<IndexEntry, TagRoster> game_storage::encode(
 	return game.encode(dest);
 }
 
-void game_storage::loadStandardTags(Game& game, IndexEntry const& ie,
-                                    TagRoster const& tags) {
-	game.loadStandardTags(ie, tags);
-}
-
 errorT game_storage::decode(Game& game, IndexEntry const& ie,
                             TagRoster const& tags, ByteBuffer buf) {
 	return game.decode(ie, tags, buf);
 }
 
 errorT game_storage::decodeMovesOnly(Game& game, ByteBuffer& buf) {
-	return game.decodeMovesOnly(buf);
+	game.clear();
+	if (errorT err = buf.decodeTags([](auto, auto) {}))
+		return err;
+
+	const auto [errStartPos, fen] = buf.decodeStartBoard();
+	if (errStartPos)
+		return errStartPos;
+	if (fen) {
+		if (errorT err = game.setStartFen(fen))
+			return err;
+	}
+
+	std::vector<scid::core::MovetextLocation> comment_marks;
+	auto err = decodeMovelist(buf, game.coreGame_, comment_marks);
+	game.TEMP_syncLegacyMovetextFromCore();
+	return err;
 }
 
 errorT game_storage::decodeEncodedMove(ByteBuffer& buf, byte val,

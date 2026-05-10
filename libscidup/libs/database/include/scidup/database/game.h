@@ -81,10 +81,8 @@ private:
     void TEMP_syncLegacyMovetextFromCore();
     // TODO [Game]: Move these database storage-codec operations out of Game
     // once the database wrapper around the future core Game exists.
-    void loadStandardTags(IndexEntry const& ie, TagRoster const& tags);
     std::pair<IndexEntry, TagRoster> encode(std::vector<byte>& dest) const;
     errorT decode(IndexEntry const& ie, TagRoster const& tags, ByteBuffer buf);
-    errorT decodeMovesOnly(ByteBuffer& buf);
     // TODO [Game]: Move these database search operations out of Game once the
     // database wrapper around the future core Game exists.
     bool materialMatch(bool promotionsFlag, ByteBuffer& buf, byte* min,
@@ -96,9 +94,6 @@ private:
     bool varExactMatch(Position* searchPos, gameExactMatchT searchType);
     friend std::pair<IndexEntry, TagRoster> game_storage::encode(
         const Game& game, std::vector<byte>& dest);
-    friend void game_storage::loadStandardTags(Game& game,
-                                               IndexEntry const& ie,
-                                               TagRoster const& tags);
     friend errorT game_storage::decode(Game& game, IndexEntry const& ie,
                                        TagRoster const& tags, ByteBuffer buf);
     friend errorT game_storage::decodeMovesOnly(Game& game, ByteBuffer& buf);
