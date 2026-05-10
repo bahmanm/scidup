@@ -150,7 +150,7 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
     BlackElo = g->coreGame().black().rating.value;
     AvgElo = g->coreGame().averageRating();
     Length = 0;
-    StartPly = g->currentPly();
+    StartPly = static_cast<scid::database::uint>(currentCursor(*g).ply());
     auto location = g->currentLocation();
     if (g->currentPos()->GetToMove() == scid::database::BLACK) {
         g->previous();
@@ -1995,8 +1995,9 @@ OpTable::AddMoveOrder (scid::database::Game * g)
 {
     scid::database::uint id = 0;
     int index = -1;
-    const auto moves =
-        scid::core::notation::partialMoveList(g->coreGame(), g->currentPly());
+    const auto moves = scid::core::notation::partialMoveList(
+        g->coreGame(),
+        static_cast<scid::database::uint>(currentCursor(*g).ply()));
 
     // Search for this move order in the current list:
 

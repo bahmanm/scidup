@@ -415,7 +415,7 @@ void Game::truncate() {
 
 	currentMove_ = endMove;
 	if (varDepth_ == 0)
-		numHalfMoves_ = currentPly();
+		numHalfMoves_ = static_cast<ushort>(coreCursor.ply());
 	coreCursor.truncate();
 	coreLocation_ = coreCursor.location();
 
@@ -442,7 +442,7 @@ void Game::truncateStart() {
 	scid::core::MovetextCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
 
-    numHalfMoves_ -= currentPly();
+    numHalfMoves_ -= static_cast<ushort>(coreCursor.ply());
     coreGame_.setStartPosition(*pos);
     *currentPos_ = *pos;
     firstMove_->setNext(currentMove_);

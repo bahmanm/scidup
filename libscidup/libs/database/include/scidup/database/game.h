@@ -177,7 +177,6 @@ public:
     Position* currentPos();
     const Position* currentPos() const;
     simpleMoveT* currentMove();
-    ushort currentPly() const;
 
     // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
     // instead of keeping it on the generic Game cursor surface.

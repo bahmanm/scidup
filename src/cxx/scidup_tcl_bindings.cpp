@@ -226,6 +226,13 @@ static bool isAtEmptyVariation(const scid::database::Game& game) {
 	return cursor.restore(game.coreLocation()) && cursor.isAtEmptyVariation();
 }
 
+static scid::database::uint currentPly(const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	if (!cursor.restore(game.coreLocation()))
+		return 0;
+	return static_cast<scid::database::uint>(cursor.ply());
+}
+
 //////////////////////////////////////////////////////////////////////
 //
 // Inline routines for setting Tcl result strings:
@@ -1397,7 +1404,7 @@ sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         ecoCode = ecoBook->findEco(*game.currentPos());
     } while (ecoCode == scidup::eco::ECO_None && game.previous() == scid::database::OK);
 
-    auto ply = game.currentPly();
+    auto ply = currentPly(game);
     game.restoreLocation(location);
 
     if (ecoCode == scidup::eco::ECO_None)
@@ -2697,7 +2704,7 @@ sc_game_firstMoves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // Check plyCount is a reasonable value, or set it to current plycount.
     auto editor = scidup::app::editor::gameSession(*db);
     if (plyCount < 0)
-        plyCount = editor.game().currentPly();
+        plyCount = currentPly(editor.game());
     if (plyCount == 0) plyCount = 1;
 
     return UI_Result(
@@ -3519,10 +3526,10 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         if (count <= 1) { // Novelty found
             base->deleteFilter(filtername.c_str());
-            return UI_Result(ti, scid::database::OK, g->currentPly());
+            return UI_Result(ti, scid::database::OK, currentPly(*g));
         }
 
-        auto work_done = g->currentPly() + 1;
+        auto work_done = currentPly(*g) + 1;
         if (!progress.report(work_done, g->coreGame().mainlineHalfMoveCount())) {
             base->deleteFilter(filtername.c_str());
             return UI_Result(ti, scid::database::ERROR_UserCancel);
@@ -4939,7 +4946,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case POS_MOVENUM:
         // This used to return:
-        //     (db->game->currentPly() + 2) / 2
+        //     (currentPly(db->game) + 2) / 2
         // but that value is wrong for games with non-standard
         // start positions. The correct value to return is:
         //     db->game->currentPos()->GetFullMoveCount()
@@ -4969,7 +4976,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         break;
 
     case LOCATION:
-        return UI_Result(ti, scid::database::OK, g.currentPly());
+        return UI_Result(ti, scid::database::OK, currentPly(g));
 
     case POS_ATTACKS:
         {
@@ -7753,27 +7760,27 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
             if (ply == 0  &&  possibleMatch) {
                 if (scid::database::game_search::exactMatch(
                         *g, pos, nullptr, searchType)) {
-                    ply = g->currentPly() + 1;
+                    ply = currentPly(*g) + 1;
                 }
             }
             if (ply == 0  &&  possibleFlippedMatch) {
                 if (scid::database::game_search::exactMatch(
                         *g, posFlip, nullptr, searchType)) {
-                    ply = g->currentPly() + 1;
+                    ply = currentPly(*g) + 1;
                 }
             }
             if (ply == 0  &&  possibleMatch) {
                 g->toStart();
                 if (scid::database::game_search::varExactMatch(
                         *g, pos, searchType)) {
-                    ply = g->currentPly() + 1;
+                    ply = currentPly(*g) + 1;
                 }
             }
             if (ply == 0  &&  possibleFlippedMatch) {
                 g->toStart();
                 if (scid::database::game_search::varExactMatch(
                         *g, posFlip, searchType)) {
-                    ply = g->currentPly() + 1;
+                    ply = currentPly(*g) + 1;
                 }
             }
         } else {
@@ -7783,13 +7790,13 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
                 if (scid::database::game_search::exactMatch(
                         *g, pos, &bbuf_clone, searchType)) {
                     // Set its auto-load move number to the matching move:
-                    ply = g->currentPly() + 1;
+                    ply = currentPly(*g) + 1;
                 }
             }
             if (ply == 0  &&  possibleFlippedMatch) {
                 if (scid::database::game_search::exactMatch(
                         *g, posFlip, &bbuf, searchType)) {
-                    ply = g->currentPly() + 1;
+                    ply = currentPly(*g) + 1;
                 }
             }
         }
@@ -8199,7 +8206,7 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         if (result) {
             // update the filter value to the current ply:
-            scid::database::uint plyOfMatch = g->currentPly() + 1 - matchLength;
+            scid::database::uint plyOfMatch = currentPly(*g) + 1 - matchLength;
             scid::database::byte b = (scid::database::byte) (plyOfMatch + 1);
             if (b == 0) { b = 1; }
             filter.set (gameNum, b);
