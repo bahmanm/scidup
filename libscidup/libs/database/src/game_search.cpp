@@ -5,6 +5,8 @@
 #include "game_search.h"
 #include "movetree.h"
 
+#include <array>
+
 namespace scid::database {
 
 namespace {
@@ -85,6 +87,134 @@ errorT decodeSearchStart(ByteBuffer& buf, Position& position) {
 
     position.StdStart();
     return OK;
+}
+
+simpleMoveT toSimpleMove(Position& position,
+                         scid::core::MoveAction const& action) {
+    simpleMoveT move = {};
+    if (action.isNull()) {
+        position.makeMove(action.from, action.to, PAWN, move);
+        return move;
+    }
+    if (action.castling) {
+        position.makeMove(action.from, action.from,
+                          action.to > action.from ? KING : QUEEN, move);
+        return move;
+    }
+
+    const auto notation = action.longNotation();
+    if (position.ReadCoordMove(&move, notation.data(), notation.size(),
+                               false) == OK) {
+        return move;
+    }
+
+    move.from = action.from;
+    move.to = action.to;
+    move.promote = action.promotion;
+    position.fillMove(move);
+    return move;
+}
+
+std::array<uint, 8> pawnFylesFor(const Position& position, pieceT pawn) {
+    std::array<uint, 8> result = {};
+    const pieceT* board = position.GetBoard();
+    uint fyle = 0;
+    for (squareT sq = A1; sq <= H8; sq++, board++) {
+        if (*board == pawn)
+            result[fyle]++;
+        fyle = (fyle + 1) & 7;
+    }
+    return result;
+}
+
+bool fyleCountsMatch(const Position& position,
+                     const std::array<uint, 8>& whitePawnFyles,
+                     const std::array<uint, 8>& blackPawnFyles) {
+    auto whiteCurrent = pawnFylesFor(position, WP);
+    auto blackCurrent = pawnFylesFor(position, BP);
+    for (fyleT fyle = A_FYLE; fyle <= H_FYLE; ++fyle) {
+        if (whiteCurrent[fyle] > whitePawnFyles[fyle] ||
+            blackCurrent[fyle] > blackPawnFyles[fyle]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool positionMatches(Position* searchPos,
+                     Position& currentPosition,
+                     gameExactMatchT searchType,
+                     const std::array<uint, 8>& whitePawnFyles,
+                     const std::array<uint, 8>& blackPawnFyles) {
+    if (searchPos->GetToMove() != currentPosition.GetToMove()
+        || searchPos->GetCount(WHITE) != currentPosition.GetCount(WHITE)
+        || searchPos->GetCount(BLACK) != currentPosition.GetCount(BLACK)
+        || searchPos->PieceCount(WP) != currentPosition.PieceCount(WP)
+        || searchPos->PieceCount(BP) != currentPosition.PieceCount(BP)
+        || searchPos->PieceCount(WN) != currentPosition.PieceCount(WN)
+        || searchPos->PieceCount(BN) != currentPosition.PieceCount(BN)
+        || searchPos->PieceCount(WB) != currentPosition.PieceCount(WB)
+        || searchPos->PieceCount(BB) != currentPosition.PieceCount(BB)
+        || searchPos->PieceCount(WR) != currentPosition.PieceCount(WR)
+        || searchPos->PieceCount(BR) != currentPosition.PieceCount(BR)
+        || searchPos->PieceCount(WQ) != currentPosition.PieceCount(WQ)
+        || searchPos->PieceCount(BQ) != currentPosition.PieceCount(BQ)) {
+        return false;
+    }
+
+    const pieceT* currentBoard = currentPosition.GetBoard();
+    const pieceT* searchBoard = searchPos->GetBoard();
+    if (searchType == GAME_EXACT_MATCH_Pawns) {
+        for (squareT sq = A1; sq <= H8; sq++, currentBoard++, searchBoard++) {
+            if (*currentBoard != *searchBoard &&
+                (*currentBoard == WP || *currentBoard == BP)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    if (searchType == GAME_EXACT_MATCH_Fyles) {
+        return fyleCountsMatch(currentPosition, whitePawnFyles,
+                               blackPawnFyles);
+    }
+    if (searchType == GAME_EXACT_MATCH_Exact) {
+        if (searchPos->HashValue() != currentPosition.HashValue())
+            return false;
+        for (squareT sq = A1; sq <= H8; sq++, currentBoard++, searchBoard++) {
+            if (*currentBoard != *searchBoard)
+                return false;
+        }
+    }
+    return true;
+}
+
+bool varExactMatchLine(scid::core::MoveSequence const& line,
+                       Position currentPosition,
+                       Position* searchPos,
+                       gameExactMatchT searchType,
+                       const std::array<uint, 8>& whitePawnFyles,
+                       const std::array<uint, 8>& blackPawnFyles) {
+    for (auto const& move : line.moves) {
+        if (positionMatches(searchPos, currentPosition, searchType,
+                            whitePawnFyles, blackPawnFyles)) {
+            return true;
+        }
+
+        for (auto const& variation : move.childVariations) {
+            if (varExactMatchLine(variation.line, currentPosition, searchPos,
+                                  searchType, whitePawnFyles,
+                                  blackPawnFyles)) {
+                return true;
+            }
+        }
+
+        auto simpleMove = toSimpleMove(currentPosition, move.action);
+        currentPosition.DoSimpleMove(simpleMove);
+    }
+
+    return line.moves.empty() &&
+           positionMatches(searchPos, currentPosition, searchType,
+                           whitePawnFyles, blackPawnFyles);
 }
 } // end of anonymous namespace
 
@@ -421,90 +551,18 @@ Game::exactMatch (Position * searchPos, ByteBuffer * buf,
 bool
 Game::varExactMatch (Position * searchPos, gameExactMatchT searchType)
 {
-    uint wpawnFyle [8] = {0, 0, 0, 0, 0, 0, 0, 0};
-    uint bpawnFyle [8] = {0, 0, 0, 0, 0, 0, 0, 0};;
-
-    if (searchType == GAME_EXACT_MATCH_Fyles) {
-        const pieceT* board = searchPos->GetBoard();
-        uint fyle = 0;
-        for (squareT sq = A1; sq <= H8; sq++, board++) {
-            if (*board == WP) {
-                wpawnFyle[fyle]++;
-            } else if (*board == BP) {
-                bpawnFyle[fyle]++;
-            }
-            fyle = (fyle + 1) & 7;
-        }
-    }
-
-    errorT err = OK;
-    while (err == OK) {
-        // Check if this position matches:
-        bool match = false;
-        if (searchPos->GetToMove() == currentPos_->GetToMove()
-            &&  searchPos->GetCount(WHITE) == currentPos_->GetCount(WHITE)
-            &&  searchPos->GetCount(BLACK) == currentPos_->GetCount(BLACK)
-            &&  searchPos->PieceCount(WP) == currentPos_->PieceCount(WP)
-            &&  searchPos->PieceCount(BP) == currentPos_->PieceCount(BP)
-            &&  searchPos->PieceCount(WN) == currentPos_->PieceCount(WN)
-            &&  searchPos->PieceCount(BN) == currentPos_->PieceCount(BN)
-            &&  searchPos->PieceCount(WB) == currentPos_->PieceCount(WB)
-            &&  searchPos->PieceCount(BB) == currentPos_->PieceCount(BB)
-            &&  searchPos->PieceCount(WR) == currentPos_->PieceCount(WR)
-            &&  searchPos->PieceCount(BR) == currentPos_->PieceCount(BR)
-            &&  searchPos->PieceCount(WQ) == currentPos_->PieceCount(WQ)
-            &&  searchPos->PieceCount(BQ) == currentPos_->PieceCount(BQ)) {
-            match = true;
-            const pieceT* b1 = currentPos_->GetBoard();
-            const pieceT* b2 = searchPos->GetBoard();
-            if (searchType == GAME_EXACT_MATCH_Pawns) {
-                for (squareT sq = A1;  sq <= H8;  sq++, b1++, b2++) {
-                    if (*b1 != *b2  &&  (*b1 == WP  ||  *b1 == BP)) {
-                        match = false; break;
-                    }
-                }
-            } else if (searchType == GAME_EXACT_MATCH_Fyles) {
-                uint wpf[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-                uint bpf[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-                uint fyle = 0;
-                for (squareT sq = A1;  sq <= H8;  sq++, b1++) {
-                    if (*b1 == WP) {
-                        wpf[fyle]++;
-                        if (wpf[fyle] > wpawnFyle[fyle]) { match = false; break; }
-                    } else if (*b1 == BP) {
-                        bpf[fyle]++;
-                        if (bpf[fyle] > bpawnFyle[fyle]) { match = false; break; }
-                    }
-                    fyle = (fyle + 1) & 7;
-                }
-            } else if (searchType == GAME_EXACT_MATCH_Exact) {
-                if (searchPos->HashValue() == currentPos_->HashValue()) {
-                    for (squareT sq = A1;  sq <= H8;  sq++, b1++, b2++) {
-                        if (*b1 != *b2) { match = false; break; }
-                    }
-                } else {
-                    match = false;
-                }
-            } else {
-                // searchType == GAME_EXACT_MATCH_Material, so do nothing.
-            }
-        }
-        if (match) { return true; }
-
-        // Now try searching each variation in turn:
-        for (uint i=0; i < currentMove_->numVariations; i++) {
-            enterVariation (i);
-            match = varExactMatch (searchPos, searchType);
-            exitVariation();
-            if (match) { return true; }
-        }
-        // Continue down this variation:
-        next();
-        if (currentMove_->marker == END_MARKER) {
-            err = ERROR_EndOfMoveList;
-        }
-    }
-    return false;
+    const auto whitePawnFyles = searchType == GAME_EXACT_MATCH_Fyles
+                                    ? pawnFylesFor(*searchPos, WP)
+                                    : std::array<uint, 8>{};
+    const auto blackPawnFyles = searchType == GAME_EXACT_MATCH_Fyles
+                                    ? pawnFylesFor(*searchPos, BP)
+                                    : std::array<uint, 8>{};
+    Position startPosition = coreGame_.startPosition()
+                                 ? *coreGame_.startPosition()
+                                 : Position::getStdStart();
+    return varExactMatchLine(coreGame_.movetext().mainline, startPosition,
+                             searchPos, searchType, whitePawnFyles,
+                             blackPawnFyles);
 }
 
 bool game_search::materialMatch(Game& game, bool promotionsFlag,
