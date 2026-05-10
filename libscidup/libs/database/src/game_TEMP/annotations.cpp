@@ -79,14 +79,6 @@ void Game::clearNags() {
 		    coreGame_, firstMove_, currentMove_, coreLocation_);
 }
 
-byte* Game::nags() const {
-	return currentMove_->prev->nags;
-}
-
-byte* Game::nextNags() const {
-	return currentMove_->nags;
-}
-
 const char* Game::moveComment() const {
 	return coreCommentAtLocation(coreGame_, coreLocation_).c_str();
 }

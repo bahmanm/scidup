@@ -210,8 +210,6 @@ public:
     errorT addNag(byte nag);
     errorT removeNag(bool isMoveNag);
     void clearNags();
-    byte* nags() const;
-    byte* nextNags() const;
 
     const char* moveComment() const;
     void setMoveComment(const char* comment);

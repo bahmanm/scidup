@@ -1,5 +1,6 @@
 #pragma once
 
+#include "scidup/core/game_cursor.h"
 #include "scidup/core/notation.h"
 #include "scidup/database/game.h"
 
@@ -52,9 +53,13 @@ inline void collectPositions(Game& game, TCont& dest) {
 		char strBuf[256];
 		game.currentPos()->PrintFEN(strBuf, sizeof(strBuf));
 		gamepos.FEN = strBuf;
-		for (byte* nag = game.nags(); *nag; nag++) {
-			gamepos.NAGs.push_back(*nag);
-		}
+		scid::core::GameCursor cursor(game.coreGame());
+		[[maybe_unused]] const bool restored = cursor.restore(
+		    game.coreLocation());
+		ASSERT(restored);
+		if (auto move = cursor.previousMove())
+			for (auto nag : move->metadata.nags)
+				gamepos.NAGs.push_back(nag);
 		gamepos.comment = game.moveComment();
 		gamepos.lastMoveSAN = scid::core::notation::previousSan(
 		    game.coreGame(), game.coreLocation());
