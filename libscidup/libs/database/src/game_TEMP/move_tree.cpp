@@ -18,14 +18,16 @@ scid::core::MoveAction toCoreMoveAction(simpleMoveT const& sm) {
 	return {sm.from, sm.to, sm.promote};
 }
 
-bool restoreCoreCursor(scid::core::MovetextCursor& cursor,
+void restoreCoreCursor(scid::core::MovetextCursor& cursor,
                        scid::core::MovetextLocation location) {
-	return cursor.restore(location);
+	[[maybe_unused]] const bool restored = cursor.restore(location);
+	ASSERT(restored);
 }
 
-bool restoreCoreCursor(scid::core::GameCursor& cursor,
+void restoreCoreCursor(scid::core::GameCursor& cursor,
                        scid::core::MovetextLocation location) {
-	return cursor.restore(location);
+	[[maybe_unused]] const bool restored = cursor.restore(location);
+	ASSERT(restored);
 }
 
 } // namespace
@@ -50,12 +52,13 @@ errorT Game::next(void) {
 		return ERROR_EndOfMoveList;
 
 	scid::core::GameCursor coreCursor(coreGame_);
-	const bool coreCursorReady = restoreCoreCursor(coreCursor, coreLocation_);
+	restoreCoreCursor(coreCursor, coreLocation_);
 
 	currentPos_->DoSimpleMove(currentMove_->moveData);
 	currentMove_ = currentMove_->next;
-	if (coreCursorReady && coreCursor.next())
-		coreLocation_ = coreCursor.location();
+	[[maybe_unused]] const bool moved = coreCursor.next();
+	ASSERT(moved);
+	coreLocation_ = coreCursor.location();
 
 	// Invariants
 	ASSERT(currentMove_ && currentMove_->prev);
@@ -72,12 +75,13 @@ errorT Game::previous(void) {
 		return ERROR_StartOfMoveList;
 
 	scid::core::GameCursor coreCursor(coreGame_);
-	const bool coreCursorReady = restoreCoreCursor(coreCursor, coreLocation_);
+	restoreCoreCursor(coreCursor, coreLocation_);
 
 	currentMove_ = currentMove_->prev;
 	currentPos_->UndoSimpleMove(currentMove_->moveData);
-	if (coreCursorReady && coreCursor.previous())
-		coreLocation_ = coreCursor.location();
+	[[maybe_unused]] const bool moved = coreCursor.previous();
+	ASSERT(moved);
+	coreLocation_ = coreCursor.location();
 
 	// Invariants
 	ASSERT(currentMove_ && currentMove_->prev);
@@ -90,7 +94,7 @@ errorT Game::previous(void) {
 //      Move into a subvariation. Variations are numbered from 0.
 errorT Game::enterVariation(uint varNumber) {
 	scid::core::GameCursor coreCursor(coreGame_);
-	const bool coreCursorReady = restoreCoreCursor(coreCursor, coreLocation_);
+	restoreCoreCursor(coreCursor, coreLocation_);
 	const auto requestedVariation = varNumber;
 
 	for (auto subVar = currentMove_; subVar->varChild; --varNumber) {
@@ -98,9 +102,10 @@ errorT Game::enterVariation(uint varNumber) {
 		if (varNumber == 0) {
 			currentMove_ = subVar->next; // skip the START_MARKER
 			++varDepth_;
-			if (coreCursorReady &&
-			    coreCursor.enterVariation(requestedVariation))
-				coreLocation_ = coreCursor.location();
+			[[maybe_unused]] const bool entered =
+			    coreCursor.enterVariation(requestedVariation);
+			ASSERT(entered);
+			coreLocation_ = coreCursor.location();
 
 			// Invariants
 			ASSERT(currentMove_ && currentMove_->prev);
@@ -120,7 +125,7 @@ errorT Game::exitVariation(void) {
 		return ERROR_NoVariation;
 
 	scid::core::GameCursor coreCursor(coreGame_);
-	const bool coreCursorReady = restoreCoreCursor(coreCursor, coreLocation_);
+	restoreCoreCursor(coreCursor, coreLocation_);
 
 	// Algorithm: go back previous moves as far as possible, then
 	// go up to the parent of the variation.
@@ -128,8 +133,9 @@ errorT Game::exitVariation(void) {
 	}
 	currentMove_ = currentMove_->getParent().first;
 	--varDepth_;
-	if (coreCursorReady && coreCursor.exitVariation())
-		coreLocation_ = coreCursor.location();
+	[[maybe_unused]] const bool exited = coreCursor.exitVariation();
+	ASSERT(exited);
+	coreLocation_ = coreCursor.location();
 
 	// Invariants
 	ASSERT(currentMove_ && currentMove_->prev);
@@ -243,7 +249,7 @@ errorT Game::addMove(simpleMoveT const& sm) {
 		truncate();
 
 	scid::core::MovetextCursor coreCursor(coreGame_);
-	const bool coreCursorReady = restoreCoreCursor(coreCursor, coreLocation_);
+	restoreCoreCursor(coreCursor, coreLocation_);
 
 	currentMove_->setNext(newMove(END_MARKER));
 	currentMove_->marker = NO_MARKER;
@@ -252,19 +258,15 @@ errorT Game::addMove(simpleMoveT const& sm) {
 	if (mainlineMove)
 		++numHalfMoves_;
 
-	auto err = next();
-	if (err == OK) {
-		if (coreCursorReady) {
-			coreCursor.addMove(toCoreMoveAction(sm));
-			coreLocation_ = coreCursor.location();
-		} else {
-			// TODO [Game]: Remove this fallback once coreLocation_ is the authoritative
-			// cursor state and legacy moveT mapping is gone.
-			TEMP_movetext::syncCoreMovetextAndLocation(
-			    coreGame_, firstMove_, currentMove_, coreLocation_);
-		}
-	}
-	return err;
+	currentPos_->DoSimpleMove(currentMove_->moveData);
+	currentMove_ = currentMove_->next;
+	coreCursor.addMove(toCoreMoveAction(sm));
+	coreLocation_ = coreCursor.location();
+
+	// Invariants
+	ASSERT(currentMove_ && currentMove_->prev);
+	ASSERT(!currentMove_->startMarker());
+	return OK;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -277,7 +279,7 @@ errorT Game::addVariation() {
 		return err;
 
 	scid::core::MovetextCursor coreCursor(coreGame_);
-	const bool coreCursorReady = restoreCoreCursor(coreCursor, coreLocation_);
+	restoreCoreCursor(coreCursor, coreLocation_);
 
 	auto newVar = newMove(START_MARKER);
 	newVar->setNext(newMove(END_MARKER));
@@ -290,15 +292,9 @@ errorT Game::addVariation() {
 	// Invariants
 	ASSERT(currentMove_ && currentMove_->prev);
 	ASSERT(!currentMove_->startMarker());
-	if (coreCursorReady) {
-		if (coreCursor.addVariation())
-			coreLocation_ = coreCursor.location();
-		else
-			TEMP_movetext::syncCoreMovetextAndLocation(
-			    coreGame_, firstMove_, currentMove_, coreLocation_);
+	if (coreCursor.addVariation()) {
+		coreLocation_ = coreCursor.location();
 	} else {
-		// TODO [Game]: Remove this fallback once coreLocation_ is the authoritative
-		// cursor state and legacy moveT mapping is gone.
 		TEMP_movetext::syncCoreMovetextAndLocation(
 		    coreGame_, firstMove_, currentMove_, coreLocation_);
 	}
@@ -310,7 +306,7 @@ errorT Game::addVariation() {
 // Promotes the current variation to first variation.
 errorT Game::promoteVariationToFirst() {
 	scid::core::MovetextCursor coreCursor(coreGame_);
-	const bool coreCursorReady = restoreCoreCursor(coreCursor, coreLocation_);
+	restoreCoreCursor(coreCursor, coreLocation_);
 
 	auto parent = currentMove_->getParent();
 	auto root = parent.first;
@@ -319,15 +315,9 @@ errorT Game::promoteVariationToFirst() {
 
 	root->detachChild(parent.second);
 	root->insertChild(parent.second, 0);
-	if (coreCursorReady) {
-		if (coreCursor.promoteVariationToFirst())
-			coreLocation_ = coreCursor.location();
-		else
-			TEMP_movetext::syncCoreMovetextAndLocation(
-			    coreGame_, firstMove_, currentMove_, coreLocation_);
+	if (coreCursor.promoteVariationToFirst()) {
+		coreLocation_ = coreCursor.location();
 	} else {
-		// TODO [Game]: Remove this fallback once coreLocation_ is the authoritative
-		// cursor state and legacy moveT mapping is gone.
 		TEMP_movetext::syncCoreMovetextAndLocation(
 		    coreGame_, firstMove_, currentMove_, coreLocation_);
 	}
@@ -340,7 +330,7 @@ errorT Game::promoteVariationToFirst() {
 //    demoting the main line to be the first variation.
 errorT Game::promoteVariationToMainline() {
 	scid::core::MovetextCursor coreCursor(coreGame_);
-	const bool coreCursorReady = restoreCoreCursor(coreCursor, coreLocation_);
+	restoreCoreCursor(coreCursor, coreLocation_);
 
 	auto parent = currentMove_->getParent();
 	auto root = parent.first;
@@ -370,15 +360,9 @@ errorT Game::promoteVariationToMainline() {
 		numHalfMoves_ = count_moves(firstMove_->next);
 	}
 
-	if (coreCursorReady) {
-		if (coreCursor.promoteVariationToMainline())
-			coreLocation_ = coreCursor.location();
-		else
-			TEMP_movetext::syncCoreMovetextAndLocation(
-			    coreGame_, firstMove_, currentMove_, coreLocation_);
+	if (coreCursor.promoteVariationToMainline()) {
+		coreLocation_ = coreCursor.location();
 	} else {
-		// TODO [Game]: Remove this fallback once coreLocation_ is the authoritative
-		// cursor state and legacy moveT mapping is gone.
 		TEMP_movetext::syncCoreMovetextAndLocation(
 		    coreGame_, firstMove_, currentMove_, coreLocation_);
 	}
@@ -394,7 +378,7 @@ errorT Game::promoteVariationToMainline() {
 //
 errorT Game::deleteVariation() {
 	scid::core::MovetextCursor coreCursor(coreGame_);
-	const bool coreCursorReady = restoreCoreCursor(coreCursor, coreLocation_);
+	restoreCoreCursor(coreCursor, coreLocation_);
 
 	auto parent = currentMove_->getParent();
 	auto root = parent.first;
@@ -402,15 +386,9 @@ errorT Game::deleteVariation() {
 		return ERROR_NoVariation;
 
 	root->detachChild(parent.second);
-	if (coreCursorReady) {
-		if (coreCursor.deleteVariation())
-			coreLocation_ = coreCursor.location();
-		else
-			TEMP_movetext::syncCoreMovetextAndLocation(
-			    coreGame_, firstMove_, currentMove_, coreLocation_);
+	if (coreCursor.deleteVariation()) {
+		coreLocation_ = coreCursor.location();
 	} else {
-		// TODO [Game]: Remove this fallback once coreLocation_ is the authoritative
-		// cursor state and legacy moveT mapping is gone.
 		TEMP_movetext::syncCoreMovetextAndLocation(
 		    coreGame_, firstMove_, currentMove_, coreLocation_);
 	}
@@ -428,7 +406,7 @@ void Game::truncate() {
 		return;
 
 	scid::core::MovetextCursor coreCursor(coreGame_);
-	const bool coreCursorReady = restoreCoreCursor(coreCursor, coreLocation_);
+	restoreCoreCursor(coreCursor, coreLocation_);
 
 	auto endMove = newMove(END_MARKER);
 	currentMove_->prev->setNext(endMove);
@@ -436,15 +414,8 @@ void Game::truncate() {
 	currentMove_ = endMove;
 	if (varDepth_ == 0)
 		numHalfMoves_ = currentPly();
-	if (coreCursorReady) {
-		coreCursor.truncate();
-		coreLocation_ = coreCursor.location();
-	} else {
-		// TODO [Game]: Remove this fallback once coreLocation_ is the authoritative
-		// cursor state and legacy moveT mapping is gone.
-		TEMP_movetext::syncCoreMovetextAndLocation(
-		    coreGame_, firstMove_, currentMove_, coreLocation_);
-	}
+	coreCursor.truncate();
+	coreLocation_ = coreCursor.location();
 
 	// Invariants
 	ASSERT(currentMove_ && currentMove_->prev);
@@ -467,7 +438,7 @@ void Game::truncateStart() {
 		return;
 
 	scid::core::MovetextCursor coreCursor(coreGame_);
-	const bool coreCursorReady = restoreCoreCursor(coreCursor, coreLocation_);
+	restoreCoreCursor(coreCursor, coreLocation_);
 
     numHalfMoves_ -= currentPly();
     coreGame_.setStartPosition(*pos);
@@ -481,15 +452,8 @@ void Game::truncateStart() {
         }
     } while (nextPgn() == OK);
     toStart();
-	if (coreCursorReady) {
-		coreCursor.truncateBeforeCursor();
-		coreLocation_ = coreCursor.location();
-	} else {
-		// TODO [Game]: Remove this fallback once coreLocation_ is the authoritative
-		// cursor state and legacy moveT mapping is gone.
-		TEMP_movetext::syncCoreMovetextAndLocation(
-		    coreGame_, firstMove_, currentMove_, coreLocation_);
-	}
+	coreCursor.truncateBeforeCursor();
+	coreLocation_ = coreCursor.location();
 }
 
 } // namespace scid::database
