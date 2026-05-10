@@ -51,6 +51,8 @@ public:
 	Move& addMove(MoveAction action);
 	Variation* addVariation(std::string_view initialComment = {});
 	bool setPreviousMoveMetadata(MoveMetadata metadata);
+	bool setPreviousMoveSan(std::string_view san);
+	bool setNextMoveSan(std::string_view san);
 	bool setCurrentVariationInitialComment(std::string_view comment);
 	bool promoteVariationToFirst();
 	bool promoteVariationToMainline();

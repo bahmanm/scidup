@@ -103,6 +103,30 @@ TEST(CoreMovetextCursorTest, RefusesToSetPreviousMoveMetadataAtLineStart) {
 	EXPECT_FALSE(cursor.setPreviousMoveMetadata({}));
 }
 
+TEST(CoreMovetextCursorTest, SetsPreviousAndNextMoveSanAtCursor) {
+	scid::core::Game game;
+	scid::core::MovetextCursor cursor(game);
+	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.addMove(quiet(scid::database::E7, scid::database::E5));
+	ASSERT_TRUE(cursor.previous());
+
+	ASSERT_TRUE(cursor.setPreviousMoveSan("e4"));
+	ASSERT_TRUE(cursor.setNextMoveSan("e5"));
+
+	auto const& mainline = game.movetext().mainline.moves;
+	ASSERT_EQ(2U, mainline.size());
+	EXPECT_EQ("e4", mainline[0].san);
+	EXPECT_EQ("e5", mainline[1].san);
+}
+
+TEST(CoreMovetextCursorTest, RefusesToSetSanWhenMoveIsMissing) {
+	scid::core::Game game;
+	scid::core::MovetextCursor cursor(game);
+
+	EXPECT_FALSE(cursor.setPreviousMoveSan("none"));
+	EXPECT_FALSE(cursor.setNextMoveSan("none"));
+}
+
 TEST(CoreMovetextCursorTest, SetsCurrentVariationInitialComment) {
 	scid::core::Game game;
 	scid::core::MovetextCursor cursor(game);

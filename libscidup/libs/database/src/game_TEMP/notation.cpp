@@ -39,12 +39,8 @@ bool syncCoreMoveSan(scid::core::Game& coreGame,
 	[[maybe_unused]] const bool restored = cursor.restore(location);
 	ASSERT(restored);
 
-	auto move = nextMove ? cursor.nextMove() : cursor.previousMove();
-	if (!move)
-		return false;
-
-	move->san = legacyMove->san;
-	return true;
+	return nextMove ? cursor.setNextMoveSan(legacyMove->san)
+	                : cursor.setPreviousMoveSan(legacyMove->san);
 }
 
 } // namespace

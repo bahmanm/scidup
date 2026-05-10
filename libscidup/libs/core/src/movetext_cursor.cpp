@@ -220,6 +220,24 @@ bool MovetextCursor::setPreviousMoveMetadata(MoveMetadata metadata) {
 	return true;
 }
 
+bool MovetextCursor::setPreviousMoveSan(std::string_view san) {
+	auto move = previousMove();
+	if (!move)
+		return false;
+
+	move->san.assign(san.begin(), san.end());
+	return true;
+}
+
+bool MovetextCursor::setNextMoveSan(std::string_view san) {
+	auto move = nextMove();
+	if (!move)
+		return false;
+
+	move->san.assign(san.begin(), san.end());
+	return true;
+}
+
 bool MovetextCursor::setCurrentVariationInitialComment(
     std::string_view comment) {
 	auto variation = currentVariation();
