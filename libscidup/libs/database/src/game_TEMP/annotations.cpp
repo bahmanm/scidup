@@ -87,21 +87,6 @@ byte* Game::nextNags() const {
 	return currentMove_->nags;
 }
 
-std::pair<const char*, const char*> Game::previousComments() const {
-	std::pair<const char*, const char*> res = {"", ""};
-	auto move = currentMove_->getPrevMove();
-	if (move)
-		move = move->getPrevMove();
-	if (move) {
-		res.first = move->comment.c_str();
-		move = move->getPrevMove();
-	}
-	if (move)
-		res.second = move->comment.c_str();
-
-	return res;
-}
-
 const char* Game::moveComment() const {
 	return coreCommentAtLocation(coreGame_, coreLocation_).c_str();
 }

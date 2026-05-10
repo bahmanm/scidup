@@ -27,6 +27,7 @@
 
 #include "crosstab.h"
 #include "scidup/core/dstring.h"
+#include "scidup/core/game_cursor.h"
 #include "scidup/core/nags.h"
 #include "scidup/core/notation.h"
 #include "engine.h"
@@ -58,6 +59,7 @@
 #include <filesystem>
 #include <numeric>
 #include <set>
+#include <string>
 #include <type_traits>
 #include <unordered_map>
 
@@ -125,6 +127,21 @@ static const scid::database::uint REPORT_PLAYER = 1;
 
 static char decimalPointChar = '.';
 static scid::database::uint htmlDiagStyle = 0;
+
+static std::pair<std::string, std::string>
+previousClockComments(const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	if (!cursor.restore(game.coreLocation()))
+		return {};
+
+	auto moves = cursor.movesToCursor();
+	std::pair<std::string, std::string> comments;
+	if (moves.size() >= 2)
+		comments.first = moves[moves.size() - 2]->metadata.comment;
+	if (moves.size() >= 3)
+		comments.second = moves[moves.size() - 3]->metadata.comment;
+	return comments;
+}
 
 //////////////////////////////////////////////////////////////////////
 //
@@ -4809,10 +4826,10 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         break;
 
     case POS_GETPREVCOMMENT: {
-        auto comments = g.previousComments();
+        auto comments = previousClockComments(g);
         UI_List res(2);
-        res.push_back(comments.first);
-        res.push_back(comments.second);
+        res.push_back(comments.first.c_str());
+        res.push_back(comments.second.c_str());
         return UI_Result(ti, scid::database::OK, res);
     }
     case POS_GETNAGS:
