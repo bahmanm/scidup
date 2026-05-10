@@ -2,7 +2,6 @@
 
 #include "scidup/database/common.h"
 #include "scidup/database/game_TEMP/notation.h"
-#include "scidup/core/dstring.h"
 #include "scidup/core/movetext_cursor.h"
 #include "scidup/core/notation.h"
 #include "scidup/core/position.h"
@@ -41,13 +40,6 @@ std::string game_notation::currentPositionUci(const Game& game) {
 	                                                game.coreLocation_);
 }
 
-
-errorT game_notation::writePartialMoveList(Game& game, DString& out,
-                                           uint plyCount) {
-	out.Append(scid::core::notation::partialMoveList(game.coreGame(), plyCount)
-	               .c_str());
-    return OK;
-}
 
 std::string game_notation::nextSan(Game& game) {
 	// TODO [Game]: Move SAN generation/caching to notation helpers and

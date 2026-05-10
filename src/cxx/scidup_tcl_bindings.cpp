@@ -2601,10 +2601,10 @@ sc_game_firstMoves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         plyCount = editor.game().currentPly();
     if (plyCount == 0) plyCount = 1;
 
-    scid::database::DString dstr;
-    scid::database::game_notation::writePartialMoveList(
-        editor.game(), dstr, plyCount);
-    return UI_Result(ti, scid::database::OK, std::string(dstr.Data()));
+    return UI_Result(
+        ti, scid::database::OK,
+        scid::core::notation::partialMoveList(editor.game().coreGame(),
+                                              plyCount));
 }
 
 int sc_game_import(ClientData, Tcl_Interp* ti, int argc, const char** argv) {

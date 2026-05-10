@@ -15,8 +15,8 @@
 #include "optable.h"
 #include "crosstab.h"
 #include "scidup/core/dstring.h"
+#include "scidup/core/notation.h"
 #include "scidup/database/game_id.h"
-#include "scidup/database/game_TEMP/notation.h"
 #include "scidup/database/game_TEMP/piece_translation.h"
 #include "scidup/eco/book.h"
 #include <algorithm>
@@ -1975,14 +1975,13 @@ OpTable::AddMoveOrder (scid::database::Game * g)
 {
     scid::database::uint id = 0;
     int index = -1;
-    scid::database::DString dstr;
-    scid::database::game_notation::writePartialMoveList(
-        *g, dstr, g->currentPly());
+    const auto moves =
+        scid::core::notation::partialMoveList(g->coreGame(), g->currentPly());
 
     // Search for this move order in the current list:
 
     for (scid::database::uint i=0; i < NumMoveOrders; i++) {
-        if (scid::database::strEqual (dstr.Data(), MoveOrder[i].moves)) {
+        if (scid::database::strEqual (moves.c_str(), MoveOrder[i].moves)) {
             index = i;
             MoveOrder[i].count++;
             id = MoveOrder[i].id;
@@ -1995,7 +1994,7 @@ OpTable::AddMoveOrder (scid::database::Game * g)
     if (index < 0) {
         if (NumMoveOrders == OPTABLE_MAX_LINES) { return 0; }
         MoveOrder[NumMoveOrders].count = 1;
-        MoveOrder[NumMoveOrders].moves = scid::database::strDuplicate (dstr.Data());
+        MoveOrder[NumMoveOrders].moves = scid::database::strDuplicate (moves.c_str());
         MoveOrder[NumMoveOrders].id = NumMoveOrders + 1;
         id = MoveOrder[NumMoveOrders].id;
         index = NumMoveOrders;
