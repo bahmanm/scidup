@@ -567,26 +567,6 @@ Game::exactMatch (Position * searchPos, ByteBuffer * buf,
     return false;
 }
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::varExactMatch():
-//    Like exactMatch(), but also searches in variations.
-//    This is much slower than exactMatch(), since it will
-//    search every position until a match is found.
-bool
-Game::varExactMatch (Position * searchPos, gameExactMatchT searchType)
-{
-    const auto whitePawnFyles = searchType == GAME_EXACT_MATCH_Fyles
-                                    ? pawnFylesFor(*searchPos, WP)
-                                    : std::array<uint, 8>{};
-    const auto blackPawnFyles = searchType == GAME_EXACT_MATCH_Fyles
-                                    ? pawnFylesFor(*searchPos, BP)
-                                    : std::array<uint, 8>{};
-    Position startPosition = startPositionFor(coreGame_);
-    return varExactMatchLine(coreGame_.movetext().mainline, startPosition,
-                             searchPos, searchType, whitePawnFyles,
-                             blackPawnFyles);
-}
-
 bool game_search::materialMatch(Game& game, bool promotionsFlag,
                                 ByteBuffer& buf, byte* min, byte* max,
                                 patternT* patterns, std::size_t patternCount,
@@ -605,7 +585,16 @@ bool game_search::exactMatch(Game& game, Position* pos, ByteBuffer* buf,
 
 bool game_search::varExactMatch(Game& game, Position* pos,
                                 gameExactMatchT searchType) {
-    return GameSearchAccess::varExactMatch(game, pos, searchType);
+    const auto whitePawnFyles = searchType == GAME_EXACT_MATCH_Fyles
+                                    ? pawnFylesFor(*pos, WP)
+                                    : std::array<uint, 8>{};
+    const auto blackPawnFyles = searchType == GAME_EXACT_MATCH_Fyles
+                                    ? pawnFylesFor(*pos, BP)
+                                    : std::array<uint, 8>{};
+    auto const& coreGame = game.coreGame();
+    Position startPosition = startPositionFor(coreGame);
+    return varExactMatchLine(coreGame.movetext().mainline, startPosition, pos,
+                             searchType, whitePawnFyles, blackPawnFyles);
 }
 
 bool GameSearchAccess::materialMatch(Game& game, bool promotionsFlag,
@@ -623,11 +612,6 @@ bool GameSearchAccess::materialMatch(Game& game, bool promotionsFlag,
 bool GameSearchAccess::exactMatch(Game& game, Position* pos, ByteBuffer* buf,
                                   gameExactMatchT searchType) {
     return game.exactMatch(pos, buf, searchType);
-}
-
-bool GameSearchAccess::varExactMatch(Game& game, Position* pos,
-                                     gameExactMatchT searchType) {
-    return game.varExactMatch(pos, searchType);
 }
 
 } // namespace scid::database

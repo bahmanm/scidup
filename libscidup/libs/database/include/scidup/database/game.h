@@ -87,7 +87,6 @@ private:
                        bool oppBishops, bool sameBishops, int minDiff,
                        int maxDiff);
     bool exactMatch(Position* pos, ByteBuffer* buf, gameExactMatchT searchType);
-    bool varExactMatch(Position* searchPos, gameExactMatchT searchType);
     friend std::pair<IndexEntry, TagRoster> game_storage::encode(
         const Game& game, std::vector<byte>& dest);
     friend errorT game_storage::decode(Game& game, IndexEntry const& ie,

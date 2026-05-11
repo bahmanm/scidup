@@ -35,8 +35,6 @@ struct GameSearchAccess {
 	                          bool sameBishops, int minDiff, int maxDiff);
 	static bool exactMatch(Game& game, Position* pos, ByteBuffer* buf,
 	                       gameExactMatchT searchType);
-	static bool varExactMatch(Game& game, Position* pos,
-	                          gameExactMatchT searchType);
 };
 
 namespace game_search {
