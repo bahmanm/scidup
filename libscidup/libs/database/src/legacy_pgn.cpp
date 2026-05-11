@@ -199,14 +199,20 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
         if (!coreMove) {
             return ERROR;
         }
+        auto afterCoreMove = cursor;
+        if (!afterCoreMove.next()) {
+            return ERROR;
+        }
         const bool isNullMove = coreMove->action.isNull();
+        const bool isLastMoveInLine = afterCoreMove.isAtLineEnd();
+        const auto* nextCoreMove = afterCoreMove.nextMove();
         bool commentLine = false;
 
         if (m->san[0] == 0) {
             // If there is a next move we can skip the SAN_MATETEST
             currentPos_->MakeSANString(
                 &(m->moveData), m->san,
-                (m->next->marker != END_MARKER) ? SAN_CHECKTEST : SAN_MATETEST);
+                !isLastMoveInLine ? SAN_CHECKTEST : SAN_MATETEST);
         }
 
         bool printThisMove = true;
@@ -411,9 +417,9 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
                     (options.style & PGN_STYLE_NO_NULL_MOVES)) {
                     // If this move has no variations, but the next move
                     // is a null move, enter inComment mode:
-                    if (m->next->isNull()  &&
+                    if (nextCoreMove && nextCoreMove->action.isNull() &&
                           ((!(options.style & PGN_STYLE_VARS))  ||
-                            (currentMove_->next->numVariations == 0))) {
+                            nextCoreMove->childVariations.empty())) {
                         inComment = true;
                         tb->PrintString(preCommentStr);
                         preCommentStr = "";
