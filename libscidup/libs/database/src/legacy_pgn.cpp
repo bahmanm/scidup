@@ -5,6 +5,7 @@
 #include "scidup/database/game.h"
 #include "scidup/database/misc.h"
 #include "scidup/core/dstring.h"
+#include "scidup/core/game_cursor.h"
 #include "scidup/core/nags.h"
 #include "scidup/core/notation.h"
 #include "movetree.h"
@@ -13,6 +14,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <string_view>
 
 namespace scid::database {
 
@@ -80,7 +82,8 @@ struct LegacyGamePgnEncoder {
 	                bool newLineToSpaces);
 
 	errorT encode();
-	errorT writeMoveList(bool printMoveNum, bool inComment, uint depth);
+	errorT writeMoveList(bool printMoveNum, bool inComment, uint depth,
+	                     scid::core::GameCursor& cursor);
 };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -88,10 +91,11 @@ struct LegacyGamePgnEncoder {
 //      Write the moves, variations and comments in PGN notation.
 //      Recursive; calls itself to write variations.
 //
-errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment, uint depth) {
+errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
+                                           uint depth,
+                                           scid::core::GameCursor& cursor) {
     auto& currentMove_ = game.currentMove_;
     auto& currentPos_ = game.currentPos_;
-    auto& firstMove_ = game.firstMove_;
     auto previous = [&] { return game.previous(); };
     auto exitVariation = [&] { return game.exitVariation(); };
     auto next = [&] { return game.next(); };
@@ -155,10 +159,20 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment, ui
     }
 
     std::string strippedComment;
+    std::string lineStartCommentStorage;
+    std::string_view lineStartComment;
+    if (depth > 0) {
+        if (auto variation = cursor.currentVariation()) {
+            lineStartComment = variation->initialComment;
+        }
+    } else {
+        lineStartComment = game.coreGame().initialComment();
+    }
+
     // If this is a variation and it starts with a comment, print it:
-    if ((depth > 0 || currentMove_->prev == firstMove_) &&
-        (options.style & PGN_STYLE_COMMENTS)) {
-        const char* comment = currentMove_->prev->comment.c_str();
+    if (!lineStartComment.empty() && (options.style & PGN_STYLE_COMMENTS)) {
+        lineStartCommentStorage.assign(lineStartComment);
+        const char* comment = lineStartCommentStorage.c_str();
         if (*comment && (options.style & PGN_STYLE_STRIP_MARKS)) {
             strippedComment = comment;
             strTrimMarkCodes(strippedComment.data());
@@ -180,6 +194,10 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment, ui
 
     while (currentMove_->marker != END_MARKER) {
         moveT *m = currentMove_;
+        const auto* coreMove = cursor.nextMove();
+        if (!coreMove) {
+            return ERROR;
+        }
         bool commentLine = false;
 
         if (m->san[0] == 0) {
@@ -465,7 +483,12 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment, ui
         }
 
         // Print any variations if the style indicates:
-        if ((options.style & PGN_STYLE_VARS)  &&  (m->numVariations > 0)) {
+        const auto variationCount =
+            static_cast<uint>(coreMove->childVariations.size());
+        if (variationCount != m->numVariations) {
+            return ERROR;
+        }
+        if ((options.style & PGN_STYLE_VARS)  &&  (variationCount > 0)) {
             if ((options.style & PGN_STYLE_COLUMN)  &&  depth == 0) {
                 if (! endedColumn) {
                     if (currentPos_->GetToMove() == WHITE) {
@@ -488,7 +511,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment, ui
                     tb->PrintString ("<br>");
                 }
             }
-            for (uint i=0; i < m->numVariations; i++) {
+            for (uint i=0; i < variationCount; i++) {
                 if (options.style & PGN_STYLE_INDENT_VARS) {
                     if (options.isColorFormat()) {
                         if (depth < 19) {
@@ -518,14 +541,23 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment, ui
                     tb->PrintChar ('(');
                 }
 
-                enterVariation (i);
+                if (enterVariation(i) != OK || !cursor.enterVariation(i)) {
+                    return ERROR;
+                }
                 numMovesPrinted++;
                 tb->PrintSpace();
 
                 // Recursively print the variation:
-                writeMoveList(true, inComment, depth + 1);
+                const auto err =
+                    writeMoveList(true, inComment, depth + 1, cursor);
 
                 exitVariation();
+                if (!cursor.exitVariation()) {
+                    return ERROR;
+                }
+                if (err != OK) {
+                    return err;
+                }
                 if (!options.isLatexFormat()  ||  depth != 0) {
                     tb->PrintChar (')');
                 }
@@ -563,6 +595,9 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment, ui
                 tb->PrintString (endColumn);
                 endedColumn = true;
             }
+        }
+        if (!cursor.next()) {
+            return ERROR;
         }
         next();
     }
@@ -627,32 +662,6 @@ errorT LegacyGamePgnEncoder::encode() {
         options.style |= PGN_STYLE_INDENT_COMMENTS;
         options.style |= PGN_STYLE_INDENT_VARS;
     }
-
-    // First: is there a pre-game comment? If so, print it:
-//    if (firstMove_->comment != NULL && (options.style & PGN_STYLE_COMMENTS)
-//        &&  ! strIsAllWhitespace (firstMove_->comment)) {
-//        tb->AddTranslation ('\n', newline);
-//        char * s = firstMove_->comment;
-//        if (options.style & PGN_STYLE_STRIP_MARKS) {
-//            s = strDuplicate (firstMove_->comment);
-//            strTrimMarkCodes (s);
-//        }
-//        if (options.isColorFormat()) {
-//            sprintf (temp, "<c_%u>", numMovesPrinted);
-//            tb->PrintString (temp);
-//            tb->AddTranslation ('<', "<lt>");
-//            tb->AddTranslation ('>', "<gt>");
-//            tb->PrintString (s);
-//            tb->ClearTranslation ('<');
-//            tb->ClearTranslation ('>');
-//            tb->PrintLine ("</c>");
-//        } else {
-//            tb->PrintLine (s);
-//        }
-//        if (options.style & PGN_STYLE_STRIP_MARKS) { delete[] s; }
-//        tb->ClearTranslation ('\n');
-//        tb->NewLine();
-//    }
 
     date_DecodeToString (Date, dateStr);
     if (options.isHtmlFormat()) { tb->PrintLine("<p><b>"); }
@@ -839,7 +848,10 @@ errorT LegacyGamePgnEncoder::encode() {
 
     if (options.isHtmlFormat()) { tb->PrintString ("<p>"); }
     numMovesPrinted = 1;
-    writeMoveList(true, false, 0);
+    scid::core::GameCursor cursor(game.coreGame());
+    if (auto err = writeMoveList(true, false, 0, cursor)) {
+        return err;
+    }
     if (options.isHtmlFormat()) { tb->PrintString ("<b>"); }
     if (options.isLatexFormat()) { tb->PrintString ("\n}\\end{chess}\n{\\bf "); }
     if (options.isColorFormat()) { tb->PrintString ("<tag>"); }
