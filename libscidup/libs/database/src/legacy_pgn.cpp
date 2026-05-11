@@ -147,11 +147,12 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
         preCommentStr = "";
         postCommentStr = "";
     }
-    moveT * m = currentMove_;
+    const auto* initialCoreMove = cursor.nextMove();
 
     // Print null moves:
     if ((options.style & PGN_STYLE_NO_NULL_MOVES) && !inComment &&
-            options.isPlainFormat() && m->isNull()) {
+            options.isPlainFormat() && initialCoreMove &&
+            initialCoreMove->action.isNull()) {
         inComment = true;
         tb->PrintString(preCommentStr);
         preCommentStr = "";
@@ -198,6 +199,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
         if (!coreMove) {
             return ERROR;
         }
+        const bool isNullMove = coreMove->action.isNull();
         bool commentLine = false;
 
         if (m->san[0] == 0) {
@@ -208,7 +210,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
         }
 
         bool printThisMove = true;
-        if (m->isNull()) {
+        if (isNullMove) {
             // Null moves are not printed in LaTeX or HTML:
             if (options.isLatexFormat()  ||  options.isHtmlFormat()) {
                 printThisMove = false;
@@ -317,12 +319,13 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
 
         if (options.style & PGN_STYLE_COMMENTS) {
             bool printDiagramHere = false;
-            if (options.isColorFormat()  &&  m->nagCount > 0) {
+            auto const& nags = coreMove->metadata.nags;
+            if (options.isColorFormat()  &&  !nags.empty()) {
                 tb->PrintString ("<nag>");
             }
-            for (uint i = 0; i < (uint) m->nagCount; i++) {
+            for (uint i = 0; i < (uint) nags.size(); i++) {
                 char temp[20];
-                game_printNag (m->nags[i], temp, options.style & PGN_STYLE_SYMBOLS,
+                game_printNag (nags[i], temp, options.style & PGN_STYLE_SYMBOLS,
                                options.legacyFormat);
 
                 // Do not print a space before the Nag if it is the
@@ -333,14 +336,14 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
                     tb->PrintSpace();
                     colWidth--;
                 }
-                if (printDiagrams  &&  m->nags[i] == scid::core::NAG_Diagram) {
+                if (printDiagrams  &&  nags[i] == scid::core::NAG_Diagram) {
                     printDiagramHere = true;
                 }
                 tb->PrintWord (temp);
                 colWidth -= (int) std::strlen(temp);
 
             }
-            if (options.isColorFormat()  &&  m->nagCount > 0) {
+            if (options.isColorFormat()  &&  !nags.empty()) {
                 tb->PrintString ("</nag>");
             }
             tb->PrintSpace();
@@ -396,9 +399,10 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
                 printMoveNum = true;
             }
 
-            const char* comment = m->comment.c_str();
+            const auto& moveComment = coreMove->metadata.comment;
+            const char* comment = moveComment.c_str();
             if (*comment && (options.style & PGN_STYLE_STRIP_MARKS)) {
-                strippedComment = m->comment;
+                strippedComment = moveComment;
                 strTrimMarkCodes(strippedComment.data());
                 comment = strippedComment.data();
             }
