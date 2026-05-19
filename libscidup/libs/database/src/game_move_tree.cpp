@@ -97,8 +97,8 @@ unsigned pgnOffsetOf(const scid::core::Game& game,
 
 ///////////////////////////////////////////////////////////////////////////
 // A "location" in the game is represented by the core MovetextLocation plus a
-// temporary legacy cache (currentPos_, currentMove_ and varDepth_) for callers
-// that have not moved to core traversal yet.
+// temporary current-position cache for callers that have not moved to core
+// traversal yet.
 // The following functions modify ONLY the current location of the game.
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -118,12 +118,6 @@ errorT Game::next(void) {
 	coreLocation_ = coreCursor.location();
 
 	currentPos_->DoSimpleMove(simpleMove);
-	ASSERT(!currentMove_->endMarker());
-	currentMove_ = currentMove_->next;
-
-	// Invariants
-	ASSERT(currentMove_ && currentMove_->prev);
-	ASSERT(!currentMove_->startMarker());
 	return OK;
 }
 
@@ -141,10 +135,6 @@ errorT Game::previous(void) {
 	[[maybe_unused]] const bool restored =
 	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
 	ASSERT(restored);
-
-	// Invariants
-	ASSERT(currentMove_ && currentMove_->prev);
-	ASSERT(!currentMove_->startMarker());
 	return OK;
 }
 
@@ -161,10 +151,6 @@ errorT Game::enterVariation(uint varNumber) {
 	[[maybe_unused]] const bool restored =
 	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
 	ASSERT(restored);
-
-	// Invariants
-	ASSERT(currentMove_ && currentMove_->prev);
-	ASSERT(!currentMove_->startMarker());
 	return OK;
 }
 
@@ -182,10 +168,6 @@ errorT Game::exitVariation(void) {
 	[[maybe_unused]] const bool restored =
 	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
 	ASSERT(restored);
-
-	// Invariants
-	ASSERT(currentMove_ && currentMove_->prev);
-	ASSERT(!currentMove_->startMarker());
 	return OK;
 }
 
@@ -200,10 +182,6 @@ void Game::toStart() {
 	[[maybe_unused]] const bool restored =
 	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
 	ASSERT(restored);
-
-	// Invariants
-	ASSERT(currentMove_ && currentMove_->prev);
-	ASSERT(!currentMove_->startMarker());
 }
 
 void Game::toEnd() {
@@ -281,10 +259,6 @@ errorT Game::addMove(simpleMoveT const& sm) {
 	coreCursor.addMove(toCoreMoveAction(sm));
 	coreLocation_ = coreCursor.location();
 	TEMP_syncLegacyMovetextFromCore();
-
-	// Invariants
-	ASSERT(currentMove_ && currentMove_->prev);
-	ASSERT(!currentMove_->startMarker());
 	return OK;
 }
 
@@ -303,10 +277,6 @@ errorT Game::addVariation() {
 		return ERROR_NoVariation;
 	coreLocation_ = coreCursor.location();
 	TEMP_syncLegacyMovetextFromCore();
-
-	// Invariants
-	ASSERT(currentMove_ && currentMove_->prev);
-	ASSERT(!currentMove_->startMarker());
 	return OK;
 }
 
@@ -374,10 +344,6 @@ void Game::truncate() {
 	coreCursor.truncate();
 	coreLocation_ = coreCursor.location();
 	TEMP_syncLegacyMovetextFromCore();
-
-	// Invariants
-	ASSERT(currentMove_ && currentMove_->prev);
-	ASSERT(!currentMove_->startMarker());
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
