@@ -81,9 +81,6 @@ private:
     // through core GameCursor directly instead of database::Game state.
     bool TEMP_restoreLegacyStateFromCoreLocation(
         scid::core::MovetextLocation location);
-    // TODO [Game]: Delete this reverse compatibility projection once legacy
-    // moveT is no longer needed by database/app readers.
-    void TEMP_syncLegacyMovetextFromCore();
     // TODO [Game]: Move these database search operations out of Game once the
     // database wrapper around the future core Game exists.
     bool materialMatch(bool promotionsFlag, ByteBuffer& buf, byte* min,
