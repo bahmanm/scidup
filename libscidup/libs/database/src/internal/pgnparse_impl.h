@@ -131,8 +131,16 @@ public:
 		if (nErrorsAllowed_ < 0)
 			return true;
 
+		scid::core::GameCursor cursor(game.coreGame());
+		[[maybe_unused]] const bool restored = cursor.restore(
+		    game.coreLocation());
+		ASSERT(restored);
+		auto position = cursor.currentPosition();
+		if (!position)
+			return logFatalErr("Failed to parse the move: ", tok);
+
 		simpleMoveT sm;
-		auto err = game.currentPos()->ParseMove(&sm, tok.first, tok.second);
+		auto err = position->ParseMove(&sm, tok.first, tok.second);
 		if (err != OK) {
 			if (game_parseNag(tok))
 				return visitPGN_NAG(tok);

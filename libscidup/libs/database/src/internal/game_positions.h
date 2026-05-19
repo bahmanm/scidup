@@ -53,7 +53,9 @@ inline void collectPositions(Game& game, TCont& dest) {
 		dest.emplace_back();
 		auto& gamepos = dest.back();
 		char strBuf[256];
-		game.currentPos()->PrintFEN(strBuf, sizeof(strBuf));
+		auto position = cursor.currentPosition();
+		ASSERT(position);
+		position->PrintFEN(strBuf, sizeof(strBuf));
 		gamepos.FEN = strBuf;
 		gamepos.RAVdepth = cursor.variationDepth();
 		gamepos.RAVnum = cursor.variationIndex();
