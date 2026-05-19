@@ -66,10 +66,9 @@ class Game {
 
 private:
     Game(const Game&);
-    // TODO [Game]: Delete this bridge when current-position readers replay
-    // through core GameCursor directly instead of database::Game state.
-    bool TEMP_restoreLegacyStateFromCoreLocation(
-        scid::core::MovetextLocation location);
+    // TODO [Game]: Delete this compatibility sync when current-position
+    // readers replay through core GameCursor directly.
+    bool setCoreLocation(scid::core::MovetextLocation location);
     // TODO [Game]: Move these database search operations out of Game once the
     // database wrapper around the future core Game exists.
     bool materialMatch(bool promotionsFlag, ByteBuffer& buf, byte* min,
@@ -89,7 +88,6 @@ private:
      * after an operation that alters the location, it can be restored.
      */
     struct GameSavedPos {
-        Position pos;
         scid::core::MovetextLocation coreLocation;
     };
 

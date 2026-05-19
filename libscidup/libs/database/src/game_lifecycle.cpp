@@ -37,8 +37,9 @@ errorT Game::setStartFen(const char* fenStr) {
 void Game::setStartPosition(Position const& pos) {
 	coreGame_.clearMovetext();
 	coreGame_.setStartPosition(pos);
-	coreLocation_ = scid::core::MovetextLocation();
-	*currentPos_ = pos;
+	[[maybe_unused]] const bool restored =
+	    setCoreLocation(scid::core::MovetextLocation());
+	ASSERT(restored);
 }
 
 // TODO [Game]: Keep Scid flags in database/app compatibility, not in the core
@@ -55,9 +56,9 @@ const char* Game::scidFlags() const {
 
 Game::Game(const Game& obj) {
 	coreGame_ = obj.coreGame_;
-	coreLocation_ = obj.coreLocation_;
 	std::copy_n(obj.scidFlags_, sizeof(obj.scidFlags_), scidFlags_);
-	*currentPos_ = *obj.currentPos_;
+	[[maybe_unused]] const bool restored = setCoreLocation(obj.coreLocation_);
+	ASSERT(restored);
 }
 
 Game* Game::clone() {
@@ -78,8 +79,9 @@ void Game::clear() {
 	// database compatibility flags.
 	coreGame_.clear();
 	scidFlags_[0] = 0;
-	coreLocation_ = scid::core::MovetextLocation();
-	currentPos_->StdStart();
+	[[maybe_unused]] const bool restored =
+	    setCoreLocation(scid::core::MovetextLocation());
+	ASSERT(restored);
 }
 
 } // namespace scid::database

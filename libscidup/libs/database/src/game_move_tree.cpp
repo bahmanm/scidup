@@ -15,22 +15,6 @@ scid::core::MoveAction toCoreMoveAction(simpleMoveT const& sm) {
 	return {sm.from, sm.to, sm.promote, sm.isCastle() != 0};
 }
 
-simpleMoveT toNavigationMove(Position& position,
-                             scid::core::MoveAction const& action) {
-	simpleMoveT move = {};
-	if (action.isNull()) {
-		position.makeMove(action.from, action.to, PAWN, move);
-		return move;
-	}
-	if (action.castling) {
-		position.makeMove(action.from, action.from,
-		                  action.to > action.from ? KING : QUEEN, move);
-		return move;
-	}
-	position.makeMove(action.from, action.to, action.promotion, move);
-	return move;
-}
-
 void restoreCoreCursor(scid::core::MovetextCursor& cursor,
                        scid::core::MovetextLocation location) {
 	[[maybe_unused]] const bool restored = cursor.restore(location);
@@ -108,15 +92,10 @@ unsigned pgnOffsetOf(const scid::core::Game& game,
 errorT Game::next(void) {
 	scid::core::GameCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
-	const auto* move = coreCursor.nextMove();
-	if (!move)
+	if (!coreCursor.next())
 		return ERROR_EndOfMoveList;
-	auto simpleMove = toNavigationMove(*currentPos_, move->action);
-	[[maybe_unused]] const bool advanced = coreCursor.next();
-	ASSERT(advanced);
-	coreLocation_ = coreCursor.location();
-
-	currentPos_->DoSimpleMove(simpleMove);
+	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
+	ASSERT(restored);
 	return OK;
 }
 
@@ -129,10 +108,7 @@ errorT Game::previous(void) {
 	restoreCoreCursor(coreCursor, coreLocation_);
 	if (!coreCursor.previous())
 		return ERROR_StartOfMoveList;
-	coreLocation_ = coreCursor.location();
-
-	[[maybe_unused]] const bool restored =
-	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
 	ASSERT(restored);
 	return OK;
 }
@@ -145,10 +121,7 @@ errorT Game::enterVariation(uint varNumber) {
 	restoreCoreCursor(coreCursor, coreLocation_);
 	if (!coreCursor.enterVariation(varNumber))
 		return ERROR_NoVariation;
-	coreLocation_ = coreCursor.location();
-
-	[[maybe_unused]] const bool restored =
-	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
 	ASSERT(restored);
 	return OK;
 }
@@ -162,10 +135,7 @@ errorT Game::exitVariation(void) {
 	restoreCoreCursor(coreCursor, coreLocation_);
 	if (!coreCursor.exitVariation())
 		return ERROR_NoVariation;
-	coreLocation_ = coreCursor.location();
-
-	[[maybe_unused]] const bool restored =
-	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
 	ASSERT(restored);
 	return OK;
 }
@@ -176,10 +146,7 @@ errorT Game::exitVariation(void) {
 void Game::toStart() {
 	scid::core::GameCursor coreCursor(coreGame_);
 	coreCursor.toStart();
-	coreLocation_ = coreCursor.location();
-
-	[[maybe_unused]] const bool restored =
-	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
 	ASSERT(restored);
 }
 
@@ -203,9 +170,7 @@ errorT Game::nextPgn() {
 	if (!nextPgnCore(coreCursor))
 		return ERROR_EndOfMoveList;
 
-	coreLocation_ = coreCursor.location();
-	[[maybe_unused]] const bool restored =
-	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
 	ASSERT(restored);
 	return OK;
 }
@@ -219,9 +184,7 @@ errorT Game::toPgnLocation(unsigned stopLocation) {
 			return ERROR_EndOfMoveList;
 	}
 
-	coreLocation_ = coreCursor.location();
-	[[maybe_unused]] const bool restored =
-	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
 	ASSERT(restored);
 	return OK;
 }
@@ -256,9 +219,7 @@ errorT Game::addMove(simpleMoveT const& sm) {
 	scid::core::MovetextCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
 	coreCursor.addMove(toCoreMoveAction(sm));
-	coreLocation_ = coreCursor.location();
-	[[maybe_unused]] const bool restored =
-	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
 	ASSERT(restored);
 	return OK;
 }
@@ -276,9 +237,7 @@ errorT Game::addVariation() {
 	restoreCoreCursor(coreCursor, coreLocation_);
 	if (!coreCursor.addVariation())
 		return ERROR_NoVariation;
-	coreLocation_ = coreCursor.location();
-	[[maybe_unused]] const bool restored =
-	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
 	ASSERT(restored);
 	return OK;
 }
@@ -292,9 +251,7 @@ errorT Game::promoteVariationToFirst() {
 	if (!coreCursor.promoteVariationToFirst())
 		return ERROR_NoVariation;
 
-	coreLocation_ = coreCursor.location();
-	[[maybe_unused]] const bool restored =
-	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
 	ASSERT(restored);
 	return OK;
 }
@@ -309,9 +266,7 @@ errorT Game::promoteVariationToMainline() {
 	if (!coreCursor.promoteVariationToMainline())
 		return ERROR_NoVariation;
 
-	coreLocation_ = coreCursor.location();
-	[[maybe_unused]] const bool restored =
-	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
 	ASSERT(restored);
 	return OK;
 }
@@ -329,9 +284,7 @@ errorT Game::deleteVariation() {
 	if (!coreCursor.deleteVariation())
 		return ERROR_NoVariation;
 
-	coreLocation_ = coreCursor.location();
-	[[maybe_unused]] const bool restored =
-	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
 	ASSERT(restored);
 	return OK;
 }
@@ -351,9 +304,7 @@ void Game::truncate() {
 	scid::core::MovetextCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
 	coreCursor.truncate();
-	coreLocation_ = coreCursor.location();
-	[[maybe_unused]] const bool restored =
-	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
 	ASSERT(restored);
 }
 
@@ -379,9 +330,7 @@ void Game::truncateStart() {
 
 	coreGame_.setStartPosition(pos);
 	coreCursor.truncateBeforeCursor();
-	coreLocation_ = coreCursor.location();
-	[[maybe_unused]] const bool restored =
-	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
 	ASSERT(restored);
 }
 

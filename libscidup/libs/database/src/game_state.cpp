@@ -25,20 +25,20 @@ simpleMoveT toCompatibilityMove(Position& position,
 } // namespace
 
 Game::GameSavedPos Game::currentLocation() const {
-	return {*currentPos_, coreLocation_};
+	return {coreLocation_};
 }
 
 void Game::restoreLocation(const GameSavedPos& savedPos) {
-	*currentPos_ = savedPos.pos;
-	coreLocation_ = savedPos.coreLocation;
+	[[maybe_unused]] const bool restored = setCoreLocation(savedPos.coreLocation);
+	ASSERT(restored);
 }
 
-bool Game::TEMP_restoreLegacyStateFromCoreLocation(
-    scid::core::MovetextLocation location) {
+bool Game::setCoreLocation(scid::core::MovetextLocation location) {
+	Position position;
 	if (auto startPosition = coreGame_.startPosition()) {
-		*currentPos_ = *startPosition;
+		position = *startPosition;
 	} else {
-		currentPos_->StdStart();
+		position.StdStart();
 	}
 
 	scid::core::GameCursor cursor(coreGame_);
@@ -47,12 +47,14 @@ bool Game::TEMP_restoreLegacyStateFromCoreLocation(
 
 	for (const auto* move : cursor.movesToCursor()) {
 		auto simpleMove =
-		    scid::core::notation::toSimpleMove(*currentPos_, move->action);
+		    scid::core::notation::toSimpleMove(position, move->action);
 		if (!simpleMove)
 			return false;
-		currentPos_->DoSimpleMove(*simpleMove);
+		position.DoSimpleMove(*simpleMove);
 	}
 
+	coreLocation_ = location;
+	*currentPos_ = position;
 	return true;
 }
 
