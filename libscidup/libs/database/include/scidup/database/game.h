@@ -142,8 +142,7 @@ public:
     void truncateStart();
 
     //////////////////////////////////////////////////////////////
-    // Functions that move the current location (only currentPos_,
-    // currentMove_ and varDepth_ are modified by these functions):
+    // Functions that move the current location.
     //
     errorT next();
     errorT previous();

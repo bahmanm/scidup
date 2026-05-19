@@ -302,7 +302,9 @@ unsigned Game::pgnOffset() const {
 //
 errorT Game::addMove(simpleMoveT const& sm) {
 	// We must be at the end of a game/variation to add a move:
-	if (!currentMove_->endMarker())
+	scid::core::GameCursor readCursor(coreGame_);
+	restoreCoreCursor(readCursor, coreLocation_);
+	if (!readCursor.isAtLineEnd())
 		truncate();
 
 	scid::core::MovetextCursor coreCursor(coreGame_);
@@ -393,7 +395,9 @@ errorT Game::deleteVariation() {
 //      So repeatedly adding moves and truncating a game will waste
 //      memory until the game is cleared.
 void Game::truncate() {
-	if (currentMove_->endMarker())
+	scid::core::GameCursor readCursor(coreGame_);
+	restoreCoreCursor(readCursor, coreLocation_);
+	if (readCursor.isAtLineEnd())
 		return;
 
 	scid::core::MovetextCursor coreCursor(coreGame_);
@@ -411,21 +415,23 @@ void Game::truncate() {
 // Game::truncateStart():
 //      Remove all moves leading to the current position.
 void Game::truncateStart() {
-	    // It is necessary to rebuild the current position using ReadFromFEN()
-	    // because the order of pieces is important when encoding to SCIDv4 format.
-	    char tempStr[256];
-	    currentPos_->PrintFEN(tempStr, sizeof(tempStr));
-	    Position pos;
-	    if (pos.ReadFromFEN(tempStr) != OK)
-	        return;
+	// It is necessary to rebuild the current position using ReadFromFEN()
+	// because the order of pieces is important when encoding to SCIDv4 format.
+	char tempStr[256];
+	currentPos_->PrintFEN(tempStr, sizeof(tempStr));
+	Position pos;
+	if (pos.ReadFromFEN(tempStr) != OK)
+		return;
 
-    if (varDepth_ != 0 && promoteVariationToMainline() != OK)
+	scid::core::GameCursor readCursor(coreGame_);
+	restoreCoreCursor(readCursor, coreLocation_);
+	if (readCursor.variationDepth() != 0 && promoteVariationToMainline() != OK)
 		return;
 
 	scid::core::MovetextCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
 
-    coreGame_.setStartPosition(pos);
+	coreGame_.setStartPosition(pos);
 	coreCursor.truncateBeforeCursor();
 	coreLocation_ = coreCursor.location();
 	TEMP_syncLegacyMovetextFromCore();
