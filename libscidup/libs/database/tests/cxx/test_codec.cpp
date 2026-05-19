@@ -17,6 +17,7 @@
 #include "scidup/database/bytebuf.h"
 #include "codec.h"
 #include "scidup/core/game_cursor.h"
+#include "scidup/core/movetext_cursor.h"
 #include "scidup/database/game.h"
 #include "scidup/database/index.h"
 #include "scidup/database/misc.h"
@@ -39,6 +40,12 @@ currentPosition(const scid::database::Game& game) {
 	auto position = cursor.currentPosition();
 	EXPECT_TRUE(position.has_value());
 	return position;
+}
+
+void setCurrentComment(scid::database::Game& game, std::string_view comment) {
+	scid::core::MovetextCursor cursor(game.coreGame());
+	ASSERT_TRUE(cursor.restore(game.coreLocation()));
+	ASSERT_TRUE(cursor.setComment(comment));
 }
 
 scid::database::fileModeT fmodes[] = {scid::database::FMODE_Create, scid::database::FMODE_ReadOnly, scid::database::FMODE_WriteOnly,
@@ -142,7 +149,7 @@ private:
 			res->addMove(move);
 
 			if (rand(0, 6) == 0)
-				res->setMoveComment(rand_comment().c_str());
+				setCurrentComment(*res, rand_comment());
 
 			scid::core::GameCursor cursor(res->coreGame());
 			[[maybe_unused]] const bool restored = cursor.restore(

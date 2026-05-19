@@ -124,6 +124,30 @@ unsigned pgnOffset(const scid::database::Game& game) {
 	return scid::core::pgn::offsetOf(coreCursor(game));
 }
 
+void setCurrentComment(scid::database::Game& game, std::string_view comment) {
+	scid::core::MovetextCursor cursor(game.coreGame());
+	ASSERT_TRUE(cursor.restore(game.coreLocation()));
+	ASSERT_TRUE(cursor.setComment(comment));
+}
+
+bool addCurrentNag(scid::database::Game& game, scid::database::byte nag) {
+	scid::core::MovetextCursor cursor(game.coreGame());
+	EXPECT_TRUE(cursor.restore(game.coreLocation()));
+	return cursor.addPreviousMoveNag(nag);
+}
+
+bool removeCurrentNag(scid::database::Game& game, bool moveNag) {
+	scid::core::MovetextCursor cursor(game.coreGame());
+	EXPECT_TRUE(cursor.restore(game.coreLocation()));
+	return cursor.removePreviousMoveNag(moveNag);
+}
+
+void clearCurrentNags(scid::database::Game& game) {
+	scid::core::MovetextCursor cursor(game.coreGame());
+	ASSERT_TRUE(cursor.restore(game.coreLocation()));
+	cursor.clearPreviousMoveNags();
+}
+
 std::string nextLegacySan(scid::database::Game& game) {
 	scid::core::GameCursor cursor(game.coreGame());
 	EXPECT_TRUE(cursor.restore(game.coreLocation()));
@@ -581,9 +605,9 @@ TEST(Test_Game, coreGameMoveMetadataMirrorsProgrammaticNagMutation) {
 	ASSERT_EQ(scid::database::OK,
 	          game.addMove(makeCurrentMove(game, scid::database::E2,
 	                                       scid::database::E4)));
-	ASSERT_EQ(scid::database::OK, game.addNag(scid::core::NAG_GoodMove));
-	ASSERT_EQ(scid::database::OK, game.addNag(scid::core::NAG_PoorMove));
-	ASSERT_EQ(scid::database::OK, game.addNag(scid::core::NAG_Equal));
+	ASSERT_TRUE(addCurrentNag(game, scid::core::NAG_GoodMove));
+	ASSERT_TRUE(addCurrentNag(game, scid::core::NAG_PoorMove));
+	ASSERT_TRUE(addCurrentNag(game, scid::core::NAG_Equal));
 
 	auto const& firstNags =
 	    game.coreGame().movetext().mainline.moves[0].metadata.nags;
@@ -591,13 +615,13 @@ TEST(Test_Game, coreGameMoveMetadataMirrorsProgrammaticNagMutation) {
 	EXPECT_EQ(scid::core::NAG_PoorMove, firstNags[0]);
 	EXPECT_EQ(scid::core::NAG_Equal, firstNags[1]);
 
-	ASSERT_EQ(scid::database::OK, game.removeNag(true));
+	ASSERT_TRUE(removeCurrentNag(game, true));
 	auto const& afterRemove =
 	    game.coreGame().movetext().mainline.moves[0].metadata.nags;
 	ASSERT_EQ(1U, afterRemove.size());
 	EXPECT_EQ(scid::core::NAG_Equal, afterRemove[0]);
 
-	game.clearNags();
+	clearCurrentNags(game);
 	EXPECT_TRUE(
 	    game.coreGame().movetext().mainline.moves[0].metadata.nags.empty());
 }
@@ -612,8 +636,7 @@ TEST(Test_Game, coreGameVariationMetadataMirrorsProgrammaticNagMutation) {
 	ASSERT_EQ(scid::database::OK,
 	          game.addMove(makeCurrentMove(game, scid::database::D2,
 	                                       scid::database::D4)));
-	ASSERT_EQ(scid::database::OK,
-	          game.addNag(scid::core::NAG_InterestingMove));
+	ASSERT_TRUE(addCurrentNag(game, scid::core::NAG_InterestingMove));
 
 	auto const& variationMove =
 	    game.coreGame()
@@ -630,17 +653,17 @@ TEST(Test_Game, coreGameMirrorsProgrammaticCommentMutation) {
 	using namespace std::literals;
 
 	scid::database::Game game;
-	game.setMoveComment("Before the first move");
+	setCurrentComment(game, "Before the first move");
 	ASSERT_EQ(scid::database::OK,
 	          game.addMove(makeCurrentMove(game, scid::database::E2,
 	                                       scid::database::E4)));
-	game.setMoveComment("After e4");
+	setCurrentComment(game, "After e4");
 	ASSERT_EQ(scid::database::OK, game.addVariation());
-	game.setMoveComment("Queen pawn alternative");
+	setCurrentComment(game, "Queen pawn alternative");
 	ASSERT_EQ(scid::database::OK,
 	          game.addMove(makeCurrentMove(game, scid::database::D2,
 	                                       scid::database::D4)));
-	game.setMoveComment("After d4");
+	setCurrentComment(game, "After d4");
 
 	auto const& movetext = game.coreGame().movetext();
 	EXPECT_EQ("Before the first move"sv, movetext.initialComment);
@@ -658,7 +681,7 @@ TEST(Test_Game, coreGameMirrorsProgrammaticCommentMutation) {
 
 TEST(Test_Game, moveCommentReadsCoreCommentAtCurrentLocation) {
 	scid::database::Game game;
-	game.setMoveComment("Before the first move");
+	setCurrentComment(game, "Before the first move");
 	game.coreGame().setInitialComment("Core initial comment");
 	EXPECT_EQ("Core initial comment",
 	          std::string(scid::database::currentMoveComment(game)));
@@ -685,14 +708,14 @@ TEST(Test_Game, moveCommentReadsCoreCommentAtCurrentLocation) {
 
 TEST(Test_Game, coreGameMirrorsStrip) {
 	scid::database::Game game;
-	game.setMoveComment("Before the first move");
+	setCurrentComment(game, "Before the first move");
 	ASSERT_EQ(scid::database::OK,
 	          game.addMove(makeCurrentMove(game, scid::database::E2,
 	                                       scid::database::E4)));
-	ASSERT_EQ(scid::database::OK, game.addNag(scid::core::NAG_GoodMove));
-	game.setMoveComment("After e4");
+	ASSERT_TRUE(addCurrentNag(game, scid::core::NAG_GoodMove));
+	setCurrentComment(game, "After e4");
 	ASSERT_EQ(scid::database::OK, game.addVariation());
-	game.setMoveComment("Alternative");
+	setCurrentComment(game, "Alternative");
 	ASSERT_EQ(scid::database::OK,
 	          game.addMove(makeCurrentMove(game, scid::database::D2,
 	                                       scid::database::D4)));
@@ -712,7 +735,7 @@ TEST(Test_Game, coreGameMirrorsInitialMovetextComment) {
 	using namespace std::literals;
 
 	scid::database::Game game;
-	game.setMoveComment("Before the first move");
+	setCurrentComment(game, "Before the first move");
 
 	EXPECT_EQ("Before the first move"sv, game.coreGame().initialComment());
 

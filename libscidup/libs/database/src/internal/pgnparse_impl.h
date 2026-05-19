@@ -2,6 +2,7 @@
 #define SCIDUP_DATABASE_INTERNAL_PGNPARSE_IMPL_H
 
 #include "scidup/core/game_cursor.h"
+#include "scidup/core/movetext_cursor.h"
 #include "pgn_lexer.h"
 #include "nag_format.h"
 #include "scidup/database/pgnparse.h"
@@ -26,6 +27,20 @@ inline std::string_view currentMoveComment(const Game& game) {
 	if (auto variation = cursor.currentVariation())
 		return variation->initialComment;
 	return game.coreGame().movetext().initialComment;
+}
+
+inline bool setCurrentMoveComment(Game& game, std::string_view comment) {
+	scid::core::MovetextCursor cursor(game.coreGame());
+	[[maybe_unused]] const bool restored = cursor.restore(game.coreLocation());
+	ASSERT(restored);
+	return cursor.setComment(comment);
+}
+
+inline bool addCurrentMoveNag(Game& game, byte nag) {
+	scid::core::MovetextCursor cursor(game.coreGame());
+	[[maybe_unused]] const bool restored = cursor.restore(game.coreLocation());
+	ASSERT(restored);
+	return cursor.addPreviousMoveNag(nag);
 }
 
 class PgnVisitor {
@@ -65,7 +80,8 @@ public:
 		auto prevSz = str.size();
 		str.append(comment.first, comment.second);
 		linenum_ += pgn::normalize(str, prevSz);
-		game.setMoveComment(str.c_str());
+		[[maybe_unused]] const bool updated = setCurrentMoveComment(game, str);
+		ASSERT(updated);
 		return true;
 	}
 
@@ -97,7 +113,7 @@ public:
 			return true;
 
 		auto nag_code = game_parseNag(token);
-		if (nag_code == 0 || game.addNag(nag_code) != OK)
+		if (nag_code == 0 || !addCurrentMoveNag(game, nag_code))
 			return logErr("Invalid annotation symbol: ", token);
 
 		return true;

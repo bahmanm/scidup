@@ -1,8 +1,23 @@
 #include "scidup/core/movetext_cursor.h"
 
+#include <algorithm>
 #include <utility>
 
 namespace scid::core {
+
+namespace {
+
+constexpr std::size_t MAX_NAGS_PER_MOVE = 8;
+
+bool isMoveNagValue(std::uint8_t nag) {
+	return nag >= 1 && nag <= 6;
+}
+
+bool isPositionNagValue(std::uint8_t nag) {
+	return nag >= 10 && nag <= 21;
+}
+
+} // namespace
 
 MovetextCursor::MovetextCursor(Game& game)
     : game_(game), currentLine_(&game.movetext_.mainline) {}
@@ -246,6 +261,78 @@ bool MovetextCursor::setCurrentVariationInitialComment(
 
 	variation->initialComment.assign(comment.begin(), comment.end());
 	return true;
+}
+
+bool MovetextCursor::setComment(std::string_view comment) {
+	if (isAtLineStart()) {
+		if (variationDepth() == 0) {
+			game_.setInitialComment(comment);
+			return true;
+		}
+		return setCurrentVariationInitialComment(comment);
+	}
+
+	auto move = previousMove();
+	if (!move)
+		return false;
+
+	move->metadata.comment.assign(comment.begin(), comment.end());
+	return true;
+}
+
+bool MovetextCursor::addPreviousMoveNag(std::uint8_t nag) {
+	auto move = previousMove();
+	if (!move)
+		return true;
+
+	auto& nags = move->metadata.nags;
+	if (nags.size() + 1 >= MAX_NAGS_PER_MOVE)
+		return false;
+	if (nag == 0)
+		return true;
+
+	if (isMoveNagValue(nag)) {
+		for (auto& existingNag : nags) {
+			if (isMoveNagValue(existingNag)) {
+				existingNag = nag;
+				return true;
+			}
+		}
+		nags.insert(nags.begin(), nag);
+		return true;
+	}
+
+	if (isPositionNagValue(nag)) {
+		for (auto& existingNag : nags) {
+			if (isPositionNagValue(existingNag)) {
+				existingNag = nag;
+				return true;
+			}
+		}
+	}
+
+	nags.push_back(nag);
+	return true;
+}
+
+bool MovetextCursor::removePreviousMoveNag(bool moveNag) {
+	auto move = previousMove();
+	if (!move)
+		return true;
+
+	auto& nags = move->metadata.nags;
+	auto match = [moveNag](std::uint8_t nag) {
+		return moveNag ? isMoveNagValue(nag) : isPositionNagValue(nag);
+	};
+	auto it = std::find_if(nags.begin(), nags.end(), match);
+	if (it != nags.end())
+		nags.erase(it);
+	return true;
+}
+
+void MovetextCursor::clearPreviousMoveNags() {
+	if (auto move = previousMove())
+		move->metadata.nags.clear();
 }
 
 bool MovetextCursor::promoteVariationToFirst() {

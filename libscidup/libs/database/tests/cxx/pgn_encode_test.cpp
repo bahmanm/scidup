@@ -22,6 +22,7 @@
 
 #include "scidup/database/game.h"
 #include "scidup/core/game_cursor.h"
+#include "scidup/core/movetext_cursor.h"
 #include "scidup/core/pgn/encode.h"
 #include "scidup/database/pgnparse.h"
 #include "pgnparse_impl.h"
@@ -48,6 +49,12 @@ scid::database::simpleMoveT makeCurrentMove(scid::database::Game& game,
 	if (auto position = currentPosition(game))
 		position->makeMove(from, to, scid::database::EMPTY, move);
 	return move;
+}
+
+void setCurrentComment(scid::database::Game& game, std::string_view comment) {
+	scid::core::MovetextCursor cursor(game.coreGame());
+	ASSERT_TRUE(cursor.restore(game.coreLocation()));
+	ASSERT_TRUE(cursor.setComment(comment));
 }
 
 } // namespace
@@ -216,10 +223,10 @@ TEST(Test_PgnEncode, encode_game) {
 	{
 		scid::database::Game game;
 		game.coreGame().setEco("A01");
-		game.setMoveComment("before the move");
+		setCurrentComment(game, "before the move");
 		auto sm = makeCurrentMove(game, scid::database::E2, scid::database::E4);
 		game.addMove(sm);
-		game.setMoveComment("after the move");
+		setCurrentComment(game, "after the move");
 		auto expected = "[Event\0\"\"]\n"sv
 		                "[Site\0\"\"]\n"sv
 		                "[Date\0\"????.??.??\"]\n"sv
@@ -255,10 +262,10 @@ TEST(Test_PgnEncode, encode) {
 	}
 	{
 		scid::database::Game game;
-		game.setMoveComment("before the move");
+		setCurrentComment(game, "before the move");
 		auto sm = makeCurrentMove(game, scid::database::E2, scid::database::E4);
 		game.addMove(sm);
-		game.setMoveComment("after the move");
+		setCurrentComment(game, "after the move");
 		auto expected = "[Event \"\"]\n"
 		                "[Site \"\"]\n"
 		                "[Date \"????.??.??\"]\n"

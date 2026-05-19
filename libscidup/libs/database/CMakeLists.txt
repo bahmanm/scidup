@@ -12,7 +12,6 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/filter.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_search.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_storage.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/game_annotations.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_lifecycle.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_move_tree.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_state.cpp"

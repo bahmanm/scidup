@@ -4,6 +4,7 @@
 #include "scidup/core/movetext_location.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 namespace scid::core {
@@ -54,6 +55,10 @@ public:
 	bool setPreviousMoveSan(std::string_view san);
 	bool setNextMoveSan(std::string_view san);
 	bool setCurrentVariationInitialComment(std::string_view comment);
+	bool setComment(std::string_view comment);
+	bool addPreviousMoveNag(std::uint8_t nag);
+	bool removePreviousMoveNag(bool moveNag);
+	void clearPreviousMoveNags();
 	bool promoteVariationToFirst();
 	bool promoteVariationToMainline();
 	bool deleteVariation();

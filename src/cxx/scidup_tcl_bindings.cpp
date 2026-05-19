@@ -28,6 +28,7 @@
 #include "crosstab.h"
 #include "scidup/core/dstring.h"
 #include "scidup/core/game_cursor.h"
+#include "scidup/core/movetext_cursor.h"
 #include "scidup/core/nags.h"
 #include "scidup/core/notation.h"
 #include "scidup/core/pgn/traversal.h"
@@ -280,6 +281,36 @@ pgnOffset(const scid::database::Game& game) {
 	if (!cursor.restore(game.coreLocation()))
 		return std::nullopt;
 	return scid::core::pgn::offsetOf(cursor);
+}
+
+static bool setCurrentComment(scid::database::Game& game,
+                              std::string_view comment) {
+	scid::core::MovetextCursor cursor(game.coreGame());
+	if (!cursor.restore(game.coreLocation()))
+		return false;
+	return cursor.setComment(comment);
+}
+
+static bool clearCurrentNags(scid::database::Game& game) {
+	scid::core::MovetextCursor cursor(game.coreGame());
+	if (!cursor.restore(game.coreLocation()))
+		return false;
+	cursor.clearPreviousMoveNags();
+	return true;
+}
+
+static bool removeCurrentNag(scid::database::Game& game, bool moveNag) {
+	scid::core::MovetextCursor cursor(game.coreGame());
+	if (!cursor.restore(game.coreLocation()))
+		return false;
+	return cursor.removePreviousMoveNag(moveNag);
+}
+
+static bool addCurrentNag(scid::database::Game& game, scid::database::byte nag) {
+	scid::core::MovetextCursor cursor(game.coreGame());
+	if (!cursor.restore(game.coreLocation()))
+		return false;
+	return cursor.addPreviousMoveNag(nag);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -3458,7 +3489,8 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     dstr.Append(" (", tags.round, ")");
     dstr.Append(", ", tags.site);
     dstr.Append(" ", ie->GetYear());
-    game.setMoveComment(dstr.Data());
+    if (!setCurrentComment(game, dstr.Data()))
+        return UI_Result(ti, scid::database::ERROR, "Error updating comment.");
 
     // And exit the new variation:
     game.exitVariation();
@@ -5005,7 +5037,8 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return UI_Result(ti, scid::database::ERROR_BadArg, "sc_pos board [startpos moves]");
 
     case POS_CLEARNAGS:
-        g.clearNags();
+        if (!clearCurrentNags(g))
+            return UI_Result(ti, scid::database::ERROR, "Error updating annotations.");
         editor.setDirty();
         break;
 
@@ -5174,16 +5207,21 @@ sc_pos_addNag (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (argc != 3) {
         return errorResult (ti, "Usage: sc_pos addNag <nagvalue>");
     }
-    const char * nagStr = argv[2];
-	if( strcmp(nagStr, "X") == 0)
-		editor.game().removeNag( true);
-	else if( strcmp(nagStr, "Y") == 0)
-		editor.game().removeNag( false);
+	const char * nagStr = argv[2];
+	if( strcmp(nagStr, "X") == 0) {
+		if (!removeCurrentNag(editor.game(), true))
+			return UI_Result(ti, scid::database::ERROR, "Error updating annotations.");
+	}
+	else if( strcmp(nagStr, "Y") == 0) {
+		if (!removeCurrentNag(editor.game(), false))
+			return UI_Result(ti, scid::database::ERROR, "Error updating annotations.");
+	}
 	else
 	{
 		scid::database::byte nag = scid::database::game_parseNag({nagStr, nagStr + std::strlen(nagStr)});
 		if (nag != 0) {
-			editor.game().addNag ((scid::database::byte) nag);
+			if (!addCurrentNag(editor.game(), nag))
+				return UI_Result(ti, scid::database::ERROR, "Error updating annotations.");
 		}
 		editor.setDirty();
 	}
@@ -5594,12 +5632,14 @@ sc_pos_setComment (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     if (str[0] == 0  || (isspace((char)str[0]) && str[1] == 0)) {
         // No comment: nullify comment if necessary:
-        editor.game().setMoveComment (NULL);
+        if (!setCurrentComment(editor.game(), {}))
+            return UI_Result(ti, scid::database::ERROR, "Error updating comment.");
         editor.setDirty();
     } else {
         // Only set the comment if it has actually changed:
         if (!scid::database::strEqual (str, oldComment.c_str())) {
-            editor.game().setMoveComment (str);
+            if (!setCurrentComment(editor.game(), str))
+                return UI_Result(ti, scid::database::ERROR, "Error updating comment.");
             editor.setDirty();
         }
     }

@@ -508,21 +508,8 @@ static void setCoreCommentAt(scid::core::Game& game,
 	scid::core::MovetextCursor cursor(game);
 	[[maybe_unused]] const bool restored = cursor.restore(location);
 	ASSERT(restored);
-
-	if (cursor.isAtLineStart()) {
-		if (cursor.variationDepth() == 0) {
-			game.setInitialComment(comment);
-		} else {
-			[[maybe_unused]] const bool updated =
-			    cursor.setCurrentVariationInitialComment(comment);
-			ASSERT(updated);
-		}
-		return;
-	}
-
-	auto* move = cursor.previousMove();
-	ASSERT(move);
-	move->metadata.comment.assign(comment.begin(), comment.end());
+	[[maybe_unused]] const bool updated = cursor.setComment(comment);
+	ASSERT(updated);
 }
 
 // Decodes the comments from @e buf and stores them into the marked core

@@ -130,21 +130,6 @@ public:
     GameSavedPos currentLocation() const;
     void restoreLocation(const GameSavedPos& savedPos);
 
-    //////////////////////////////////////////////////////////////
-    // Functions that get information about the current location.
-    //
-
-    //////////////////////////////////////////////////////////////
-    // Functions that get/set information about the last/next move.
-    // TODO [Game]: Replace this compatibility surface with Move.metadata,
-    // MoveAction notation helpers, and GameCursor traversal.
-    //
-    errorT addNag(byte nag);
-    errorT removeNag(bool isMoveNag);
-    void clearNags();
-
-    void setMoveComment(const char* comment);
-
     Game* clone();
 };
 
