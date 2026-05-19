@@ -2,7 +2,6 @@
 
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/notation.h"
-#include "movetree.h"
 
 namespace scid::database {
 namespace {
@@ -32,49 +31,6 @@ Game::GameSavedPos Game::currentLocation() const {
 void Game::restoreLocation(const GameSavedPos& savedPos) {
 	*currentPos_ = savedPos.pos;
 	coreLocation_ = savedPos.coreLocation;
-	[[maybe_unused]] const bool restored =
-	    TEMP_restoreLegacyCursorFromCoreLocation(coreLocation_);
-	ASSERT(restored);
-}
-
-bool Game::TEMP_restoreLegacyCursorFromCoreLocation(
-    scid::core::MovetextLocation location) {
-	auto advanceLegacyLocation = [this](std::size_t count) {
-		for (std::size_t i = 0; i < count; ++i) {
-			if (!currentMove_ || currentMove_->endMarker())
-				return false;
-			currentMove_ = currentMove_->next;
-		}
-		return true;
-	};
-
-	auto enterLegacyVariation = [this](std::size_t variationIndex) {
-		if (!currentMove_ || currentMove_->startMarker() ||
-		    currentMove_->endMarker()) {
-			return false;
-		}
-
-		auto* variation = currentMove_->varChild;
-		for (std::size_t i = 0; variation && i < variationIndex; ++i)
-			variation = variation->varChild;
-		if (!variation)
-			return false;
-
-		currentMove_ = variation->next;
-		++varDepth_;
-		return true;
-	};
-
-	currentMove_ = firstMove_->next;
-	varDepth_ = 0;
-
-	for (auto const& step : location.path()) {
-		if (!advanceLegacyLocation(step.nextIndex) ||
-		    !enterLegacyVariation(step.variationIndex)) {
-			return false;
-		}
-	}
-	return advanceLegacyLocation(location.nextIndex());
 }
 
 bool Game::TEMP_restoreLegacyStateFromCoreLocation(
@@ -97,7 +53,7 @@ bool Game::TEMP_restoreLegacyStateFromCoreLocation(
 		currentPos_->DoSimpleMove(*simpleMove);
 	}
 
-	return TEMP_restoreLegacyCursorFromCoreLocation(location);
+	return true;
 }
 
 Position* Game::currentPos() {

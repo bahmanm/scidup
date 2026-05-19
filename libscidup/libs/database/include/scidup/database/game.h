@@ -77,10 +77,6 @@ private:
     Game(const Game&);
     moveT* allocMove();
     moveT* newMove(markerT marker);
-    // TODO [Game]: Delete this bridge when saved/restored locations are fully
-    // core-backed and no legacy moveT cursor needs to be maintained.
-    bool TEMP_restoreLegacyCursorFromCoreLocation(
-        scid::core::MovetextLocation location);
     // TODO [Game]: Delete this bridge when current-position readers replay
     // through core GameCursor directly instead of database::Game state.
     bool TEMP_restoreLegacyStateFromCoreLocation(
