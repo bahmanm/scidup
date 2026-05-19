@@ -243,6 +243,20 @@ currentPosition(const scid::database::Game& game) {
 	return cursor.currentPosition();
 }
 
+static std::optional<scid::database::simpleMoveT>
+currentMove(const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	if (!cursor.restore(game.coreLocation()))
+		return std::nullopt;
+
+	auto position = cursor.currentPosition();
+	auto move = cursor.nextMove();
+	if (!position || !move)
+		return std::nullopt;
+
+	return scid::core::notation::toSimpleMove(*position, move->action);
+}
+
 //////////////////////////////////////////////////////////////////////
 //
 // Inline routines for setting Tcl result strings:
@@ -3370,12 +3384,12 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // Create a new variation and add merge-game moves to it:
     game.toPly (matchPly);
     bool atLastMove = isAtEnd(game);
-    scid::database::simpleMoveT * sm = NULL;
+    std::optional<scid::database::simpleMoveT> sm;
     if (atLastMove) {
         // At end of game, so remember final game move for replicating
         // at the start of the variation:
         game.previous();
-        sm = game.currentMove();
+        sm = currentMove(game);
         ASSERT(sm);
         game.next();
     }
@@ -3389,9 +3403,9 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     merge->toPly (mergePly);
     ply = mergePly;
     while (ply < endPly) {
-        scid::database::simpleMoveT * mergeMove = merge->currentMove();
+        auto mergeMove = currentMove(*merge);
         if (merge->next() != scid::database::OK) { break; }
-        if (mergeMove == NULL) { break; }
+        if (!mergeMove) { break; }
         if (game.addMove(*mergeMove) != scid::database::OK) { break; }
         ply++;
     }
@@ -3456,8 +3470,8 @@ sc_game_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             continue;
         }
         g->previous();
-        scid::database::simpleMoveT * sm = g->currentMove();
-        if (sm == NULL) { break; }
+        auto sm = currentMove(*g);
+        if (!sm) { break; }
         char * s = moveStrings[plyCount];
         if (sanFormat) {
             scid::database::strCopy(

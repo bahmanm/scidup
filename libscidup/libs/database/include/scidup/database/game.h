@@ -59,7 +59,6 @@ class Game {
     char        scidFlags_[22];
 
     // Position and moves
-    simpleMoveT  currentMoveCache_;
     scid::core::MovetextLocation coreLocation_;
 
 private:
@@ -138,7 +137,6 @@ public:
     //////////////////////////////////////////////////////////////
     // Functions that get information about the current location.
     //
-    simpleMoveT* currentMove();
 
     // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
     // instead of keeping it on the generic Game cursor surface.

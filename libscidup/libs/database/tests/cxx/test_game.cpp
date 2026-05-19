@@ -100,13 +100,19 @@ scid::core::GameCursor coreCursor(const scid::database::Game& game) {
 }
 
 std::string nextLegacySan(scid::database::Game& game) {
-	auto* move = game.currentMove();
-	if (!move)
+	scid::core::GameCursor cursor(game.coreGame());
+	EXPECT_TRUE(cursor.restore(game.coreLocation()));
+	auto position = cursor.currentPosition();
+	auto* move = cursor.nextMove();
+	if (!position || !move)
+		return {};
+
+	auto simpleMove = scid::core::notation::toSimpleMove(*position, move->action);
+	if (!simpleMove)
 		return {};
 
 	scid::database::sanStringT san = {};
-	if (auto position = currentPosition(game))
-		position->MakeSANString(move, san, scid::database::SAN_MATETEST);
+	position->MakeSANString(&*simpleMove, san, scid::database::SAN_MATETEST);
 	return san;
 }
 

@@ -1,7 +1,6 @@
 #include "scidup/database/game.h"
 
 #include "scidup/core/game_cursor.h"
-#include "scidup/core/notation.h"
 
 namespace scid::database {
 
@@ -21,26 +20,6 @@ bool Game::setCoreLocation(scid::core::MovetextLocation location) {
 
 	coreLocation_ = location;
 	return true;
-}
-
-simpleMoveT* Game::currentMove() {
-	scid::core::GameCursor cursor(coreGame_);
-	[[maybe_unused]] const bool restored = cursor.restore(coreLocation_);
-	ASSERT(restored);
-	const auto* move = cursor.nextMove();
-	if (!move)
-		return nullptr;
-
-	auto position = cursor.currentPosition();
-	if (!position)
-		return nullptr;
-
-	auto simpleMove = scid::core::notation::toSimpleMove(*position, move->action);
-	if (!simpleMove)
-		return nullptr;
-
-	currentMoveCache_ = *simpleMove;
-	return &currentMoveCache_;
 }
 
 } // namespace scid::database
