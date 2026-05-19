@@ -123,8 +123,8 @@ public:
     errorT previous();
     errorT enterVariation(uint varNumber);
     errorT exitVariation();
-    // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
-    // instead of keeping it on the generic Game cursor surface.
+    // TODO [Game]: Remove these database delegators once callers use the
+    // core::pgn traversal functions directly.
     errorT nextPgn();
     errorT toPgnLocation(unsigned stopLocation);
     void toStart();
@@ -138,8 +138,8 @@ public:
     // Functions that get information about the current location.
     //
 
-    // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
-    // instead of keeping it on the generic Game cursor surface.
+    // TODO [Game]: Remove these database delegators once callers use the
+    // core::pgn traversal functions directly.
     unsigned pgnLocation() const;
     unsigned pgnOffset() const;
 

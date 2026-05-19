@@ -2,6 +2,7 @@
 
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/movetext_cursor.h"
+#include "scidup/core/pgn/traversal.h"
 #include "scidup/core/position.h"
 #include "scidup/database/common.h"
 
@@ -25,55 +26,6 @@ void restoreCoreCursor(scid::core::GameCursor& cursor,
                        scid::core::MovetextLocation location) {
 	[[maybe_unused]] const bool restored = cursor.restore(location);
 	ASSERT(restored);
-}
-
-bool nextPgnCore(scid::core::GameCursor& cursor) {
-	if (cursor.previousMove() &&
-	    !cursor.previousMove()->childVariations.empty() &&
-	    cursor.previous()) {
-		return cursor.enterVariation(0);
-	}
-
-	while (!cursor.next()) {
-		if (cursor.variationDepth() == 0)
-			return false;
-
-		auto variationIndex = cursor.variationIndex();
-		if (!cursor.exitVariation())
-			return false;
-		if (cursor.enterVariation(variationIndex + 1))
-			return true;
-		[[maybe_unused]] const bool skippedParent = cursor.next();
-		ASSERT(skippedParent);
-	}
-	return true;
-}
-
-unsigned pgnLocationOf(const scid::core::Game& game,
-                       scid::core::MovetextLocation location) {
-	scid::core::GameCursor cursor(game);
-	unsigned result = 1;
-	if (cursor.location() == location)
-		return result;
-
-	while (nextPgnCore(cursor)) {
-		++result;
-		if (cursor.location() == location)
-			return result;
-	}
-	ASSERT(false);
-	return result;
-}
-
-unsigned pgnOffsetOf(const scid::core::Game& game,
-                     scid::core::MovetextLocation location) {
-	scid::core::GameCursor cursor(game);
-	restoreCoreCursor(cursor, location);
-	while (cursor.isAtVariationStart() && cursor.variationDepth() != 0) {
-		[[maybe_unused]] const bool exited = cursor.exitVariation();
-		ASSERT(exited);
-	}
-	return pgnLocationOf(game, cursor.location());
 }
 
 } // namespace
@@ -162,12 +114,12 @@ void Game::toPly(int hmNumber) {
 		next();
 }
 
-// TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
-// instead of keeping it on the generic Game cursor surface.
+// TODO [Game]: Remove this database delegator once callers use the core::pgn
+// traversal functions directly.
 errorT Game::nextPgn() {
 	scid::core::GameCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
-	if (!nextPgnCore(coreCursor))
+	if (!scid::core::pgn::nextLocation(coreCursor))
 		return ERROR_EndOfMoveList;
 
 	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
@@ -175,30 +127,32 @@ errorT Game::nextPgn() {
 	return OK;
 }
 
-// TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
-// instead of keeping it on the generic Game cursor surface.
+// TODO [Game]: Remove this database delegator once callers use the core::pgn
+// traversal functions directly.
 errorT Game::toPgnLocation(unsigned stopLocation) {
 	scid::core::GameCursor coreCursor(coreGame_);
-	for (unsigned loc = 1; loc < stopLocation; ++loc) {
-		if (!nextPgnCore(coreCursor))
-			return ERROR_EndOfMoveList;
-	}
+	if (!scid::core::pgn::seekLocation(coreCursor, stopLocation))
+		return ERROR_EndOfMoveList;
 
 	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
 	ASSERT(restored);
 	return OK;
 }
 
-// TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
-// instead of keeping it on the generic Game cursor surface.
+// TODO [Game]: Remove this database delegator once callers use the core::pgn
+// traversal functions directly.
 unsigned Game::pgnLocation() const {
-	return pgnLocationOf(coreGame_, coreLocation_);
+	scid::core::GameCursor coreCursor(coreGame_);
+	restoreCoreCursor(coreCursor, coreLocation_);
+	return scid::core::pgn::locationOf(coreCursor);
 }
 
-// TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
-// instead of keeping it on the generic Game cursor surface.
+// TODO [Game]: Remove this database delegator once callers use the core::pgn
+// traversal functions directly.
 unsigned Game::pgnOffset() const {
-	return pgnOffsetOf(coreGame_, coreLocation_);
+	scid::core::GameCursor coreCursor(coreGame_);
+	restoreCoreCursor(coreCursor, coreLocation_);
+	return scid::core::pgn::offsetOf(coreCursor);
 }
 
 ///////////////////////////////////////////////////////////////////////////

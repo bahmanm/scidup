@@ -10,6 +10,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/movetext_cursor.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/movetext_location.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/notation.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/pgn_traversal.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/position.cpp" )
 
@@ -32,6 +33,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/nags.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/notation.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/pgn/encode.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/pgn/traversal.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/position.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/primitives.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/rating.h"
