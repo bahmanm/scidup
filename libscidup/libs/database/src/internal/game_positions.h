@@ -2,6 +2,7 @@
 
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/notation.h"
+#include "scidup/core/pgn/traversal.h"
 #include "scidup/database/game.h"
 
 #include <cstdint>
@@ -10,9 +11,6 @@
 
 namespace scid::database::gamepos {
 
-// TODO [Game]: Rebuild this snapshot helper on top of the future GameCursor
-// plus the PGN/export traversal adapter. It currently depends on legacy
-// PGN-order cursor methods and should not be moved until those boundaries exist.
 struct GamePos {
 	uint32_t RAVdepth;
 	uint32_t RAVnum;
@@ -42,11 +40,8 @@ struct GamePos {
  */
 template <typename TCont>
 inline void collectPositions(Game& game, TCont& dest) {
+	scid::core::GameCursor cursor(game.coreGame());
 	do {
-		scid::core::GameCursor cursor(game.coreGame());
-		[[maybe_unused]] const bool restored = cursor.restore(
-		    game.coreLocation());
-		ASSERT(restored);
 		if (cursor.isAtVariationStart() && !cursor.isAtGameStart())
 			continue;
 
@@ -69,9 +64,9 @@ inline void collectPositions(Game& game, TCont& dest) {
 			gamepos.comment = game.coreGame().movetext().initialComment;
 		}
 		gamepos.lastMoveSAN = scid::core::notation::previousSan(
-		    game.coreGame(), game.coreLocation());
+		    game.coreGame(), cursor.location());
 
-	} while (game.nextPgn() == OK);
+	} while (scid::core::pgn::nextLocation(cursor));
 }
 
 /**
@@ -82,7 +77,6 @@ inline void collectPositions(Game& game, TCont& dest) {
  */
 inline std::vector<GamePos> collectPositions(Game& game) {
 	std::vector<GamePos> res;
-	game.toStart();
 	collectPositions(game, res);
 	return res;
 }
