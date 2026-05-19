@@ -93,7 +93,6 @@ private:
                                        TagRoster const& tags, ByteBuffer buf);
     friend errorT game_storage::decodeMovesOnly(Game& game, ByteBuffer& buf);
     friend struct GameSearchAccess;
-    friend struct LegacyGamePgnEncoder;
     /**
      * Contains the information of the current position in the game, so that
      * after an operation that alters the location, it can be restored.
@@ -122,6 +121,7 @@ public:
     void setStartPosition(Position const& pos);
 
     void setScidFlags(const char* s, size_t len);
+    const char* scidFlags() const;
 
     //////////////////////////////////////////////////////////////
     // Functions to add or delete moves:

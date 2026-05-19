@@ -644,28 +644,29 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
 //      Write a game in PGN to a textbuffer.
 //
 errorT LegacyGamePgnEncoder::encode() {
-    const auto& BlackElo = game.coreGame_.black().rating.value;
-    const auto& BlackRatingType = game.coreGame_.black().rating.type;
-    const auto& Date = game.coreGame_.date();
-    const auto EcoCode = scidup::eco::fromString(game.coreGame_.eco().c_str());
-    const auto& EventDate = game.coreGame_.eventDate();
-    const auto& Result = game.coreGame_.result();
-    const auto& RoundStr = game.coreGame_.round();
-    auto& scidFlags = game.scidFlags_;
-    const auto& SiteStr = game.coreGame_.site();
-    auto* startPos = game.coreGame_.startPosition();
-    const auto& WhiteElo = game.coreGame_.white().rating.value;
-    const auto& WhiteRatingType = game.coreGame_.white().rating.type;
-    const auto& extraTags_ = game.coreGame_.extraTags();
+    auto& coreGame = game.coreGame();
+    const auto& BlackElo = coreGame.black().rating.value;
+    const auto& BlackRatingType = coreGame.black().rating.type;
+    const auto& Date = coreGame.date();
+    const auto EcoCode = scidup::eco::fromString(coreGame.eco().c_str());
+    const auto& EventDate = coreGame.eventDate();
+    const auto& Result = coreGame.result();
+    const auto& RoundStr = coreGame.round();
+    const auto* scidFlags = game.scidFlags();
+    const auto& SiteStr = coreGame.site();
+    auto* startPos = coreGame.startPosition();
+    const auto& WhiteElo = coreGame.white().rating.value;
+    const auto& WhiteRatingType = coreGame.white().rating.type;
+    const auto& extraTags_ = coreGame.extraTags();
     auto findExtraTag = [&](const char* tag) {
-        auto value = game.coreGame_.findExtraTag(tag);
+        auto value = coreGame.findExtraTag(tag);
         return value ? value->c_str() : nullptr;
     };
-    auto blackStr = [&] { return game.coreGame().black().name.c_str(); };
-    auto eventStr = [&] { return game.coreGame().event().c_str(); };
-    auto roundStr = [&] { return game.coreGame().round().c_str(); };
-    auto siteStr = [&] { return game.coreGame().site().c_str(); };
-    auto whiteStr = [&] { return game.coreGame().white().name.c_str(); };
+    auto blackStr = [&] { return coreGame.black().name.c_str(); };
+    auto eventStr = [&] { return coreGame.event().c_str(); };
+    auto roundStr = [&] { return coreGame.round().c_str(); };
+    auto siteStr = [&] { return coreGame.site().c_str(); };
+    auto whiteStr = [&] { return coreGame.white().name.c_str(); };
     char temp[256];
     char dateStr [20];
     const char * newline = "\n";
@@ -874,7 +875,7 @@ errorT LegacyGamePgnEncoder::encode() {
 
     if (options.isHtmlFormat()) { tb->PrintString ("<p>"); }
     numMovesPrinted = 1;
-    scid::core::GameCursor cursor(game.coreGame());
+    scid::core::GameCursor cursor(coreGame);
     auto position = startPos ? *startPos : Position::getStdStart();
     if (auto err = writeMoveList(true, false, 0, cursor, position)) {
         return err;
