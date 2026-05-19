@@ -26,10 +26,20 @@
 #include <iterator>
 #include <memory>
 #include <numeric>
+#include <optional>
 #include <random>
 #include <vector>
 
 namespace {
+
+std::optional<scid::database::Position>
+currentPosition(const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	EXPECT_TRUE(cursor.restore(game.coreLocation()));
+	auto position = cursor.currentPosition();
+	EXPECT_TRUE(position.has_value());
+	return position;
+}
 
 scid::database::fileModeT fmodes[] = {scid::database::FMODE_Create, scid::database::FMODE_ReadOnly, scid::database::FMODE_WriteOnly,
                       scid::database::FMODE_Both};
@@ -117,16 +127,18 @@ private:
 
 	std::unique_ptr<scid::database::Game> genGame() {
 		auto res = std::unique_ptr<scid::database::Game>(new scid::database::Game);
-		res->currentPos()->StdStart();
 		scid::database::MoveList mlist;
 		for (auto i = rand(0, maxMoves); i > 0; --i) {
-			res->currentPos()->GenerateMoves(&mlist, scid::database::EMPTY, scid::database::GEN_ALL_MOVES,
-			                                    true);
+			auto position = currentPosition(*res);
+			if (!position)
+				break;
+			position->GenerateMoves(&mlist, scid::database::EMPTY,
+			                        scid::database::GEN_ALL_MOVES, true);
 			if (mlist.Size() == 0)
 				break;
 
 			auto move = *mlist.Get(rand(0, mlist.Size() - 1));
-			res->currentPos()->fillMove(move);
+			position->fillMove(move);
 			res->addMove(move);
 
 			if (rand(0, 6) == 0)

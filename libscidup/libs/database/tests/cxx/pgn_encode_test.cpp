@@ -21,12 +21,36 @@
  */
 
 #include "scidup/database/game.h"
+#include "scidup/core/game_cursor.h"
 #include "scidup/core/pgn/encode.h"
 #include "scidup/database/pgnparse.h"
 #include "pgnparse_impl.h"
 #include <gtest/gtest.h>
+#include <optional>
 #include <string>
 #include <string_view>
+
+namespace {
+
+std::optional<scid::database::Position>
+currentPosition(const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	EXPECT_TRUE(cursor.restore(game.coreLocation()));
+	auto position = cursor.currentPosition();
+	EXPECT_TRUE(position.has_value());
+	return position;
+}
+
+scid::database::simpleMoveT makeCurrentMove(scid::database::Game& game,
+                                            scid::database::squareT from,
+                                            scid::database::squareT to) {
+	scid::database::simpleMoveT move;
+	if (auto position = currentPosition(game))
+		position->makeMove(from, to, scid::database::EMPTY, move);
+	return move;
+}
+
+} // namespace
 
 TEST(Test_PgnEncode, break_lines) {
 	using namespace std::literals;
@@ -193,8 +217,7 @@ TEST(Test_PgnEncode, encode_game) {
 		scid::database::Game game;
 		game.coreGame().setEco("A01");
 		game.setMoveComment("before the move");
-		scid::database::simpleMoveT sm;
-		game.currentPos()->makeMove(scid::database::E2, scid::database::E4, scid::database::EMPTY, sm);
+		auto sm = makeCurrentMove(game, scid::database::E2, scid::database::E4);
 		game.addMove(sm);
 		game.setMoveComment("after the move");
 		auto expected = "[Event\0\"\"]\n"sv
@@ -233,8 +256,7 @@ TEST(Test_PgnEncode, encode) {
 	{
 		scid::database::Game game;
 		game.setMoveComment("before the move");
-		scid::database::simpleMoveT sm;
-		game.currentPos()->makeMove(scid::database::E2, scid::database::E4, scid::database::EMPTY, sm);
+		auto sm = makeCurrentMove(game, scid::database::E2, scid::database::E4);
 		game.addMove(sm);
 		game.setMoveComment("after the move");
 		auto expected = "[Event \"\"]\n"

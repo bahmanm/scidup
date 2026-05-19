@@ -1,7 +1,27 @@
+#include "scidup/core/game_cursor.h"
+#include "scidup/database/game.h"
 #include "scidup/database/pgnparse.h"
 
 #include <gtest/gtest.h>
+#include <string>
 #include <string_view>
+
+namespace {
+
+std::string currentFen(const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	EXPECT_TRUE(cursor.restore(game.coreLocation()));
+	auto position = cursor.currentPosition();
+	EXPECT_TRUE(position.has_value());
+	if (!position)
+		return {};
+
+	char buf[1024];
+	position->PrintFEN(buf, sizeof(buf));
+	return buf;
+}
+
+} // namespace
 
 TEST(Test_PrintFen, castling_flag_kside_from_pgn) {
 	std::string_view pgn =
@@ -26,9 +46,7 @@ TEST(Test_PrintFen, castling_flag_kside_from_pgn) {
 	    "2bnk1rr/3pppq1/8/ppp3pp/PPP3PP/8/3PPPQ1/2BN1RKR b g - 7 5",
 	    "2bn1rkr/3pppq1/8/ppp3pp/PPP3PP/8/3PPPQ1/2BN1RKR w - - 8 6"};
 	for (auto expected : fens) {
-		char buf[1024];
-		game.currentPos()->PrintFEN(buf, sizeof(buf));
-		EXPECT_STREQ(buf, expected);
+		EXPECT_STREQ(currentFen(game).c_str(), expected);
 		game.nextPgn();
 	}
 }
@@ -54,9 +72,7 @@ TEST(Test_PrintFen, castling_flag_qside_from_pgn) {
 	    "r1kr4/1b1ppn2/8/pppQ1pPp/PPPq1PP1/8/1B1PPN2/RR2K3 w B - 1 5",
 	    "r1kr4/1b1ppn2/8/pppQ1pPp/PPPq1PP1/8/1B1PPN2/R1KR4 b - - 2 5"};
 	for (auto expected : fens) {
-		char buf[1024];
-		game.currentPos()->PrintFEN(buf, sizeof(buf));
-		EXPECT_STREQ(buf, expected);
+		EXPECT_STREQ(currentFen(game).c_str(), expected);
 		game.nextPgn();
 	}
 }

@@ -1,13 +1,28 @@
 #include "scidup/database/bytebuf.h"
 #include "scidup/database/game.h"
+#include "scidup/core/game_cursor.h"
 #include "scidup/core/notation.h"
 #include "scidup/database/pgnparse.h"
 
 #include <gtest/gtest.h>
+#include <string>
 #include <string_view>
 #include <vector>
 
 namespace {
+
+std::string currentFen(const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	EXPECT_TRUE(cursor.restore(game.coreLocation()));
+	auto position = cursor.currentPosition();
+	EXPECT_TRUE(position.has_value());
+	if (!position)
+		return {};
+
+	char buf[256];
+	position->PrintFEN(buf, sizeof(buf));
+	return buf;
+}
 
 void expect_roundtrip(std::string_view pgn) {
 	SCOPED_TRACE(std::string(pgn));
@@ -28,11 +43,7 @@ void expect_roundtrip(std::string_view pgn) {
 	decoded.toStart();
 
 	for (;;) {
-		char originalFen[256];
-		char decodedFen[256];
-		original.currentPos()->PrintFEN(originalFen, sizeof(originalFen));
-		decoded.currentPos()->PrintFEN(decodedFen, sizeof(decodedFen));
-		EXPECT_STREQ(originalFen, decodedFen);
+		EXPECT_EQ(currentFen(original), currentFen(decoded));
 		EXPECT_EQ(scid::core::notation::nextSan(original.coreGame(),
 		                                        original.coreLocation()),
 		          scid::core::notation::nextSan(decoded.coreGame(),

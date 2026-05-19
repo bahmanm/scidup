@@ -31,6 +31,7 @@
 #include <cstring>
 #include <gtest/gtest.h>
 #include <memory>
+#include <optional>
 #include <random>
 #include <string>
 #include <string_view>
@@ -59,11 +60,31 @@ scid::database::LegacyGameEncodeOptions scidFlagsPgnOptions() {
 	};
 }
 
+std::optional<scid::database::Position>
+currentPosition(const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	EXPECT_TRUE(cursor.restore(game.coreLocation()));
+	auto position = cursor.currentPosition();
+	EXPECT_TRUE(position.has_value());
+	return position;
+}
+
+std::string currentFen(const scid::database::Game& game) {
+	auto position = currentPosition(game);
+	if (!position)
+		return {};
+
+	char buf[1024];
+	position->PrintFEN(buf, sizeof(buf));
+	return buf;
+}
+
 scid::database::simpleMoveT makeCurrentMove(scid::database::Game& game,
                                             scid::database::squareT from,
                                             scid::database::squareT to) {
 	scid::database::simpleMoveT move;
-	game.currentPos()->makeMove(from, to, scid::database::EMPTY, move);
+	if (auto position = currentPosition(game))
+		position->makeMove(from, to, scid::database::EMPTY, move);
 	return move;
 }
 
@@ -84,7 +105,8 @@ std::string nextLegacySan(scid::database::Game& game) {
 		return {};
 
 	scid::database::sanStringT san = {};
-	game.currentPos()->MakeSANString(move, san, scid::database::SAN_MATETEST);
+	if (auto position = currentPosition(game))
+		position->MakeSANString(move, san, scid::database::SAN_MATETEST);
 	return san;
 }
 
@@ -107,9 +129,13 @@ TEST(Test_Game, clone) {
 
 		ASSERT_EQ(clone->pgnOffset(), game.pgnOffset());
 
-		auto board = game.currentPos()->GetBoard();
+		auto position = currentPosition(game);
+		auto clonePosition = currentPosition(*clone);
+		ASSERT_TRUE(position);
+		ASSERT_TRUE(clonePosition);
+		auto board = position->GetBoard();
 		ASSERT_TRUE(
-		    std::equal(board, board + 66, clone->currentPos()->GetBoard()));
+		    std::equal(board, board + 66, clonePosition->GetBoard()));
 
 		ASSERT_EQ(nextCoreSan(game), nextCoreSan(*clone));
 
@@ -354,9 +380,7 @@ TEST(Test_Game, encodeFEN) {
 		scid::database::Game game;
 		scid::database::game_storage::decodeMovesOnly(game, bbuf);
 		game.toStart();
-		char str[1024];
-		game.currentPos()->PrintFEN(str, sizeof(str));
-		EXPECT_STREQ(kiwipete, str);
+		EXPECT_STREQ(kiwipete, currentFen(game).c_str());
 	}
 }
 
@@ -742,15 +766,14 @@ TEST(Test_Game, illegalPGN_Castling) {
 	scid::database::PgnParseLog pgnLog;
 	EXPECT_FALSE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game, pgnLog));
 	EXPECT_FALSE(pgnLog.log.empty());
-	char fen[256];
 	game.toEnd();
-	game.currentPos()->PrintFEN(fen, sizeof(fen));
 	EXPECT_STREQ(
-	    fen, "rnbq1rk1/ppppbppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQ1RK1 w - - 6 5");
+	    currentFen(game).c_str(),
+	    "rnbq1rk1/ppppbppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQ1RK1 w - - 6 5");
 	game.previous();
-	game.currentPos()->PrintFEN(fen, sizeof(fen));
 	EXPECT_STREQ(
-	    fen, "rnbqk2r/ppppbppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQ1RK1 b kq - 5 4");
+	    currentFen(game).c_str(),
+	    "rnbqk2r/ppppbppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQ1RK1 b kq - 5 4");
 }
 
 TEST(Test_Game, illegalPGN_KingCapture) {
@@ -759,11 +782,10 @@ TEST(Test_Game, illegalPGN_KingCapture) {
 	scid::database::PgnParseLog pgnLog;
 	EXPECT_FALSE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game, pgnLog));
 	EXPECT_FALSE(pgnLog.log.empty());
-	char fen[256];
 	game.toEnd();
-	game.currentPos()->PrintFEN(fen, sizeof(fen));
 	EXPECT_STREQ(
-	    fen, "rnbqk1nr/pppp1ppp/4p3/8/1b1PP3/8/PPP2PPP/RNBQKBNR w KQkq - 1 3");
+	    currentFen(game).c_str(),
+	    "rnbqk1nr/pppp1ppp/4p3/8/1b1PP3/8/PPP2PPP/RNBQKBNR w KQkq - 1 3");
 }
 
 namespace {
