@@ -323,7 +323,7 @@ TEST(Test_Game, locationInPGN) {
 		          scid::database::game_storage::decodeMovesOnly(game, bufGame));
 
 		unsigned location = 1;
-		game.toStart();
+		game.restoreLocation(scid::core::MovetextLocation{});
 		while (true) {
 			++location;
 			if (!nextPgn(game)) {
@@ -361,18 +361,30 @@ TEST(Test_Game, toStart_toEnd) {
 	for (int i = 0; i < 10; i++) {
 		ASSERT_TRUE(toPgnLocation(game, distribution(randomEngine)));
 		ASSERT_NE(0, coreCursor(game).ply());
-		game.toStart(); // Move to start from any position
+		game.restoreLocation(scid::core::MovetextLocation{}); // Move to start from any position
 		EXPECT_EQ(0, coreCursor(game).ply());
 	}
-	game.toStart(); // Move to start from start
+	game.restoreLocation(scid::core::MovetextLocation{}); // Move to start from start
 	EXPECT_EQ(0, coreCursor(game).ply());
-	game.toEnd(); // Move to end from start
+	{
+		scid::core::GameCursor cursor(game.coreGame());
+		cursor.toEnd();
+		game.restoreLocation(cursor.location());
+	} // Move to end from start
 	EXPECT_EQ(149, coreCursor(game).ply());
-	game.toEnd(); // Move to end from end
+	{
+		scid::core::GameCursor cursor(game.coreGame());
+		cursor.toEnd();
+		game.restoreLocation(cursor.location());
+	} // Move to end from end
 	EXPECT_EQ(149, coreCursor(game).ply());
 	for (int i = 0; i < 10; i++) {
 		ASSERT_TRUE(toPgnLocation(game, distribution(randomEngine)));
-		game.toEnd(); // Move to end from any position
+		{
+			scid::core::GameCursor cursor(game.coreGame());
+			cursor.toEnd();
+			game.restoreLocation(cursor.location());
+		} // Move to end from any position
 		EXPECT_EQ(149, coreCursor(game).ply());
 	}
 }
@@ -460,7 +472,7 @@ TEST(Test_Game, encodeFEN) {
 		scid::database::ByteBuffer bbuf(encodedGame.data(), encodedGame.size());
 		scid::database::Game game;
 		scid::database::game_storage::decodeMovesOnly(game, bbuf);
-		game.toStart();
+		game.restoreLocation(scid::core::MovetextLocation{});
 		EXPECT_STREQ(kiwipete, currentFen(game).c_str());
 	}
 }
@@ -537,7 +549,7 @@ TEST(Test_Game, coreGameMovetextMirrorsLegacyMoveTree) {
 	ASSERT_TRUE(cursor.next());
 	EXPECT_TRUE(cursor.isAtVariationEnd());
 
-	game.toStart();
+	game.restoreLocation(scid::core::MovetextLocation{});
 	EXPECT_EQ("d4", nextCoreSan(game));
 	EXPECT_TRUE(game.coreGame().movetext().mainline.moves[0].san.empty());
 }
@@ -846,7 +858,11 @@ TEST(Test_Game, illegalPGN_Castling) {
 	scid::database::PgnParseLog pgnLog;
 	EXPECT_FALSE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game, pgnLog));
 	EXPECT_FALSE(pgnLog.log.empty());
-	game.toEnd();
+	{
+		scid::core::GameCursor cursor(game.coreGame());
+		cursor.toEnd();
+		game.restoreLocation(cursor.location());
+	}
 	EXPECT_STREQ(
 	    currentFen(game).c_str(),
 	    "rnbq1rk1/ppppbppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQ1RK1 w - - 6 5");
@@ -862,7 +878,11 @@ TEST(Test_Game, illegalPGN_KingCapture) {
 	scid::database::PgnParseLog pgnLog;
 	EXPECT_FALSE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game, pgnLog));
 	EXPECT_FALSE(pgnLog.log.empty());
-	game.toEnd();
+	{
+		scid::core::GameCursor cursor(game.coreGame());
+		cursor.toEnd();
+		game.restoreLocation(cursor.location());
+	}
 	EXPECT_STREQ(
 	    currentFen(game).c_str(),
 	    "rnbqk1nr/pppp1ppp/4p3/8/1b1PP3/8/PPP2PPP/RNBQKBNR w KQkq - 1 3");
@@ -898,7 +918,7 @@ template <typename DataT> std::string decode_game(DataT const& data) {
 	auto bbuf = scid::database::ByteBuffer{data.data(), data.size()};
 	scid::database::Game game;
 	scid::database::game_storage::decodeMovesOnly(game, bbuf);
-	game.toStart();
+	game.restoreLocation(scid::core::MovetextLocation{});
 	std::string moves;
 	do {
 		moves += ' ';

@@ -5,6 +5,7 @@
 // library boundary: the database loads and saves Game objects, while ScidUp
 // owns the current editing session, dirty state, undo/redo, and push/pop state.
 
+#include "scidup/core/game_cursor.h"
 #include "scidup/database/game_id.h"
 #include "scidup/database/scidbase.h"
 #include "scidup_app_undo_redo.h"
@@ -110,9 +111,12 @@ public:
 			return err;
 
 		if (base_->defaultFilterGet(gameId) > 0) {
-			s.game->toPly(base_->defaultFilterGet(gameId) - 1);
+			scid::core::GameCursor cursor(s.game->coreGame());
+			if (!cursor.toPly(base_->defaultFilterGet(gameId) - 1))
+				cursor.toEnd();
+			s.game->restoreLocation(cursor.location());
 		} else {
-			s.game->toStart();
+			s.game->restoreLocation(scid::core::MovetextLocation{});
 		}
 		s.loadedGameId = gameId;
 		s.dirty = false;
@@ -131,7 +135,7 @@ public:
 		const auto err = base_->loadGame(*s.loadedGameId, *s.game);
 		if (err != scid::database::OK)
 			return err;
-		s.game->toStart();
+		s.game->restoreLocation(scid::core::MovetextLocation{});
 		return scid::database::OK;
 	}
 

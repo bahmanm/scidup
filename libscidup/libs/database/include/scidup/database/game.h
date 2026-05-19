@@ -107,10 +107,6 @@ public:
     errorT previous();
     errorT enterVariation(uint varNumber);
     errorT exitVariation();
-    void toStart();
-    /// Move to the end of the main line.
-    void toEnd();
-    void toPly(int hmNumber);
     void restoreLocation(scid::core::MovetextLocation location);
 
     Game* clone();

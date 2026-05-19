@@ -91,28 +91,6 @@ errorT Game::exitVariation(void) {
 	return OK;
 }
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Move to the beginning of the game.
-//
-void Game::toStart() {
-	scid::core::GameCursor coreCursor(coreGame_);
-	coreCursor.toStart();
-	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
-	ASSERT(restored);
-}
-
-void Game::toEnd() {
-	toStart();
-	while (next() == OK) {
-	}
-}
-
-void Game::toPly(int hmNumber) {
-	toStart();
-	for (int i = 0; i < hmNumber; ++i)
-		next();
-}
-
 ///////////////////////////////////////////////////////////////////////////
 // The following functions modify the moves graph in order to add or delete
 // moves. Promoting variations also modifies the moves graph.

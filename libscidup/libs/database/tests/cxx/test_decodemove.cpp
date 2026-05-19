@@ -39,8 +39,8 @@ void expect_roundtrip(std::string_view pgn) {
 	ASSERT_EQ(scid::database::OK,
 	          scid::database::game_storage::decodeMovesOnly(decoded, bbuf));
 
-	original.toStart();
-	decoded.toStart();
+	original.restoreLocation(scid::core::MovetextLocation{});
+	decoded.restoreLocation(scid::core::MovetextLocation{});
 
 	for (;;) {
 		EXPECT_EQ(currentFen(original), currentFen(decoded));

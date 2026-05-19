@@ -1521,7 +1521,11 @@ sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (!ecoBook) { return TCL_OK; }
 
     auto location = game.coreLocation();
-    game.toEnd();
+    {
+        scid::core::GameCursor cursor(game.coreGame());
+        cursor.toEnd();
+        game.restoreLocation(cursor.location());
+    }
     scidup::eco::Code ecoCode = scidup::eco::ECO_None;
     do {
         auto pos = currentPosition(game);
@@ -3432,7 +3436,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::uint nMergePos = merge->coreGame().mainlineHalfMoveCount() + 1;
     typedef char compactBoardStr [36];
     compactBoardStr * mergeBoards = new compactBoardStr [nMergePos];
-    merge->toStart();
+    merge->restoreLocation(scid::core::MovetextLocation{});
     for (scid::database::uint i=0; i < nMergePos; i++) {
         auto position = currentPosition(*merge);
         if (!position) {
@@ -3445,7 +3449,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Now find the deepest position in the current game that occurs
     // in the merge game:
-    game.toStart();
+    game.restoreLocation(scid::core::MovetextLocation{});
     scid::database::uint matchPly = 0;
     scid::database::uint mergePly = 0;
     scid::database::uint ply = 0;
@@ -3473,7 +3477,12 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // Now the games match at the locations matchPly in the current
     // game and mergePly in the merge game.
     // Create a new variation and add merge-game moves to it:
-    game.toPly (matchPly);
+    {
+        scid::core::GameCursor cursor(game.coreGame());
+        if (!cursor.toPly(matchPly))
+            cursor.toEnd();
+        game.restoreLocation(cursor.location());
+    }
     bool atLastMove = isAtEnd(game);
     std::optional<scid::database::simpleMoveT> sm;
     if (atLastMove) {
@@ -3491,7 +3500,12 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         // We need to replicate the last move of the current game.
         game.addMove(*sm);
     }
-    merge->toPly (mergePly);
+    {
+        scid::core::GameCursor cursor(merge->coreGame());
+        if (!cursor.toPly(mergePly))
+            cursor.toEnd();
+        merge->restoreLocation(cursor.location());
+    }
     ply = mergePly;
     while (ply < endPly) {
         auto mergeMove = currentMove(*merge);
@@ -4017,7 +4031,7 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
     UI_List boards(n_moves);
     UI_List moves(n_moves);
     auto location = g->coreLocation();
-    g->toStart();
+    g->restoreLocation(scid::core::MovetextLocation{});
     do {
             auto position = currentPosition(*g);
             if (!position)
@@ -4829,7 +4843,11 @@ sc_move (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_move_back (cd, ti, argc, argv);
 
     case MOVE_END:
-        editor.game().toEnd();
+        {
+            scid::core::GameCursor cursor(editor.game().coreGame());
+            cursor.toEnd();
+            editor.game().restoreLocation(cursor.location());
+        }
         break;
 
     case MOVE_ENDVAR:
@@ -4845,13 +4863,16 @@ sc_move (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case MOVE_PLY:
         if (argc == 3) {
-            editor.game().toPly(scid::database::strGetUnsigned(argv[2]));
+            scid::core::GameCursor cursor(editor.game().coreGame());
+            if (!cursor.toPly(scid::database::strGetUnsigned(argv[2])))
+                cursor.toEnd();
+            editor.game().restoreLocation(cursor.location());
             return UI_Result(ti, scid::database::OK);
         }
         return errorResult (ti, "Usage: sc_move ply <plynumber>");
 
     case MOVE_START:
-        editor.game().toStart();
+        editor.game().restoreLocation(scid::core::MovetextLocation{});
         break;
 
     default:
@@ -5059,7 +5080,11 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                     return UI_Result(ti, scid::database::ERROR_InvalidMove);
             }
 
-            game.toEnd();
+            {
+                scid::core::GameCursor cursor(game.coreGame());
+                cursor.toEnd();
+                game.restoreLocation(cursor.location());
+            }
             auto finalPos = currentPosition(game);
             if (!finalPos)
                 return UI_Result(ti, scid::database::ERROR, "Error reading position.");
@@ -7482,7 +7507,12 @@ sc_report_create (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             if (db->getGame(*ie, *scratchGame) != scid::database::OK) {
                 return errorResult (ti, "Error reading game file.");
             }
-            scratchGame->toPly (ply - 1);
+            {
+                scid::core::GameCursor cursor(scratchGame->coreGame());
+                if (!cursor.toPly(ply - 1))
+                    cursor.toEnd();
+                scratchGame->restoreLocation(cursor.location());
+            }
             if (isAtEnd(*scratchGame)) ply = 0;
             if (ply != 0) {
                 scid::database::uint moveOrderID = report->AddMoveOrder (scratchGame);
@@ -8001,14 +8031,14 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
                 }
             }
             if (ply == 0  &&  possibleMatch) {
-                g->toStart();
+                g->restoreLocation(scid::core::MovetextLocation{});
                 if (scid::database::game_search::varExactMatch(
                         *g, pos, searchType)) {
                     ply = currentPly(*g) + 1;
                 }
             }
             if (ply == 0  &&  possibleFlippedMatch) {
-                g->toStart();
+                g->restoreLocation(scid::core::MovetextLocation{});
                 if (scid::database::game_search::varExactMatch(
                         *g, posFlip, searchType)) {
                     ply = currentPly(*g) + 1;
