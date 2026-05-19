@@ -2222,7 +2222,9 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case GAME_SANTOUCI:
         if (argc == 3) {
-            auto pos = editor.game().currentPos();
+            auto pos = currentPosition(editor.game());
+            if (!pos)
+                return UI_Result(ti, scid::database::ERROR, "Error reading position.");
             scid::database::simpleMoveT sm;
             auto end = argv[2] + std::strlen(argv[2]);
             if (auto err = pos->ParseMove(&sm, argv[2], end))
@@ -2262,10 +2264,11 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         break;
 
     case GAME_VARIANT:
-        return UI_Result(ti, scid::database::OK,
-                         editor.game().currentPos()->isChess960()
-                             ? "chess960"
-                             : "standard");
+        if (auto pos = currentPosition(editor.game())) {
+            return UI_Result(ti, scid::database::OK,
+                             pos->isChess960() ? "chess960" : "standard");
+        }
+        return UI_Result(ti, scid::database::ERROR, "Error reading position.");
 
     case GAME_UCI_CURRENTPOS:
         return UI_Result(ti, scid::database::OK,
@@ -7738,7 +7741,10 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
     flip = scid::database::strGetBoolean (argv[5]);
 
     auto editor = scidup::app::editor::gameSession(*db);
-    scid::database::Position * pos = editor.game().currentPos();
+    auto position = currentPosition(editor.game());
+    if (!position)
+        return UI_Result(ti, scid::database::ERROR, "Error reading position.");
+    auto* pos = &*position;
 
     scid::database::Progress progress = UI_CreateProgress(ti);
     Timer timer;  // Start timing this search.
