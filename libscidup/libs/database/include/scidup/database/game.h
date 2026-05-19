@@ -26,7 +26,6 @@
 #include "scidup/database/indexentry.h"
 #include "scidup/database/namebase.h"
 #include "scidup/core/position.h"
-#include <memory>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -60,15 +59,11 @@ class Game {
     char        scidFlags_[22];
 
     // Position and moves
-    std::unique_ptr<Position> currentPos_{new Position};
     simpleMoveT  currentMoveCache_;
     scid::core::MovetextLocation coreLocation_;
 
 private:
     Game(const Game&);
-    // TODO [Game]: Delete this compatibility cache when current-position
-    // readers use core GameCursor directly.
-    bool refreshCurrentPosCache() const;
     bool setCoreLocation(scid::core::MovetextLocation location);
     // TODO [Game]: Move these database search operations out of Game once the
     // database wrapper around the future core Game exists.
@@ -143,8 +138,6 @@ public:
     //////////////////////////////////////////////////////////////
     // Functions that get information about the current location.
     //
-    Position* currentPos();
-    const Position* currentPos() const;
     simpleMoveT* currentMove();
 
     // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
