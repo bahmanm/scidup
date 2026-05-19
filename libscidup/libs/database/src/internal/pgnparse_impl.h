@@ -43,6 +43,18 @@ inline bool addCurrentMoveNag(Game& game, byte nag) {
 	return cursor.addPreviousMoveNag(nag);
 }
 
+inline errorT resetStartFen(Game& game, const char* fen) {
+	Position position;
+	if (auto err = position.ReadFromFEN(fen))
+		return err;
+
+	game.coreGame().clearMovetext();
+	game.coreGame().setStartPosition(position);
+
+	game.restoreLocation({scid::core::MovetextLocation{}});
+	return OK;
+}
+
 class PgnVisitor {
 	Game& game;
 	std::vector<std::pair<size_t, std::string>> errors_;
@@ -93,7 +105,7 @@ public:
 	void visitPGN_EPD(TView line) {
 		ASSERT(nErrorsAllowed_ >= 0);
 		std::string tmp(line.first, line.second);
-		if (game.setStartFen(tmp.c_str()) == OK) {
+		if (resetStartFen(game, tmp.c_str()) == OK) {
 			auto opcode = std::find_if(
 			    line.first, line.second, [spaces = 0](char ch) mutable {
 				    return (ch == ' ') ? spaces++ == 4 : spaces == 4;
@@ -378,7 +390,7 @@ private:
 			}
 			if (std::equal(tag, tag + 3, "FEN")) {
 				std::string tmp{value.first, value.second};
-				return game.setStartFen(tmp.c_str()) == OK;
+				return resetStartFen(game, tmp.c_str()) == OK;
 			}
 			break;
 		case 4:

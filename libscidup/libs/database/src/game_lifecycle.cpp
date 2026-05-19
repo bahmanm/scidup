@@ -1,7 +1,5 @@
 #include "scidup/database/game.h"
 
-#include "scidup/core/position.h"
-
 #include <algorithm>
 #include <utility>
 
@@ -23,23 +21,6 @@ const scid::core::Game& Game::coreGame() const {
 
 scid::core::MovetextLocation Game::coreLocation() const {
 	return coreLocation_;
-}
-
-errorT Game::setStartFen(const char* fenStr) {
-	Position pos;
-	if (auto err = pos.ReadFromFEN(fenStr))
-		return err;
-
-	setStartPosition(pos);
-	return OK;
-}
-
-void Game::setStartPosition(Position const& pos) {
-	coreGame_.clearMovetext();
-	coreGame_.setStartPosition(pos);
-	[[maybe_unused]] const bool restored =
-	    setCoreLocation(scid::core::MovetextLocation());
-	ASSERT(restored);
 }
 
 // TODO [Game]: Keep Scid flags in database/app compatibility, not in the core

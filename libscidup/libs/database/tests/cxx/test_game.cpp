@@ -161,6 +161,19 @@ void stripMovetext(scid::database::Game& game, bool variations,
 	game.coreGame().stripMovetext(variations, comments, nags);
 }
 
+scid::database::errorT resetGameStartFen(scid::database::Game& game,
+                                         const char* fen) {
+	scid::database::Position position;
+	if (auto err = position.ReadFromFEN(fen))
+		return err;
+
+	game.coreGame().clearMovetext();
+	game.coreGame().setStartPosition(position);
+
+	game.restoreLocation({scid::core::MovetextLocation{}});
+	return scid::database::OK;
+}
+
 std::string nextLegacySan(scid::database::Game& game) {
 	scid::core::GameCursor cursor(game.coreGame());
 	EXPECT_TRUE(cursor.restore(game.coreLocation()));
@@ -380,7 +393,7 @@ TEST(Test_Game, coreGamePgnEncodingIncludesLegacyMetadataTags) {
 	game.coreGame().addTag("Annotator", "Example");
 	game.coreGame().setResult(scid::database::RESULT_Black);
 	const char* fen = "8/N2P1pk1/2n2q2/1P2pp2/5PN1/QKPp1P2/8/8 w - - 0 1";
-	game.setStartFen(fen);
+	ASSERT_EQ(scid::database::OK, resetGameStartFen(game, fen));
 	game.coreGame().addTag("Event", "event nAme");
 	game.coreGame().addTag("Round", "round 4");
 	game.coreGame().addTag("Site", "a long site maybe in a long country");
@@ -440,7 +453,7 @@ TEST(Test_Game, encodeFEN) {
 	    "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1";
 	{
 		scid::database::Game game;
-		game.setStartFen(kiwipete);
+		ASSERT_EQ(scid::database::OK, resetGameStartFen(game, kiwipete));
 		scid::database::game_storage::encode(game, encodedGame);
 	}
 	{

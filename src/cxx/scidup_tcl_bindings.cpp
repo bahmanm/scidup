@@ -328,6 +328,26 @@ static bool stripMovetext(scid::database::Game& game, bool variations,
 	return true;
 }
 
+static void resetStartPosition(scid::database::Game& game,
+                               const scid::database::Position& position) {
+	game.coreGame().clearMovetext();
+	game.coreGame().setStartPosition(position);
+	game.restoreLocation({scid::core::MovetextLocation{}});
+}
+
+static scid::database::errorT resetStartFen(scid::database::Game& game,
+                                            const char* fen) {
+	scid::database::Position position;
+	if (auto err = position.ReadFromFEN(fen))
+		return err;
+
+	game.coreGame().clearMovetext();
+	game.coreGame().setStartPosition(position);
+
+	game.restoreLocation({scid::core::MovetextLocation{}});
+	return scid::database::OK;
+}
+
 //////////////////////////////////////////////////////////////////////
 //
 // Inline routines for setting Tcl result strings:
@@ -3915,7 +3935,7 @@ sc_game_startBoard (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: sc_game startBoard <fenString>");
     }
     const char * str = argv[2];
-    auto err = editor.game().setStartFen(str);
+    auto err = resetStartFen(editor.game(), str);
     if (err != scid::database::OK)
         return errorResult(ti, "Invalid FEN string.");
 
@@ -5032,7 +5052,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                 return UI_Result(ti, err);
 
             auto game = scid::database::Game();
-            game.setStartPosition(pos);
+            resetStartPosition(game, pos);
             if (const auto len = std::strlen(argv[3])) {
                 scid::database::PgnParseLog pgn;
                 if (!scid::database::pgnParseGame(argv[3], len, game, pgn))
@@ -5188,7 +5208,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             scid::database::PgnParseLog log;
             scid::database::Game game;
             if (pos.ReadFromFENorUCI(argv[2]) == scid::database::OK &&
-                (game.setStartPosition(pos), true) &&
+                (resetStartPosition(game, pos), true) &&
                 scid::database::pgnParseGame(argv[3], std::strlen(argv[3]), game, log) &&
                 log.log.empty()) {
                 std::string moves;

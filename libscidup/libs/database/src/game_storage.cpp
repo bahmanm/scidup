@@ -412,6 +412,18 @@ errorT decodeMovelist(ByteBuffer& buf, scid::core::Game& game,
 	}
 }
 
+errorT resetStartFen(Game& game, const char* fen) {
+	Position position;
+	if (auto err = position.ReadFromFEN(fen))
+		return err;
+
+	game.coreGame().clearMovetext();
+	game.coreGame().setStartPosition(position);
+
+	game.restoreLocation({scid::core::MovetextLocation{}});
+	return OK;
+}
+
 struct CommentStats {
 	unsigned comments = 0;
 	unsigned empty = 0;
@@ -724,7 +736,7 @@ errorT game_storage::decode(Game& game, IndexEntry const& ie,
 		return errStartPos;
 
 	if (fen)
-		err = game.setStartFen(fen);
+		err = resetStartFen(game, fen);
 
 	std::vector<scid::core::MovetextLocation> comment_marks;
 	if (err == OK)
@@ -758,7 +770,7 @@ errorT game_storage::decodeMovesOnly(Game& game, ByteBuffer& buf) {
 	if (errStartPos)
 		return errStartPos;
 	if (fen) {
-		if (errorT err = game.setStartFen(fen))
+		if (errorT err = resetStartFen(game, fen))
 			return err;
 	}
 

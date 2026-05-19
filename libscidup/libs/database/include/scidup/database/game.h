@@ -94,13 +94,6 @@ public:
     scid::core::MovetextLocation coreLocation() const;
     void clear();
 
-    /// Setup the start position from a FEN string and remove all the moves.
-    /// If the FEN is invalid the game is not changed.
-    errorT setStartFen(const char* fenStr);
-
-    /// Set a new start position and remove all the moves.
-    void setStartPosition(Position const& pos);
-
     void setScidFlags(const char* s, size_t len);
     const char* scidFlags() const;
 
