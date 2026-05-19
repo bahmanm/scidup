@@ -76,6 +76,10 @@ private:
     Game(const Game&);
     moveT* allocMove();
     moveT* newMove(markerT marker);
+    // TODO [Game]: Delete this bridge when saved/restored locations are fully
+    // core-backed and no legacy moveT cursor needs to be maintained.
+    bool TEMP_restoreLegacyCursorFromCoreLocation(
+        scid::core::MovetextLocation location);
     // TODO [Game]: Delete this reverse compatibility projection once legacy
     // moveT is no longer needed by database/app readers.
     void TEMP_syncLegacyMovetextFromCore();
@@ -99,8 +103,6 @@ private:
      */
     struct GameSavedPos {
         Position pos;
-        moveT* move;
-        uint varDepth;
         scid::core::MovetextLocation coreLocation;
     };
 
