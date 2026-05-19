@@ -60,6 +60,7 @@
 #include <cstring>
 #include <filesystem>
 #include <numeric>
+#include <optional>
 #include <set>
 #include <string>
 #include <type_traits>
@@ -232,6 +233,14 @@ static scid::database::uint currentPly(const scid::database::Game& game) {
 	if (!cursor.restore(game.coreLocation()))
 		return 0;
 	return static_cast<scid::database::uint>(cursor.ply());
+}
+
+static std::optional<scid::database::Position>
+currentPosition(const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	if (!cursor.restore(game.coreLocation()))
+		return std::nullopt;
+	return cursor.currentPosition();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -4740,8 +4749,11 @@ sc_move_add (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         s[4] = scid::database::piece_Char(promo);
         s[5] = 0;
     }
+    auto pos = currentPosition(editor.game());
+    if (!pos)
+        return errorResult(ti, "Error adding move.");
+
     scid::database::simpleMoveT sm;
-    scid::database::Position * pos = editor.game().currentPos();
     scid::database::errorT err = pos->ReadCoordMove(&sm, s, s[4] == 0 ? 4 : 5, true);
     if (err == scid::database::OK) {
         err = editor.game().addMove(sm);
@@ -4881,7 +4893,10 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case POS_BOARD:
         if (argc == 2) {
-            g.currentPos()->MakeLongStr(boardStr);
+            auto pos = currentPosition(g);
+            if (!pos)
+                return UI_Result(ti, scid::database::ERROR, "Error reading position.");
+            pos->MakeLongStr(boardStr);
             return UI_Result(ti, scid::database::OK, boardStr);
         }
         if (argc == 4) {
@@ -4898,7 +4913,10 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             }
 
             game.toEnd();
-            game.currentPos()->MakeLongStr(boardStr);
+            auto finalPos = currentPosition(game);
+            if (!finalPos)
+                return UI_Result(ti, scid::database::ERROR, "Error reading position.");
+            finalPos->MakeLongStr(boardStr);
             auto lastmove = scid::core::notation::previousMoveUci(
                 game.coreGame(), game.coreLocation());
             UI_List result(2);
@@ -4914,7 +4932,11 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         break;
 
     case POS_FEN:
-        g.currentPos()->PrintFEN(boardStr, sizeof(boardStr));
+        if (auto pos = currentPosition(g)) {
+            pos->PrintFEN(boardStr, sizeof(boardStr));
+        } else {
+            return UI_Result(ti, scid::database::ERROR, "Error reading position.");
+        }
         AppendResult (ti, boardStr, NULL);
         break;
 
@@ -4942,7 +4964,9 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_pos_isAt (cd, ti, argc, argv);
 
     case POS_ISCHECK:
-        return UI_Result(ti, scid::database::OK, g.currentPos()->IsKingInCheck());
+        if (auto pos = currentPosition(g))
+            return UI_Result(ti, scid::database::OK, pos->IsKingInCheck());
+        return UI_Result(ti, scid::database::ERROR, "Error reading position.");
 
     case POS_ISLEGAL:
         return sc_pos_isLegal (cd, ti, argc, argv);
@@ -4958,8 +4982,10 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         //     (currentPly(db->game) + 2) / 2
         // but that value is wrong for games with non-standard
         // start positions. The correct value to return is:
-        //     db->game->currentPos()->GetFullMoveCount()
-        return setUintResult (ti, g.currentPos()->GetFullMoveCount());
+        //     current position's GetFullMoveCount()
+        if (auto pos = currentPosition(g))
+            return setUintResult (ti, pos->GetFullMoveCount());
+        return UI_Result(ti, scid::database::ERROR, "Error reading position.");
 
     case POS_PGNOFFSET:
         setUintResult (ti, g.pgnOffset());
@@ -4969,8 +4995,12 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_pos_setComment (cd, ti, argc, argv);
 
     case POS_SIDE:
-        setResult (ti, (g.currentPos()->GetToMove() == scid::database::WHITE)
-                   ? "white" : "black");
+        if (auto pos = currentPosition(g)) {
+            setResult (ti, (pos->GetToMove() == scid::database::WHITE)
+                       ? "white" : "black");
+        } else {
+            return UI_Result(ti, scid::database::ERROR, "Error reading position.");
+        }
         break;
 
     case POS_TEX:
@@ -4978,7 +5008,12 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             bool flip = false;
             if (argc > 2  &&  scid::database::strIsPrefix (argv[2], "flip")) { flip = true; }
             scid::database::DString * dstr = new scid::database::DString;
-            g.currentPos()->DumpLatexBoard (dstr, flip);
+            auto pos = currentPosition(g);
+            if (!pos) {
+                delete dstr;
+                return UI_Result(ti, scid::database::ERROR, "Error reading position.");
+            }
+            pos->DumpLatexBoard (dstr, flip);
             AppendResult (ti, dstr->Data(), NULL);
             delete dstr;
         }
@@ -4989,7 +5024,10 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case POS_ATTACKS:
         {
-            scid::database::Position pos(*g.currentPos());
+            auto current = currentPosition(g);
+            if (!current)
+                return UI_Result(ti, scid::database::ERROR, "Error reading position.");
+            scid::database::Position pos(*current);
             for (scid::database::colorT c = scid::database::WHITE; c <= scid::database::BLACK; c++) {
                 for (scid::database::uint i = 0; i < pos.GetCount(c); i++) {
                     scid::database::squareT sq = pos.GetList(c)[i];
@@ -5121,8 +5159,11 @@ sc_pos_analyze (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
     if (arg != argc) { return errorResult (ti, usage); }
 
+    auto pos = currentPosition(editor.game());
+    if (!pos)
+        return errorResult(ti, "Error reading position.");
+
     // Generate all legal moves:
-    scid::database::Position * pos = editor.game().currentPos();
     scid::database::MoveList mlist;
     pos->GenerateMoves(&mlist);
 
@@ -5134,7 +5175,7 @@ sc_pos_analyze (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     engine->SetMinDepthCheckTime(mindepth);
     if (searchdepth > 0)
       engine->SetSearchDepth(searchdepth);
-    engine->SetPosition (pos);
+    engine->SetPosition (&*pos);
     engine->SetPostMode (postMode);
     engine->SetPruning (pruning);
     int score = engine->Think (&mlist);
@@ -5165,7 +5206,9 @@ sc_pos_bestSquare (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: sc_pos bestSquare <square>");
     }
 
-    scid::database::Position * pos = editor.game().currentPos();
+    auto pos = currentPosition(editor.game());
+    if (!pos)
+        return errorResult(ti, "Error reading position.");
 
     // Try to read the square parameter as algebraic ("h8") or numeric (63):
     scid::database::squareT sq = scid::database::strGetSquare (argv[2]);
@@ -5225,7 +5268,7 @@ sc_pos_bestSquare (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             // search promotes the best move to be first in the list.
             Engine * engine = new Engine();
             engine->SetSearchTime (25);    // Do a 25 millisecond search
-            engine->SetPosition (pos);
+            engine->SetPosition (&*pos);
             engine->Think (&mlist);
             delete engine;
         }
@@ -5282,7 +5325,10 @@ sc_pos_hash (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             default:  return errorResult (ti, usage);
         }
     }
-    scid::database::Position * pos = editor.game().currentPos();
+    auto pos = currentPosition(editor.game());
+    if (!pos)
+        return errorResult(ti, "Error reading position.");
+
     scid::database::uint hash = pos->HashValue();
     if (pawnHashOnly) {
         hash = pos->PawnHashValue();
@@ -5322,7 +5368,12 @@ sc_pos_html (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (argc == arg+1) { style = scid::database::strGetUnsigned (argv[arg]); }
 
     scid::database::DString * dstr = new scid::database::DString;
-    editor.game().currentPos()->DumpHtmlBoard (dstr, style, path, flip);
+    auto pos = currentPosition(editor.game());
+    if (!pos) {
+        delete dstr;
+        return errorResult(ti, "Error reading position.");
+    }
+    pos->DumpHtmlBoard (dstr, style, path, flip);
     AppendResult (ti, dstr->Data(), NULL);
     delete dstr;
     return TCL_OK;
@@ -5378,7 +5429,10 @@ sc_pos_isPromo (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "Usage: sc_pos isPromotion <square> <square>");
     }
 
-    scid::database::Position * pos = editor.game().currentPos();
+    auto pos = currentPosition(editor.game());
+    if (!pos)
+        return errorResult(ti, "Error reading position.");
+
     int fromSq = scid::database::strGetInteger (argv[2]);
     int toSq = scid::database::strGetInteger (argv[3]);
 
@@ -5406,7 +5460,10 @@ sc_pos_isLegal (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return UI_Result(ti, scid::database::OK, false);
     }
 
-    auto pos = editor.game().currentPos();
+    auto pos = currentPosition(editor.game());
+    if (!pos)
+        return errorResult(ti, "Error reading position.");
+
     bool legal = pos->IsLegalMove(sq1, sq2, scid::database::EMPTY) ||
                  pos->IsLegalMove(sq2, sq1, scid::database::EMPTY) ||
                  pos->IsLegalMove(sq1, sq2, scid::database::QUEEN) ||
@@ -5424,7 +5481,10 @@ UI_res_t sc_pos_moves(UI_handle_t ti, int argc, const char** argv) {
         return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
     bool coordMoves = argc == 3 && scid::database::strGetBoolean(argv[2]);
-    auto pos = editor.game().currentPos();
+    auto pos = currentPosition(editor.game());
+    if (!pos)
+        return UI_Result(ti, scid::database::ERROR, "Error reading position.");
+
     scid::database::MoveList moves;
     pos->GenerateMoves(&moves);
     UI_List res(moves.Size() * (coordMoves ? 2 : 1));
