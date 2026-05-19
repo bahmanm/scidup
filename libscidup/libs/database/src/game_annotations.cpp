@@ -20,16 +20,14 @@ bool isPositionNagValue(byte nag) {
 
 } // namespace
 
-// TODO [Game]: Move NAG/comment storage behind Move.metadata once the core
-// Move shape exists. These methods write core metadata first, then rebuild the
-// legacy moveT cache for compatibility readers.
+// TODO [Game]: Move these compatibility mutators to core Game/Movetext once
+// database::Game no longer owns the editing surface.
 void Game::clearNags() {
 	scid::core::MovetextCursor cursor(coreGame_);
 	[[maybe_unused]] const bool restored = cursor.restore(coreLocation_);
 	ASSERT(restored);
 	if (auto* move = cursor.previousMove()) {
 		move->metadata.nags.clear();
-		TEMP_syncLegacyMovetextFromCore();
 	}
 }
 
@@ -50,7 +48,6 @@ errorT Game::addNag (byte nag) {
 			if(isMoveNagValue(existingNag))
 			{
 				existingNag = nag;
-				TEMP_syncLegacyMovetextFromCore();
 				return OK;
 			}
 	// If it is a position nag replace an existing
@@ -59,7 +56,6 @@ errorT Game::addNag (byte nag) {
 			if(isPositionNagValue(existingNag))
 			{
 				existingNag = nag;
-				TEMP_syncLegacyMovetextFromCore();
 				return OK;
 			}
 	if( nag >= 1 && nag <= 6)
@@ -69,7 +65,6 @@ errorT Game::addNag (byte nag) {
 	}
 	else
 		nags.push_back(nag);
-	TEMP_syncLegacyMovetextFromCore();
     return OK;
 }
 
@@ -89,7 +84,6 @@ errorT Game::removeNag (bool isMoveNag) {
 	auto it = std::find_if(nags.begin(), nags.end(), match);
 	if (it != nags.end()) {
 		nags.erase(it);
-		TEMP_syncLegacyMovetextFromCore();
 	}
     return OK;
 }
@@ -114,6 +108,5 @@ void Game::setMoveComment(const char* comment) {
 		ASSERT(move);
 		move->metadata.comment.assign(value.begin(), value.end());
 	}
-	TEMP_syncLegacyMovetextFromCore();
 }
 } // namespace scid::database
