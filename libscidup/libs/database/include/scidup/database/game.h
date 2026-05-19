@@ -63,7 +63,6 @@ class Game {
     std::unique_ptr<Position> currentPos_{new Position};
     simpleMoveT  currentMoveCache_;
     scid::core::MovetextLocation coreLocation_;
-    ushort      numHalfMoves_; // Total half moves in the main line.
 
 private:
     Game(const Game&);
