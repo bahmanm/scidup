@@ -22,6 +22,7 @@
 #include "scidup/eco/book.h"
 #include <algorithm>
 #include <cstdio>
+#include <optional>
 
 namespace {
 
@@ -38,6 +39,11 @@ bool isAtStart(const scid::database::Game& game) {
 
 bool isAtVariationStart(const scid::database::Game& game) {
     return currentCursor(game).isAtVariationStart();
+}
+
+std::optional<scid::database::Position>
+currentPosition(const scid::database::Game& game) {
+    return currentCursor(game).currentPosition();
 }
 
 } // namespace
@@ -152,7 +158,9 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
     Length = 0;
     StartPly = static_cast<scid::database::uint>(currentCursor(*g).ply());
     auto location = g->currentLocation();
-    if (g->currentPos()->GetToMove() == scid::database::BLACK) {
+    auto startPosition = currentPosition(*g);
+    ASSERT(startPosition);
+    if (startPosition->GetToMove() == scid::database::BLACK) {
         g->previous();
     }
     NoteNumber = NoteMoveNum = 0;
@@ -171,7 +179,9 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
             ShortGame = true;
         } else {
             Length++;
-            g->currentPos()->MakeSANString (sm, Move[i], scid::database::SAN_CHECKTEST);
+            auto position = currentPosition(*g);
+            ASSERT(position);
+            position->MakeSANString (sm, Move[i], scid::database::SAN_CHECKTEST);
             scid::database::strStrip (Move[i], '-');
             scid::database::strStrip (Move[i], '=');
             g->next();
@@ -187,7 +197,9 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
             ShortGame = true;
         } else {
             Length++;
-            g->currentPos()->MakeSANString (sm, Move[i], scid::database::SAN_CHECKTEST);
+            auto position = currentPosition(*g);
+            ASSERT(position);
+            position->MakeSANString (sm, Move[i], scid::database::SAN_CHECKTEST);
             scid::database::strStrip (Move[i], '-');
             scid::database::strStrip (Move[i], '=');
             g->next();
@@ -202,7 +214,9 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
     g->toStart();
     for (i=0; i < maxThemePly; i++) {
         if (g->next() != scid::database::OK) { break; }
-        SetPositionalThemes (g->currentPos());
+        auto position = currentPosition(*g);
+        ASSERT(position);
+        SetPositionalThemes (&*position);
     }
 
     g->restoreLocation(location);
@@ -500,7 +514,9 @@ OpTable::Init (const char * type, scid::database::Game * g, scidup::eco::Book * 
     NumMoveOrders = 0;
     Format = OPTABLE_Text;
     StartLength = 0;
-    WTM = (g->currentPos()->GetToMove() == scid::database::WHITE ? true : false);
+    auto position = currentPosition(*g);
+    ASSERT(position);
+    WTM = (position->GetToMove() == scid::database::WHITE ? true : false);
     DecimalChar = '.';
 
     Results[scid::database::RESULT_White] = Results[scid::database::RESULT_Black] = 0;
@@ -524,15 +540,19 @@ OpTable::Init (const char * type, scid::database::Game * g, scidup::eco::Book * 
             continue;
         }
         if (ebook != NULL && ECOstr_.empty()) {
-            auto eco = ebook->findEcoString(*g->currentPos());
+            auto position = currentPosition(*g);
+            ASSERT(position);
+            auto eco = ebook->findEcoString(*position);
             if (!eco.empty())
                 ECOstr_.append(eco);
         }
         g->previous();
         scid::database::simpleMoveT * sm = g->currentMove();
         if (sm == NULL) { break; }
-        g->currentPos()->MakeSANString (sm, StartLine[StartLength],
-                                           scid::database::SAN_CHECKTEST);
+        auto position = currentPosition(*g);
+        ASSERT(position);
+        position->MakeSANString (sm, StartLine[StartLength],
+                                 scid::database::SAN_CHECKTEST);
         StartLength++;
         if (StartLength >= OPTABLE_MAX_STARTLINE) { break; }
     }

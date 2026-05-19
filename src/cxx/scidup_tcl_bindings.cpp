@@ -1419,7 +1419,9 @@ sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     game.toEnd();
     scidup::eco::Code ecoCode = scidup::eco::ECO_None;
     do {
-        ecoCode = ecoBook->findEco(*game.currentPos());
+        auto pos = currentPosition(game);
+        if (!pos) { break; }
+        ecoCode = ecoBook->findEco(*pos);
     } while (ecoCode == scidup::eco::ECO_None && game.previous() == scid::database::OK);
 
     auto ply = currentPly(game);
@@ -2032,17 +2034,19 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                     bool useCache = (argc == 5);
 
                     auto editor = scidup::app::editor::gameSession(*db);
-                    auto const& pos = *editor.game().currentPos();
+                    auto pos = currentPosition(editor.game());
+                    if (!pos)
+                        return UI_Result(ti, scid::database::ERROR, "Error reading position.");
                     if (useCache &&
-                        scidup::app::tree::session(*dbase).cacheRestore(pos))
+                        scidup::app::tree::session(*dbase).cacheRestore(*pos))
                         return UI_Result(ti, scid::database::OK);
 
-                    if (!scid::database::SearchPos(pos).setFilter(
+                    if (!scid::database::SearchPos(*pos).setFilter(
                             *dbase, filter, UI_CreateProgress(ti)))
                         return UI_Result(ti, scid::database::ERROR_UserCancel);
 
                     if (useCache)
-                        scidup::app::tree::session(*dbase).cacheAdd(pos);
+                        scidup::app::tree::session(*dbase).cacheAdd(*pos);
 
                     return UI_Result(ti, scid::database::OK);
                 }
@@ -2900,9 +2904,12 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         } else if (scid::database::strIsPrefix(argv[arg], "ECO")) {
             std::string str;
             if (ecoBook) {
-                auto ecoStr = ecoBook->findEcoString(*g.currentPos());
-                if (!ecoStr.empty())
-                    str.append(ecoStr);
+                auto pos = currentPosition(g);
+                if (pos) {
+                    auto ecoStr = ecoBook->findEcoString(*pos);
+                    if (!ecoStr.empty())
+                        str.append(ecoStr);
+                }
             }
             return UI_Result(ti, scid::database::OK, str);
         }
@@ -3027,8 +3034,11 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     char san [20];
     char tempTrans[20];
-    scid::database::colorT toMove = g.currentPos()->GetToMove();
-    scid::database::uint moveCount = g.currentPos()->GetFullMoveCount();
+    auto position = currentPosition(g);
+    if (!position)
+        return UI_Result(ti, scid::database::ERROR, "Error reading position.");
+    scid::database::colorT toMove = position->GetToMove();
+    scid::database::uint moveCount = position->GetFullMoveCount();
     scid::database::uint prevMoveCount = moveCount;
     if (toMove == scid::database::WHITE) { prevMoveCount--; }
 
@@ -3112,8 +3122,8 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     if (showMaterialValue) {
-        scid::database::uint mWhite = g.currentPos()->MaterialValue (scid::database::WHITE);
-        scid::database::uint mBlack = g.currentPos()->MaterialValue (scid::database::BLACK);
+        scid::database::uint mWhite = position->MaterialValue (scid::database::WHITE);
+        scid::database::uint mBlack = position->MaterialValue (scid::database::BLACK);
         std::snprintf(temp, sizeof(temp), "    <gray>(%u-%u", mWhite, mBlack);
         AppendResult (ti, temp, NULL);
         if (mWhite > mBlack) {
@@ -3208,7 +3218,8 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Now check ECO book for the current position:
     if (ecoBook) {
-        auto ecoStr = ecoBook->findEcoString(*g.currentPos());
+        auto pos = currentPosition(g);
+        auto ecoStr = pos ? ecoBook->findEcoString(*pos) : "";
         if (!ecoStr.empty()) {
             std::string ecoComment(ecoStr);
             scidup::eco::Code eco = scidup::eco::fromString(ecoComment.c_str());
@@ -3225,7 +3236,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
     if (showFEN) {
         char boardStr [200];
-        g.currentPos()->PrintFEN(boardStr, sizeof(boardStr));
+        position->PrintFEN(boardStr, sizeof(boardStr));
         AppendResult (ti, "<br><gray>", boardStr, "</gray>", NULL);
     }
     return TCL_OK;
@@ -3315,7 +3326,12 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     compactBoardStr * mergeBoards = new compactBoardStr [nMergePos];
     merge->toStart();
     for (scid::database::uint i=0; i < nMergePos; i++) {
-        merge->currentPos()->PrintCompactStr (mergeBoards[i]);
+        auto position = currentPosition(*merge);
+        if (!position) {
+            delete [] mergeBoards;
+            return UI_Result(ti, scid::database::ERROR, "Error reading position.");
+        }
+        position->PrintCompactStr (mergeBoards[i]);
         merge->next();
     }
 
@@ -3330,7 +3346,12 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         if (game.next() != scid::database::OK) { done = true; }
         ply++;
         compactBoardStr currentBoard;
-        game.currentPos()->PrintCompactStr (currentBoard);
+        auto position = currentPosition(game);
+        if (!position) {
+            delete [] mergeBoards;
+            return UI_Result(ti, scid::database::ERROR, "Error reading position.");
+        }
+        position->PrintCompactStr (currentBoard);
         for (scid::database::uint n=0; n < nMergePos; n++) {
             if (scid::database::strEqual (currentBoard, mergeBoards[n])) {
                 matchPly = ply;
@@ -3517,7 +3538,9 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::Game* g = &editor.game();
     if (ecoBook) {
         while (g->next() == scid::database::OK) {}
-        while (ecoBook->findEcoString(*g->currentPos()).empty()) {
+        while (true) {
+            auto pos = currentPosition(*g);
+            if (!pos || !ecoBook->findEcoString(*pos).empty()) { break; }
             if (g->previous() != scid::database::OK) break;
         }
     }
@@ -3530,7 +3553,10 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::HFilter filter = scidup::app::tree::resolveFilter(*base, filtername);
     scid::database::dateT currentDate = g->coreGame().date();
     while (g->next() == scid::database::OK) {
-        scid::database::SearchPos(*g->currentPos()).setFilter(*base, filter, scid::database::Progress());
+        auto pos = currentPosition(*g);
+        if (!pos)
+            return UI_Result(ti, scid::database::ERROR, "Error reading position.");
+        scid::database::SearchPos(*pos).setFilter(*base, filter, scid::database::Progress());
         int count = 0;
         for (scid::database::uint i=0, n = base->numGames(); i < n; i++) {
             if (filter.get(i) == 0) continue;
@@ -3882,12 +3908,15 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
     auto location = g->currentLocation();
     g->toStart();
     do {
+            auto position = currentPosition(*g);
+            if (!position)
+                return UI_Result(ti, scid::database::ERROR, "Error reading position.");
             char boardStr[100];
-            g->currentPos()->MakeLongStr (boardStr);
+            position->MakeLongStr (boardStr);
             boards.push_back(boardStr);
 
-            scid::database::colorT toMove = g->currentPos()->GetToMove();
-            scid::database::uint moveCount = g->currentPos()->GetFullMoveCount();
+            scid::database::colorT toMove = position->GetToMove();
+            scid::database::uint moveCount = position->GetFullMoveCount();
             char san [20];
             scid::database::strCopy(
                 san,
@@ -7451,7 +7480,10 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
     auto editor = scidup::app::editor::gameSession(*db);
-    scid::database::Position searchPos = *(editor.game().currentPos());
+    auto current = currentPosition(editor.game());
+    if (!current)
+        return UI_Result(ti, scid::database::ERROR, "Error reading position.");
+    scid::database::Position searchPos = *current;
     auto tree = base->getTreeStat(filter);
 
     auto calc_eco = [&](auto const& move) {
