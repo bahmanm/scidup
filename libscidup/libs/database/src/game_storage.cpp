@@ -420,7 +420,7 @@ errorT resetStartFen(Game& game, const char* fen) {
 	game.coreGame().clearMovetext();
 	game.coreGame().setStartPosition(position);
 
-	game.restoreLocation({scid::core::MovetextLocation{}});
+	game.restoreLocation(scid::core::MovetextLocation{});
 	return OK;
 }
 

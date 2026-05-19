@@ -877,7 +877,7 @@ std::pair<const char*, unsigned> LegacyGamePgnEncoder::encodeToPgnText(
     bool newLineAtEnd, bool newLineToSpaces) {
     static TextBuffer tbuf;
 
-    auto location = game.currentLocation();
+    auto location = game.coreLocation();
     tbuf.Empty();
     tbuf.SetWrapColumn(lineWidth ? lineWidth : tbuf.GetBufferSize());
     tbuf.NewlinesToSpaces(newLineToSpaces);

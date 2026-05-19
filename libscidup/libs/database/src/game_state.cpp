@@ -4,12 +4,8 @@
 
 namespace scid::database {
 
-Game::GameSavedPos Game::currentLocation() const {
-	return {coreLocation_};
-}
-
-void Game::restoreLocation(const GameSavedPos& savedPos) {
-	[[maybe_unused]] const bool restored = setCoreLocation(savedPos.coreLocation);
+void Game::restoreLocation(scid::core::MovetextLocation location) {
+	[[maybe_unused]] const bool restored = setCoreLocation(location);
 	ASSERT(restored);
 }
 

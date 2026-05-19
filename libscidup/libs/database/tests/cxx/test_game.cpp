@@ -104,7 +104,7 @@ bool nextPgn(scid::database::Game& game) {
 	auto cursor = coreCursor(game);
 	if (!scid::core::pgn::nextLocation(cursor))
 		return false;
-	game.restoreLocation({cursor.location()});
+	game.restoreLocation(cursor.location());
 	return true;
 }
 
@@ -112,7 +112,7 @@ bool toPgnLocation(scid::database::Game& game, unsigned location) {
 	scid::core::GameCursor cursor(game.coreGame());
 	if (!scid::core::pgn::seekLocation(cursor, location))
 		return false;
-	game.restoreLocation({cursor.location()});
+	game.restoreLocation(cursor.location());
 	return true;
 }
 
@@ -155,7 +155,7 @@ void stripMovetext(scid::database::Game& game, bool variations,
 		ASSERT_TRUE(cursor.restore(game.coreLocation()));
 		while (cursor.exitVariation()) {
 		}
-		game.restoreLocation({cursor.location()});
+		game.restoreLocation(cursor.location());
 	}
 
 	game.coreGame().stripMovetext(variations, comments, nags);
@@ -170,7 +170,7 @@ scid::database::errorT resetGameStartFen(scid::database::Game& game,
 	game.coreGame().clearMovetext();
 	game.coreGame().setStartPosition(position);
 
-	game.restoreLocation({scid::core::MovetextLocation{}});
+	game.restoreLocation(scid::core::MovetextLocation{});
 	return scid::database::OK;
 }
 
@@ -613,7 +613,7 @@ TEST(Test_Game, savedLocationRestoresProgrammaticVariationState) {
 	          game.addMove(makeCurrentMove(game, scid::database::D2,
 	                                       scid::database::D4)));
 
-	auto location = game.currentLocation();
+	auto location = game.coreLocation();
 	ASSERT_EQ(scid::database::OK, game.exitVariation());
 	ASSERT_TRUE(coreCursor(game).isAtGameStart());
 

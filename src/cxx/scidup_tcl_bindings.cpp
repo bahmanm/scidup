@@ -321,7 +321,7 @@ static bool stripMovetext(scid::database::Game& game, bool variations,
 			return false;
 		while (cursor.exitVariation()) {
 		}
-		game.restoreLocation({cursor.location()});
+		game.restoreLocation(cursor.location());
 	}
 
 	game.coreGame().stripMovetext(variations, comments, nags);
@@ -332,7 +332,7 @@ static void resetStartPosition(scid::database::Game& game,
                                const scid::database::Position& position) {
 	game.coreGame().clearMovetext();
 	game.coreGame().setStartPosition(position);
-	game.restoreLocation({scid::core::MovetextLocation{}});
+	game.restoreLocation(scid::core::MovetextLocation{});
 }
 
 static scid::database::errorT resetStartFen(scid::database::Game& game,
@@ -344,7 +344,7 @@ static scid::database::errorT resetStartFen(scid::database::Game& game,
 	game.coreGame().clearMovetext();
 	game.coreGame().setStartPosition(position);
 
-	game.restoreLocation({scid::core::MovetextLocation{}});
+	game.restoreLocation(scid::core::MovetextLocation{});
 	return scid::database::OK;
 }
 
@@ -1520,7 +1520,7 @@ sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
     if (!ecoBook) { return TCL_OK; }
 
-    auto location = game.currentLocation();
+    auto location = game.coreLocation();
     game.toEnd();
     scidup::eco::Code ecoCode = scidup::eco::ECO_None;
     do {
@@ -3555,7 +3555,7 @@ sc_game_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         if (argv[arg][0] == 'l') { printMoves = false; }
     }
 
-    auto location = g->currentLocation();
+    auto location = g->coreLocation();
     while (! isAtStart(*g)) {
         if (isAtVariationStart(*g)) {
             g->exitVariation();
@@ -3903,7 +3903,7 @@ sc_game_save (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         ieOld->GetFlagStr(buf, "WBMENPTKQ!?U123456");
         currGame.setScidFlags(buf, std::strlen(buf));
     }
-    auto location = currGame.currentLocation();
+    auto location = currGame.coreLocation();
     scid::database::errorT res = dbase->saveGame(currGame, gnum);
     currGame.restoreLocation(location);
     if (res == scid::database::OK) {
@@ -4016,7 +4016,7 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
     const auto n_moves = g->coreGame().mainlineHalfMoveCount() + 1;
     UI_List boards(n_moves);
     UI_List moves(n_moves);
-    auto location = g->currentLocation();
+    auto location = g->coreLocation();
     g->toStart();
     do {
             auto position = currentPosition(*g);
@@ -4993,7 +4993,7 @@ sc_move_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     auto location = seekPgnLocation(editor.game(), offset);
     if (!location)
         return UI_Result(ti, scid::database::ERROR, "Error reading PGN location.");
-    editor.game().restoreLocation({*location});
+    editor.game().restoreLocation(*location);
     return TCL_OK;
 }
 

@@ -27,7 +27,7 @@ bool nextPgn(scid::database::Game& game) {
 	EXPECT_TRUE(cursor.restore(game.coreLocation()));
 	if (!scid::core::pgn::nextLocation(cursor))
 		return false;
-	game.restoreLocation({cursor.location()});
+	game.restoreLocation(cursor.location());
 	return true;
 }
 

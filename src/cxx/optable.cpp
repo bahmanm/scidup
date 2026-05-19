@@ -167,7 +167,7 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
     AvgElo = g->coreGame().averageRating();
     Length = 0;
     StartPly = static_cast<scid::database::uint>(currentCursor(*g).ply());
-    auto location = g->currentLocation();
+    auto location = g->coreLocation();
     auto startPosition = currentPosition(*g);
     ASSERT(startPosition);
     if (startPosition->GetToMove() == scid::database::BLACK) {
@@ -543,7 +543,7 @@ OpTable::Init (const char * type, scid::database::Game * g, scidup::eco::Book * 
     }
 
     // Generate the text for each move up to the current position:
-    auto location = g->currentLocation();
+    auto location = g->coreLocation();
     while (! isAtStart(*g)) {
         if (isAtVariationStart(*g)) {
             g->exitVariation();

@@ -78,14 +78,6 @@ private:
                                        TagRoster const& tags, ByteBuffer buf);
     friend errorT game_storage::decodeMovesOnly(Game& game, ByteBuffer& buf);
     friend struct GameSearchAccess;
-    /**
-     * Contains the information of the current position in the game, so that
-     * after an operation that alters the location, it can be restored.
-     */
-    struct GameSavedPos {
-        scid::core::MovetextLocation coreLocation;
-    };
-
 public:
     Game();
     ~Game();
@@ -119,8 +111,7 @@ public:
     /// Move to the end of the main line.
     void toEnd();
     void toPly(int hmNumber);
-    GameSavedPos currentLocation() const;
-    void restoreLocation(const GameSavedPos& savedPos);
+    void restoreLocation(scid::core::MovetextLocation location);
 
     Game* clone();
 };
