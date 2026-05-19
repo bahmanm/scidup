@@ -1,27 +1,9 @@
 #include "scidup/database/game.h"
 
 #include "scidup/core/game_cursor.h"
+#include "scidup/core/notation.h"
 
 namespace scid::database {
-namespace {
-
-simpleMoveT toCompatibilityMove(Position& position,
-                                scid::core::MoveAction const& action) {
-	simpleMoveT move = {};
-	if (action.isNull()) {
-		position.makeMove(action.from, action.to, PAWN, move);
-		return move;
-	}
-	if (action.castling) {
-		position.makeMove(action.from, action.from,
-		                  action.to > action.from ? KING : QUEEN, move);
-		return move;
-	}
-	position.makeMove(action.from, action.to, action.promotion, move);
-	return move;
-}
-
-} // namespace
 
 Game::GameSavedPos Game::currentLocation() const {
 	return {coreLocation_};
@@ -62,7 +44,15 @@ simpleMoveT* Game::currentMove() {
 	if (!move)
 		return nullptr;
 
-	currentMoveCache_ = toCompatibilityMove(*currentPos_, move->action);
+	auto position = cursor.currentPosition();
+	if (!position)
+		return nullptr;
+
+	auto simpleMove = scid::core::notation::toSimpleMove(*position, move->action);
+	if (!simpleMove)
+		return nullptr;
+
+	currentMoveCache_ = *simpleMove;
 	return &currentMoveCache_;
 }
 

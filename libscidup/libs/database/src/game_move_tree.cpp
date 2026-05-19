@@ -314,14 +314,18 @@ void Game::truncate() {
 void Game::truncateStart() {
 	// It is necessary to rebuild the current position using ReadFromFEN()
 	// because the order of pieces is important when encoding to SCIDv4 format.
+	scid::core::GameCursor readCursor(coreGame_);
+	restoreCoreCursor(readCursor, coreLocation_);
+	auto currentPosition = readCursor.currentPosition();
+	if (!currentPosition)
+		return;
+
 	char tempStr[256];
-	currentPos_->PrintFEN(tempStr, sizeof(tempStr));
+	currentPosition->PrintFEN(tempStr, sizeof(tempStr));
 	Position pos;
 	if (pos.ReadFromFEN(tempStr) != OK)
 		return;
 
-	scid::core::GameCursor readCursor(coreGame_);
-	restoreCoreCursor(readCursor, coreLocation_);
 	if (readCursor.variationDepth() != 0 && promoteVariationToMainline() != OK)
 		return;
 
