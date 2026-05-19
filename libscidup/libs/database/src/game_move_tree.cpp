@@ -103,8 +103,8 @@ unsigned pgnOffsetOf(const scid::core::Game& game,
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Move current position forward one move.
-// Also update all the necessary fields in the simpleMove structure
-// (currentMove_->moveData) so it can be undone.
+// Keep the temporary legacy cursor cache in sync while deriving the position
+// update from the core move action.
 //
 errorT Game::next(void) {
 	scid::core::GameCursor coreCursor(coreGame_);

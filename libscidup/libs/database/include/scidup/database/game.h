@@ -66,6 +66,7 @@ class Game {
     byte        moveChunkUsed_;
     std::forward_list<std::unique_ptr<moveT[]> > moveChunks_;
     std::unique_ptr<Position> currentPos_{new Position};
+    simpleMoveT  currentMoveCache_;
     moveT*      firstMove_;
     moveT*      currentMove_;
     scid::core::MovetextLocation coreLocation_;

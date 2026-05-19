@@ -5,6 +5,25 @@
 #include "movetree.h"
 
 namespace scid::database {
+namespace {
+
+simpleMoveT toCompatibilityMove(Position& position,
+                                scid::core::MoveAction const& action) {
+	simpleMoveT move = {};
+	if (action.isNull()) {
+		position.makeMove(action.from, action.to, PAWN, move);
+		return move;
+	}
+	if (action.castling) {
+		position.makeMove(action.from, action.from,
+		                  action.to > action.from ? KING : QUEEN, move);
+		return move;
+	}
+	position.makeMove(action.from, action.to, action.promotion, move);
+	return move;
+}
+
+} // namespace
 
 Game::GameSavedPos Game::currentLocation() const {
 	return {*currentPos_, coreLocation_};
@@ -90,9 +109,15 @@ const Position* Game::currentPos() const {
 }
 
 simpleMoveT* Game::currentMove() {
-	// TODO [Game]: Keep this legacy pointer until callers stop depending on
-	// position-filled simpleMoveT fields that are not present in MoveAction.
-	return currentMove_->endMarker() ? nullptr : &currentMove_->moveData;
+	scid::core::GameCursor cursor(coreGame_);
+	[[maybe_unused]] const bool restored = cursor.restore(coreLocation_);
+	ASSERT(restored);
+	const auto* move = cursor.nextMove();
+	if (!move)
+		return nullptr;
+
+	currentMoveCache_ = toCompatibilityMove(*currentPos_, move->action);
+	return &currentMoveCache_;
 }
 
 } // namespace scid::database
