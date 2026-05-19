@@ -745,15 +745,20 @@ errorT game_storage::decode(Game& game, IndexEntry const& ie,
 		err = decodeMovelist(buf, coreGame, comment_marks);
 
 	if (err != OK) {
-		game.TEMP_syncLegacyMovetextFromCore();
+		[[maybe_unused]] const bool restored =
+		    game.TEMP_restoreLegacyStateFromCoreLocation(game.coreLocation_);
+		ASSERT(restored);
 		return err;
 	}
 
 	if (err == OK)
 		err = decodeComments(buf, coreGame, comment_marks);
 
-	if (err == OK)
-		game.TEMP_syncLegacyMovetextFromCore();
+	if (err == OK) {
+		[[maybe_unused]] const bool restored =
+		    game.TEMP_restoreLegacyStateFromCoreLocation(game.coreLocation_);
+		ASSERT(restored);
+	}
 
 	return err;
 }
@@ -773,7 +778,9 @@ errorT game_storage::decodeMovesOnly(Game& game, ByteBuffer& buf) {
 
 	std::vector<scid::core::MovetextLocation> comment_marks;
 	auto err = decodeMovelist(buf, game.coreGame_, comment_marks);
-	game.TEMP_syncLegacyMovetextFromCore();
+	[[maybe_unused]] const bool restored =
+	    game.TEMP_restoreLegacyStateFromCoreLocation(game.coreLocation_);
+	ASSERT(restored);
 	return err;
 }
 
