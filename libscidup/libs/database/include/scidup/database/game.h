@@ -34,7 +34,6 @@ namespace scid::database {
 
 class ByteBuffer;
 class Game;
-struct GameSearchAccess;
 class TextBuffer;
 struct patternT;
 enum gameExactMatchT : int;
@@ -64,20 +63,11 @@ class Game {
 private:
     Game(const Game&);
     bool setCoreLocation(scid::core::MovetextLocation location);
-    // TODO [Game]: Move these database search operations out of Game once the
-    // database wrapper around the future core Game exists.
-    bool materialMatch(bool promotionsFlag, ByteBuffer& buf, byte* min,
-                       byte* max, patternT* patterns, size_t patternCount,
-                       int minPly, int maxPly, int matchLength,
-                       bool oppBishops, bool sameBishops, int minDiff,
-                       int maxDiff);
-    bool exactMatch(Position* pos, ByteBuffer* buf, gameExactMatchT searchType);
     friend std::pair<IndexEntry, TagRoster> game_storage::encode(
         const Game& game, std::vector<byte>& dest);
     friend errorT game_storage::decode(Game& game, IndexEntry const& ie,
                                        TagRoster const& tags, ByteBuffer buf);
     friend errorT game_storage::decodeMovesOnly(Game& game, ByteBuffer& buf);
-    friend struct GameSearchAccess;
 public:
     Game();
     ~Game();

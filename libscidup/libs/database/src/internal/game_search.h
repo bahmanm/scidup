@@ -27,16 +27,6 @@ enum gameExactMatchT : int {
 	GAME_EXACT_MATCH_Material
 };
 
-struct GameSearchAccess {
-	static bool materialMatch(Game& game, bool promotionsFlag, ByteBuffer& buf,
-	                          byte* min, byte* max, patternT* patterns,
-	                          std::size_t patternCount, int minPly, int maxPly,
-	                          int matchLength, bool oppBishops,
-	                          bool sameBishops, int minDiff, int maxDiff);
-	static bool exactMatch(Game& game, Position* pos, ByteBuffer* buf,
-	                       gameExactMatchT searchType);
-};
-
 namespace game_search {
 
 bool materialMatch(Game& game, bool promotionsFlag, ByteBuffer& buf, byte* min,

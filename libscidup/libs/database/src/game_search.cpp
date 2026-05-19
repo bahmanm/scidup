@@ -33,7 +33,7 @@ int calcHomePawnMask (pieceT pawn, const pieceT* board)
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // patternsMatch():
-//      Used by Game::materialMatch() to test patterns.
+//      Used by materialMatch() to test patterns.
 //      Returns true if all the patterns in the list match.
 //
 bool patternsMatch(const Position* pos, patternT* patterns, size_t patternCount) {
@@ -222,19 +222,12 @@ Position startPositionFor(const scid::core::Game& game) {
     return game.startPosition() ? *game.startPosition()
                                 : Position::getStdStart();
 }
-} // end of anonymous namespace
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::materialMatch(): Material search test.
-//      The parameters min and max should each be an array of 15
-//      counts, to specify the maximum and minimum number of counts
-//      of each type of piece.
-//
-bool Game::materialMatch(bool promotionsFlag, ByteBuffer& buf, byte* min,
-                         byte* max, patternT* patterns, size_t patternCount,
-                         int minPly, int maxPly, int matchLength,
-                         bool oppBishops, bool sameBishops, int minDiff,
-                         int maxDiff) {
+bool materialMatches(bool promotionsFlag, ByteBuffer& buf, byte* min,
+                     byte* max, patternT* patterns, size_t patternCount,
+                     int minPly, int maxPly, int matchLength,
+                     bool oppBishops, bool sameBishops, int minDiff,
+                     int maxDiff) {
     ASSERT (matchLength >= 1);
 
     int matchesNeeded = matchLength;
@@ -339,12 +332,7 @@ bool Game::materialMatch(bool promotionsFlag, ByteBuffer& buf, byte* min,
       Next_Move:
         {
             simpleMoveT sm;
-            auto [errMove, val] = buf.nextLineMove();
-            err = errMove;
-            if (err == OK) {
-                err = game_storage::decodeEncodedMove(buf, val,
-                                                      currentPosition, sm);
-            }
+            err = game_storage::decodeMainlineMove(buf, currentPosition, sm);
             if (err == OK) {
                 currentPosition.DoSimpleMove(sm);
             }
@@ -357,18 +345,8 @@ bool Game::materialMatch(bool promotionsFlag, ByteBuffer& buf, byte* min,
     return false;
 }
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::exactMatch():
-//      Exact position search test.
-//      If sm is not NULL, its from, to, promote etc will be filled with
-//      the next move at the matching position, if there is one.
-//      If neverMatch is non-NULL, the boolean it points to is set to
-//      true if the game could never match even with extra moves.
-//
-bool
-Game::exactMatch (Position * searchPos, ByteBuffer * buf,
-                  gameExactMatchT searchType)
-{
+bool exactMatches(const scid::core::Game& game, Position* searchPos,
+                  ByteBuffer* buf, gameExactMatchT searchType) {
     // If buf is NULL, the game is in memory. Otherwise, decode only
     // the necessary moves:
     errorT err = OK;
@@ -378,8 +356,8 @@ Game::exactMatch (Position * searchPos, ByteBuffer * buf,
     std::size_t memoryMoveIndex = 0;
 
     if (buf == NULL) {
-        decodedPosition = startPositionFor(coreGame_);
-        memoryLine = &coreGame_.movetext().mainline;
+        decodedPosition = startPositionFor(game);
+        memoryLine = &game.movetext().mainline;
     } else {
         err = decodeSearchStart(*buf, decodedPosition);
     }
@@ -537,13 +515,8 @@ Game::exactMatch (Position * searchPos, ByteBuffer * buf,
                     err = OK;
                 }
             } else {
-                auto [errMove, val] = buf->nextLineMove();
-                err = errMove;
-                if (err == OK) {
-                    err = game_storage::decodeEncodedMove(*buf, val,
-                                                          *currentPosition,
-                                                          nextMove);
-                }
+                err = game_storage::decodeMainlineMove(*buf, *currentPosition,
+                                                       nextMove);
             }
 
             if (err == OK) {
@@ -566,20 +539,22 @@ Game::exactMatch (Position * searchPos, ByteBuffer * buf,
     return false;
 }
 
-bool game_search::materialMatch(Game& game, bool promotionsFlag,
+} // end of anonymous namespace
+
+bool game_search::materialMatch([[maybe_unused]] Game& game, bool promotionsFlag,
                                 ByteBuffer& buf, byte* min, byte* max,
                                 patternT* patterns, std::size_t patternCount,
                                 int minPly, int maxPly, int matchLength,
                                 bool oppBishops, bool sameBishops, int minDiff,
                                 int maxDiff) {
-    return GameSearchAccess::materialMatch(
-        game, promotionsFlag, buf, min, max, patterns, patternCount, minPly,
-        maxPly, matchLength, oppBishops, sameBishops, minDiff, maxDiff);
+    return materialMatches(promotionsFlag, buf, min, max, patterns,
+                           patternCount, minPly, maxPly, matchLength,
+                           oppBishops, sameBishops, minDiff, maxDiff);
 }
 
 bool game_search::exactMatch(Game& game, Position* pos, ByteBuffer* buf,
                              gameExactMatchT searchType) {
-    return GameSearchAccess::exactMatch(game, pos, buf, searchType);
+    return exactMatches(game.coreGame(), pos, buf, searchType);
 }
 
 bool game_search::varExactMatch(Game& game, Position* pos,
@@ -594,23 +569,6 @@ bool game_search::varExactMatch(Game& game, Position* pos,
     Position startPosition = startPositionFor(coreGame);
     return varExactMatchLine(coreGame.movetext().mainline, startPosition, pos,
                              searchType, whitePawnFyles, blackPawnFyles);
-}
-
-bool GameSearchAccess::materialMatch(Game& game, bool promotionsFlag,
-                                     ByteBuffer& buf, byte* min, byte* max,
-                                     patternT* patterns,
-                                     std::size_t patternCount, int minPly,
-                                     int maxPly, int matchLength,
-                                     bool oppBishops, bool sameBishops,
-                                     int minDiff, int maxDiff) {
-    return game.materialMatch(promotionsFlag, buf, min, max, patterns,
-                              patternCount, minPly, maxPly, matchLength,
-                              oppBishops, sameBishops, minDiff, maxDiff);
-}
-
-bool GameSearchAccess::exactMatch(Game& game, Position* pos, ByteBuffer* buf,
-                                  gameExactMatchT searchType) {
-    return game.exactMatch(pos, buf, searchType);
 }
 
 } // namespace scid::database
