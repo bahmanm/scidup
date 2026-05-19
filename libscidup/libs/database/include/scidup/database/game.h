@@ -80,6 +80,10 @@ private:
     // core-backed and no legacy moveT cursor needs to be maintained.
     bool TEMP_restoreLegacyCursorFromCoreLocation(
         scid::core::MovetextLocation location);
+    // TODO [Game]: Delete this bridge when current-position readers replay
+    // through core GameCursor directly instead of database::Game state.
+    bool TEMP_restoreLegacyStateFromCoreLocation(
+        scid::core::MovetextLocation location);
     // TODO [Game]: Delete this reverse compatibility projection once legacy
     // moveT is no longer needed by database/app readers.
     void TEMP_syncLegacyMovetextFromCore();

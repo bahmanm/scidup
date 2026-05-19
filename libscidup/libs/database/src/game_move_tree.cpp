@@ -16,6 +16,22 @@ scid::core::MoveAction toCoreMoveAction(simpleMoveT const& sm) {
 	return {sm.from, sm.to, sm.promote, sm.isCastle() != 0};
 }
 
+simpleMoveT toNavigationMove(Position& position,
+                             scid::core::MoveAction const& action) {
+	simpleMoveT move = {};
+	if (action.isNull()) {
+		position.makeMove(action.from, action.to, PAWN, move);
+		return move;
+	}
+	if (action.castling) {
+		position.makeMove(action.from, action.from,
+		                  action.to > action.from ? KING : QUEEN, move);
+		return move;
+	}
+	position.makeMove(action.from, action.to, action.promotion, move);
+	return move;
+}
+
 void restoreCoreCursor(scid::core::MovetextCursor& cursor,
                        scid::core::MovetextLocation location) {
 	[[maybe_unused]] const bool restored = cursor.restore(location);
@@ -80,13 +96,9 @@ unsigned pgnOffsetOf(const scid::core::Game& game,
 } // namespace
 
 ///////////////////////////////////////////////////////////////////////////
-// A "location" in the game is represented by a position (Game::currentPos_), the
-// next move to be played (Game::currentMove_) and the number of parent variations
-// (Game::varDepth_). Since currentMove_ is the next move to be played, some
-// invariants must hold: it is never nullptr and it never points to a
-// START_MARKER (it will point to a END_MARKER if there are no more moves). This
-// also means that currentMove_->prev is always valid: it will point to a
-// previous move or to a START_MARKER.
+// A "location" in the game is represented by the core MovetextLocation plus a
+// temporary legacy cache (currentPos_, currentMove_ and varDepth_) for callers
+// that have not moved to core traversal yet.
 // The following functions modify ONLY the current location of the game.
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -97,12 +109,16 @@ unsigned pgnOffsetOf(const scid::core::Game& game,
 errorT Game::next(void) {
 	scid::core::GameCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
-	if (!coreCursor.next())
+	const auto* move = coreCursor.nextMove();
+	if (!move)
 		return ERROR_EndOfMoveList;
+	auto simpleMove = toNavigationMove(*currentPos_, move->action);
+	[[maybe_unused]] const bool advanced = coreCursor.next();
+	ASSERT(advanced);
 	coreLocation_ = coreCursor.location();
 
+	currentPos_->DoSimpleMove(simpleMove);
 	ASSERT(!currentMove_->endMarker());
-	currentPos_->DoSimpleMove(currentMove_->moveData);
 	currentMove_ = currentMove_->next;
 
 	// Invariants
@@ -122,9 +138,9 @@ errorT Game::previous(void) {
 		return ERROR_StartOfMoveList;
 	coreLocation_ = coreCursor.location();
 
-	ASSERT(!currentMove_->prev->startMarker());
-	currentMove_ = currentMove_->prev;
-	currentPos_->UndoSimpleMove(currentMove_->moveData);
+	[[maybe_unused]] const bool restored =
+	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	ASSERT(restored);
 
 	// Invariants
 	ASSERT(currentMove_ && currentMove_->prev);
@@ -142,19 +158,14 @@ errorT Game::enterVariation(uint varNumber) {
 		return ERROR_NoVariation;
 	coreLocation_ = coreCursor.location();
 
-	for (auto subVar = currentMove_; subVar->varChild; --varNumber) {
-		subVar = subVar->varChild;
-		if (varNumber == 0) {
-			currentMove_ = subVar->next; // skip the START_MARKER
-			++varDepth_;
+	[[maybe_unused]] const bool restored =
+	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	ASSERT(restored);
 
-			// Invariants
-			ASSERT(currentMove_ && currentMove_->prev);
-			ASSERT(!currentMove_->startMarker());
-			return OK;
-		}
-	}
-	return ERROR_NoVariation; // there is no such variation
+	// Invariants
+	ASSERT(currentMove_ && currentMove_->prev);
+	ASSERT(!currentMove_->startMarker());
+	return OK;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -168,14 +179,9 @@ errorT Game::exitVariation(void) {
 		return ERROR_NoVariation;
 	coreLocation_ = coreCursor.location();
 
-	// Algorithm: go back previous moves as far as possible, then
-	// go up to the parent of the variation.
-	while (!currentMove_->prev->startMarker()) {
-		currentMove_ = currentMove_->prev;
-		currentPos_->UndoSimpleMove(currentMove_->moveData);
-	}
-	currentMove_ = currentMove_->getParent().first;
-	--varDepth_;
+	[[maybe_unused]] const bool restored =
+	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	ASSERT(restored);
 
 	// Invariants
 	ASSERT(currentMove_ && currentMove_->prev);
@@ -191,13 +197,9 @@ void Game::toStart() {
 	coreCursor.toStart();
 	coreLocation_ = coreCursor.location();
 
-	if (auto startPos = coreGame_.startPosition()) {
-		*currentPos_ = *startPos;
-	} else {
-		currentPos_->StdStart();
-	}
-	varDepth_ = 0;
-	currentMove_ = firstMove_->next;
+	[[maybe_unused]] const bool restored =
+	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	ASSERT(restored);
 
 	// Invariants
 	ASSERT(currentMove_ && currentMove_->prev);
@@ -265,12 +267,16 @@ errorT Game::nextPgn() {
 // TODO [Game]: Move PGN-order traversal to a PGN/export traversal adapter
 // instead of keeping it on the generic Game cursor surface.
 errorT Game::toPgnLocation(unsigned stopLocation) {
-	toStart();
+	scid::core::GameCursor coreCursor(coreGame_);
 	for (unsigned loc = 1; loc < stopLocation; ++loc) {
-		errorT err = nextPgn();
-		if (err != OK)
-			return err;
+		if (!nextPgnCore(coreCursor))
+			return ERROR_EndOfMoveList;
 	}
+
+	coreLocation_ = coreCursor.location();
+	[[maybe_unused]] const bool restored =
+	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	ASSERT(restored);
 	return OK;
 }
 

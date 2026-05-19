@@ -1,5 +1,7 @@
 #include "scidup/database/game.h"
 
+#include "scidup/core/game_cursor.h"
+#include "scidup/core/notation.h"
 #include "movetree.h"
 
 namespace scid::database {
@@ -54,6 +56,29 @@ bool Game::TEMP_restoreLegacyCursorFromCoreLocation(
 		}
 	}
 	return advanceLegacyLocation(location.nextIndex());
+}
+
+bool Game::TEMP_restoreLegacyStateFromCoreLocation(
+    scid::core::MovetextLocation location) {
+	if (auto startPosition = coreGame_.startPosition()) {
+		*currentPos_ = *startPosition;
+	} else {
+		currentPos_->StdStart();
+	}
+
+	scid::core::GameCursor cursor(coreGame_);
+	if (!cursor.restore(location))
+		return false;
+
+	for (const auto* move : cursor.movesToCursor()) {
+		auto simpleMove =
+		    scid::core::notation::toSimpleMove(*currentPos_, move->action);
+		if (!simpleMove)
+			return false;
+		currentPos_->DoSimpleMove(*simpleMove);
+	}
+
+	return TEMP_restoreLegacyCursorFromCoreLocation(location);
 }
 
 Position* Game::currentPos() {
