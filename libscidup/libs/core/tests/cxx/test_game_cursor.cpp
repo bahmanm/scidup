@@ -144,6 +144,47 @@ TEST(CoreGameCursorTest, ReturnsNestedVariationMovesToCursor) {
 	EXPECT_EQ("c7c5", moves[1]->action.longNotation());
 }
 
+TEST(CoreGameCursorTest, ReturnsCurrentPositionAtMainlineLocation) {
+	scid::core::Game game;
+	game.appendMainlineMove(quiet(scid::database::E2, scid::database::E4));
+	game.appendMainlineMove(quiet(scid::database::E7, scid::database::E5));
+
+	scid::core::GameCursor cursor(game);
+	ASSERT_TRUE(cursor.toPly(2));
+
+	auto position = cursor.currentPosition();
+	ASSERT_TRUE(position);
+
+	char fen[256] = {};
+	position->PrintFEN(fen, sizeof(fen));
+	EXPECT_STREQ(
+	    "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+	    fen);
+}
+
+TEST(CoreGameCursorTest, ReturnsCurrentPositionAtVariationLocation) {
+	scid::core::Game game;
+	auto& first = game.appendMainlineMove(
+	    quiet(scid::database::D2, scid::database::D4));
+	auto& variation = first.childVariations.emplace_back();
+	variation.line.appendMove(quiet(scid::database::E2, scid::database::E4));
+	variation.line.appendMove(quiet(scid::database::E7, scid::database::E5));
+
+	scid::core::GameCursor cursor(game);
+	ASSERT_TRUE(cursor.enterVariation(0));
+	ASSERT_TRUE(cursor.next());
+	ASSERT_TRUE(cursor.next());
+
+	auto position = cursor.currentPosition();
+	ASSERT_TRUE(position);
+
+	char fen[256] = {};
+	position->PrintFEN(fen, sizeof(fen));
+	EXPECT_STREQ(
+	    "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+	    fen);
+}
+
 TEST(CoreGameCursorTest, SeeksToMainlineStartAndEnd) {
 	scid::core::Game game;
 	auto& first = game.appendMainlineMove(

@@ -2,8 +2,10 @@
 
 #include "scidup/core/game.h"
 #include "scidup/core/movetext_location.h"
+#include "scidup/core/position.h"
 
 #include <cstddef>
+#include <optional>
 #include <vector>
 
 namespace scid::core {
@@ -23,6 +25,7 @@ public:
 	const Move* nextMove() const;
 	const Variation* currentVariation() const;
 	std::vector<const Move*> movesToCursor() const;
+	std::optional<scid::database::Position> currentPosition() const;
 	std::size_t ply() const;
 	std::size_t variationCount() const;
 	std::size_t variationDepth() const;

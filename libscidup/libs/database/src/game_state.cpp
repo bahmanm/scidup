@@ -1,7 +1,6 @@
 #include "scidup/database/game.h"
 
 #include "scidup/core/game_cursor.h"
-#include "scidup/core/notation.h"
 
 namespace scid::database {
 namespace {
@@ -34,27 +33,16 @@ void Game::restoreLocation(const GameSavedPos& savedPos) {
 }
 
 bool Game::setCoreLocation(scid::core::MovetextLocation location) {
-	Position position;
-	if (auto startPosition = coreGame_.startPosition()) {
-		position = *startPosition;
-	} else {
-		position.StdStart();
-	}
-
 	scid::core::GameCursor cursor(coreGame_);
 	if (!cursor.restore(location))
 		return false;
 
-	for (const auto* move : cursor.movesToCursor()) {
-		auto simpleMove =
-		    scid::core::notation::toSimpleMove(position, move->action);
-		if (!simpleMove)
-			return false;
-		position.DoSimpleMove(*simpleMove);
-	}
+	auto position = cursor.currentPosition();
+	if (!position)
+		return false;
 
 	coreLocation_ = location;
-	*currentPos_ = position;
+	*currentPos_ = *position;
 	return true;
 }
 

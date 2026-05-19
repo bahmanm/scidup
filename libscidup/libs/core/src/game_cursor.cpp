@@ -1,8 +1,19 @@
 #include "scidup/core/game_cursor.h"
 
+#include "scidup/core/notation.h"
+
 #include <utility>
 
 namespace scid::core {
+
+namespace {
+
+scid::database::Position startPosition(const Game& game) {
+	return game.startPosition() ? *game.startPosition()
+	                            : scid::database::Position::getStdStart();
+}
+
+} // namespace
 
 GameCursor::GameCursor(const Game& game)
     : game_(game), currentLine_(&game.movetext().mainline) {}
@@ -40,6 +51,17 @@ std::vector<const Move*> GameCursor::movesToCursor() const {
 		result.push_back(&currentLine().moves[i]);
 
 	return result;
+}
+
+std::optional<scid::database::Position> GameCursor::currentPosition() const {
+	auto position = startPosition(game_);
+	for (const auto* move : movesToCursor()) {
+		auto simpleMove = notation::toSimpleMove(position, move->action);
+		if (!simpleMove)
+			return std::nullopt;
+		position.DoSimpleMove(*simpleMove);
+	}
+	return position;
 }
 
 std::size_t GameCursor::ply() const {
