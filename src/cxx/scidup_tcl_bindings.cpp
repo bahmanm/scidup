@@ -313,6 +313,21 @@ static bool addCurrentNag(scid::database::Game& game, scid::database::byte nag) 
 	return cursor.addPreviousMoveNag(nag);
 }
 
+static bool stripMovetext(scid::database::Game& game, bool variations,
+                          bool comments, bool nags) {
+	if (variations) {
+		scid::core::MovetextCursor cursor(game.coreGame());
+		if (!cursor.restore(game.coreLocation()))
+			return false;
+		while (cursor.exitVariation()) {
+		}
+		game.restoreLocation({cursor.location()});
+	}
+
+	game.coreGame().stripMovetext(variations, comments, nags);
+	return true;
+}
+
 //////////////////////////////////////////////////////////////////////
 //
 // Inline routines for setting Tcl result strings:
@@ -3914,9 +3929,11 @@ sc_game_startBoard (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 int sc_game_strip(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 	auto editor = scidup::app::editor::gameSession(*db);
 	if (argc == 3 && !strcmp("variations", argv[2])) {
-		editor.game().strip(true, false, false);
+		if (!stripMovetext(editor.game(), true, false, false))
+			return UI_Result(ti, scid::database::ERROR, "Error stripping game.");
 	} else if (argc == 3 && !strcmp("comments", argv[2])) {
-		editor.game().strip(false, true, true);
+		if (!stripMovetext(editor.game(), false, true, true))
+			return UI_Result(ti, scid::database::ERROR, "Error stripping game.");
 	} else {
 		return errorResult(ti, "Usage: sc_game strip [comments|variations]");
 	}

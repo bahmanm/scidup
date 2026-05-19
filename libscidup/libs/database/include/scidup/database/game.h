@@ -93,7 +93,6 @@ public:
     const scid::core::Game& coreGame() const;
     scid::core::MovetextLocation coreLocation() const;
     void clear();
-    void strip(bool variations, bool comments, bool NAGs);
 
     /// Setup the start position from a FEN string and remove all the moves.
     /// If the FEN is invalid the game is not changed.

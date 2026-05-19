@@ -148,6 +148,19 @@ void clearCurrentNags(scid::database::Game& game) {
 	cursor.clearPreviousMoveNags();
 }
 
+void stripMovetext(scid::database::Game& game, bool variations,
+                   bool comments, bool nags) {
+	if (variations) {
+		scid::core::MovetextCursor cursor(game.coreGame());
+		ASSERT_TRUE(cursor.restore(game.coreLocation()));
+		while (cursor.exitVariation()) {
+		}
+		game.restoreLocation({cursor.location()});
+	}
+
+	game.coreGame().stripMovetext(variations, comments, nags);
+}
+
 std::string nextLegacySan(scid::database::Game& game) {
 	scid::core::GameCursor cursor(game.coreGame());
 	EXPECT_TRUE(cursor.restore(game.coreLocation()));
@@ -720,7 +733,7 @@ TEST(Test_Game, coreGameMirrorsStrip) {
 	          game.addMove(makeCurrentMove(game, scid::database::D2,
 	                                       scid::database::D4)));
 
-	game.strip(true, true, true);
+	stripMovetext(game, true, true, true);
 
 	auto const& movetext = game.coreGame().movetext();
 	EXPECT_TRUE(movetext.initialComment.empty());

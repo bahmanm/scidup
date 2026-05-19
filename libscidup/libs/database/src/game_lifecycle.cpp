@@ -65,15 +65,6 @@ Game* Game::clone() {
 	return new Game(*this);
 }
 
-void Game::strip(bool variations, bool comments, bool NAGs) {
-	// TODO [Game]: Decide whether stripping belongs on core Game or a future
-	// MovetextCursor. It mutates move-tree structure and Move.metadata together.
-	while (variations && exitVariation() == OK) {
-	}
-
-	coreGame_.stripMovetext(variations, comments, NAGs);
-}
-
 void Game::clear() {
 	// TODO [Game]: Split this reset across core Game metadata/moves and
 	// database compatibility flags.
