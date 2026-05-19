@@ -30,6 +30,7 @@
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/nags.h"
 #include "scidup/core/notation.h"
+#include "scidup/core/pgn/traversal.h"
 #include "engine.h"
 #include "scidup/database/game_id.h"
 #include "scidup/database/game.h"
@@ -255,6 +256,30 @@ currentMove(const scid::database::Game& game) {
 		return std::nullopt;
 
 	return scid::core::notation::toSimpleMove(*position, move->action);
+}
+
+static std::optional<scid::core::MovetextLocation>
+seekPgnLocation(const scid::database::Game& game, unsigned location) {
+	scid::core::GameCursor cursor(game.coreGame());
+	if (!scid::core::pgn::seekLocation(cursor, location))
+		return std::nullopt;
+	return cursor.location();
+}
+
+static std::optional<unsigned>
+pgnLocation(const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	if (!cursor.restore(game.coreLocation()))
+		return std::nullopt;
+	return scid::core::pgn::locationOf(cursor);
+}
+
+static std::optional<unsigned>
+pgnOffset(const scid::database::Game& game) {
+	scid::core::GameCursor cursor(game.coreGame());
+	if (!cursor.restore(game.coreLocation()))
+		return std::nullopt;
+	return scid::core::pgn::offsetOf(cursor);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -4884,15 +4909,22 @@ int
 sc_move_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     auto editor = scidup::app::editor::gameSession(*db);
-    if (argc == 2)
-        return UI_Result(ti, scid::database::OK, editor.game().pgnLocation());
+    if (argc == 2) {
+        auto location = pgnLocation(editor.game());
+        if (!location)
+            return UI_Result(ti, scid::database::ERROR, "Error reading PGN location.");
+        return UI_Result(ti, scid::database::OK, *location);
+    }
 
     if (argc != 3) {
         return errorResult (ti, "Usage: sc_move pgn [offset]");
     }
 
     scid::database::uint offset = scid::database::strGetUnsigned (argv[2]);
-    editor.game().toPgnLocation (offset);
+    auto location = seekPgnLocation(editor.game(), offset);
+    if (!location)
+        return UI_Result(ti, scid::database::ERROR, "Error reading PGN location.");
+    editor.game().restoreLocation({*location});
     return TCL_OK;
 }
 
@@ -5034,8 +5066,9 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return UI_Result(ti, scid::database::ERROR, "Error reading position.");
 
     case POS_PGNOFFSET:
-        setUintResult (ti, g.pgnOffset());
-        break;
+        if (auto offset = pgnOffset(g))
+            return setUintResult (ti, *offset);
+        return UI_Result(ti, scid::database::ERROR, "Error reading PGN location.");
 
     case POS_SETCOMMENT:
         return sc_pos_setComment (cd, ti, argc, argv);
