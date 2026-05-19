@@ -1,15 +1,24 @@
 #pragma once
 
+#include "scidup/core/movelist.h"
 #include "scidup/core/primitives.h"
 #include <cstddef>
+#include <optional>
 #include <string>
+
+namespace scid::database {
+class Position;
+} // namespace scid::database
 
 namespace scid::core {
 class Game;
 class MovetextLocation;
+struct MoveAction;
 
 namespace notation {
 
+std::optional<scid::database::simpleMoveT>
+toSimpleMove(scid::database::Position& position, MoveAction const& action);
 std::string currentPositionUci(const Game& game, MovetextLocation location);
 std::string previousMoveUci(const Game& game, MovetextLocation location);
 std::string nextMoveUci(const Game& game, MovetextLocation location);

@@ -11,11 +11,9 @@
 #include <vector>
 
 namespace scid::core::notation {
-namespace {
 
-std::optional<scid::database::simpleMoveT> toSimpleMove(
-    scid::database::Position& position,
-    MoveAction action) {
+std::optional<scid::database::simpleMoveT>
+toSimpleMove(scid::database::Position& position, MoveAction const& action) {
 	scid::database::simpleMoveT move;
 	if (action.isNull()) {
 		position.makeMove(action.from, action.to, scid::database::PAWN, move);
@@ -36,8 +34,6 @@ std::optional<scid::database::simpleMoveT> toSimpleMove(
 		return std::nullopt;
 	return move;
 }
-
-} // namespace
 
 GameCursor cursorAt(const Game& game, MovetextLocation location) {
 	GameCursor cursor(game);

@@ -70,32 +70,6 @@ static void writeComment(TextBuffer* tb, const char* preStr,
     }
 }
 
-static simpleMoveT toSimpleMove(Position& position,
-                                scid::core::MoveAction const& action) {
-    simpleMoveT move = {};
-    if (action.isNull()) {
-        position.makeMove(action.from, action.to, PAWN, move);
-        return move;
-    }
-    if (action.castling) {
-        position.makeMove(action.from, action.from,
-                          action.to > action.from ? KING : QUEEN, move);
-        return move;
-    }
-
-    const auto notation = action.longNotation();
-    if (position.ReadCoordMove(&move, notation.data(), notation.size(),
-                               false) == OK) {
-        return move;
-    }
-
-    move.from = action.from;
-    move.to = action.to;
-    move.promote = action.promotion;
-    position.fillMove(move);
-    return move;
-}
-
 static std::string sanForMove(Position& position, scid::core::Move const& move,
                               sanFlagT flag, simpleMoveT& simpleMove) {
     if (!move.san.empty()) {
@@ -235,10 +209,14 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
         const auto* nextCoreMove = afterCoreMove.nextMove();
         bool commentLine = false;
 
-        const auto simpleMove = toSimpleMove(position, coreMove->action);
+        const auto simpleMove =
+            scid::core::notation::toSimpleMove(position, coreMove->action);
+        if (!simpleMove) {
+            return ERROR;
+        }
         auto positionAfterMove = position;
-        positionAfterMove.DoSimpleMove(simpleMove);
-        auto sanMove = simpleMove;
+        positionAfterMove.DoSimpleMove(*simpleMove);
+        auto sanMove = *simpleMove;
         const auto san = sanForMove(
             position, *coreMove,
             !isLastMoveInLine ? SAN_CHECKTEST : SAN_MATETEST, sanMove);

@@ -206,26 +206,6 @@ struct MovetextEntry {
 	std::span<const std::uint8_t> nags;
 };
 
-inline bool move_action_to_simple_move(scid::database::Position& position,
-                                       MoveAction action,
-                                       scid::database::simpleMoveT& move) {
-	if (action.isNull()) {
-		position.makeMove(action.from, action.to, scid::database::PAWN, move);
-		return true;
-	}
-	if (action.castling) {
-		position.makeMove(action.from, action.from,
-		                  action.to > action.from ? scid::database::KING
-		                                          : scid::database::QUEEN,
-		                  move);
-		return true;
-	}
-
-	const auto notation = action.longNotation();
-	return position.ReadCoordMove(&move, notation.data(), notation.size(),
-	                              false) == scid::database::OK;
-}
-
 inline std::string san_for_move(scid::database::Position& position,
                                 const Move& move,
                                 scid::database::sanFlagT flag,
@@ -303,14 +283,12 @@ void encode_core_line(MoveSequence const& line,
 	for (std::size_t i = 0; i < line.moves.size(); ++i) {
 		auto const& move = line.moves[i];
 		auto position_before_move = position;
-		scid::database::simpleMoveT simpleMove = {};
-		const bool hasSimpleMove = detail::move_action_to_simple_move(
-		    position, move.action, simpleMove);
+		auto simpleMove = notation::toSimpleMove(position, move.action);
 		const auto sanFlag = i + 1 == line.moves.size()
 		                         ? scid::database::SAN_MATETEST
 		                         : scid::database::SAN_CHECKTEST;
 		const auto san = detail::san_for_move(
-		    position, move, sanFlag, hasSimpleMove ? &simpleMove : nullptr);
+		    position, move, sanFlag, simpleMove ? &*simpleMove : nullptr);
 
 		detail::encode_movetext_entry<hard_len>(
 		    {detail::MovetextEntryKind::Move,
@@ -333,8 +311,8 @@ void encode_core_line(MoveSequence const& line,
 			    ply, move_end, dest);
 		}
 
-		if (hasSimpleMove)
-			position.DoSimpleMove(simpleMove);
+		if (simpleMove)
+			position.DoSimpleMove(*simpleMove);
 	}
 }
 
