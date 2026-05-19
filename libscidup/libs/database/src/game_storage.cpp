@@ -684,7 +684,7 @@ std::pair<IndexEntry, TagRoster> game_storage::encode(
 	} else {
 		ie.SetStartFlag(false);
 	}
-	ie.SetFlag(IndexEntry::StrToFlagMask(game.scidFlags_), true);
+	ie.SetFlag(IndexEntry::StrToFlagMask(game.scidFlags()), true);
 
 	const auto [promo, underPromo] =
 	    mainlineInfo(coreGame.startPosition(), coreGame.movetext().mainline, ie);
@@ -743,9 +743,7 @@ errorT game_storage::decode(Game& game, IndexEntry const& ie,
 		err = decodeMovelist(buf, coreGame, comment_marks);
 
 	if (err != OK) {
-		[[maybe_unused]] const bool restored =
-		    game.setCoreLocation(game.coreLocation_);
-		ASSERT(restored);
+		game.restoreLocation(game.coreLocation());
 		return err;
 	}
 
@@ -753,9 +751,7 @@ errorT game_storage::decode(Game& game, IndexEntry const& ie,
 		err = decodeComments(buf, coreGame, comment_marks);
 
 	if (err == OK) {
-		[[maybe_unused]] const bool restored =
-		    game.setCoreLocation(game.coreLocation_);
-		ASSERT(restored);
+		game.restoreLocation(game.coreLocation());
 	}
 
 	return err;
@@ -775,10 +771,8 @@ errorT game_storage::decodeMovesOnly(Game& game, ByteBuffer& buf) {
 	}
 
 	std::vector<scid::core::MovetextLocation> comment_marks;
-	auto err = decodeMovelist(buf, game.coreGame_, comment_marks);
-	[[maybe_unused]] const bool restored =
-	    game.setCoreLocation(game.coreLocation_);
-	ASSERT(restored);
+	auto err = decodeMovelist(buf, game.coreGame(), comment_marks);
+	game.restoreLocation(game.coreLocation());
 	return err;
 }
 

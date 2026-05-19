@@ -3,6 +3,7 @@
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/notation.h"
 #include "scidup/database/pgnparse.h"
+#include "game_storage.h"
 
 #include <gtest/gtest.h>
 #include <string>

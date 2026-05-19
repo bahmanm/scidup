@@ -38,15 +38,6 @@ class TextBuffer;
 struct patternT;
 enum gameExactMatchT : int;
 
-namespace game_storage {
-std::pair<IndexEntry, TagRoster> encode(const Game& game,
-                                        std::vector<byte>& dest);
-void loadStandardTags(Game& game, IndexEntry const& ie, TagRoster const& tags);
-errorT decode(Game& game, IndexEntry const& ie, TagRoster const& tags,
-              ByteBuffer buf);
-errorT decodeMovesOnly(Game& game, ByteBuffer& buf);
-} // namespace game_storage
-
 //////////////////////////////////////////////////////////////////////
 //  Game:  Class Definition
 
@@ -63,11 +54,6 @@ class Game {
 private:
     Game(const Game&);
     bool setCoreLocation(scid::core::MovetextLocation location);
-    friend std::pair<IndexEntry, TagRoster> game_storage::encode(
-        const Game& game, std::vector<byte>& dest);
-    friend errorT game_storage::decode(Game& game, IndexEntry const& ie,
-                                       TagRoster const& tags, ByteBuffer buf);
-    friend errorT game_storage::decodeMovesOnly(Game& game, ByteBuffer& buf);
 public:
     Game();
     ~Game();

@@ -22,6 +22,7 @@
 #include "scidup/database/index.h"
 #include "scidup/database/misc.h"
 #include "scidup/database/namebase.h"
+#include "game_storage.h"
 #include <cstring>
 #include <gtest/gtest.h>
 #include <iterator>

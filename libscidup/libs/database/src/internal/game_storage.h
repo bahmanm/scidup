@@ -2,8 +2,25 @@
 
 #include "scidup/database/bytebuf.h"
 #include "scidup/core/position.h"
+#include "scidup/database/common.h"
+
+#include <utility>
+#include <vector>
+
+namespace scid::database {
+class Game;
+class IndexEntry;
+struct TagRoster;
+} // namespace scid::database
 
 namespace scid::database::game_storage {
+
+std::pair<IndexEntry, TagRoster> encode(const Game& game,
+                                        std::vector<byte>& dest);
+void loadStandardTags(Game& game, IndexEntry const& ie, TagRoster const& tags);
+errorT decode(Game& game, IndexEntry const& ie, TagRoster const& tags,
+              ByteBuffer buf);
+errorT decodeMovesOnly(Game& game, ByteBuffer& buf);
 
 struct ByteBufferAccess {
 	template <typename MoveFn, typename CommentFn, typename VariationFn,

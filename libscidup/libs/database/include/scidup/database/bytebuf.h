@@ -139,7 +139,6 @@ class ByteBuffer {
 	const unsigned char* data_;
 	const unsigned char* const end_;
 
-	friend class Game;
 	friend class GameView;
 	friend struct game_storage::ByteBufferAccess;
 

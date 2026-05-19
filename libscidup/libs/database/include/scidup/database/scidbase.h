@@ -128,9 +128,7 @@ struct scidBaseT {
 
 		GameView getGame(const IndexEntry* ie) const;
 		ByteBuffer getGame(const IndexEntry& ie) const;
-	errorT getGame(const IndexEntry& ie, Game& dest) const {
-		return game_storage::decode(dest, ie, tagRoster(ie), getGame(ie));
-	}
+	errorT getGame(const IndexEntry& ie, Game& dest) const;
 	errorT loadGame(gamenumT gNum, Game& dest) const;
 
 	errorT importGames(const scidBaseT* srcBase, const HFilter& filter,

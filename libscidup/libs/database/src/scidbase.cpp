@@ -21,6 +21,7 @@
 #include "codec_pgn.h"
 #include "codec_scid4.h"
 #include "codec_scid5.h"
+#include "game_storage.h"
 #include "scidup/database/common.h"
 #include "scidup/database/game_id.h"
 #include "sortcache.h"
@@ -266,6 +267,10 @@ GameView scidBaseT::getGame(const IndexEntry* ie) const {
 
 ByteBuffer scidBaseT::getGame(const IndexEntry& ie) const {
 	return storage_->codec->getGameData(ie.GetOffset(), ie.GetLength());
+}
+
+errorT scidBaseT::getGame(const IndexEntry& ie, Game& dest) const {
+	return game_storage::decode(dest, ie, tagRoster(ie), getGame(ie));
 }
 
 errorT scidBaseT::saveGame(Game* game, gamenumT replacedGameId) {

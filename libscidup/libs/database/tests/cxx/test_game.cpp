@@ -22,6 +22,7 @@
 #include "scidup/core/pgn/encode.h"
 #include "scidup/core/pgn/traversal.h"
 #include "scidup/database/scidbase.h"
+#include "game_storage.h"
 #include "legacy_pgn.h"
 #include "nag_format.h"
 #include "piece_translation.h"
