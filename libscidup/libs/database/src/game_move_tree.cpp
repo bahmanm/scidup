@@ -223,44 +223,13 @@ void Game::toPly(int hmNumber) {
 errorT Game::nextPgn() {
 	scid::core::GameCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
-	if (coreCursor.previousMove() &&
-	    !coreCursor.previousMove()->childVariations.empty() &&
-	    coreCursor.previous()) {
-		[[maybe_unused]] const bool entered = coreCursor.enterVariation(0);
-		ASSERT(entered);
-		auto err = previous();
-		if (err == OK)
-			err = enterVariation(0);
-		ASSERT(coreLocation_ == coreCursor.location());
-		return err;
-	}
+	if (!nextPgnCore(coreCursor))
+		return ERROR_EndOfMoveList;
 
-	while (!coreCursor.next()) {
-		if (coreCursor.variationDepth() == 0)
-			return ERROR_EndOfMoveList;
-
-		auto varnum = static_cast<uint>(coreCursor.variationIndex());
-		[[maybe_unused]] const bool exited = coreCursor.exitVariation();
-		ASSERT(exited);
-		auto err = exitVariation();
-		ASSERT(err == OK);
-
-		if (coreCursor.enterVariation(varnum + 1)) {
-			err = enterVariation(varnum + 1);
-			ASSERT(err == OK);
-			ASSERT(coreLocation_ == coreCursor.location());
-			return OK;
-		}
-
-		[[maybe_unused]] const bool skippedParent = coreCursor.next();
-		ASSERT(skippedParent);
-		err = next();
-		ASSERT(err == OK);
-	}
-
-	auto err = next();
-	ASSERT(err == OK);
-	ASSERT(coreLocation_ == coreCursor.location());
+	coreLocation_ = coreCursor.location();
+	[[maybe_unused]] const bool restored =
+	    TEMP_restoreLegacyStateFromCoreLocation(coreLocation_);
+	ASSERT(restored);
 	return OK;
 }
 
