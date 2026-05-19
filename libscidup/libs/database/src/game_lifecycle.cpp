@@ -41,7 +41,7 @@ void Game::setStartPosition(Position const& pos) {
 	coreGame_.clearMovetext();
 	coreGame_.setStartPosition(pos);
 	coreLocation_ = scid::core::MovetextLocation();
-	TEMP_syncLegacyMovetextFromCore();
+	*currentPos_ = pos;
 }
 
 // TODO [Game]: Keep Scid flags in database/app compatibility, not in the core
@@ -77,8 +77,8 @@ Game::Game(const Game& obj) {
 	coreGame_ = obj.coreGame_;
 	coreLocation_ = obj.coreLocation_;
 	std::copy_n(obj.scidFlags_, sizeof(obj.scidFlags_), scidFlags_);
+	*currentPos_ = *obj.currentPos_;
 	moveChunkUsed_ = MOVE_CHUNKSIZE;
-	TEMP_syncLegacyMovetextFromCore();
 }
 
 Game* Game::clone() {
@@ -101,7 +101,7 @@ void Game::clear() {
 	coreGame_.clear();
 	scidFlags_[0] = 0;
 	coreLocation_ = scid::core::MovetextLocation();
-	TEMP_syncLegacyMovetextFromCore();
+	currentPos_->StdStart();
 }
 
 } // namespace scid::database
