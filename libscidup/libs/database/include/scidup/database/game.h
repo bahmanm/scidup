@@ -123,10 +123,6 @@ public:
     errorT previous();
     errorT enterVariation(uint varNumber);
     errorT exitVariation();
-    // TODO [Game]: Remove these database delegators once callers use the
-    // core::pgn traversal functions directly.
-    errorT nextPgn();
-    errorT toPgnLocation(unsigned stopLocation);
     void toStart();
     /// Move to the end of the main line.
     void toEnd();
@@ -137,11 +133,6 @@ public:
     //////////////////////////////////////////////////////////////
     // Functions that get information about the current location.
     //
-
-    // TODO [Game]: Remove these database delegators once callers use the
-    // core::pgn traversal functions directly.
-    unsigned pgnLocation() const;
-    unsigned pgnOffset() const;
 
     //////////////////////////////////////////////////////////////
     // Functions that get/set information about the last/next move.

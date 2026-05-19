@@ -2,7 +2,6 @@
 
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/movetext_cursor.h"
-#include "scidup/core/pgn/traversal.h"
 #include "scidup/core/position.h"
 #include "scidup/database/common.h"
 
@@ -112,47 +111,6 @@ void Game::toPly(int hmNumber) {
 	toStart();
 	for (int i = 0; i < hmNumber; ++i)
 		next();
-}
-
-// TODO [Game]: Remove this database delegator once callers use the core::pgn
-// traversal functions directly.
-errorT Game::nextPgn() {
-	scid::core::GameCursor coreCursor(coreGame_);
-	restoreCoreCursor(coreCursor, coreLocation_);
-	if (!scid::core::pgn::nextLocation(coreCursor))
-		return ERROR_EndOfMoveList;
-
-	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
-	ASSERT(restored);
-	return OK;
-}
-
-// TODO [Game]: Remove this database delegator once callers use the core::pgn
-// traversal functions directly.
-errorT Game::toPgnLocation(unsigned stopLocation) {
-	scid::core::GameCursor coreCursor(coreGame_);
-	if (!scid::core::pgn::seekLocation(coreCursor, stopLocation))
-		return ERROR_EndOfMoveList;
-
-	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
-	ASSERT(restored);
-	return OK;
-}
-
-// TODO [Game]: Remove this database delegator once callers use the core::pgn
-// traversal functions directly.
-unsigned Game::pgnLocation() const {
-	scid::core::GameCursor coreCursor(coreGame_);
-	restoreCoreCursor(coreCursor, coreLocation_);
-	return scid::core::pgn::locationOf(coreCursor);
-}
-
-// TODO [Game]: Remove this database delegator once callers use the core::pgn
-// traversal functions directly.
-unsigned Game::pgnOffset() const {
-	scid::core::GameCursor coreCursor(coreGame_);
-	restoreCoreCursor(coreCursor, coreLocation_);
-	return scid::core::pgn::offsetOf(coreCursor);
 }
 
 ///////////////////////////////////////////////////////////////////////////

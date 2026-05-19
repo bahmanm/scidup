@@ -20,6 +20,7 @@
 #include "scidup/core/nags.h"
 #include "scidup/core/notation.h"
 #include "scidup/core/pgn/encode.h"
+#include "scidup/core/pgn/traversal.h"
 #include "scidup/database/scidbase.h"
 #include "legacy_pgn.h"
 #include "nag_format.h"
@@ -99,6 +100,30 @@ scid::core::GameCursor coreCursor(const scid::database::Game& game) {
 	return cursor;
 }
 
+bool nextPgn(scid::database::Game& game) {
+	auto cursor = coreCursor(game);
+	if (!scid::core::pgn::nextLocation(cursor))
+		return false;
+	game.restoreLocation({cursor.location()});
+	return true;
+}
+
+bool toPgnLocation(scid::database::Game& game, unsigned location) {
+	scid::core::GameCursor cursor(game.coreGame());
+	if (!scid::core::pgn::seekLocation(cursor, location))
+		return false;
+	game.restoreLocation({cursor.location()});
+	return true;
+}
+
+unsigned pgnLocation(const scid::database::Game& game) {
+	return scid::core::pgn::locationOf(coreCursor(game));
+}
+
+unsigned pgnOffset(const scid::database::Game& game) {
+	return scid::core::pgn::offsetOf(coreCursor(game));
+}
+
 std::string nextLegacySan(scid::database::Game& game) {
 	scid::core::GameCursor cursor(game.coreGame());
 	EXPECT_TRUE(cursor.restore(game.coreLocation()));
@@ -129,11 +154,12 @@ TEST(Test_Game, clone) {
 		ASSERT_EQ(scid::database::OK, dbase.getGame(*dbase.getIndexEntry(0), game));
 
 		std::mt19937 re(std::random_device{}());
-		game.toPgnLocation(std::uniform_int_distribution<>{0, 500}(re));
+		ASSERT_TRUE(
+		    toPgnLocation(game, std::uniform_int_distribution<unsigned>{0, 500}(re)));
 
 		std::unique_ptr<scid::database::Game> clone{game.clone()};
 
-		ASSERT_EQ(clone->pgnOffset(), game.pgnOffset());
+		ASSERT_EQ(pgnOffset(*clone), pgnOffset(game));
 
 		auto position = currentPosition(game);
 		auto clonePosition = currentPosition(*clone);
@@ -250,23 +276,22 @@ TEST(Test_Game, locationInPGN) {
 		game.toStart();
 		while (true) {
 			++location;
-			scid::database::errorT errForward = game.nextPgn();
-			if (errForward != scid::database::OK) {
-				ASSERT_EQ(errForward, game.toPgnLocation(location));
+			if (!nextPgn(game)) {
+				ASSERT_FALSE(toPgnLocation(game, location));
 				break;
 			}
 
-			ASSERT_EQ(location, game.pgnLocation());
+			ASSERT_EQ(location, pgnLocation(game));
 			if (!coreCursor(game).isAtVariationStart()) {
-				ASSERT_EQ(location, game.pgnOffset());
+				ASSERT_EQ(location, pgnOffset(game));
 			}
 
 			std::string san = nextCoreSan(game);
 			auto ply1 = coreCursor(game).ply();
-			game.toPgnLocation(location);
+			ASSERT_TRUE(toPgnLocation(game, location));
 			auto ply2 = coreCursor(game).ply();
 			ASSERT_EQ(ply1, ply2);
-			ASSERT_EQ(location, game.pgnLocation());
+			ASSERT_EQ(location, pgnLocation(game));
 			ASSERT_EQ(san, nextCoreSan(game));
 		}
 	}
@@ -284,7 +309,7 @@ TEST(Test_Game, toStart_toEnd) {
 	ASSERT_EQ(scid::database::OK, dbase.getGame(*ie, game));
 
 	for (int i = 0; i < 10; i++) {
-		game.toPgnLocation(distribution(randomEngine));
+		ASSERT_TRUE(toPgnLocation(game, distribution(randomEngine)));
 		ASSERT_NE(0, coreCursor(game).ply());
 		game.toStart(); // Move to start from any position
 		EXPECT_EQ(0, coreCursor(game).ply());
@@ -296,7 +321,7 @@ TEST(Test_Game, toStart_toEnd) {
 	game.toEnd(); // Move to end from end
 	EXPECT_EQ(149, coreCursor(game).ply());
 	for (int i = 0; i < 10; i++) {
-		game.toPgnLocation(distribution(randomEngine));
+		ASSERT_TRUE(toPgnLocation(game, distribution(randomEngine)));
 		game.toEnd(); // Move to end from any position
 		EXPECT_EQ(149, coreCursor(game).ply());
 	}
@@ -410,7 +435,7 @@ TEST(Test_Game, currentPositionUci_startpos) {
 	    {10, "position startpos moves d2d4 d7d5"},
 	    {11, "position startpos moves d2d4 d7d5 c2c4"}};
 	for (auto [pos, str] : expected) {
-		game.toPgnLocation(pos);
+		ASSERT_TRUE(toPgnLocation(game, pos));
 		EXPECT_EQ(str, scid::core::notation::currentPositionUci(
 		                   game.coreGame(), game.coreLocation()));
 	}
@@ -760,7 +785,7 @@ TEST(Test_Game, currentPositionUci_fen) {
 	    // clang-format on
 	};
 	for (auto [pos, str] : expected) {
-		game.toPgnLocation(pos);
+		ASSERT_TRUE(toPgnLocation(game, pos));
 		EXPECT_EQ(str, scid::core::notation::currentPositionUci(
 		                   game.coreGame(), game.coreLocation()));
 	}
