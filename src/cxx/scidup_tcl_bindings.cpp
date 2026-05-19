@@ -8864,7 +8864,10 @@ sc_book_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::uint slot = scid::database::strGetUnsigned (argv[2]);
     char boardStr[100];
     auto editor = scidup::app::editor::gameSession(*db);
-    editor.game().currentPos()->PrintFEN(boardStr, sizeof(boardStr));
+    auto position = currentPosition(editor.game());
+    if (!position)
+        return UI_Result(ti, scid::database::ERROR, "Error reading position.");
+    position->PrintFEN(boardStr, sizeof(boardStr));
 
     char moves[1024] = {};
     auto extra_info = polyglot_moves(moves, boardStr, slot);
@@ -8894,7 +8897,10 @@ sc_book_positions (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 	    scid::database::uint slot = scid::database::strGetUnsigned (argv[2]);
 			auto editor = scidup::app::editor::gameSession(*db);
-			editor.game().currentPos()->PrintFEN(boardStr, sizeof(boardStr));
+			auto position = currentPosition(editor.game());
+			if (!position)
+				return UI_Result(ti, scid::database::ERROR, "Error reading position.");
+			position->PrintFEN(boardStr, sizeof(boardStr));
 			polyglot_positions(moves, (const char *) boardStr, slot);
     AppendResult (ti, moves, NULL);
     return TCL_OK;
