@@ -66,8 +66,9 @@ class Game {
 
 private:
     Game(const Game&);
-    // TODO [Game]: Delete this compatibility sync when current-position
-    // readers replay through core GameCursor directly.
+    // TODO [Game]: Delete this compatibility cache when current-position
+    // readers use core GameCursor directly.
+    bool refreshCurrentPosCache() const;
     bool setCoreLocation(scid::core::MovetextLocation location);
     // TODO [Game]: Move these database search operations out of Game once the
     // database wrapper around the future core Game exists.

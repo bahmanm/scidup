@@ -19,20 +19,32 @@ bool Game::setCoreLocation(scid::core::MovetextLocation location) {
 	if (!cursor.restore(location))
 		return false;
 
+	coreLocation_ = location;
+	return true;
+}
+
+bool Game::refreshCurrentPosCache() const {
+	scid::core::GameCursor cursor(coreGame_);
+	if (!cursor.restore(coreLocation_))
+		return false;
+
 	auto position = cursor.currentPosition();
 	if (!position)
 		return false;
 
-	coreLocation_ = location;
 	*currentPos_ = *position;
 	return true;
 }
 
 Position* Game::currentPos() {
+	[[maybe_unused]] const bool refreshed = refreshCurrentPosCache();
+	ASSERT(refreshed);
 	return currentPos_.get();
 }
 
 const Position* Game::currentPos() const {
+	[[maybe_unused]] const bool refreshed = refreshCurrentPosCache();
+	ASSERT(refreshed);
 	return currentPos_.get();
 }
 
