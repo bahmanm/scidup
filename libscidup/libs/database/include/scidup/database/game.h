@@ -100,13 +100,6 @@ public:
     void truncate();
     void truncateStart();
 
-    //////////////////////////////////////////////////////////////
-    // Functions that move the current location.
-    //
-    errorT next();
-    errorT previous();
-    errorT enterVariation(uint varNumber);
-    errorT exitVariation();
     void restoreLocation(scid::core::MovetextLocation location);
 
     Game* clone();

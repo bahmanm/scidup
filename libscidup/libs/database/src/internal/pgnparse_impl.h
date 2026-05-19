@@ -247,8 +247,12 @@ public:
 		if (nErrorsAllowed_ < 0)
 			return true;
 
-		if (game.exitVariation() != OK || game.next() != OK)
+		scid::core::GameCursor cursor(game.coreGame());
+		[[maybe_unused]] const bool restored = cursor.restore(game.coreLocation());
+		ASSERT(restored);
+		if (!cursor.exitVariation() || !cursor.next())
 			return logFatalErr("Failed to exit from variation.");
+		game.restoreLocation(cursor.location());
 
 		return true;
 	}

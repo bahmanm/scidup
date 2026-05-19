@@ -1531,7 +1531,13 @@ sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         auto pos = currentPosition(game);
         if (!pos) { break; }
         ecoCode = ecoBook->findEco(*pos);
-    } while (ecoCode == scidup::eco::ECO_None && game.previous() == scid::database::OK);
+        if (ecoCode != scidup::eco::ECO_None)
+            break;
+        scid::core::GameCursor cursor(game.coreGame());
+        if (!cursor.restore(game.coreLocation()) || !cursor.previous())
+            break;
+        game.restoreLocation(cursor.location());
+    } while (true);
 
     auto ply = currentPly(game);
     game.restoreLocation(location);
@@ -2854,8 +2860,12 @@ int sc_game_import(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 	auto editor = scidup::app::editor::gameSession(*db);
 	editor.setDirty();
 	bool new_variation = false;
-	if (editor.game().next() == scid::database::OK) {
+	{
+		scid::core::GameCursor cursor(editor.game().coreGame());
+		if (cursor.restore(editor.game().coreLocation()) && cursor.next()) {
+			editor.game().restoreLocation(cursor.location());
 		new_variation = (editor.game().addVariation() == scid::database::OK);
+		}
 	}
 
 	scid::database::PgnParseLog pgn;
@@ -3255,7 +3265,13 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         AppendResult (ti, "<br>", translate (ti, "Variations"), ":", NULL);
         for (scid::database::uint vnum = 0; vnum < varCount && vnum < 5; vnum++) {
             char s[20];
-            g.enterVariation (vnum);
+            {
+                scid::core::GameCursor cursor(g.coreGame());
+                [[maybe_unused]] const bool restored = cursor.restore(g.coreLocation());
+                ASSERT(restored);
+                if (cursor.enterVariation(vnum))
+                    g.restoreLocation(cursor.location());
+            }
             scid::database::strCopy(
                 s,
                 scid::core::notation::nextSan(g.coreGame(), g.coreLocation())
@@ -3280,7 +3296,13 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 AppendResult (ti, "<red>", s, "</red>", NULL);
             }
             AppendResult (ti, "</run>", NULL);
-            g.exitVariation ();
+            {
+                scid::core::GameCursor cursor(g.coreGame());
+                [[maybe_unused]] const bool restored = cursor.restore(g.coreLocation());
+                ASSERT(restored);
+                if (cursor.exitVariation())
+                    g.restoreLocation(cursor.location());
+            }
         }
     }
 
@@ -3444,7 +3466,11 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             return UI_Result(ti, scid::database::ERROR, "Error reading position.");
         }
         position->PrintCompactStr (mergeBoards[i]);
-        merge->next();
+        {
+            scid::core::GameCursor cursor(merge->coreGame());
+            if (cursor.restore(merge->coreLocation()) && cursor.next())
+                merge->restoreLocation(cursor.location());
+        }
     }
 
     // Now find the deepest position in the current game that occurs
@@ -3455,7 +3481,14 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::uint ply = 0;
     bool done = false;
     while (!done) {
-        if (game.next() != scid::database::OK) { done = true; }
+        {
+            scid::core::GameCursor cursor(game.coreGame());
+            if (!cursor.restore(game.coreLocation()) || !cursor.next()) {
+                done = true;
+            } else {
+                game.restoreLocation(cursor.location());
+            }
+        }
         ply++;
         compactBoardStr currentBoard;
         auto position = currentPosition(game);
@@ -3488,12 +3521,30 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (atLastMove) {
         // At end of game, so remember final game move for replicating
         // at the start of the variation:
-        game.previous();
+        {
+            scid::core::GameCursor cursor(game.coreGame());
+            [[maybe_unused]] const bool restored = cursor.restore(game.coreLocation());
+            ASSERT(restored);
+            [[maybe_unused]] const bool moved = cursor.previous();
+            ASSERT(moved);
+            game.restoreLocation(cursor.location());
+        }
         sm = currentMove(game);
         ASSERT(sm);
-        game.next();
+        {
+            scid::core::GameCursor cursor(game.coreGame());
+            [[maybe_unused]] const bool restored = cursor.restore(game.coreLocation());
+            ASSERT(restored);
+            [[maybe_unused]] const bool moved = cursor.next();
+            ASSERT(moved);
+            game.restoreLocation(cursor.location());
+        }
     }
-    game.next();
+    {
+        scid::core::GameCursor cursor(game.coreGame());
+        if (cursor.restore(game.coreLocation()) && cursor.next())
+            game.restoreLocation(cursor.location());
+    }
     game.addVariation();
     editor.setDirty();
     if (sm) {
@@ -3509,7 +3560,11 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     ply = mergePly;
     while (ply < endPly) {
         auto mergeMove = currentMove(*merge);
-        if (merge->next() != scid::database::OK) { break; }
+        {
+            scid::core::GameCursor cursor(merge->coreGame());
+            if (!cursor.restore(merge->coreLocation()) || !cursor.next()) { break; }
+            merge->restoreLocation(cursor.location());
+        }
         if (!mergeMove) { break; }
         if (game.addMove(*mergeMove) != scid::database::OK) { break; }
         ply++;
@@ -3542,7 +3597,11 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return UI_Result(ti, scid::database::ERROR, "Error updating comment.");
 
     // And exit the new variation:
-    game.exitVariation();
+    {
+        scid::core::GameCursor cursor(game.coreGame());
+        if (cursor.restore(game.coreLocation()) && cursor.exitVariation())
+            game.restoreLocation(cursor.location());
+    }
     return TCL_OK;
 }
 
@@ -3572,10 +3631,16 @@ sc_game_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     auto location = g->coreLocation();
     while (! isAtStart(*g)) {
         if (isAtVariationStart(*g)) {
-            g->exitVariation();
+            scid::core::GameCursor cursor(g->coreGame());
+            if (cursor.restore(g->coreLocation()) && cursor.exitVariation())
+                g->restoreLocation(cursor.location());
             continue;
         }
-        g->previous();
+        {
+            scid::core::GameCursor cursor(g->coreGame());
+            if (cursor.restore(g->coreLocation()) && cursor.previous())
+                g->restoreLocation(cursor.location());
+        }
         auto sm = currentMove(*g);
         if (!sm) { break; }
         char * s = moveStrings[plyCount];
@@ -3660,11 +3725,18 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     auto editor = scidup::app::editor::gameSession(*base);
     scid::database::Game* g = &editor.game();
     if (ecoBook) {
-        while (g->next() == scid::database::OK) {}
+        while (true) {
+            scid::core::GameCursor cursor(g->coreGame());
+            if (!cursor.restore(g->coreLocation()) || !cursor.next())
+                break;
+            g->restoreLocation(cursor.location());
+        }
         while (true) {
             auto pos = currentPosition(*g);
             if (!pos || !ecoBook->findEcoString(*pos).empty()) { break; }
-            if (g->previous() != scid::database::OK) break;
+            scid::core::GameCursor cursor(g->coreGame());
+            if (!cursor.restore(g->coreLocation()) || !cursor.previous()) break;
+            g->restoreLocation(cursor.location());
         }
     }
 
@@ -3675,7 +3747,13 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     std::string filtername = base->newFilter();
     scid::database::HFilter filter = scidup::app::tree::resolveFilter(*base, filtername);
     scid::database::dateT currentDate = g->coreGame().date();
-    while (g->next() == scid::database::OK) {
+    while (true) {
+        {
+            scid::core::GameCursor cursor(g->coreGame());
+            if (!cursor.restore(g->coreLocation()) || !cursor.next())
+                break;
+            g->restoreLocation(cursor.location());
+        }
         auto pos = currentPosition(*g);
         if (!pos)
             return UI_Result(ti, scid::database::ERROR, "Error reading position.");
@@ -4072,7 +4150,11 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
                 moves.push_back(scid::database::RESULT_LONGSTR[g->coreGame().result()]);
             }
 
-    } while (g->next() == scid::database::OK);
+            scid::core::GameCursor cursor(g->coreGame());
+            if (!cursor.restore(g->coreLocation()) || !cursor.next())
+                break;
+            g->restoreLocation(cursor.location());
+    } while (true);
     g->restoreLocation(location);
 
     res.push_back(boards);
@@ -4851,7 +4933,11 @@ sc_move (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         break;
 
     case MOVE_ENDVAR:
-        while (editor.game().next() == scid::database::OK) {
+        while (true) {
+            scid::core::GameCursor cursor(editor.game().coreGame());
+            if (!cursor.restore(editor.game().coreLocation()) || !cursor.next())
+                break;
+            editor.game().restoreLocation(cursor.location());
         }
         break;
 
@@ -4958,7 +5044,9 @@ sc_move_back (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     for (int i = 0; i < count; i++) {
-        if (editor.game().previous() != scid::database::OK) { break; }
+        scid::core::GameCursor cursor(editor.game().coreGame());
+        if (!cursor.restore(editor.game().coreLocation()) || !cursor.previous()) { break; }
+        editor.game().restoreLocation(cursor.location());
         numMovesTakenBack++;
     }
 
@@ -4982,7 +5070,9 @@ sc_move_forward (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     for (int i = 0; i < count; i++) {
-        if (editor.game().next() != scid::database::OK) { break; }
+        scid::core::GameCursor cursor(editor.game().coreGame());
+        if (!cursor.restore(editor.game().coreLocation()) || !cursor.next()) { break; }
+        editor.game().restoreLocation(cursor.location());
         numMovesMade++;
     }
 
@@ -8801,7 +8891,11 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case VAR_CREATE:
         if (! (isAtVariationStart(game)  &&  isAtVariationEnd(game))) {
-            game.next();
+            {
+                scid::core::GameCursor cursor(game.coreGame());
+                if (cursor.restore(game.coreLocation()) && cursor.next())
+                    game.restoreLocation(cursor.location());
+            }
             game.addVariation();
             editor.setDirty();
         }
@@ -8814,7 +8908,11 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_var_enter (cd, ti, argc, argv);
 
     case VAR_EXIT:
-        game.exitVariation();
+        {
+            scid::core::GameCursor cursor(game.coreGame());
+            if (cursor.restore(game.coreLocation()) && cursor.exitVariation())
+                game.restoreLocation(cursor.location());
+        }
         break;
 
     case VAR_FIRST:
@@ -8874,7 +8972,14 @@ sc_var_list (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::uint varCount = variationCount(game);
     char s[100];
     for (scid::database::uint varNumber = 0; varNumber < varCount; varNumber++) {
-        game.enterVariation (varNumber);
+        {
+            scid::core::GameCursor cursor(game.coreGame());
+            [[maybe_unused]] const bool restored = cursor.restore(game.coreLocation());
+            ASSERT(restored);
+            [[maybe_unused]] const bool entered = cursor.enterVariation(varNumber);
+            ASSERT(entered);
+            game.restoreLocation(cursor.location());
+        }
         if (uci) {
             scid::database::strCopy(
                 s, scid::core::notation::nextMoveUci(game.coreGame(),
@@ -8888,7 +8993,14 @@ sc_var_list (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         }
         // if (s[0] == 0) { scid::database::strCopy (s, "(empty)"); }
         AppendElement (ti, s);
-        game.exitVariation ();
+        {
+            scid::core::GameCursor cursor(game.coreGame());
+            [[maybe_unused]] const bool restored = cursor.restore(game.coreLocation());
+            ASSERT(restored);
+            [[maybe_unused]] const bool exited = cursor.exitVariation();
+            ASSERT(exited);
+            game.restoreLocation(cursor.location());
+        }
     }
     return TCL_OK;
 }
@@ -8910,12 +9022,23 @@ sc_var_enter (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, "No such variation!");
     }
 
-    game.enterVariation (varNumber);
+    {
+        scid::core::GameCursor cursor(game.coreGame());
+        [[maybe_unused]] const bool restored = cursor.restore(game.coreLocation());
+        ASSERT(restored);
+        [[maybe_unused]] const bool entered = cursor.enterVariation(varNumber);
+        ASSERT(entered);
+        game.restoreLocation(cursor.location());
+    }
     // Should moving into a variation also automatically play
     // the first variation move? Maybe it should depend on
     // whether there is a comment before the first move.
     // Uncomment the following line to auto-play the first move:
-    game.next();
+    {
+        scid::core::GameCursor cursor(game.coreGame());
+        if (cursor.restore(game.coreLocation()) && cursor.next())
+            game.restoreLocation(cursor.location());
+    }
 
     return TCL_OK;
 }

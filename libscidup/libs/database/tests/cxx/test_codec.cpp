@@ -159,8 +159,15 @@ private:
 			if (varOp < 20) {
 				res->addVariation();
 			} else if (varOp > 80) {
-				res->exitVariation();
-				res->next();
+				if (cursor.exitVariation()) {
+					res->restoreLocation(cursor.location());
+					scid::core::GameCursor nextCursor(res->coreGame());
+					[[maybe_unused]] const bool nextRestored =
+					    nextCursor.restore(res->coreLocation());
+					ASSERT(nextRestored);
+					if (nextCursor.next())
+						res->restoreLocation(nextCursor.location());
+				}
 			}
 		}
 		return res;

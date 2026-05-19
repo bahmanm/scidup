@@ -49,11 +49,21 @@ void expect_roundtrip(std::string_view pgn) {
 		          scid::core::notation::nextSan(decoded.coreGame(),
 		                                        decoded.coreLocation()));
 
-		const auto originalErr = original.next();
-		const auto decodedErr = decoded.next();
+		scid::core::GameCursor originalCursor(original.coreGame());
+		EXPECT_TRUE(originalCursor.restore(original.coreLocation()));
+		scid::core::GameCursor decodedCursor(decoded.coreGame());
+		EXPECT_TRUE(decodedCursor.restore(decoded.coreLocation()));
+		const auto originalErr = originalCursor.next()
+		                             ? scid::database::OK
+		                             : scid::database::ERROR_EndOfMoveList;
+		const auto decodedErr = decodedCursor.next()
+		                            ? scid::database::OK
+		                            : scid::database::ERROR_EndOfMoveList;
 		EXPECT_EQ(originalErr, decodedErr);
 		if (originalErr != scid::database::OK)
 			break;
+		original.restoreLocation(originalCursor.location());
+		decoded.restoreLocation(decodedCursor.location());
 	}
 }
 

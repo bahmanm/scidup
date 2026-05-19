@@ -171,7 +171,9 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
     auto startPosition = currentPosition(*g);
     ASSERT(startPosition);
     if (startPosition->GetToMove() == scid::database::BLACK) {
-        g->previous();
+        auto cursor = currentCursor(*g);
+        if (cursor.previous())
+            g->restoreLocation(cursor.location());
     }
     NoteNumber = NoteMoveNum = 0;
     scid::database::uint columnMoves = OPTABLE_COLUMNS * 2;
@@ -194,7 +196,9 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
             position->MakeSANString (&*sm, Move[i], scid::database::SAN_CHECKTEST);
             scid::database::strStrip (Move[i], '-');
             scid::database::strStrip (Move[i], '=');
-            g->next();
+            auto cursor = currentCursor(*g);
+            if (cursor.next())
+                g->restoreLocation(cursor.location());
         }
         i++;
     }
@@ -212,7 +216,9 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
             position->MakeSANString (&*sm, Move[i], scid::database::SAN_CHECKTEST);
             scid::database::strStrip (Move[i], '-');
             scid::database::strStrip (Move[i], '=');
-            g->next();
+            auto cursor = currentCursor(*g);
+            if (cursor.next())
+                g->restoreLocation(cursor.location());
         }
         i++;
     }
@@ -223,7 +229,9 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
     for (i=0; i < NUM_POSTHEMES; i++) { Theme[i] = 0; }
     g->restoreLocation(scid::core::MovetextLocation{});
     for (i=0; i < maxThemePly; i++) {
-        if (g->next() != scid::database::OK) { break; }
+        auto cursor = currentCursor(*g);
+        if (!cursor.next()) { break; }
+        g->restoreLocation(cursor.location());
         auto position = currentPosition(*g);
         ASSERT(position);
         SetPositionalThemes (&*position);
@@ -546,7 +554,9 @@ OpTable::Init (const char * type, scid::database::Game * g, scidup::eco::Book * 
     auto location = g->coreLocation();
     while (! isAtStart(*g)) {
         if (isAtVariationStart(*g)) {
-            g->exitVariation();
+            auto cursor = currentCursor(*g);
+            if (cursor.exitVariation())
+                g->restoreLocation(cursor.location());
             continue;
         }
         if (ebook != NULL && ECOstr_.empty()) {
@@ -556,7 +566,11 @@ OpTable::Init (const char * type, scid::database::Game * g, scidup::eco::Book * 
             if (!eco.empty())
                 ECOstr_.append(eco);
         }
-        g->previous();
+        {
+            auto cursor = currentCursor(*g);
+            if (cursor.previous())
+                g->restoreLocation(cursor.location());
+        }
         auto sm = currentMove(*g);
         if (!sm) { break; }
         auto position = currentPosition(*g);

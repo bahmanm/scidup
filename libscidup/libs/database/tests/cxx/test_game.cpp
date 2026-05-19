@@ -604,7 +604,12 @@ TEST(Test_Game, stateQueriesMirrorCoreCursorForProgrammaticVariation) {
 	EXPECT_TRUE(cursorAfterMove.isAtVariationEnd());
 	EXPECT_FALSE(cursorAfterMove.isAtEmptyVariation());
 
-	ASSERT_EQ(scid::database::OK, game.exitVariation());
+	{
+		scid::core::GameCursor cursor(game.coreGame());
+		ASSERT_TRUE(cursor.restore(game.coreLocation()));
+		ASSERT_TRUE(cursor.exitVariation());
+		game.restoreLocation(cursor.location());
+	}
 	auto cursorAfterExit = coreCursor(game);
 	EXPECT_EQ(0U, coreCursor(game).ply());
 	EXPECT_EQ(0U, cursorAfterExit.variationDepth());
@@ -626,7 +631,12 @@ TEST(Test_Game, savedLocationRestoresProgrammaticVariationState) {
 	                                       scid::database::D4)));
 
 	auto location = game.coreLocation();
-	ASSERT_EQ(scid::database::OK, game.exitVariation());
+	{
+		scid::core::GameCursor cursor(game.coreGame());
+		ASSERT_TRUE(cursor.restore(game.coreLocation()));
+		ASSERT_TRUE(cursor.exitVariation());
+		game.restoreLocation(cursor.location());
+	}
 	ASSERT_TRUE(coreCursor(game).isAtGameStart());
 
 	game.restoreLocation(location);
@@ -866,7 +876,12 @@ TEST(Test_Game, illegalPGN_Castling) {
 	EXPECT_STREQ(
 	    currentFen(game).c_str(),
 	    "rnbq1rk1/ppppbppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQ1RK1 w - - 6 5");
-	game.previous();
+	{
+		scid::core::GameCursor cursor(game.coreGame());
+		ASSERT_TRUE(cursor.restore(game.coreLocation()));
+		ASSERT_TRUE(cursor.previous());
+		game.restoreLocation(cursor.location());
+	}
 	EXPECT_STREQ(
 	    currentFen(game).c_str(),
 	    "rnbqk2r/ppppbppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQ1RK1 b kq - 5 4");
@@ -923,7 +938,12 @@ template <typename DataT> std::string decode_game(DataT const& data) {
 	do {
 		moves += ' ';
 		moves.append(nextLegacySan(game));
-	} while (game.next() == scid::database::OK);
+		scid::core::GameCursor cursor(game.coreGame());
+		EXPECT_TRUE(cursor.restore(game.coreLocation()));
+		if (!cursor.next())
+			break;
+		game.restoreLocation(cursor.location());
+	} while (true);
 	moves.erase(0, 1);
 	return moves;
 }

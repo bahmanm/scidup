@@ -30,68 +30,6 @@ void restoreCoreCursor(scid::core::GameCursor& cursor,
 } // namespace
 
 ///////////////////////////////////////////////////////////////////////////
-// A "location" in the game is represented by the core MovetextLocation plus a
-// temporary current-position cache for callers that have not moved to core
-// traversal yet.
-// The following functions modify ONLY the current location of the game.
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Move current position forward one move.
-// Keep the temporary legacy cursor cache in sync while deriving the position
-// update from the core move action.
-//
-errorT Game::next(void) {
-	scid::core::GameCursor coreCursor(coreGame_);
-	restoreCoreCursor(coreCursor, coreLocation_);
-	if (!coreCursor.next())
-		return ERROR_EndOfMoveList;
-	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
-	ASSERT(restored);
-	return OK;
-}
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::previous():
-//      Backup one move.
-//
-errorT Game::previous(void) {
-	scid::core::GameCursor coreCursor(coreGame_);
-	restoreCoreCursor(coreCursor, coreLocation_);
-	if (!coreCursor.previous())
-		return ERROR_StartOfMoveList;
-	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
-	ASSERT(restored);
-	return OK;
-}
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::enterVariation():
-//      Move into a subvariation. Variations are numbered from 0.
-errorT Game::enterVariation(uint varNumber) {
-	scid::core::GameCursor coreCursor(coreGame_);
-	restoreCoreCursor(coreCursor, coreLocation_);
-	if (!coreCursor.enterVariation(varNumber))
-		return ERROR_NoVariation;
-	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
-	ASSERT(restored);
-	return OK;
-}
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Game::exitVariation():
-//      Move out of a variation, to the parent.
-//
-errorT Game::exitVariation(void) {
-	scid::core::GameCursor coreCursor(coreGame_);
-	restoreCoreCursor(coreCursor, coreLocation_);
-	if (!coreCursor.exitVariation())
-		return ERROR_NoVariation;
-	[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
-	ASSERT(restored);
-	return OK;
-}
-
-///////////////////////////////////////////////////////////////////////////
 // The following functions modify the moves graph in order to add or delete
 // moves. Promoting variations also modifies the moves graph.
 
@@ -119,9 +57,14 @@ errorT Game::addMove(simpleMoveT const& sm) {
 //      Add a variation for the current move.
 //      Also moves into the variation.
 errorT Game::addVariation() {
-	auto err = previous();
-	if (err != OK)
-		return err;
+	{
+		scid::core::GameCursor coreCursor(coreGame_);
+		restoreCoreCursor(coreCursor, coreLocation_);
+		if (!coreCursor.previous())
+			return ERROR_StartOfMoveList;
+		[[maybe_unused]] const bool restored = setCoreLocation(coreCursor.location());
+		ASSERT(restored);
+	}
 
 	scid::core::MovetextCursor coreCursor(coreGame_);
 	restoreCoreCursor(coreCursor, coreLocation_);
