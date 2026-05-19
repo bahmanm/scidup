@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <string>
 #include <string_view>
 
 namespace scid::database {
@@ -70,6 +71,44 @@ static void writeComment(TextBuffer* tb, const char* preStr,
     }
 }
 
+static simpleMoveT toSimpleMove(Position& position,
+                                scid::core::MoveAction const& action) {
+    simpleMoveT move = {};
+    if (action.isNull()) {
+        position.makeMove(action.from, action.to, PAWN, move);
+        return move;
+    }
+    if (action.castling) {
+        position.makeMove(action.from, action.from,
+                          action.to > action.from ? KING : QUEEN, move);
+        return move;
+    }
+
+    const auto notation = action.longNotation();
+    if (position.ReadCoordMove(&move, notation.data(), notation.size(),
+                               false) == OK) {
+        return move;
+    }
+
+    move.from = action.from;
+    move.to = action.to;
+    move.promote = action.promotion;
+    position.fillMove(move);
+    return move;
+}
+
+static std::string sanForMove(Position& position, scid::core::Move const& move,
+                              sanFlagT flag) {
+    if (!move.san.empty()) {
+        return move.san;
+    }
+
+    auto simpleMove = toSimpleMove(position, move.action);
+    sanStringT san = {};
+    position.MakeSANString(&simpleMove, san, flag);
+    return san;
+}
+
 struct LegacyGamePgnEncoder {
 	Game& game;
 	TextBuffer* tb;
@@ -103,7 +142,6 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
         return game.enterVariation(varNumber);
     };
 
-    sanStringT tempTrans;
     const char * preCommentStr = "{";
     const char * postCommentStr = "}";
     const char * startTable = "\n";
@@ -208,12 +246,9 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
         const auto* nextCoreMove = afterCoreMove.nextMove();
         bool commentLine = false;
 
-        if (m->san[0] == 0) {
-            // If there is a next move we can skip the SAN_MATETEST
-            currentPos_->MakeSANString(
-                &(m->moveData), m->san,
-                !isLastMoveInLine ? SAN_CHECKTEST : SAN_MATETEST);
-        }
+        const auto san = sanForMove(
+            *currentPos_, *coreMove,
+            !isLastMoveInLine ? SAN_CHECKTEST : SAN_MATETEST);
 
         bool printThisMove = true;
         if (isNullMove) {
@@ -290,7 +325,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
             char buf[100];
             char* q = buf;
 
-            for (char const* p = m->san; *p; ++p) {
+            for (char const* p = san.c_str(); *p; ++p) {
                 ASSERT(q - buf < static_cast<std::ptrdiff_t>(sizeof(buf) - 4));
 
                 switch (*p) {
@@ -308,12 +343,12 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
             tb->PrintWord (buf);
         } else {
             // translate pieces
-            strcpy(tempTrans, m->san);
-            transPieces(tempTrans);
-            //tb->PrintWord (m->san);
-            tb->PrintWord (tempTrans);
+            auto translatedSan = san;
+            translatedSan.push_back('\0');
+            transPieces(translatedSan.data());
+            tb->PrintWord (translatedSan.data());
         }
-        colWidth -= (int) std::strlen(m->san);
+        colWidth -= (int) san.size();
         if (options.isColorFormat()) {
             tb->PrintString ("</m>");
         }
