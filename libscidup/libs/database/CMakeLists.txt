@@ -63,7 +63,6 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_storage.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/legacy_encode_options.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/legacy_pgn.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/movetree.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/nag_format.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/naglatex.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/nagtext.h"

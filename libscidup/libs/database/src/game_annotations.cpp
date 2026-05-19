@@ -2,13 +2,15 @@
 
 #include "scidup/core/movetext_cursor.h"
 #include "scidup/database/common.h"
-#include "movetree.h"
 
 #include <algorithm>
+#include <cstddef>
 
 namespace scid::database {
 
 namespace {
+
+constexpr std::size_t MAX_NAGS_PER_MOVE = 8;
 
 bool isMoveNagValue(byte nag) {
 	return nag >= 1 && nag <= 6;
@@ -40,7 +42,7 @@ errorT Game::addNag (byte nag) {
 		return OK;
 	auto& nags = move->metadata.nags;
 
-    if (nags.size() + 1 >= MAX_NAGS) { return ERROR_GameFull; }
+    if (nags.size() + 1 >= MAX_NAGS_PER_MOVE) { return ERROR_GameFull; }
     if (nag == 0) { /* Nags cannot be zero! */ return OK; }
 	// If it is a move nag replace an existing
 	if( nag >= 1 && nag <= 6)

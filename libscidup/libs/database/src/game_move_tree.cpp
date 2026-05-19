@@ -4,7 +4,6 @@
 #include "scidup/core/movetext_cursor.h"
 #include "scidup/core/position.h"
 #include "scidup/database/common.h"
-#include "movetree.h"
 
 #include <utility>
 

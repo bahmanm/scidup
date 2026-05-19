@@ -26,7 +26,6 @@
 #include "scidup/database/indexentry.h"
 #include "scidup/database/namebase.h"
 #include "scidup/core/position.h"
-#include <forward_list>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -38,10 +37,8 @@ class ByteBuffer;
 class Game;
 struct GameSearchAccess;
 class TextBuffer;
-struct moveT;
 struct patternT;
 enum gameExactMatchT : int;
-enum markerT : byte;
 
 namespace game_storage {
 std::pair<IndexEntry, TagRoster> encode(const Game& game,
@@ -63,20 +60,13 @@ class Game {
     char        scidFlags_[22];
 
     // Position and moves
-    byte        moveChunkUsed_;
-    std::forward_list<std::unique_ptr<moveT[]> > moveChunks_;
     std::unique_ptr<Position> currentPos_{new Position};
     simpleMoveT  currentMoveCache_;
-    moveT*      firstMove_;
-    moveT*      currentMove_;
     scid::core::MovetextLocation coreLocation_;
-    uint        varDepth_;     // Current variation depth.
     ushort      numHalfMoves_; // Total half moves in the main line.
 
 private:
     Game(const Game&);
-    moveT* allocMove();
-    moveT* newMove(markerT marker);
     // TODO [Game]: Delete this bridge when current-position readers replay
     // through core GameCursor directly instead of database::Game state.
     bool TEMP_restoreLegacyStateFromCoreLocation(
@@ -166,8 +156,6 @@ public:
 
     //////////////////////////////////////////////////////////////
     // Functions that get/set information about the last/next move.
-    // Notice: when location is at the start of the game or a variation,
-    // infomation are stored into the START_MARKER.
     // TODO [Game]: Replace this compatibility surface with Move.metadata,
     // MoveAction notation helpers, and GameCursor traversal.
     //

@@ -7,7 +7,6 @@
 #include "scidup/database/namebase.h"
 #include "scidup/core/movetext_cursor.h"
 #include "game_storage.h"
-#include "movetree.h"
 #include "stored.h"
 
 #include <algorithm>

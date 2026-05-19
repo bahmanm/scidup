@@ -4,7 +4,6 @@
 #include "scidup/database/common.h"
 #include "game_search.h"
 #include "game_storage.h"
-#include "movetree.h"
 
 #include <array>
 #include <cstddef>

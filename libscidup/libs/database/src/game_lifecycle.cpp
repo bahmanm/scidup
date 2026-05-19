@@ -1,6 +1,5 @@
 #include "scidup/database/game.h"
 
-#include "movetree.h"
 #include "scidup/core/position.h"
 
 #include <algorithm>
@@ -9,8 +8,6 @@
 namespace scid::database {
 
 Game::~Game() = default;
-
-constexpr int MOVE_CHUNKSIZE = 128;
 
 Game::Game() {
 	clear();
@@ -56,29 +53,11 @@ const char* Game::scidFlags() const {
 	return scidFlags_;
 }
 
-moveT* Game::allocMove() {
-	// TODO [Game]: Hide legacy moveT chunk allocation behind the future core
-	// move-tree representation.
-	if (moveChunkUsed_ == MOVE_CHUNKSIZE) {
-		moveChunks_.emplace_front(new moveT[MOVE_CHUNKSIZE]);
-		moveChunkUsed_ = 0;
-	}
-	return moveChunks_.front().get() + moveChunkUsed_++;
-}
-
-moveT* Game::newMove(markerT marker) {
-	moveT* res = allocMove();
-	res->clear();
-	res->marker = marker;
-	return res;
-}
-
 Game::Game(const Game& obj) {
 	coreGame_ = obj.coreGame_;
 	coreLocation_ = obj.coreLocation_;
 	std::copy_n(obj.scidFlags_, sizeof(obj.scidFlags_), scidFlags_);
 	*currentPos_ = *obj.currentPos_;
-	moveChunkUsed_ = MOVE_CHUNKSIZE;
 }
 
 Game* Game::clone() {
