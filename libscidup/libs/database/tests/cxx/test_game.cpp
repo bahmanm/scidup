@@ -89,6 +89,22 @@ scid::database::simpleMoveT makeCurrentMove(scid::database::Game& game,
 	return move;
 }
 
+void addMove(scid::database::Game& game,
+             scid::database::simpleMoveT const& move) {
+	scid::core::MovetextCursor cursor(game.coreGame());
+	ASSERT_TRUE(cursor.restore(game.coreLocation()));
+	cursor.addMove({move.from, move.to, move.promote, move.isCastle() != 0});
+	game.restoreLocation(cursor.location());
+}
+
+void addVariation(scid::database::Game& game) {
+	scid::core::MovetextCursor cursor(game.coreGame());
+	ASSERT_TRUE(cursor.restore(game.coreLocation()));
+	ASSERT_TRUE(cursor.previous());
+	ASSERT_NE(nullptr, cursor.addVariation());
+	game.restoreLocation(cursor.location());
+}
+
 std::string nextCoreSan(const scid::database::Game& game) {
 	return scid::core::notation::nextSan(game.coreGame(), game.coreLocation());
 }
@@ -557,13 +573,11 @@ TEST(Test_Game, coreGameMovetextMirrorsLegacyMoveTree) {
 TEST(Test_Game, coreGameMovetextMirrorsProgrammaticVariationAdds) {
 	scid::database::Game game;
 
-	ASSERT_EQ(scid::database::OK,
-	          game.addMove(makeCurrentMove(game, scid::database::E2,
-	                                       scid::database::E4)));
-	ASSERT_EQ(scid::database::OK, game.addVariation());
-	ASSERT_EQ(scid::database::OK,
-	          game.addMove(makeCurrentMove(game, scid::database::D2,
-	                                       scid::database::D4)));
+	addMove(game, makeCurrentMove(game, scid::database::E2,
+	                              scid::database::E4));
+	addVariation(game);
+	addMove(game, makeCurrentMove(game, scid::database::D2,
+	                              scid::database::D4));
 
 	auto const& mainline = game.coreGame().movetext().mainline.moves;
 	ASSERT_EQ(1U, mainline.size());
@@ -578,10 +592,9 @@ TEST(Test_Game, coreGameMovetextMirrorsProgrammaticVariationAdds) {
 TEST(Test_Game, stateQueriesMirrorCoreCursorForProgrammaticVariation) {
 	scid::database::Game game;
 
-	ASSERT_EQ(scid::database::OK,
-	          game.addMove(makeCurrentMove(game, scid::database::E2,
-	                                       scid::database::E4)));
-	ASSERT_EQ(scid::database::OK, game.addVariation());
+	addMove(game, makeCurrentMove(game, scid::database::E2,
+	                              scid::database::E4));
+	addVariation(game);
 	auto cursor = coreCursor(game);
 	EXPECT_EQ(0U, coreCursor(game).ply());
 	EXPECT_EQ(1U, cursor.variationDepth());
@@ -593,9 +606,8 @@ TEST(Test_Game, stateQueriesMirrorCoreCursorForProgrammaticVariation) {
 	EXPECT_FALSE(cursor.isAtGameStart());
 	EXPECT_FALSE(cursor.isAtGameEnd());
 
-	ASSERT_EQ(scid::database::OK,
-	          game.addMove(makeCurrentMove(game, scid::database::D2,
-	                                       scid::database::D4)));
+	addMove(game, makeCurrentMove(game, scid::database::D2,
+	                              scid::database::D4));
 	auto cursorAfterMove = coreCursor(game);
 	EXPECT_EQ(1U, coreCursor(game).ply());
 	EXPECT_EQ(1U, cursorAfterMove.variationDepth());
@@ -622,13 +634,11 @@ TEST(Test_Game, stateQueriesMirrorCoreCursorForProgrammaticVariation) {
 TEST(Test_Game, savedLocationRestoresProgrammaticVariationState) {
 	scid::database::Game game;
 
-	ASSERT_EQ(scid::database::OK,
-	          game.addMove(makeCurrentMove(game, scid::database::E2,
-	                                       scid::database::E4)));
-	ASSERT_EQ(scid::database::OK, game.addVariation());
-	ASSERT_EQ(scid::database::OK,
-	          game.addMove(makeCurrentMove(game, scid::database::D2,
-	                                       scid::database::D4)));
+	addMove(game, makeCurrentMove(game, scid::database::E2,
+	                              scid::database::E4));
+	addVariation(game);
+	addMove(game, makeCurrentMove(game, scid::database::D2,
+	                              scid::database::D4));
 
 	auto location = game.coreLocation();
 	{
@@ -650,9 +660,8 @@ TEST(Test_Game, savedLocationRestoresProgrammaticVariationState) {
 TEST(Test_Game, coreGameMoveMetadataMirrorsProgrammaticNagMutation) {
 	scid::database::Game game;
 
-	ASSERT_EQ(scid::database::OK,
-	          game.addMove(makeCurrentMove(game, scid::database::E2,
-	                                       scid::database::E4)));
+	addMove(game, makeCurrentMove(game, scid::database::E2,
+	                              scid::database::E4));
 	ASSERT_TRUE(addCurrentNag(game, scid::core::NAG_GoodMove));
 	ASSERT_TRUE(addCurrentNag(game, scid::core::NAG_PoorMove));
 	ASSERT_TRUE(addCurrentNag(game, scid::core::NAG_Equal));
@@ -677,13 +686,11 @@ TEST(Test_Game, coreGameMoveMetadataMirrorsProgrammaticNagMutation) {
 TEST(Test_Game, coreGameVariationMetadataMirrorsProgrammaticNagMutation) {
 	scid::database::Game game;
 
-	ASSERT_EQ(scid::database::OK,
-	          game.addMove(makeCurrentMove(game, scid::database::E2,
-	                                       scid::database::E4)));
-	ASSERT_EQ(scid::database::OK, game.addVariation());
-	ASSERT_EQ(scid::database::OK,
-	          game.addMove(makeCurrentMove(game, scid::database::D2,
-	                                       scid::database::D4)));
+	addMove(game, makeCurrentMove(game, scid::database::E2,
+	                              scid::database::E4));
+	addVariation(game);
+	addMove(game, makeCurrentMove(game, scid::database::D2,
+	                              scid::database::D4));
 	ASSERT_TRUE(addCurrentNag(game, scid::core::NAG_InterestingMove));
 
 	auto const& variationMove =
@@ -702,15 +709,13 @@ TEST(Test_Game, coreGameMirrorsProgrammaticCommentMutation) {
 
 	scid::database::Game game;
 	setCurrentComment(game, "Before the first move");
-	ASSERT_EQ(scid::database::OK,
-	          game.addMove(makeCurrentMove(game, scid::database::E2,
-	                                       scid::database::E4)));
+	addMove(game, makeCurrentMove(game, scid::database::E2,
+	                              scid::database::E4));
 	setCurrentComment(game, "After e4");
-	ASSERT_EQ(scid::database::OK, game.addVariation());
+	addVariation(game);
 	setCurrentComment(game, "Queen pawn alternative");
-	ASSERT_EQ(scid::database::OK,
-	          game.addMove(makeCurrentMove(game, scid::database::D2,
-	                                       scid::database::D4)));
+	addMove(game, makeCurrentMove(game, scid::database::D2,
+	                              scid::database::D4));
 	setCurrentComment(game, "After d4");
 
 	auto const& movetext = game.coreGame().movetext();
@@ -734,9 +739,8 @@ TEST(Test_Game, moveCommentReadsCoreCommentAtCurrentLocation) {
 	EXPECT_EQ("Core initial comment",
 	          std::string(scid::database::currentMoveComment(game)));
 
-	ASSERT_EQ(scid::database::OK,
-	          game.addMove(makeCurrentMove(game, scid::database::E2,
-	                                       scid::database::E4)));
+	addMove(game, makeCurrentMove(game, scid::database::E2,
+	                              scid::database::E4));
 	scid::core::MovetextCursor mainlineCursor(game.coreGame());
 	ASSERT_TRUE(mainlineCursor.restore(game.coreLocation()));
 	scid::core::MoveMetadata metadata;
@@ -745,7 +749,7 @@ TEST(Test_Game, moveCommentReadsCoreCommentAtCurrentLocation) {
 	EXPECT_EQ("Core previous move comment",
 	          std::string(scid::database::currentMoveComment(game)));
 
-	ASSERT_EQ(scid::database::OK, game.addVariation());
+	addVariation(game);
 	scid::core::MovetextCursor variationCursor(game.coreGame());
 	ASSERT_TRUE(variationCursor.restore(game.coreLocation()));
 	ASSERT_TRUE(variationCursor.setCurrentVariationInitialComment(
@@ -757,16 +761,14 @@ TEST(Test_Game, moveCommentReadsCoreCommentAtCurrentLocation) {
 TEST(Test_Game, coreGameMirrorsStrip) {
 	scid::database::Game game;
 	setCurrentComment(game, "Before the first move");
-	ASSERT_EQ(scid::database::OK,
-	          game.addMove(makeCurrentMove(game, scid::database::E2,
-	                                       scid::database::E4)));
+	addMove(game, makeCurrentMove(game, scid::database::E2,
+	                              scid::database::E4));
 	ASSERT_TRUE(addCurrentNag(game, scid::core::NAG_GoodMove));
 	setCurrentComment(game, "After e4");
-	ASSERT_EQ(scid::database::OK, game.addVariation());
+	addVariation(game);
 	setCurrentComment(game, "Alternative");
-	ASSERT_EQ(scid::database::OK,
-	          game.addMove(makeCurrentMove(game, scid::database::D2,
-	                                       scid::database::D4)));
+	addMove(game, makeCurrentMove(game, scid::database::D2,
+	                              scid::database::D4));
 
 	stripMovetext(game, true, true, true);
 

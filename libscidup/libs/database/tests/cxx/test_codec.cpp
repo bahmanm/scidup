@@ -48,6 +48,22 @@ void setCurrentComment(scid::database::Game& game, std::string_view comment) {
 	ASSERT_TRUE(cursor.setComment(comment));
 }
 
+void addMove(scid::database::Game& game,
+             scid::database::simpleMoveT const& move) {
+	scid::core::MovetextCursor cursor(game.coreGame());
+	ASSERT_TRUE(cursor.restore(game.coreLocation()));
+	cursor.addMove({move.from, move.to, move.promote, move.isCastle() != 0});
+	game.restoreLocation(cursor.location());
+}
+
+void addVariation(scid::database::Game& game) {
+	scid::core::MovetextCursor cursor(game.coreGame());
+	ASSERT_TRUE(cursor.restore(game.coreLocation()));
+	ASSERT_TRUE(cursor.previous());
+	ASSERT_NE(nullptr, cursor.addVariation());
+	game.restoreLocation(cursor.location());
+}
+
 scid::database::fileModeT fmodes[] = {scid::database::FMODE_Create, scid::database::FMODE_ReadOnly, scid::database::FMODE_WriteOnly,
                       scid::database::FMODE_Both};
 const char* filename = "codecbase";
@@ -146,7 +162,7 @@ private:
 
 			auto move = *mlist.Get(rand(0, mlist.Size() - 1));
 			position->fillMove(move);
-			res->addMove(move);
+			addMove(*res, move);
 
 			if (rand(0, 6) == 0)
 				setCurrentComment(*res, rand_comment());
@@ -157,7 +173,7 @@ private:
 			ASSERT(restored);
 			int varOp = rand(0, 80 + int(cursor.variationDepth()) * 20);
 			if (varOp < 20) {
-				res->addVariation();
+				addVariation(*res);
 			} else if (varOp > 80) {
 				if (cursor.exitVariation()) {
 					res->restoreLocation(cursor.location());

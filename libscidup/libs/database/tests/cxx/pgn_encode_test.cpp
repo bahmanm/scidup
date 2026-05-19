@@ -57,6 +57,13 @@ void setCurrentComment(scid::database::Game& game, std::string_view comment) {
 	ASSERT_TRUE(cursor.setComment(comment));
 }
 
+void addMove(scid::database::Game& game, scid::database::simpleMoveT const& move) {
+	scid::core::MovetextCursor cursor(game.coreGame());
+	ASSERT_TRUE(cursor.restore(game.coreLocation()));
+	cursor.addMove({move.from, move.to, move.promote, move.isCastle() != 0});
+	game.restoreLocation(cursor.location());
+}
+
 } // namespace
 
 TEST(Test_PgnEncode, break_lines) {
@@ -225,7 +232,7 @@ TEST(Test_PgnEncode, encode_game) {
 		game.coreGame().setEco("A01");
 		setCurrentComment(game, "before the move");
 		auto sm = makeCurrentMove(game, scid::database::E2, scid::database::E4);
-		game.addMove(sm);
+		addMove(game, sm);
 		setCurrentComment(game, "after the move");
 		auto expected = "[Event\0\"\"]\n"sv
 		                "[Site\0\"\"]\n"sv
@@ -264,7 +271,7 @@ TEST(Test_PgnEncode, encode) {
 		scid::database::Game game;
 		setCurrentComment(game, "before the move");
 		auto sm = makeCurrentMove(game, scid::database::E2, scid::database::E4);
-		game.addMove(sm);
+		addMove(game, sm);
 		setCurrentComment(game, "after the move");
 		auto expected = "[Event \"\"]\n"
 		                "[Site \"\"]\n"

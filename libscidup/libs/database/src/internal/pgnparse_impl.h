@@ -175,9 +175,14 @@ public:
 
 			return logFatalErr("Failed to parse the move: ", tok);
 		}
-		return (game.addMove(sm) == OK)
-		           ? true
-		           : logFatalErr("Failed to add the move: ", tok);
+		scid::core::MovetextCursor moveCursor(game.coreGame());
+		[[maybe_unused]] const bool moveRestored =
+		    moveCursor.restore(game.coreLocation());
+		ASSERT(moveRestored);
+		moveCursor.addMove(
+		    {sm.from, sm.to, sm.promote, sm.isCastle() != 0});
+		game.restoreLocation(moveCursor.location());
+		return true;
 	}
 
 	bool visitPGN_Suffix(TView token) { return visitPGN_NAG(token); }
@@ -237,8 +242,12 @@ public:
 		if (nErrorsAllowed_ < 0)
 			return true;
 
-		if (game.addVariation() != OK)
+		scid::core::MovetextCursor cursor(game.coreGame());
+		[[maybe_unused]] const bool restored = cursor.restore(game.coreLocation());
+		ASSERT(restored);
+		if (!cursor.previous() || !cursor.addVariation())
 			return logFatalErr("Failed to add a new variation.");
+		game.restoreLocation(cursor.location());
 
 		return true;
 	}

@@ -89,17 +89,6 @@ public:
     void setScidFlags(const char* s, size_t len);
     const char* scidFlags() const;
 
-    //////////////////////////////////////////////////////////////
-    // Functions to add or delete moves:
-    //
-    errorT addMove(simpleMoveT const& sm);
-    errorT addVariation();
-    errorT deleteVariation();
-    errorT promoteVariationToFirst();
-    errorT promoteVariationToMainline();
-    void truncate();
-    void truncateStart();
-
     void restoreLocation(scid::core::MovetextLocation location);
 
     Game* clone();

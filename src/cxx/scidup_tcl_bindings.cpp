@@ -2369,10 +2369,45 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         if (argc > 2 && scid::database::strIsPrefix (argv[2], "-start")) {
             // "sc_game truncate -start" truncates the moves up to the
             // current position:
-            editor.game().truncateStart();
+            auto& game = editor.game();
+            scid::core::GameCursor readCursor(game.coreGame());
+            if (readCursor.restore(game.coreLocation())) {
+                auto currentPosition = readCursor.currentPosition();
+                if (currentPosition) {
+                    // Rebuild through FEN to preserve the piece order expected
+                    // by SCIDv4 encoding.
+                    char tempStr[256];
+                    currentPosition->PrintFEN(tempStr, sizeof(tempStr));
+                    scid::database::Position pos;
+                    if (pos.ReadFromFEN(tempStr) == scid::database::OK) {
+                        bool canTruncate = true;
+                        if (readCursor.variationDepth() != 0) {
+                            scid::core::MovetextCursor promoteCursor(game.coreGame());
+                            canTruncate =
+                                promoteCursor.restore(game.coreLocation()) &&
+                                promoteCursor.promoteVariationToMainline();
+                            if (canTruncate)
+                                game.restoreLocation(promoteCursor.location());
+                        }
+                        if (canTruncate) {
+                            scid::core::MovetextCursor cursor(game.coreGame());
+                            if (cursor.restore(game.coreLocation())) {
+                                game.coreGame().setStartPosition(pos);
+                                cursor.truncateBeforeCursor();
+                                game.restoreLocation(cursor.location());
+                            }
+                        }
+                    }
+                }
+            }
         } else {
             // Remove moves from the current position to the end of the game.
-            editor.game().truncate();
+            scid::core::MovetextCursor cursor(editor.game().coreGame());
+            if (cursor.restore(editor.game().coreLocation()) &&
+                !cursor.isAtLineEnd()) {
+                cursor.truncate();
+                editor.game().restoreLocation(cursor.location());
+            }
         }
         editor.setDirty();
         scid::database::language = old_language;
@@ -2864,7 +2899,14 @@ int sc_game_import(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 		scid::core::GameCursor cursor(editor.game().coreGame());
 		if (cursor.restore(editor.game().coreLocation()) && cursor.next()) {
 			editor.game().restoreLocation(cursor.location());
-		new_variation = (editor.game().addVariation() == scid::database::OK);
+			scid::core::MovetextCursor moveCursor(editor.game().coreGame());
+			[[maybe_unused]] const bool restored =
+			    moveCursor.restore(editor.game().coreLocation());
+			ASSERT(restored);
+			if (moveCursor.previous() && moveCursor.addVariation()) {
+				editor.game().restoreLocation(moveCursor.location());
+				new_variation = true;
+			}
 		}
 	}
 
@@ -2872,7 +2914,9 @@ int sc_game_import(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 	auto ok = scid::database::pgnParseGame(argv[2], std::strlen(argv[2]), editor.game(), pgn);
 
 	if (new_variation && isAtEmptyVariation(editor.game())) {
-		editor.game().deleteVariation();
+		scid::core::MovetextCursor cursor(editor.game().coreGame());
+		if (cursor.restore(editor.game().coreLocation()) && cursor.deleteVariation())
+			editor.game().restoreLocation(cursor.location());
 	}
 
 	if (!ok && pgn.log.empty())
@@ -3545,11 +3589,24 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         if (cursor.restore(game.coreLocation()) && cursor.next())
             game.restoreLocation(cursor.location());
     }
-    game.addVariation();
+    {
+        scid::core::MovetextCursor cursor(game.coreGame());
+        [[maybe_unused]] const bool restored = cursor.restore(game.coreLocation());
+        ASSERT(restored);
+        [[maybe_unused]] const bool moved = cursor.previous();
+        ASSERT(moved);
+        [[maybe_unused]] const auto* variation = cursor.addVariation();
+        ASSERT(variation);
+        game.restoreLocation(cursor.location());
+    }
     editor.setDirty();
     if (sm) {
         // We need to replicate the last move of the current game.
-        game.addMove(*sm);
+        scid::core::MovetextCursor cursor(game.coreGame());
+        [[maybe_unused]] const bool restored = cursor.restore(game.coreLocation());
+        ASSERT(restored);
+        cursor.addMove({sm->from, sm->to, sm->promote, sm->isCastle() != 0});
+        game.restoreLocation(cursor.location());
     }
     {
         scid::core::GameCursor cursor(merge->coreGame());
@@ -3566,7 +3623,13 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             merge->restoreLocation(cursor.location());
         }
         if (!mergeMove) { break; }
-        if (game.addMove(*mergeMove) != scid::database::OK) { break; }
+        {
+            scid::core::MovetextCursor cursor(game.coreGame());
+            if (!cursor.restore(game.coreLocation())) { break; }
+            cursor.addMove({mergeMove->from, mergeMove->to,
+                            mergeMove->promote, mergeMove->isCastle() != 0});
+            game.restoreLocation(cursor.location());
+        }
         ply++;
     }
 
@@ -5003,11 +5066,13 @@ sc_move_add (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::simpleMoveT sm;
     scid::database::errorT err = pos->ReadCoordMove(&sm, s, s[4] == 0 ? 4 : 5, true);
     if (err == scid::database::OK) {
-        err = editor.game().addMove(sm);
-        if (err == scid::database::OK) {
-            editor.setDirty();
-            return TCL_OK;
-        }
+        scid::core::MovetextCursor cursor(editor.game().coreGame());
+        if (!cursor.restore(editor.game().coreLocation()))
+            return errorResult(ti, "Error adding move.");
+        cursor.addMove({sm.from, sm.to, sm.promote, sm.isCastle() != 0});
+        editor.game().restoreLocation(cursor.location());
+        editor.setDirty();
+        return TCL_OK;
     }
     return errorResult (ti, "Error adding move.");
 }
@@ -8896,7 +8961,11 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                 if (cursor.restore(game.coreLocation()) && cursor.next())
                     game.restoreLocation(cursor.location());
             }
-            game.addVariation();
+            scid::core::MovetextCursor cursor(game.coreGame());
+            if (cursor.restore(game.coreLocation()) && cursor.previous() &&
+                cursor.addVariation()) {
+                game.restoreLocation(cursor.location());
+            }
             editor.setDirty();
         }
         break;
@@ -8929,7 +8998,14 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
     case VAR_PROMOTE:
         editor.setDirty();
-        return UI_Result(ti, game.promoteVariationToMainline ());
+        {
+            scid::core::MovetextCursor cursor(game.coreGame());
+            if (!cursor.restore(game.coreLocation()) ||
+                !cursor.promoteVariationToMainline())
+                return UI_Result(ti, scid::database::ERROR_NoVariation);
+            game.restoreLocation(cursor.location());
+            return UI_Result(ti, scid::database::OK);
+        }
 
     default:
         return InvalidCommand (ti, "sc_var", options);
@@ -8943,7 +9019,12 @@ sc_var (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 //    Deletes a specified variation.
 int sc_var_delete(ClientData, Tcl_Interp* ti, int, const char**) {
 	auto editor = scidup::app::editor::gameSession(*db);
-	auto err = editor.game().deleteVariation();
+	scid::core::MovetextCursor cursor(editor.game().coreGame());
+	auto err = scid::database::ERROR_NoVariation;
+	if (cursor.restore(editor.game().coreLocation()) && cursor.deleteVariation()) {
+		editor.game().restoreLocation(cursor.location());
+		err = scid::database::OK;
+	}
 	if (err != scid::database::ERROR_NoVariation)
 		editor.setDirty();
 	return UI_Result(ti, err);
@@ -8954,7 +9035,13 @@ int sc_var_delete(ClientData, Tcl_Interp* ti, int, const char**) {
 //    first in the list.
 int sc_var_first(ClientData, Tcl_Interp* ti, int, const char**) {
 	auto editor = scidup::app::editor::gameSession(*db);
-	auto err = editor.game().promoteVariationToFirst();
+	scid::core::MovetextCursor cursor(editor.game().coreGame());
+	auto err = scid::database::ERROR_NoVariation;
+	if (cursor.restore(editor.game().coreLocation()) &&
+	    cursor.promoteVariationToFirst()) {
+		editor.game().restoreLocation(cursor.location());
+		err = scid::database::OK;
+	}
 	if (err != scid::database::ERROR_NoVariation)
 		editor.setDirty();
 	return UI_Result(ti, err);
