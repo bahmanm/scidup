@@ -276,7 +276,6 @@ errorT scidBaseT::getGame(const IndexEntry& ie, Game& dest) const {
 	                                sizeof(scidFlags), ie, tagRoster(ie),
 	                                getGame(ie));
 	dest.setScidFlags(scidFlags, sizeof(scidFlags));
-	dest.restoreLocation(scid::core::MovetextLocation{});
 	return err;
 }
 

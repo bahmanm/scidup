@@ -34,34 +34,39 @@
 namespace {
 
 std::optional<scid::database::Position>
-currentPosition(const scid::database::Game& game) {
+currentPosition(const scid::database::Game& game,
+                scid::core::MovetextLocation location) {
 	scid::core::GameCursor cursor(game.coreGame());
-	EXPECT_TRUE(cursor.restore(game.coreLocation()));
+	EXPECT_TRUE(cursor.restore(location));
 	auto position = cursor.currentPosition();
 	EXPECT_TRUE(position.has_value());
 	return position;
 }
 
 scid::database::simpleMoveT makeCurrentMove(scid::database::Game& game,
+                                            scid::core::MovetextLocation location,
                                             scid::database::squareT from,
                                             scid::database::squareT to) {
 	scid::database::simpleMoveT move;
-	if (auto position = currentPosition(game))
+	if (auto position = currentPosition(game, location))
 		position->makeMove(from, to, scid::database::EMPTY, move);
 	return move;
 }
 
-void setCurrentComment(scid::database::Game& game, std::string_view comment) {
+void setCurrentComment(scid::database::Game& game,
+                       scid::core::MovetextLocation location,
+                       std::string_view comment) {
 	scid::core::MovetextCursor cursor(game.coreGame());
-	ASSERT_TRUE(cursor.restore(game.coreLocation()));
+	ASSERT_TRUE(cursor.restore(location));
 	ASSERT_TRUE(cursor.setComment(comment));
 }
 
-void addMove(scid::database::Game& game, scid::database::simpleMoveT const& move) {
+void addMove(scid::database::Game& game, scid::core::MovetextLocation& location,
+             scid::database::simpleMoveT const& move) {
 	scid::core::MovetextCursor cursor(game.coreGame());
-	ASSERT_TRUE(cursor.restore(game.coreLocation()));
+	ASSERT_TRUE(cursor.restore(location));
 	cursor.addMove({move.from, move.to, move.promote, move.isCastle() != 0});
-	game.restoreLocation(cursor.location());
+	location = cursor.location();
 }
 
 } // namespace
@@ -229,11 +234,12 @@ TEST(Test_PgnEncode, encode_game) {
 	}
 	{
 		scid::database::Game game;
+		scid::core::MovetextLocation location;
 		game.coreGame().setEco("A01");
-		setCurrentComment(game, "before the move");
-		auto sm = makeCurrentMove(game, scid::database::E2, scid::database::E4);
-		addMove(game, sm);
-		setCurrentComment(game, "after the move");
+		setCurrentComment(game, location, "before the move");
+		auto sm = makeCurrentMove(game, location, scid::database::E2, scid::database::E4);
+		addMove(game, location, sm);
+		setCurrentComment(game, location, "after the move");
 		auto expected = "[Event\0\"\"]\n"sv
 		                "[Site\0\"\"]\n"sv
 		                "[Date\0\"????.??.??\"]\n"sv
@@ -269,10 +275,11 @@ TEST(Test_PgnEncode, encode) {
 	}
 	{
 		scid::database::Game game;
-		setCurrentComment(game, "before the move");
-		auto sm = makeCurrentMove(game, scid::database::E2, scid::database::E4);
-		addMove(game, sm);
-		setCurrentComment(game, "after the move");
+		scid::core::MovetextLocation location;
+		setCurrentComment(game, location, "before the move");
+		auto sm = makeCurrentMove(game, location, scid::database::E2, scid::database::E4);
+		addMove(game, location, sm);
+		setCurrentComment(game, location, "after the move");
 		auto expected = "[Event \"\"]\n"
 		                "[Site \"\"]\n"
 		                "[Date \"????.??.??\"]\n"

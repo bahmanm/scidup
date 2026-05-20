@@ -16,6 +16,7 @@
 #define SCID_OPTABLE_H
 
 #include "scidup/core/game_result.h"
+#include "scidup/core/movetext_location.h"
 #include "scidup/core/notation.h"
 #include "scidup/database/common.h"
 #include "scidup/database/game_id.h"
@@ -110,14 +111,17 @@ class OpLine
     scid::database::uint        EgTheme;
 
     void Init (void);
-    void Init (scid::database::Game * g, const scid::database::IndexEntry * ie, scid::database::gamenumT gameNum,
+    void Init (scid::database::Game * g, scid::core::MovetextLocation location,
+               const scid::database::IndexEntry * ie, scid::database::gamenumT gameNum,
                scid::database::uint maxExtraMoves, scid::database::uint maxThemeMoveNumber);
     void Destroy (void);
 
   public:
     OpLine () { Init(); }
-    OpLine (scid::database::Game * g, const scid::database::IndexEntry * ie, scid::database::gamenumT gnum, scid::database::uint max, scid::database::uint tm) {
-        Init (g, ie, gnum, max, tm);
+    OpLine (scid::database::Game * g, scid::core::MovetextLocation location,
+            const scid::database::IndexEntry * ie, scid::database::gamenumT gnum,
+            scid::database::uint max, scid::database::uint tm) {
+        Init (g, location, ie, gnum, max, tm);
     }
     ~OpLine() { Destroy(); }
     void SetPositionalThemes (scid::database::Position * pos);
@@ -182,12 +186,17 @@ class OpTable
     void PrintNotes (scid::database::DString * dstr, scid::database::uint format);
 
   public:
-    OpTable (const char * type, scid::database::Game * g, scidup::eco::Book * ecoBook) {
-        Init (type, g, ecoBook);
+    OpTable (const char * type, scid::database::Game * g,
+             scid::core::MovetextLocation location, scidup::eco::Book * ecoBook) {
+        Init (type, g, location, ecoBook);
     }
-    OpTable (const char * type, scid::database::Game * g) { Init (type, g, NULL); }
+    OpTable (const char * type, scid::database::Game * g,
+             scid::core::MovetextLocation location) {
+        Init (type, g, location, NULL);
+    }
     ~OpTable() { Clear();  delete[] Type; }
-    void Init (const char * type, scid::database::Game * g, scidup::eco::Book * ecoBook);
+    void Init (const char * type, scid::database::Game * g,
+               scid::core::MovetextLocation location, scidup::eco::Book * ecoBook);
     void Clear ();
     void ClearNotes ();
     void SetFormat (const char * str);
@@ -242,7 +251,8 @@ class OpTable
     void   PrintText (scid::database::DString * str, const char *title, const char *comment,
                       bool htext);
     static scid::database::uint FormatFromStr (const char * str);
-    scid::database::uint   AddMoveOrder (scid::database::Game * g);
+    scid::database::uint   AddMoveOrder (scid::database::Game * g,
+                                         scid::core::MovetextLocation location);
     void   PopularMoveOrders (scid::database::DString * dstr, scid::database::uint count);
     void   ThemeReport (scid::database::DString * dstr, scid::database::uint argc, const char ** argv);
     void   AddEndMaterial (scid::database::matSigT ms, bool inFilter);

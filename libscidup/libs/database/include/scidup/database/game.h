@@ -48,24 +48,17 @@ class Game {
     // is a domain reason for them outside database/app compatibility.
     char        scidFlags_[22];
 
-    // Position and moves
-    scid::core::MovetextLocation coreLocation_;
-
 private:
     Game(const Game&);
-    bool setCoreLocation(scid::core::MovetextLocation location);
 public:
     Game();
     ~Game();
     scid::core::Game& coreGame();
     const scid::core::Game& coreGame() const;
-    scid::core::MovetextLocation coreLocation() const;
     void clear();
 
     void setScidFlags(const char* s, size_t len);
     const char* scidFlags() const;
-
-    void restoreLocation(scid::core::MovetextLocation location);
 
     Game* clone();
 };

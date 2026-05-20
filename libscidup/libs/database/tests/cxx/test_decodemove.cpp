@@ -12,9 +12,10 @@
 
 namespace {
 
-std::string currentFen(const scid::database::Game& game) {
+std::string currentFen(const scid::database::Game& game,
+                       scid::core::MovetextLocation location) {
 	scid::core::GameCursor cursor(game.coreGame());
-	EXPECT_TRUE(cursor.restore(game.coreLocation()));
+	EXPECT_TRUE(cursor.restore(location));
 	auto position = cursor.currentPosition();
 	EXPECT_TRUE(position.has_value());
 	if (!position)
@@ -28,8 +29,10 @@ std::string currentFen(const scid::database::Game& game) {
 void expect_roundtrip(std::string_view pgn) {
 	SCOPED_TRACE(std::string(pgn));
 	scid::database::Game original;
+	scid::core::MovetextLocation originalLocation;
 	scid::database::PgnParseLog parseLog;
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), original,
+	                                         originalLocation,
 	                                         parseLog));
 
 	std::vector<scid::database::byte> encoded;
@@ -42,22 +45,22 @@ void expect_roundtrip(std::string_view pgn) {
 	ASSERT_EQ(scid::database::OK,
 	          scid::database::game_storage::decodeMovesOnly(decoded.coreGame(),
 	                                                        bbuf));
-	decoded.restoreLocation(scid::core::MovetextLocation{});
 
-	original.restoreLocation(scid::core::MovetextLocation{});
-	decoded.restoreLocation(scid::core::MovetextLocation{});
+	originalLocation = {};
+	scid::core::MovetextLocation decodedLocation;
 
 	for (;;) {
-		EXPECT_EQ(currentFen(original), currentFen(decoded));
+		EXPECT_EQ(currentFen(original, originalLocation),
+		          currentFen(decoded, decodedLocation));
 		EXPECT_EQ(scid::core::notation::nextSan(original.coreGame(),
-		                                        original.coreLocation()),
+		                                        originalLocation),
 		          scid::core::notation::nextSan(decoded.coreGame(),
-		                                        decoded.coreLocation()));
+		                                        decodedLocation));
 
 		scid::core::GameCursor originalCursor(original.coreGame());
-		EXPECT_TRUE(originalCursor.restore(original.coreLocation()));
+		EXPECT_TRUE(originalCursor.restore(originalLocation));
 		scid::core::GameCursor decodedCursor(decoded.coreGame());
-		EXPECT_TRUE(decodedCursor.restore(decoded.coreLocation()));
+		EXPECT_TRUE(decodedCursor.restore(decodedLocation));
 		const auto originalErr = originalCursor.next()
 		                             ? scid::database::OK
 		                             : scid::database::ERROR_EndOfMoveList;
@@ -67,8 +70,8 @@ void expect_roundtrip(std::string_view pgn) {
 		EXPECT_EQ(originalErr, decodedErr);
 		if (originalErr != scid::database::OK)
 			break;
-		original.restoreLocation(originalCursor.location());
-		decoded.restoreLocation(decodedCursor.location());
+		originalLocation = originalCursor.location();
+		decodedLocation = decodedCursor.location();
 	}
 }
 

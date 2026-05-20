@@ -115,7 +115,6 @@ private:
 		        game.coreGame(), scidFlags, sizeof(scidFlags), ie, tags, data))
 			return err;
 		game.setScidFlags(scidFlags, sizeof(scidFlags));
-		game.restoreLocation(scid::core::MovetextLocation{});
 
 		if (errorT err = getDerived()->gameSave(&game, replaced))
 			return err;
@@ -131,7 +130,6 @@ private:
 		        game.coreGame(), scidFlags, sizeof(scidFlags), ie, tags, data))
 			return err;
 		game.setScidFlags(scidFlags, sizeof(scidFlags));
-		game.restoreLocation(scid::core::MovetextLocation{});
 
 		if (errorT err = getDerived()->gameAdd(&game))
 			return err;

@@ -131,12 +131,14 @@ public:
 
 	void resetToNewGame() const { state().reset(); }
 
-	void replace(scid::database::Game* game, std::optional<scid::database::gamenumT> gameId, bool dirty) const {
+	void replace(scid::database::Game* game, scid::core::MovetextLocation location,
+	             std::optional<scid::database::gamenumT> gameId,
+	             bool dirty) const {
 		auto& s = state();
 		s.game.reset(game);
 		s.loadedGameId = gameId;
 		s.dirty = dirty;
-		s.location = game->coreLocation();
+		s.location = location;
 		s.history.clear();
 		delete s.deprecatedPushPop.game;
 		s.deprecatedPushPop = {};

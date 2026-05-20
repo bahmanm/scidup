@@ -35,34 +35,39 @@
 namespace {
 
 std::optional<scid::database::Position>
-currentPosition(const scid::database::Game& game) {
+currentPosition(const scid::database::Game& game,
+                scid::core::MovetextLocation location) {
 	scid::core::GameCursor cursor(game.coreGame());
-	EXPECT_TRUE(cursor.restore(game.coreLocation()));
+	EXPECT_TRUE(cursor.restore(location));
 	auto position = cursor.currentPosition();
 	EXPECT_TRUE(position.has_value());
 	return position;
 }
 
-void setCurrentComment(scid::database::Game& game, std::string_view comment) {
+void setCurrentComment(scid::database::Game& game,
+                       scid::core::MovetextLocation location,
+                       std::string_view comment) {
 	scid::core::MovetextCursor cursor(game.coreGame());
-	ASSERT_TRUE(cursor.restore(game.coreLocation()));
+	ASSERT_TRUE(cursor.restore(location));
 	ASSERT_TRUE(cursor.setComment(comment));
 }
 
 void addMove(scid::database::Game& game,
+             scid::core::MovetextLocation& location,
              scid::database::simpleMoveT const& move) {
 	scid::core::MovetextCursor cursor(game.coreGame());
-	ASSERT_TRUE(cursor.restore(game.coreLocation()));
+	ASSERT_TRUE(cursor.restore(location));
 	cursor.addMove({move.from, move.to, move.promote, move.isCastle() != 0});
-	game.restoreLocation(cursor.location());
+	location = cursor.location();
 }
 
-void addVariation(scid::database::Game& game) {
+void addVariation(scid::database::Game& game,
+                  scid::core::MovetextLocation& location) {
 	scid::core::MovetextCursor cursor(game.coreGame());
-	ASSERT_TRUE(cursor.restore(game.coreLocation()));
+	ASSERT_TRUE(cursor.restore(location));
 	ASSERT_TRUE(cursor.previous());
 	ASSERT_NE(nullptr, cursor.addVariation());
-	game.restoreLocation(cursor.location());
+	location = cursor.location();
 }
 
 scid::database::fileModeT fmodes[] = {scid::database::FMODE_Create, scid::database::FMODE_ReadOnly, scid::database::FMODE_WriteOnly,
@@ -152,9 +157,10 @@ private:
 
 	std::unique_ptr<scid::database::Game> genGame() {
 		auto res = std::unique_ptr<scid::database::Game>(new scid::database::Game);
+		scid::core::MovetextLocation location;
 		scid::database::MoveList mlist;
 		for (auto i = rand(0, maxMoves); i > 0; --i) {
-			auto position = currentPosition(*res);
+			auto position = currentPosition(*res, location);
 			if (!position)
 				break;
 			position->GenerateMoves(&mlist, scid::database::EMPTY,
@@ -164,27 +170,26 @@ private:
 
 			auto move = *mlist.Get(rand(0, mlist.Size() - 1));
 			position->fillMove(move);
-			addMove(*res, move);
+			addMove(*res, location, move);
 
 			if (rand(0, 6) == 0)
-				setCurrentComment(*res, rand_comment());
+				setCurrentComment(*res, location, rand_comment());
 
 			scid::core::GameCursor cursor(res->coreGame());
-			[[maybe_unused]] const bool restored = cursor.restore(
-			    res->coreLocation());
+			[[maybe_unused]] const bool restored = cursor.restore(location);
 			ASSERT(restored);
 			int varOp = rand(0, 80 + int(cursor.variationDepth()) * 20);
 			if (varOp < 20) {
-				addVariation(*res);
+				addVariation(*res, location);
 			} else if (varOp > 80) {
 				if (cursor.exitVariation()) {
-					res->restoreLocation(cursor.location());
+					location = cursor.location();
 					scid::core::GameCursor nextCursor(res->coreGame());
 					[[maybe_unused]] const bool nextRestored =
-					    nextCursor.restore(res->coreLocation());
+					    nextCursor.restore(location);
 					ASSERT(nextRestored);
 					if (nextCursor.next())
-						res->restoreLocation(nextCursor.location());
+						location = nextCursor.location();
 				}
 			}
 		}

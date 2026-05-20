@@ -19,10 +19,6 @@ const scid::core::Game& Game::coreGame() const {
 	return coreGame_;
 }
 
-scid::core::MovetextLocation Game::coreLocation() const {
-	return coreLocation_;
-}
-
 // TODO [Game]: Keep Scid flags in database/app compatibility, not in the core
 // metadata model.
 void Game::setScidFlags(const char* s, size_t len) {
@@ -38,8 +34,6 @@ const char* Game::scidFlags() const {
 Game::Game(const Game& obj) {
 	coreGame_ = obj.coreGame_;
 	std::copy_n(obj.scidFlags_, sizeof(obj.scidFlags_), scidFlags_);
-	[[maybe_unused]] const bool restored = setCoreLocation(obj.coreLocation_);
-	ASSERT(restored);
 }
 
 Game* Game::clone() {
@@ -51,9 +45,6 @@ void Game::clear() {
 	// database compatibility flags.
 	coreGame_.clear();
 	scidFlags_[0] = 0;
-	[[maybe_unused]] const bool restored =
-	    setCoreLocation(scid::core::MovetextLocation());
-	ASSERT(restored);
 }
 
 } // namespace scid::database

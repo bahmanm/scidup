@@ -28,7 +28,8 @@ bool pgnParseGameImpl(const char* input, size_t inputLen, Game& game,
 
 bool pgnParseGame(const char* input, size_t inputLen, Game& game,
                   PgnParseLog& log) {
-	return pgnParseGameImpl(input, inputLen, game, nullptr, log);
+	scid::core::MovetextLocation location;
+	return pgnParseGameImpl(input, inputLen, game, &location, log);
 }
 
 bool pgnParseGame(const char* input, size_t inputLen, Game& game,

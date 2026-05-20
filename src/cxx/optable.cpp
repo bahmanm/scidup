@@ -26,29 +26,38 @@
 
 namespace {
 
-scid::core::GameCursor currentCursor(const scid::database::Game& game) {
+scid::core::GameCursor currentCursor(const scid::database::Game& game,
+                                     scid::core::MovetextLocation location) {
     scid::core::GameCursor cursor(game.coreGame());
-    [[maybe_unused]] const bool restored = cursor.restore(game.coreLocation());
+    [[maybe_unused]] const bool restored = cursor.restore(location);
     ASSERT(restored);
     return cursor;
 }
 
-bool isAtStart(const scid::database::Game& game) {
-    return currentCursor(game).isAtGameStart();
+scid::core::GameCursor currentCursor(const scid::database::Game& game) {
+    return currentCursor(game, scid::core::MovetextLocation{});
 }
 
-bool isAtVariationStart(const scid::database::Game& game) {
-    return currentCursor(game).isAtVariationStart();
+bool isAtStart(const scid::database::Game& game,
+               scid::core::MovetextLocation location) {
+    return currentCursor(game, location).isAtGameStart();
+}
+
+bool isAtVariationStart(const scid::database::Game& game,
+                        scid::core::MovetextLocation location) {
+    return currentCursor(game, location).isAtVariationStart();
 }
 
 std::optional<scid::database::Position>
-currentPosition(const scid::database::Game& game) {
-    return currentCursor(game).currentPosition();
+currentPosition(const scid::database::Game& game,
+                scid::core::MovetextLocation location = {}) {
+    return currentCursor(game, location).currentPosition();
 }
 
 std::optional<scid::database::simpleMoveT>
-currentMove(const scid::database::Game& game) {
-    auto cursor = currentCursor(game);
+currentMove(const scid::database::Game& game,
+            scid::core::MovetextLocation location) {
+    auto cursor = currentCursor(game, location);
     auto position = cursor.currentPosition();
     auto move = cursor.nextMove();
     if (!position || !move)
@@ -147,7 +156,8 @@ OpLine::Init (void)
 }
 
 void
-OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, scid::database::gamenumT gameNum,
+OpLine::Init (scid::database::Game * g, scid::core::MovetextLocation location,
+              const scid::database::IndexEntry * ie, scid::database::gamenumT gameNum,
               scid::database::uint maxExtraMoves, scid::database::uint maxThemeMoveNumber)
 {
     White = scid::database::strDuplicate (g->coreGame().white().name.c_str());
@@ -166,14 +176,14 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
     BlackElo = g->coreGame().black().rating.value;
     AvgElo = g->coreGame().averageRating();
     Length = 0;
-    StartPly = static_cast<scid::database::uint>(currentCursor(*g).ply());
-    auto location = g->coreLocation();
-    auto startPosition = currentPosition(*g);
+    StartPly = static_cast<scid::database::uint>(currentCursor(*g, location).ply());
+    auto startLocation = location;
+    auto startPosition = currentPosition(*g, location);
     ASSERT(startPosition);
     if (startPosition->GetToMove() == scid::database::BLACK) {
-        auto cursor = currentCursor(*g);
+        auto cursor = currentCursor(*g, location);
         if (cursor.previous())
-            g->restoreLocation(cursor.location());
+            location = cursor.location();
     }
     NoteNumber = NoteMoveNum = 0;
     scid::database::uint columnMoves = OPTABLE_COLUMNS * 2;
@@ -185,59 +195,59 @@ OpLine::Init (scid::database::Game * g, const scid::database::IndexEntry * ie, s
     scid::database::uint i = 0;
     ShortGame = false;
     while (i < columnMoves) {
-        auto sm = currentMove(*g);
+        auto sm = currentMove(*g, location);
         if (!sm) {
             Move[i][0] = 0;
             ShortGame = true;
         } else {
             Length++;
-            auto position = currentPosition(*g);
+            auto position = currentPosition(*g, location);
             ASSERT(position);
             position->MakeSANString (&*sm, Move[i], scid::database::SAN_CHECKTEST);
             scid::database::strStrip (Move[i], '-');
             scid::database::strStrip (Move[i], '=');
-            auto cursor = currentCursor(*g);
+            auto cursor = currentCursor(*g, location);
             if (cursor.next())
-                g->restoreLocation(cursor.location());
+                location = cursor.location();
         }
         i++;
     }
 
     // Now read in all the extra note moves:
     while (i < maxLineMoves) {
-        auto sm = currentMove(*g);
+        auto sm = currentMove(*g, location);
         if (!sm) {
             Move[i][0] = 0;
             ShortGame = true;
         } else {
             Length++;
-            auto position = currentPosition(*g);
+            auto position = currentPosition(*g, location);
             ASSERT(position);
             position->MakeSANString (&*sm, Move[i], scid::database::SAN_CHECKTEST);
             scid::database::strStrip (Move[i], '-');
             scid::database::strStrip (Move[i], '=');
-            auto cursor = currentCursor(*g);
+            auto cursor = currentCursor(*g, location);
             if (cursor.next())
-                g->restoreLocation(cursor.location());
+                location = cursor.location();
         }
         i++;
     }
-    if (!currentMove(*g)) { ShortGame = true; }
+    if (!currentMove(*g, location)) { ShortGame = true; }
 
     // Now set positional themes:
     scid::database::uint maxThemePly = maxThemeMoveNumber * 2;
     for (i=0; i < NUM_POSTHEMES; i++) { Theme[i] = 0; }
-    g->restoreLocation(scid::core::MovetextLocation{});
+    location = {};
     for (i=0; i < maxThemePly; i++) {
-        auto cursor = currentCursor(*g);
+        auto cursor = currentCursor(*g, location);
         if (!cursor.next()) { break; }
-        g->restoreLocation(cursor.location());
-        auto position = currentPosition(*g);
+        location = cursor.location();
+        auto position = currentPosition(*g, location);
         ASSERT(position);
         SetPositionalThemes (&*position);
     }
 
-    g->restoreLocation(location);
+    location = startLocation;
 }
 
 
@@ -520,7 +530,8 @@ OpLine::PrintSummary (scid::database::DString * dstr, scid::database::uint forma
 
 
 void
-OpTable::Init (const char * type, scid::database::Game * g, scidup::eco::Book * ebook)
+OpTable::Init (const char * type, scid::database::Game * g,
+               scid::core::MovetextLocation location, scidup::eco::Book * ebook)
 {
     Type = scid::database::strDuplicate (type);
     TargetRows = OPTABLE_DEFAULT_ROWS;
@@ -532,7 +543,7 @@ OpTable::Init (const char * type, scid::database::Game * g, scidup::eco::Book * 
     NumMoveOrders = 0;
     Format = OPTABLE_Text;
     StartLength = 0;
-    auto position = currentPosition(*g);
+    auto position = currentPosition(*g, location);
     ASSERT(position);
     WTM = (position->GetToMove() == scid::database::WHITE ? true : false);
     DecimalChar = '.';
@@ -551,36 +562,36 @@ OpTable::Init (const char * type, scid::database::Game * g, scidup::eco::Book * 
     }
 
     // Generate the text for each move up to the current position:
-    auto location = g->coreLocation();
-    while (! isAtStart(*g)) {
-        if (isAtVariationStart(*g)) {
-            auto cursor = currentCursor(*g);
+    auto startLocation = location;
+    while (! isAtStart(*g, location)) {
+        if (isAtVariationStart(*g, location)) {
+            auto cursor = currentCursor(*g, location);
             if (cursor.exitVariation())
-                g->restoreLocation(cursor.location());
+                location = cursor.location();
             continue;
         }
         if (ebook != NULL && ECOstr_.empty()) {
-            auto position = currentPosition(*g);
+            auto position = currentPosition(*g, location);
             ASSERT(position);
             auto eco = ebook->findEcoString(*position);
             if (!eco.empty())
                 ECOstr_.append(eco);
         }
         {
-            auto cursor = currentCursor(*g);
+            auto cursor = currentCursor(*g, location);
             if (cursor.previous())
-                g->restoreLocation(cursor.location());
+                location = cursor.location();
         }
-        auto sm = currentMove(*g);
+        auto sm = currentMove(*g, location);
         if (!sm) { break; }
-        auto position = currentPosition(*g);
+        auto position = currentPosition(*g, location);
         ASSERT(position);
         position->MakeSANString (&*sm, StartLine[StartLength],
                                  scid::database::SAN_CHECKTEST);
         StartLength++;
         if (StartLength >= OPTABLE_MAX_STARTLINE) { break; }
     }
-    g->restoreLocation(location);
+    location = startLocation;
     // Now the moves are in the StartLine[] array, in reverse order.
 }
 
@@ -2035,13 +2046,14 @@ OpTable::AvgElo (scid::database::colorT color, scid::database::uint * count, sci
 }
 
 scid::database::uint
-OpTable::AddMoveOrder (scid::database::Game * g)
+OpTable::AddMoveOrder (scid::database::Game * g,
+                       scid::core::MovetextLocation location)
 {
     scid::database::uint id = 0;
     int index = -1;
     const auto moves = scid::core::notation::partialMoveList(
         g->coreGame(),
-        static_cast<scid::database::uint>(currentCursor(*g).ply()));
+        static_cast<scid::database::uint>(currentCursor(*g, location).ply()));
 
     // Search for this move order in the current list:
 

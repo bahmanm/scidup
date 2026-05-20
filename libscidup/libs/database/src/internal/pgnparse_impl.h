@@ -18,7 +18,8 @@ namespace scid::database {
 
 inline scid::core::MovetextLocation currentLocation(
     const Game& game, const scid::core::MovetextLocation* location) {
-	return location ? *location : game.coreLocation();
+	(void)game;
+	return location ? *location : scid::core::MovetextLocation{};
 }
 
 inline void setCurrentLocation(Game& game,
@@ -26,9 +27,8 @@ inline void setCurrentLocation(Game& game,
                                scid::core::MovetextLocation value) {
 	if (location) {
 		*location = value;
-	} else {
-		game.restoreLocation(value);
 	}
+	(void)game;
 }
 
 inline std::string_view currentMoveComment(
@@ -80,6 +80,7 @@ inline errorT resetStartFen(Game& game, scid::core::MovetextLocation* location,
 
 class PgnVisitor {
 	Game& game;
+	scid::core::MovetextLocation ownedLocation_;
 	scid::core::MovetextLocation* location_;
 	std::vector<std::pair<size_t, std::string>> errors_;
 	size_t linenum_ = 0;
@@ -90,7 +91,7 @@ class PgnVisitor {
 public:
 	explicit PgnVisitor(Game& g,
 	                    scid::core::MovetextLocation* location = nullptr)
-	    : game(g), location_(location) {}
+	    : game(g), location_(location ? location : &ownedLocation_) {}
 
 	auto const& errors() const { return errors_; }
 	size_t lineNumber() const { return linenum_; }

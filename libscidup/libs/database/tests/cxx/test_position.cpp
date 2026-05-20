@@ -9,9 +9,10 @@
 
 namespace {
 
-std::string currentFen(const scid::database::Game& game) {
+std::string currentFen(const scid::database::Game& game,
+                       scid::core::MovetextLocation location) {
 	scid::core::GameCursor cursor(game.coreGame());
-	EXPECT_TRUE(cursor.restore(game.coreLocation()));
+	EXPECT_TRUE(cursor.restore(location));
 	auto position = cursor.currentPosition();
 	EXPECT_TRUE(position.has_value());
 	if (!position)
@@ -22,12 +23,13 @@ std::string currentFen(const scid::database::Game& game) {
 	return buf;
 }
 
-bool nextPgn(scid::database::Game& game) {
+bool nextPgn(scid::database::Game& game,
+             scid::core::MovetextLocation& location) {
 	scid::core::GameCursor cursor(game.coreGame());
-	EXPECT_TRUE(cursor.restore(game.coreLocation()));
+	EXPECT_TRUE(cursor.restore(location));
 	if (!scid::core::pgn::nextLocation(cursor))
 		return false;
-	game.restoreLocation(cursor.location());
+	location = cursor.location();
 	return true;
 }
 
@@ -39,9 +41,11 @@ TEST(Test_PrintFen, castling_flag_kside_from_pgn) {
 	    "0 1\"]"
 	    "1. Rxa1 Rxa8 2. Ra3 Ra6 3. Rh3 Rh6 4. Rhh1 Rhh8 5. O-O O-O";
 	scid::database::Game game;
+	scid::core::MovetextLocation location;
 	scid::database::PgnParseLog parseLog;
-	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game, parseLog));
-	game.restoreLocation(scid::core::MovetextLocation{});
+	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game,
+	                                         location, parseLog));
+	location = {};
 
 	const char* fens[] = {
 	    "Brbnk1r1/3pppq1/8/ppp3pp/PPP3PP/8/3PPPQ1/bRBNK1R1 w KQkq - 0 1",
@@ -56,8 +60,8 @@ TEST(Test_PrintFen, castling_flag_kside_from_pgn) {
 	    "2bnk1rr/3pppq1/8/ppp3pp/PPP3PP/8/3PPPQ1/2BN1RKR b g - 7 5",
 	    "2bn1rkr/3pppq1/8/ppp3pp/PPP3PP/8/3PPPQ1/2BN1RKR w - - 8 6"};
 	for (auto expected : fens) {
-		EXPECT_STREQ(currentFen(game).c_str(), expected);
-		nextPgn(game);
+		EXPECT_STREQ(currentFen(game, location).c_str(), expected);
+		nextPgn(game, location);
 	}
 }
 
@@ -67,9 +71,11 @@ TEST(Test_PrintFen, castling_flag_qside_from_pgn) {
 	    "KQkq - 0 1\"]"
 	    "1... Rg6 2. Rg3 Ra6 3. Ra3 Raxa8 4. Raxa1 O-O-O 5. O-O-O";
 	scid::database::Game game;
+	scid::core::MovetextLocation location;
 	scid::database::PgnParseLog parseLog;
-	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game, parseLog));
-	game.restoreLocation(scid::core::MovetextLocation{});
+	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game,
+	                                         location, parseLog));
+	location = {};
 
 	const char* fens[] = {
 	    "Br2k1r1/1b1ppn2/8/pppQ1pPp/PPPq1PP1/8/1B1PPN2/bR2K1R1 b KQkq - 0 1",
@@ -82,7 +88,7 @@ TEST(Test_PrintFen, castling_flag_qside_from_pgn) {
 	    "r1kr4/1b1ppn2/8/pppQ1pPp/PPPq1PP1/8/1B1PPN2/RR2K3 w B - 1 5",
 	    "r1kr4/1b1ppn2/8/pppQ1pPp/PPPq1PP1/8/1B1PPN2/R1KR4 b - - 2 5"};
 	for (auto expected : fens) {
-		EXPECT_STREQ(currentFen(game).c_str(), expected);
-		nextPgn(game);
+		EXPECT_STREQ(currentFen(game, location).c_str(), expected);
+		nextPgn(game, location);
 	}
 }
