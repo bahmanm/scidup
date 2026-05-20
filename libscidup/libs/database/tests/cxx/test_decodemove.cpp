@@ -33,12 +33,16 @@ void expect_roundtrip(std::string_view pgn) {
 	                                         parseLog));
 
 	std::vector<scid::database::byte> encoded;
-	scid::database::game_storage::encode(original, encoded);
+	scid::database::game_storage::encode(original.coreGame(),
+	                                     original.scidFlags(), encoded);
 
 	scid::database::ByteBuffer bbuf(encoded.data(), encoded.size());
 	scid::database::Game decoded;
+	decoded.clear();
 	ASSERT_EQ(scid::database::OK,
-	          scid::database::game_storage::decodeMovesOnly(decoded, bbuf));
+	          scid::database::game_storage::decodeMovesOnly(decoded.coreGame(),
+	                                                        bbuf));
+	decoded.restoreLocation(scid::core::MovetextLocation{});
 
 	original.restoreLocation(scid::core::MovetextLocation{});
 	decoded.restoreLocation(scid::core::MovetextLocation{});

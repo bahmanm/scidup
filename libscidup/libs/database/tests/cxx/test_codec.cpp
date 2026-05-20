@@ -143,11 +143,12 @@ public:
 	}
 
 private:
-	void encodeGames() {
-		for (auto& game : v_) {
-			scid::database::game_storage::encode(*game, encoded_.emplace_back());
+		void encodeGames() {
+			for (auto& game : v_) {
+				scid::database::game_storage::encode(
+				    game->coreGame(), game->scidFlags(), encoded_.emplace_back());
+			}
 		}
-	}
 
 	std::unique_ptr<scid::database::Game> genGame() {
 		auto res = std::unique_ptr<scid::database::Game>(new scid::database::Game);

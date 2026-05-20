@@ -4,23 +4,31 @@
 #include "scidup/core/position.h"
 #include "scidup/database/common.h"
 
+#include <cstddef>
 #include <utility>
 #include <vector>
 
-namespace scid::database {
+namespace scid::core {
 class Game;
+} // namespace scid::core
+
+namespace scid::database {
 class IndexEntry;
 struct TagRoster;
 } // namespace scid::database
 
 namespace scid::database::game_storage {
 
-std::pair<IndexEntry, TagRoster> encode(const Game& game,
+std::pair<IndexEntry, TagRoster> encode(const scid::core::Game& game,
+                                        const char* scidFlags,
                                         std::vector<byte>& dest);
-void loadStandardTags(Game& game, IndexEntry const& ie, TagRoster const& tags);
-errorT decode(Game& game, IndexEntry const& ie, TagRoster const& tags,
-              ByteBuffer buf);
-errorT decodeMovesOnly(Game& game, ByteBuffer& buf);
+void loadStandardTags(scid::core::Game& game, char* scidFlags,
+                      std::size_t scidFlagsLen, IndexEntry const& ie,
+                      TagRoster const& tags);
+errorT decode(scid::core::Game& game, char* scidFlags,
+              std::size_t scidFlagsLen, IndexEntry const& ie,
+              TagRoster const& tags, ByteBuffer buf);
+errorT decodeMovesOnly(scid::core::Game& game, ByteBuffer& buf);
 
 struct ByteBufferAccess {
 	template <typename MoveFn, typename CommentFn, typename VariationFn,

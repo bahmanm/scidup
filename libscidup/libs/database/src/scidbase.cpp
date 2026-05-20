@@ -270,7 +270,14 @@ ByteBuffer scidBaseT::getGame(const IndexEntry& ie) const {
 }
 
 errorT scidBaseT::getGame(const IndexEntry& ie, Game& dest) const {
-	return game_storage::decode(dest, ie, tagRoster(ie), getGame(ie));
+	dest.clear();
+	char scidFlags[22]{};
+	auto err = game_storage::decode(dest.coreGame(), scidFlags,
+	                                sizeof(scidFlags), ie, tagRoster(ie),
+	                                getGame(ie));
+	dest.setScidFlags(scidFlags, sizeof(scidFlags));
+	dest.restoreLocation(scid::core::MovetextLocation{});
+	return err;
 }
 
 errorT scidBaseT::saveGame(Game* game, gamenumT replacedGameId) {
@@ -282,7 +289,8 @@ errorT scidBaseT::saveGame(Game const& game, gamenumT replacedGameId) {
 		return errModify;
 
 	std::vector<byte> buf;
-	auto [ie, tags] = game_storage::encode(game, buf);
+	auto [ie, tags] = game_storage::encode(game.coreGame(), game.scidFlags(),
+	                                       buf);
 	auto gamedata = ByteBuffer(buf.data(), buf.size());
 
 	errorT err = (replacedGameId < numGames())
@@ -360,7 +368,8 @@ errorT scidBaseT::importGames(std::string_view dbType,
 		std::vector<byte> buf;
 		res = CodecPgn::parseGames(progress, pgn, [&](Game& game) {
 			buf.clear();
-			auto [ie, tags] = game_storage::encode(game, buf);
+			auto [ie, tags] = game_storage::encode(game.coreGame(),
+			                                       game.scidFlags(), buf);
 			auto err = storage_->codec->addGame(ie, tags, {buf.data(), buf.size()});
 			if (err == ERROR_CodecChess960) {
 				++nChess960Errors;

@@ -1,11 +1,10 @@
-#include "scidup/database/game.h"
-
+#include "scidup/core/game.h"
+#include "scidup/core/movetext_cursor.h"
 #include "scidup/database/bytebuf.h"
 #include "scidup/database/common.h"
 #include "scidup/database/indexentry.h"
 #include "scidup/database/matsig.h"
 #include "scidup/database/namebase.h"
-#include "scidup/core/movetext_cursor.h"
 #include "game_storage.h"
 #include "stored.h"
 
@@ -28,27 +27,32 @@ namespace scid::database {
 // boundary. The future core Game should not know about compact database
 // metadata records.
 //
-void game_storage::loadStandardTags(Game& game, IndexEntry const& ie,
+void game_storage::loadStandardTags(scid::core::Game& game, char* scidFlags,
+                                    std::size_t scidFlagsLen,
+                                    IndexEntry const& ie,
                                     TagRoster const& tags) {
-    auto& coreGame = game.coreGame();
-    coreGame.setEvent(tags.event);
-    coreGame.setSite(tags.site);
-    coreGame.setWhiteName(tags.white);
-    coreGame.setBlackName(tags.black);
-    coreGame.setRound(tags.round);
-    coreGame.setDate(ie.GetDate());
-    coreGame.setEventDate(ie.GetEventDate());
-    coreGame.setWhiteRating({ie.GetWhiteElo(), ie.GetWhiteRatingType()});
-    coreGame.setBlackRating({ie.GetBlackElo(), ie.GetBlackRatingType()});
-    coreGame.setResult(ie.GetResult());
-    scidup::eco::String ecoStr;
-    scidup::eco::toExtendedString(ie.GetEcoCode(), ecoStr);
-    coreGame.setEco(ecoStr);
-    char scidFlags[22];
-    ie.GetFlagStr(scidFlags, NULL);
-    game.setScidFlags(scidFlags, sizeof(scidFlags));
-    if (!ie.isChessStd())
-        coreGame.findOrCreateTag("Variant").assign("Chess960");
+	game.setEvent(tags.event);
+	game.setSite(tags.site);
+	game.setWhiteName(tags.white);
+	game.setBlackName(tags.black);
+	game.setRound(tags.round);
+	game.setDate(ie.GetDate());
+	game.setEventDate(ie.GetEventDate());
+	game.setWhiteRating({ie.GetWhiteElo(), ie.GetWhiteRatingType()});
+	game.setBlackRating({ie.GetBlackElo(), ie.GetBlackRatingType()});
+	game.setResult(ie.GetResult());
+	scidup::eco::String ecoStr;
+	scidup::eco::toExtendedString(ie.GetEcoCode(), ecoStr);
+	game.setEco(ecoStr);
+	if (scidFlags && scidFlagsLen > 0) {
+		char flags[22];
+		ie.GetFlagStr(flags, NULL);
+		std::fill_n(scidFlags, scidFlagsLen, 0);
+		std::copy_n(flags, std::min(scidFlagsLen - 1, sizeof(flags)),
+		            scidFlags);
+	}
+	if (!ie.isChessStd())
+		game.findOrCreateTag("Variant").assign("Chess960");
 }
 
 
@@ -412,15 +416,13 @@ errorT decodeMovelist(ByteBuffer& buf, scid::core::Game& game,
 	}
 }
 
-errorT resetStartFen(Game& game, const char* fen) {
+errorT resetStartFen(scid::core::Game& game, const char* fen) {
 	Position position;
 	if (auto err = position.ReadFromFEN(fen))
 		return err;
 
-	game.coreGame().clearMovetext();
-	game.coreGame().setStartPosition(position);
-
-	game.restoreLocation(scid::core::MovetextLocation{});
+	game.clearMovetext();
+	game.setStartPosition(position);
 	return OK;
 }
 
@@ -653,11 +655,11 @@ std::pair<bool, bool> mainlineInfo(const Position* customStart,
 }
 
 std::pair<IndexEntry, TagRoster> game_storage::encode(
-    const Game& game, std::vector<byte>& dest) {
+    const scid::core::Game& coreGame, const char* scidFlags,
+    std::vector<byte>& dest) {
 	// TODO [Game]: Keep IndexEntry/TagRoster projection in the database storage
 	// boundary. Core metadata should be projected here, not stored in database
 	// codec types.
-	const auto& coreGame = game.coreGame();
 	auto tags = TagRoster();
 	tags.event = coreGame.event().c_str();
 	tags.site = coreGame.site().c_str();
@@ -684,7 +686,7 @@ std::pair<IndexEntry, TagRoster> game_storage::encode(
 	} else {
 		ie.SetStartFlag(false);
 	}
-	ie.SetFlag(IndexEntry::StrToFlagMask(game.scidFlags()), true);
+	ie.SetFlag(IndexEntry::StrToFlagMask(scidFlags ? scidFlags : ""), true);
 
 	const auto [promo, underPromo] =
 	    mainlineInfo(coreGame.startPosition(), coreGame.movetext().mainline, ie);
@@ -718,11 +720,11 @@ std::pair<IndexEntry, TagRoster> game_storage::encode(
 	return {ie, tags};
 }
 
-errorT game_storage::decode(Game& game, IndexEntry const& ie,
+errorT game_storage::decode(scid::core::Game& coreGame, char* scidFlags,
+                            std::size_t scidFlagsLen, IndexEntry const& ie,
                             TagRoster const& tags, ByteBuffer buf) {
-	game.clear();
-	game_storage::loadStandardTags(game, ie, tags);
-	auto& coreGame = game.coreGame();
+	coreGame.clear();
+	game_storage::loadStandardTags(coreGame, scidFlags, scidFlagsLen, ie, tags);
 
 	errorT err = buf.decodeTags([&](const auto& tag, const auto& value) {
 		auto& dest = coreGame.findOrCreateTag(tag);
@@ -736,28 +738,22 @@ errorT game_storage::decode(Game& game, IndexEntry const& ie,
 		return errStartPos;
 
 	if (fen)
-		err = resetStartFen(game, fen);
+		err = resetStartFen(coreGame, fen);
 
 	std::vector<scid::core::MovetextLocation> comment_marks;
 	if (err == OK)
 		err = decodeMovelist(buf, coreGame, comment_marks);
 
-	if (err != OK) {
-		game.restoreLocation(game.coreLocation());
+	if (err != OK)
 		return err;
-	}
 
 	if (err == OK)
 		err = decodeComments(buf, coreGame, comment_marks);
 
-	if (err == OK) {
-		game.restoreLocation(game.coreLocation());
-	}
-
 	return err;
 }
 
-errorT game_storage::decodeMovesOnly(Game& game, ByteBuffer& buf) {
+errorT game_storage::decodeMovesOnly(scid::core::Game& game, ByteBuffer& buf) {
 	game.clear();
 	if (errorT err = buf.decodeTags([](auto, auto) {}))
 		return err;
@@ -771,8 +767,7 @@ errorT game_storage::decodeMovesOnly(Game& game, ByteBuffer& buf) {
 	}
 
 	std::vector<scid::core::MovetextLocation> comment_marks;
-	auto err = decodeMovelist(buf, game.coreGame(), comment_marks);
-	game.restoreLocation(game.coreLocation());
+	auto err = decodeMovelist(buf, game, comment_marks);
 	return err;
 }
 

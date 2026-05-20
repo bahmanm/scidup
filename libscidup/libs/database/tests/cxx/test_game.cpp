@@ -334,10 +334,13 @@ TEST(Test_Game, locationInPGN) {
 		ASSERT_NE(nullptr, dbase.getIndexEntry_bounds(0));
 
 		scid::database::Game game;
-		auto bufGame = dbase.getGame(*dbase.getIndexEntry(0));
-		ASSERT_TRUE(bufGame);
-		ASSERT_EQ(scid::database::OK,
-		          scid::database::game_storage::decodeMovesOnly(game, bufGame));
+		 auto bufGame = dbase.getGame(*dbase.getIndexEntry(0));
+		 ASSERT_TRUE(bufGame);
+		 game.clear();
+		 ASSERT_EQ(scid::database::OK,
+		          scid::database::game_storage::decodeMovesOnly(
+		              game.coreGame(), bufGame));
+		 game.restoreLocation(scid::core::MovetextLocation{});
 
 		unsigned location = 1;
 		game.restoreLocation(scid::core::MovetextLocation{});
@@ -459,7 +462,8 @@ TEST(Test_Game, empty_tag_name) {
 		game.coreGame().addTag("Annotator", "common tag");
 		EXPECT_EQ(game.coreGame().extraTags().size(), 3);
 
-		scid::database::game_storage::encode(game, encodedGame);
+		scid::database::game_storage::encode(game.coreGame(), game.scidFlags(),
+		                                     encodedGame);
 	}
 
 	scid::database::ByteBuffer bbuf(encodedGame.data(), encodedGame.size());
@@ -483,12 +487,14 @@ TEST(Test_Game, encodeFEN) {
 	{
 		scid::database::Game game;
 		ASSERT_EQ(scid::database::OK, resetGameStartFen(game, kiwipete));
-		scid::database::game_storage::encode(game, encodedGame);
+		scid::database::game_storage::encode(game.coreGame(), game.scidFlags(),
+		                                     encodedGame);
 	}
 	{
 		scid::database::ByteBuffer bbuf(encodedGame.data(), encodedGame.size());
 		scid::database::Game game;
-		scid::database::game_storage::decodeMovesOnly(game, bbuf);
+		game.clear();
+		scid::database::game_storage::decodeMovesOnly(game.coreGame(), bbuf);
 		game.restoreLocation(scid::core::MovetextLocation{});
 		EXPECT_STREQ(kiwipete, currentFen(game).c_str());
 	}
@@ -914,7 +920,7 @@ auto make_invalid(unsigned char movecode, std::string_view pgn) {
 	scid::database::Game g;
 	scid::database::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()},
 	                                scid::database::PgnVisitor{g});
-	scid::database::game_storage::encode(g, data);
+	scid::database::game_storage::encode(g.coreGame(), g.scidFlags(), data);
 	auto comment_tag = std::find(data.begin(), data.end(), 12);
 	if (comment_tag != data.end())
 		*++comment_tag = movecode;
@@ -935,7 +941,8 @@ template <typename DataT> std::string decode_gameview(DataT const& data) {
 template <typename DataT> std::string decode_game(DataT const& data) {
 	auto bbuf = scid::database::ByteBuffer{data.data(), data.size()};
 	scid::database::Game game;
-	scid::database::game_storage::decodeMovesOnly(game, bbuf);
+	game.clear();
+	scid::database::game_storage::decodeMovesOnly(game.coreGame(), bbuf);
 	game.restoreLocation(scid::core::MovetextLocation{});
 	std::string moves;
 	do {

@@ -3490,10 +3490,12 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     const scid::database::IndexEntry* ie = base->getIndexEntry(gnum);
     auto bbuf = base->getGame(*ie);
     scid::database::Game * merge = scratchGame;
-    if (scid::database::game_storage::decodeMovesOnly(*merge, bbuf) !=
+    merge->clear();
+    if (scid::database::game_storage::decodeMovesOnly(merge->coreGame(), bbuf) !=
         scid::database::OK) {
         return errorResult (ti, "Error decoding game.");
     }
+    merge->restoreLocation(scid::core::MovetextLocation{});
     if (merge->coreGame().hasNonStandardStart()) {
         return errorResult (ti, "The merge game has a non-standard start position.");
     }
@@ -4547,8 +4549,11 @@ sc_game_tags_reload(ClientData, Tcl_Interp*, int, const char**)
     if (!db->isOpen()) { return TCL_OK; }
     const auto ie = editor.loadedIndexEntry();
     if (!ie) { return TCL_OK; }
-    scid::database::game_storage::loadStandardTags(editor.game(), *ie,
-                                                   db->tagRoster(*ie));
+    char scidFlags[22];
+    scid::database::game_storage::loadStandardTags(
+        editor.game().coreGame(), scidFlags, sizeof(scidFlags), *ie,
+        db->tagRoster(*ie));
+    editor.game().setScidFlags(scidFlags, sizeof(scidFlags));
     return TCL_OK;
 }
 
@@ -8171,7 +8176,9 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
         }
         scid::database::uint ply = 0;
         if (useVars) {
-            scid::database::game_storage::decodeMovesOnly(*g, bbuf);
+            g->clear();
+            scid::database::game_storage::decodeMovesOnly(g->coreGame(), bbuf);
+            g->restoreLocation(scid::core::MovetextLocation{});
             // Try matching the game without variations first:
             if (ply == 0  &&  possibleMatch) {
                 if (scid::database::game_search::exactMatch(
