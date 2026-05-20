@@ -502,9 +502,9 @@ UI_res_t sc_base_getGame(scid::database::scidBaseT* dbase, UI_handle_t ti, int a
 	scid::database::gamenumT gNum = scid::database::strGetUnsigned(argv[3]);
 	auto editor = scidup::app::editor::gameSession(*dbase);
 	if (live && gNum > 0 && editor.matchesLoadedGame(gNum - 1)) {
-		auto location = editor.game().coreLocation();
+		auto location = editor.location();
 		auto res = sc_base_getGameHelper(ti, editor.game());
-		editor.game().restoreLocation(location);
+		editor.setLocation(location);
 		return res;
 	}
 
