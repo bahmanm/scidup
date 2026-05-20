@@ -28,9 +28,10 @@
 #include "codec.h"
 #include "codec_memory.h"
 #include "game_storage.h"
+#include "scidup/core/game.h"
 #include "scidup/database/game_id.h"
-#include "scidup/database/game.h"
 
+#include <array>
 #include <atomic>
 #include <thread>
 
@@ -42,7 +43,7 @@
  * header's data of all the games; however a dependency between the codecs and
  * the @e Index class is not desirable.
  * This class provides an interface that encapsulates the codecs, requiring only
- * the ability to exchange @e Game objects.
+ * the ability to exchange core Game objects plus database Scid flags.
  */
 namespace scid::database {
 
@@ -64,12 +65,15 @@ public:
 	 * Reads the next game.
 	 * A derived class implements this function to sequentially read the games
 	 * contained into the database.
-	 * @param Game&: the Game object where the data will be stored.
+	 * @param game: the core Game object where the data will be stored.
+	 * @param scidFlags: output buffer for database/application Scid flags.
 	 * @returns
 	 * - ERROR_NotFound if there are no more games to be read.
 	 * - OK otherwise.
 	 */
-	errorT parseNext(Game&) { return ERROR_NotFound; }
+	errorT parseNext(scid::core::Game&, char*, std::size_t) {
+		return ERROR_NotFound;
+	}
 
 	/**
 	 * Returns info about the parsing progress.
@@ -87,36 +91,39 @@ public:
 
 	/**
 	 * Adds a game into the database.
-	 * @param Game*: valid pointer to a Game object with the new data.
+	 * @param game: core game data to add.
+	 * @param scidFlags: database/application Scid flags for the game.
 	 * @returns OK in case of success, an @p errorT code otherwise.
 	 */
-	errorT gameAdd(Game*) { return ERROR_CodecUnsupFeat; }
+	errorT gameAdd(scid::core::Game const&, const char*) {
+		return ERROR_CodecUnsupFeat;
+	}
 
 	/**
 	 * Replaces a game in the database.
-	 * @param Game*:    valid pointer to a Game object with the new data.
+	 * @param game:     core game data to replace.
+	 * @param scidFlags: database/application Scid flags for the game.
 	 * @param gamenumT: valid gamenumT of the game to be replaced.
 	 * @returns OK in case of success, an @p errorT code otherwise.
 	 * If not overridden, adds a special tag and invoke gameAdd().
 	 */
-	errorT gameSave(Game* game, gamenumT replaced) {
-		game->coreGame().removeExtraTag(special_replace_tag);
-		game->coreGame().addTag(special_replace_tag,
-		                         std::to_string(replaced));
-		return getDerived()->gameAdd(game);
+	errorT gameSave(scid::core::Game game, const char* scidFlags,
+	                gamenumT replaced) {
+		game.removeExtraTag(special_replace_tag);
+		game.addTag(special_replace_tag, std::to_string(replaced));
+		return getDerived()->gameAdd(game, scidFlags);
 	}
 
 private:
 	errorT saveGame(IndexEntry const& ie, TagRoster const& tags,
 	                ByteBuffer const& data, gamenumT replaced) final {
-		Game game;
 		char scidFlags[22]{};
+		scid::core::Game game;
 		if (errorT err = game_storage::decode(
-		        game.coreGame(), scidFlags, sizeof(scidFlags), ie, tags, data))
+		        game, scidFlags, sizeof(scidFlags), ie, tags, data))
 			return err;
-		game.setScidFlags(scidFlags, sizeof(scidFlags));
 
-		if (errorT err = getDerived()->gameSave(&game, replaced))
+		if (errorT err = getDerived()->gameSave(game, scidFlags, replaced))
 			return err;
 
 		return CodecMemory::saveGame(ie, tags, data, replaced);
@@ -124,14 +131,13 @@ private:
 
 	errorT addGame(IndexEntry const& ie, TagRoster const& tags,
 	               ByteBuffer const& data) final {
-		Game game;
 		char scidFlags[22]{};
+		scid::core::Game game;
 		if (errorT err = game_storage::decode(
-		        game.coreGame(), scidFlags, sizeof(scidFlags), ie, tags, data))
+		        game, scidFlags, sizeof(scidFlags), ie, tags, data))
 			return err;
-		game.setScidFlags(scidFlags, sizeof(scidFlags));
 
-		if (errorT err = getDerived()->gameAdd(&game))
+		if (errorT err = getDerived()->gameAdd(game, scidFlags))
 			return err;
 
 		return CodecMemory::addGame(ie, tags, data);
@@ -167,23 +173,22 @@ private:
 			return err;
 
 		std::vector<byte> buf;
-		return parseGames(progress, *getDerived(), [&](Game& game) {
+		return parseGames(progress, *getDerived(), [&](scid::core::Game& game,
+		                                               const char* scidFlags) {
 			buf.clear();
 
-			if (auto replace_game =
-			        game.coreGame().findExtraTag(special_replace_tag)) {
+			if (auto replace_game = game.findExtraTag(special_replace_tag)) {
 				auto gnum = std::strtoul(replace_game->c_str(), NULL, 10);
 				if (gnum < CodecMemory::numGames()) {
-					game.coreGame().removeExtraTag(special_replace_tag);
-					auto [ie, tags] = game_storage::encode(
-					    game.coreGame(), game.scidFlags(), buf);
+					game.removeExtraTag(special_replace_tag);
+					auto [ie, tags] =
+					    game_storage::encode(game, scidFlags, buf);
 					return CodecMemory::saveGame(
 					    ie, tags, {buf.data(), buf.size()}, gnum);
 				}
 			}
 
-			auto [ie, tags] = game_storage::encode(
-			    game.coreGame(), game.scidFlags(), buf);
+			auto [ie, tags] = game_storage::encode(game, scidFlags, buf);
 			return CodecMemory::addGame(ie, tags, {buf.data(), buf.size()});
 		});
 	}
@@ -191,14 +196,15 @@ private:
 public:
 	/*
 	 * Given a source database of type CodecProxy<T>, for each game a
-	 * corresponding Game object is created and dispatched to @e destFn.
+	 * corresponding core Game object and Scid flags are dispatched to @e destFn.
 	 */
 	template <typename TProgress, typename TSource, typename TDestFn>
 	static errorT parseGames(const TProgress& progress, TSource& src,
 	                         TDestFn destFn) {
 		auto workTotal = src.parseProgress().second;
 
-		Game game[4];
+		std::array<scid::core::Game, 4> game;
+		std::array<std::array<char, 22>, 4> scidFlags{};
 		std::atomic<size_t> workDone{};
 		std::atomic<int8_t> sync[4] = {};
 		enum { sy_free, sy_used, sy_stop };
@@ -219,7 +225,9 @@ public:
 				if (sy == sy_stop)
 					break;
 
-				if (src.parseNext(game[slot]) == ERROR_NotFound)
+				scidFlags[slot].fill(0);
+				if (src.parseNext(game[slot], scidFlags[slot].data(),
+				                  scidFlags[slot].size()) == ERROR_NotFound)
 					break;
 
 				if (++nProduced % 1024 == 0) {
@@ -257,7 +265,7 @@ public:
 				}
 			}
 
-			err = destFn(game[slot]);
+			err = destFn(game[slot], scidFlags[slot].data());
 			if (err != OK)
 				break;
 

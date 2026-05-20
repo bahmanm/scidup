@@ -288,7 +288,9 @@ auto collectPositions(const scid::database::scidBaseT& dbase, scid::database::ga
 	auto ie_bounds = dbase.getIndexEntry_bounds(gnum);
 	auto ie = dbase.getIndexEntry(gnum);
 	scid::database::Game game;
-	if (ie_bounds && ie && dbase.getGame(*ie_bounds, game) == scid::database::OK)
+	if (ie_bounds && ie &&
+	    dbase.getGame(*ie_bounds, game.coreGame(), game.scidFlagsData(),
+	                  game.scidFlagsCapacity()) == scid::database::OK)
 		return scid::database::gamepos::collectPositions(game);
 
 	return decltype(scid::database::gamepos::collectPositions(game))();
@@ -303,7 +305,7 @@ TEST_F(Test_Scidbase, getGamePos1) {
 
 	scid::database::scidBaseT dbase;
 	ASSERT_EQ(scid::database::OK, dbase.open("MEMORY", scid::database::FMODE_Create, "Memory"));
-	ASSERT_EQ(scid::database::OK, dbase.saveGame(&game));
+	ASSERT_EQ(scid::database::OK, dbase.saveGame(game.coreGame(), game.scidFlags()));
 	ASSERT_NE(nullptr, dbase.getIndexEntry_bounds(0));
 
 	auto gamepos = collectPositions(dbase, 0);
@@ -330,7 +332,7 @@ TEST_F(Test_Scidbase, getGamePos2) {
 
 	scid::database::scidBaseT dbase;
 	ASSERT_EQ(scid::database::OK, dbase.open("MEMORY", scid::database::FMODE_Create, "Memory"));
-	ASSERT_EQ(scid::database::OK, dbase.saveGame(&game));
+	ASSERT_EQ(scid::database::OK, dbase.saveGame(game.coreGame(), game.scidFlags()));
 	ASSERT_NE(nullptr, dbase.getIndexEntry_bounds(0));
 
 	auto gamepos = collectPositions(dbase, 0);

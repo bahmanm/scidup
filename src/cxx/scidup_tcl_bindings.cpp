@@ -827,7 +827,8 @@ sc_base_export (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 // Print the game, skipping any corrupt games:
                 const scid::database::IndexEntry* ie = db->getIndexEntry(i);
                 if (ie->GetLength() == 0) { continue; }
-                if (db->getGame(*ie, *g) != scid::database::OK) {
+                if (db->getGame(*ie, g->coreGame(), g->scidFlagsData(),
+                                g->scidFlagsCapacity()) != scid::database::OK) {
                     continue;
                 }
                 exportGame (g, exportFile, {pgnStyle, outputFormat, 0});
@@ -2248,7 +2249,9 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                 for (size_t i = 0; i < count; ++i) {
                     const scid::database::IndexEntry* ie = dbase->getIndexEntry(idxList[i]);
                     // Skip any corrupt games:
-                    if (dbase->getGame(*ie, g) != scid::database::OK) continue;
+                    if (dbase->getGame(*ie, g.coreGame(), g.scidFlagsData(),
+                                       g.scidFlagsCapacity()) !=
+                        scid::database::OK) continue;
 
                     std::pair<const char*, unsigned> pgn =
                         scid::database::legacy_pgn::encode(
@@ -2645,7 +2648,8 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         if (ie->GetLength() == 0) {
             return errorResult (ti, "Error: empty game file record.");
         }
-        if (db->getGame(*ie, *g) != scid::database::OK) {
+        if (db->getGame(*ie, g->coreGame(), g->scidFlagsData(),
+                        g->scidFlagsCapacity()) != scid::database::OK) {
             return errorResult (ti, "Error reading game file.");
         }
     }
@@ -3971,7 +3975,8 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             if (ie->GetLength() == 0) {
                 return errorResult (ti, "Error: empty game file record.");
             }
-            if (base->getGame(*ie, *g) != scid::database::OK) {
+            if (base->getGame(*ie, g->coreGame(), g->scidFlagsData(),
+                              g->scidFlagsCapacity()) != scid::database::OK) {
                 return errorResult (ti, "Error reading game file.");
             }
 
@@ -4095,7 +4100,8 @@ sc_game_save (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         ieOld->GetFlagStr(buf, "WBMENPTKQ!?U123456");
         currGame.setScidFlags(buf, std::strlen(buf));
     }
-    scid::database::errorT res = dbase->saveGame(currGame, gnum);
+    scid::database::errorT res =
+        dbase->saveGame(currGame.coreGame(), currGame.scidFlags(), gnum);
     if (res == scid::database::OK) {
         if (gnum == scid::database::INVALID_GAMEID && db == dbase) {
             // Saved new game, so set gameNumber to the saved game number:
@@ -4166,12 +4172,16 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
 		return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
 	scid::database::Game* g = scratchGame;
-	scid::database::gamenumT gnum = scid::database::strGetUnsigned(argv[3]);
-	if (gnum > 0) {
-		auto ie = base.getIndexEntry_bounds(gnum - 1);
-		if (!ie || base.getGame(*ie, *scratchGame) != scid::database::OK) {
-			return UI_Result(ti, scid::database::ERROR_BadArg, usage);
-		}
+		scid::database::gamenumT gnum = scid::database::strGetUnsigned(argv[3]);
+		if (gnum > 0) {
+			auto ie = base.getIndexEntry_bounds(gnum - 1);
+			if (!ie ||
+			    base.getGame(*ie, scratchGame->coreGame(),
+			                 scratchGame->scidFlagsData(),
+			                 scratchGame->scidFlagsCapacity()) !=
+			        scid::database::OK) {
+				return UI_Result(ti, scid::database::ERROR_BadArg, usage);
+			}
 	} else {
 		auto editor =
 		    scidup::app::editor::gameSession(const_cast<scid::database::scidBaseT&>(base));
@@ -4329,7 +4339,8 @@ sc_game_tags_get (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         if (db->numGames() > 0) {
             g = scratchGame;
             const scid::database::IndexEntry* ie = db->getIndexEntry(db->numGames() - 1);
-            if (db->getGame(*ie, *g) != scid::database::OK) {
+            if (db->getGame(*ie, g->coreGame(), g->scidFlagsData(),
+                            g->scidFlagsCapacity()) != scid::database::OK) {
                 return errorResult (ti, "Error reading game file.");
             }
         }
@@ -4802,16 +4813,18 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::errorT err2 = scid::database::OK;
     if (updated1) {
         scid::database::Game game;
-        err1 = db->getGame(ie1, game);
+        err1 = db->getGame(ie1, game.coreGame(), game.scidFlagsData(),
+                           game.scidFlagsCapacity());
         if (err1 == scid::database::OK) {
-            err1 = db->saveGame(&game, gn1 - 1);
+            err1 = db->saveGame(game.coreGame(), game.scidFlags(), gn1 - 1);
         }
     }
     if (updated2) {
         scid::database::Game game;
-        err2 = db->getGame(ie2, game);
+        err2 = db->getGame(ie2, game.coreGame(), game.scidFlagsData(),
+                           game.scidFlagsCapacity());
         if (err2 == scid::database::OK) {
-            err2 = db->saveGame(&game, gn2 - 1);
+            err2 = db->saveGame(game.coreGame(), game.scidFlags(), gn2 - 1);
         }
     }
     db->setDuplicates(std::move(duplicates));
@@ -7720,7 +7733,10 @@ sc_report_create (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         const scid::database::IndexEntry* ie = db->getIndexEntry(gnum);
         if (ply != 0) {
             scid::core::MovetextLocation scratchLocation;
-            if (db->getGame(*ie, *scratchGame) != scid::database::OK) {
+            if (db->getGame(*ie, scratchGame->coreGame(),
+                            scratchGame->scidFlagsData(),
+                            scratchGame->scidFlagsCapacity()) !=
+                scid::database::OK) {
                 return errorResult (ti, "Error reading game file.");
             }
             {
@@ -8954,7 +8970,10 @@ sc_search_header (ClientData, Tcl_Interp * ti, scid::database::scidBaseT* base, 
         // generating the PGN representation of each game.
 
 		if (match && pgnTextCount > 0) {
-			if (base->getGame(*ie, *scratchGame) != scid::database::OK) {
+			if (base->getGame(*ie, scratchGame->coreGame(),
+			                  scratchGame->scidFlagsData(),
+			                  scratchGame->scidFlagsCapacity()) !=
+			    scid::database::OK) {
 				match = false;
 			} else {
 				const auto encodeOptions =

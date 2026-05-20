@@ -19,9 +19,9 @@
 #ifndef SCIDBASE_H
 #define SCIDBASE_H
 
+#include "scidup/core/game.h"
 #include "scidup/core/game_result.h"
 #include "scidup/database/bytebuf.h"
-#include "scidup/database/game.h"
 #include "scidup/database/game_id.h"
 #include "scidup/database/gameview.h"
 #include "scidup/database/hfilter.h"
@@ -128,8 +128,10 @@ struct scidBaseT {
 
 		GameView getGame(const IndexEntry* ie) const;
 		ByteBuffer getGame(const IndexEntry& ie) const;
-	errorT getGame(const IndexEntry& ie, Game& dest) const;
-	errorT loadGame(gamenumT gNum, Game& dest) const;
+	errorT getGame(const IndexEntry& ie, scid::core::Game& dest,
+	              char* scidFlags, std::size_t scidFlagsLen) const;
+	errorT loadGame(gamenumT gNum, scid::core::Game& dest,
+	               char* scidFlags, std::size_t scidFlagsLen) const;
 
 	errorT importGames(const scidBaseT* srcBase, const HFilter& filter,
 	                   const Progress& progress);
@@ -138,15 +140,17 @@ struct scidBaseT {
 
 	/**
 	 * Add or replace a game into the database.
-	 * @param game: valid pointer to a Game object with the data of the game.
+	 * @param game: core game data to store.
+	 * @param scidFlags: database/application Scid flags for the game.
 	 * @param replacedGameId: id of the game to replace.
 	 *                        If >= numGames(), a new game will be added.
 	 * @returns OK if successful or an error code.
 	 */
-	errorT saveGame(Game const& game,
+	errorT saveGame(scid::core::Game const& game, const char* scidFlags,
 	                gamenumT replacedGameId = INVALID_GAMEID);
-	errorT saveGame(Game* game, gamenumT replacedGameId = INVALID_GAMEID);
-	errorT addGame(Game const& game) { return saveGame(game, INVALID_GAMEID); }
+	errorT addGame(scid::core::Game const& game, const char* scidFlags) {
+		return saveGame(game, scidFlags, INVALID_GAMEID);
+	}
 
 	bool getFlag(uint flag, uint gNum) const {
 		return idx->GetEntry(gNum)->GetFlag(flag);

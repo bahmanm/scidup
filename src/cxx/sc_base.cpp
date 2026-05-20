@@ -169,9 +169,10 @@ UI_res_t sc_base_copygames(scid::database::scidBaseT* dbase, UI_handle_t ti, int
 			    "sc_base copygames error: wrong <gameNum|filterName>");
 
 		scid::database::Game game;
-		err = dbase->getGame(*ie, game);
+		err = dbase->getGame(*ie, game.coreGame(), game.scidFlagsData(),
+		                     game.scidFlagsCapacity());
 		if (err == scid::database::OK) {
-			err = targetBase->saveGame(&game);
+			err = targetBase->saveGame(game.coreGame(), game.scidFlags());
 		}
 	}
 	return UI_Result(ti, err);
@@ -513,7 +514,9 @@ UI_res_t sc_base_getGame(scid::database::scidBaseT* dbase, UI_handle_t ti, int a
 		return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
 	scid::database::Game game;
-	scid::database::errorT err = dbase->getGame(*ie, game);
+	scid::database::errorT err =
+	    dbase->getGame(*ie, game.coreGame(), game.scidFlagsData(),
+	                   game.scidFlagsCapacity());
 	if (err != scid::database::OK)
 		return UI_Result(ti, err);
 	return sc_base_getGameHelper(ti, game);

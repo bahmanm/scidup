@@ -240,7 +240,10 @@ TEST(Test_Game, clone) {
 		ASSERT_NE(nullptr, dbase.getIndexEntry_bounds(0));
 
 		scid::database::Game game;
-		ASSERT_EQ(scid::database::OK, dbase.getGame(*dbase.getIndexEntry(0), game));
+		ASSERT_EQ(scid::database::OK,
+		          dbase.getGame(*dbase.getIndexEntry(0), game.coreGame(),
+		                        game.scidFlagsData(),
+		                        game.scidFlagsCapacity()));
 		scid::core::MovetextLocation location;
 
 		std::mt19937 re(std::random_device{}());
@@ -404,7 +407,9 @@ TEST(Test_Game, toStart_toEnd) {
 	auto randomEngine = std::mt19937(std::random_device{}());
 	auto distribution = std::uniform_int_distribution<>{2, 500};
 	scid::database::Game game;
-	ASSERT_EQ(scid::database::OK, dbase.getGame(*ie, game));
+	ASSERT_EQ(scid::database::OK,
+	          dbase.getGame(*ie, game.coreGame(), game.scidFlagsData(),
+	                        game.scidFlagsCapacity()));
 	scid::core::MovetextLocation location;
 
 	for (int i = 0; i < 10; i++) {

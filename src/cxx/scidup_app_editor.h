@@ -7,6 +7,7 @@
 
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/movetext_location.h"
+#include "scidup/database/game.h"
 #include "scidup/database/game_id.h"
 #include "scidup/database/scidbase.h"
 #include "scidup_app_undo_redo.h"
@@ -147,7 +148,9 @@ public:
 	scid::database::errorT load(scid::database::gamenumT gameId) const {
 		auto& s = state();
 		s.history.clear();
-		const auto err = base_->loadGame(gameId, *s.game);
+		const auto err = base_->loadGame(gameId, s.game->coreGame(),
+		                                 s.game->scidFlagsData(),
+		                                 s.game->scidFlagsCapacity());
 		if (err != scid::database::OK)
 			return err;
 
@@ -174,7 +177,9 @@ public:
 			return scid::database::OK;
 		}
 
-		const auto err = base_->loadGame(*s.loadedGameId, *s.game);
+		const auto err = base_->loadGame(*s.loadedGameId, s.game->coreGame(),
+		                                 s.game->scidFlagsData(),
+		                                 s.game->scidFlagsCapacity());
 		if (err != scid::database::OK)
 			return err;
 		s.location = {};

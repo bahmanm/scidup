@@ -31,6 +31,14 @@ const char* Game::scidFlags() const {
 	return scidFlags_;
 }
 
+char* Game::scidFlagsData() {
+	return scidFlags_;
+}
+
+size_t Game::scidFlagsCapacity() const {
+	return sizeof(scidFlags_);
+}
+
 Game::Game(const Game& obj) {
 	coreGame_ = obj.coreGame_;
 	std::copy_n(obj.scidFlags_, sizeof(obj.scidFlags_), scidFlags_);

@@ -87,7 +87,8 @@ public:
 	 * - ERROR_NotFound if there are no more games to be read.
 	 * - OK otherwise.
 	 */
-	errorT parseNext(Game& game) {
+	errorT parseNext(scid::core::Game& game, char* scidFlagsOut,
+	                 std::size_t scidFlagsOutLen) {
 		const auto verge = 3 * (nRead_ / 4);
 		if (nParsed_ > verge && nRead_ == buf_.size()) {
 			nParsed_ -= verge;
@@ -98,7 +99,7 @@ public:
 
 		game.clear();
 		std::optional<std::string> scidFlags;
-		PgnVisitor visitor(game.coreGame(), nullptr, &scidFlags);
+		PgnVisitor visitor(game, nullptr, &scidFlags);
 		auto parse = pgn::parse_game(
 		    {buf_.data() + nParsed_, buf_.data() + nRead_}, visitor);
 
@@ -109,7 +110,7 @@ public:
 				// Double the buffer size and retry.
 				buf_.resize(nRead_ * 2);
 				nRead_ += file_.sgetn(buf_.data() + nRead_, nRead_);
-				return parseNext(game);
+				return parseNext(game, scidFlagsOut, scidFlagsOutLen);
 			}
 			// Abort
 			nRead_ = nParsed_ = 0;
@@ -119,10 +120,13 @@ public:
 
 		nParsed_ += parse.first;
 		pgn_impl::logGame(parseLog_, parse.first, visitor);
-		if (scidFlags) {
-			game.setScidFlags(scidFlags->data(), scidFlags->size());
+		if (scidFlags && scidFlagsOut && scidFlagsOutLen > 0) {
+			std::fill_n(scidFlagsOut, scidFlagsOutLen, 0);
+			std::copy_n(scidFlags->data(),
+			            std::min(scidFlagsOutLen - 1, scidFlags->size()),
+			            scidFlagsOut);
 		}
-		if (eof && !parse.second && currentMoveComment(game.coreGame()).empty())
+		if (eof && !parse.second && currentMoveComment(game).empty())
 			return ERROR_NotFound;
 
 		return OK;
@@ -145,12 +149,12 @@ public:
 	/**
 	 * Add a game into the database.
 	 * The @e game is encoded in pgn format and appended at the end of @e file_.
-	 * @param game: valid pointer to a Game object with the new data.
+	 * @param game: core game data to append.
 	 * @returns OK in case of success, an @e errorT code otherwise.
 	 */
-	errorT gameAdd(Game* game) {
+	errorT gameAdd(scid::core::Game const& game, const char*) {
 		buf_.clear();
-		scid::core::pgn::encode(game->coreGame(), buf_);
+		scid::core::pgn::encode(game, buf_);
 		buf_.push_back('\n');
 		return file_.append(buf_.data(), buf_.size());
 	}

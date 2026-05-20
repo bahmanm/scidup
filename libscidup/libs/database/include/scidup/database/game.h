@@ -59,6 +59,8 @@ public:
 
     void setScidFlags(const char* s, size_t len);
     const char* scidFlags() const;
+    char* scidFlagsData();
+    size_t scidFlagsCapacity() const;
 
     Game* clone();
 };
