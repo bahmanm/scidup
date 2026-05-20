@@ -14,7 +14,7 @@
 * along with Scid. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "scidup/database/game.h"
+#include "scidup/core/game.h"
 #include "legacy_pgn.h"
 #include "pgnparse_impl.h"
 #include "scidup/core/game_cursor.h"
@@ -71,9 +71,9 @@ std::string canonicaliseWhitespace(std::string text) {
 	return res;
 }
 
-std::string currentFen(const scid::database::Game& game,
+std::string currentFen(const scid::core::Game& game,
                        scid::core::MovetextLocation location) {
-	scid::core::GameCursor cursor(game.coreGame());
+	scid::core::GameCursor cursor(game);
 	EXPECT_TRUE(cursor.restore(location));
 	auto position = cursor.currentPosition();
 	EXPECT_TRUE(position.has_value());
@@ -91,12 +91,12 @@ TEST(Test_PgnParser, UTF8_char) {
 	auto pgnUTF8 = readFile(gameUTF8);
 	ASSERT_TRUE(pgnUTF8.size() > 0);
 
-	scid::database::Game game;
+	scid::core::Game game;
 	scid::database::PgnParseLog errors;
-	ASSERT_TRUE(scid::database::pgnParseGame(pgnUTF8.data(), pgnUTF8.size(), game.coreGame(), errors));
+	ASSERT_TRUE(scid::database::pgnParseGame(pgnUTF8.data(), pgnUTF8.size(), game, errors));
 	EXPECT_TRUE(errors.log.empty());
 	auto pgn = scid::database::legacy_pgn::encode(
-	    game.coreGame(), game.scidFlags(),
+	    game, "",
 	    {PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
 	         PGN_STYLE_SCIDFLAGS,
 	     scid::database::PGN_FORMAT_Plain,
@@ -111,12 +111,12 @@ TEST(Test_PgnParser, Latin1_char) {
 	auto pgnLatin1 = readFile(gameLatin1);
 	ASSERT_TRUE(pgnLatin1.size() > 0);
 
-	scid::database::Game game;
+	scid::core::Game game;
 	scid::database::PgnParseLog errors;
-	ASSERT_TRUE(scid::database::pgnParseGame(pgnLatin1.data(), pgnLatin1.size(), game.coreGame(), errors));
+	ASSERT_TRUE(scid::database::pgnParseGame(pgnLatin1.data(), pgnLatin1.size(), game, errors));
 	EXPECT_TRUE(errors.log.empty());
 	auto pgn = scid::database::legacy_pgn::encode(
-	    game.coreGame(), game.scidFlags(),
+	    game, "",
 	    {PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
 	         PGN_STYLE_SCIDFLAGS,
 	     scid::database::PGN_FORMAT_Plain,
@@ -170,66 +170,66 @@ TEST(Test_PgnParser, EPD) {
 		" *\n\n";
 	// clang-format on
 
-	scid::database::Game game;
+	scid::core::Game game;
 
 	auto len = std::strlen(pgn);
 	scid::database::PgnParseLog parseLog;
 	game.clear();
 	scid::core::MovetextLocation location;
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
-	                         game.coreGame(), location, parseLog));
+	                         game, location, parseLog));
 	EXPECT_TRUE(parseLog.log.empty());
 	EXPECT_STREQ(
 	    "rnbqkb1r/1ppppppp/5n2/p7/2P5/4P3/PP1P1PPP/RNBQKBNR b KQkq - 0 1",
 	    currentFen(game, location).c_str());
 	EXPECT_EQ("0 1;",
-	          std::string(scid::database::currentMoveComment(game.coreGame(), &location)));
+	          std::string(scid::database::currentMoveComment(game, &location)));
 
 	game.clear();
 	location = {};
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
-	                         game.coreGame(), location, parseLog));
+	                         game, location, parseLog));
 	EXPECT_TRUE(parseLog.log.empty());
 	EXPECT_STREQ(
 	    "rq2r1k1/1bbn1pp1/1pp2n1p/p2p4/N2P3B/P2BP2P/1PQ1NPP1/2R2R1K b - - 0 1",
 	    currentFen(game, location).c_str());
-	EXPECT_EQ("", std::string(scid::database::currentMoveComment(game.coreGame(), &location)));
+	EXPECT_EQ("", std::string(scid::database::currentMoveComment(game, &location)));
 
 	game.clear();
 	location = {};
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
-	                         game.coreGame(), location, parseLog));
+	                         game, location, parseLog));
 	EXPECT_TRUE(parseLog.log.empty());
 	EXPECT_STREQ("1B2K3/4b3/3pk3/5R2/8/7B/8/8 w - - 0 1",
 	             currentFen(game, location).c_str());
 	EXPECT_EQ("bm Bb8-c7; ce +M3; pv Bb8-c7 Be7-f8 Ke8xf8 d6-d5 Rf5-f7+;",
-	          std::string(scid::database::currentMoveComment(game.coreGame(), &location)));
+	          std::string(scid::database::currentMoveComment(game, &location)));
 
 	game.clear();
 	location = {};
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
-	                         game.coreGame(), location, parseLog));
+	                         game, location, parseLog));
 	EXPECT_TRUE(parseLog.log.empty());
 	EXPECT_STREQ("1B2K3/4b3/3pk3/5R2/8/7B/8/8 w - - 0 1",
 	             currentFen(game, location).c_str());
 	EXPECT_EQ("bm Bc7 Rf3+",
-	          std::string(scid::database::currentMoveComment(game.coreGame(), &location)));
+	          std::string(scid::database::currentMoveComment(game, &location)));
 
 	game.clear();
 	location = {};
 	ASSERT_FALSE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
-	                          game.coreGame(), location, parseLog));
+	                          game, location, parseLog));
 	EXPECT_FALSE(parseLog.log.empty());
-	EXPECT_NE(scid::database::currentMoveComment(game.coreGame(), &location).data(), nullptr);
+	EXPECT_NE(scid::database::currentMoveComment(game, &location).data(), nullptr);
 
 	game.clear();
 	std::string last_log = parseLog.log;
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
-	                         game.coreGame(), parseLog));
+	                         game, parseLog));
 	EXPECT_TRUE(parseLog.log.size() > last_log.size());
 	EXPECT_STREQ(expected_game,
 	             scid::database::legacy_pgn::encode(
-	                 game.coreGame(), game.scidFlags(),
+	                 game, "",
 	                 scid::database::defaultLegacyGameEncodeOptions(),
 	                 1024, true)
 	                 .first);
@@ -237,13 +237,13 @@ TEST(Test_PgnParser, EPD) {
 	game.clear();
 	last_log = parseLog.log;
 	ASSERT_TRUE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
-	                         game.coreGame(), parseLog));
+	                         game, parseLog));
 	EXPECT_STREQ(last_log.c_str(), parseLog.log.c_str());
-	EXPECT_EQ("Partial game", game.coreGame().event());
+	EXPECT_EQ("Partial game", game.event());
 
 	game.clear();
 	ASSERT_FALSE(scid::database::pgnParseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
-	                          game.coreGame(), parseLog));
+	                          game, parseLog));
 	ASSERT_EQ(parseLog.n_bytes, len);
 }
 
@@ -418,12 +418,12 @@ TEST(Test_PgnParser, TagPairs) {
 		}
 
 		scid::database::PgnParseLog parseLog;
-		scid::database::Game game;
+		scid::core::Game game;
 
-		ASSERT_TRUE(scid::database::pgnParseGame(src.c_str(), src.size(), game.coreGame(), parseLog));
+		ASSERT_TRUE(scid::database::pgnParseGame(src.c_str(), src.size(), game, parseLog));
 		ASSERT_EQ(!parseLog.log.size(), !errors);
 		auto pgn = scid::database::legacy_pgn::encode(
-		    game.coreGame(), game.scidFlags(),
+		    game, "",
 		    scid::database::defaultLegacyGameEncodeOptions(), 75, true);
 		src.assign(pgn.first, pgn.second);
 		ASSERT_STREQ(src.c_str(), expect.c_str());

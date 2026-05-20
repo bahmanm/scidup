@@ -1,5 +1,5 @@
 #include "scidup/database/bytebuf.h"
-#include "scidup/database/game.h"
+#include "scidup/core/game.h"
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/notation.h"
 #include "scidup/database/pgnparse.h"
@@ -12,9 +12,9 @@
 
 namespace {
 
-std::string currentFen(const scid::database::Game& game,
+std::string currentFen(const scid::core::Game& game,
                        scid::core::MovetextLocation location) {
-	scid::core::GameCursor cursor(game.coreGame());
+	scid::core::GameCursor cursor(game);
 	EXPECT_TRUE(cursor.restore(location));
 	auto position = cursor.currentPosition();
 	EXPECT_TRUE(position.has_value());
@@ -28,22 +28,22 @@ std::string currentFen(const scid::database::Game& game,
 
 void expect_roundtrip(std::string_view pgn) {
 	SCOPED_TRACE(std::string(pgn));
-	scid::database::Game original;
+	scid::core::Game original;
 	scid::core::MovetextLocation originalLocation;
 	scid::database::PgnParseLog parseLog;
-	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), original.coreGame(),
+	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), original,
 	                                         originalLocation,
 	                                         parseLog));
 
 	std::vector<scid::database::byte> encoded;
-	scid::database::game_storage::encode(original.coreGame(),
-	                                     original.scidFlags(), encoded);
+	scid::database::game_storage::encode(original,
+	                                     "", encoded);
 
 	scid::database::ByteBuffer bbuf(encoded.data(), encoded.size());
-	scid::database::Game decoded;
+	scid::core::Game decoded;
 	decoded.clear();
 	ASSERT_EQ(scid::database::OK,
-	          scid::database::game_storage::decodeMovesOnly(decoded.coreGame(),
+	          scid::database::game_storage::decodeMovesOnly(decoded,
 	                                                        bbuf));
 
 	originalLocation = {};
@@ -52,14 +52,14 @@ void expect_roundtrip(std::string_view pgn) {
 	for (;;) {
 		EXPECT_EQ(currentFen(original, originalLocation),
 		          currentFen(decoded, decodedLocation));
-		EXPECT_EQ(scid::core::notation::nextSan(original.coreGame(),
+		EXPECT_EQ(scid::core::notation::nextSan(original,
 		                                        originalLocation),
-		          scid::core::notation::nextSan(decoded.coreGame(),
+		          scid::core::notation::nextSan(decoded,
 		                                        decodedLocation));
 
-		scid::core::GameCursor originalCursor(original.coreGame());
+		scid::core::GameCursor originalCursor(original);
 		EXPECT_TRUE(originalCursor.restore(originalLocation));
-		scid::core::GameCursor decodedCursor(decoded.coreGame());
+		scid::core::GameCursor decodedCursor(decoded);
 		EXPECT_TRUE(decodedCursor.restore(decodedLocation));
 		const auto originalErr = originalCursor.next()
 		                             ? scid::database::OK

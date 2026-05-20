@@ -1,6 +1,6 @@
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/pgn/traversal.h"
-#include "scidup/database/game.h"
+#include "scidup/core/game.h"
 #include "scidup/database/pgnparse.h"
 
 #include <gtest/gtest.h>
@@ -9,9 +9,9 @@
 
 namespace {
 
-std::string currentFen(const scid::database::Game& game,
+std::string currentFen(const scid::core::Game& game,
                        scid::core::MovetextLocation location) {
-	scid::core::GameCursor cursor(game.coreGame());
+	scid::core::GameCursor cursor(game);
 	EXPECT_TRUE(cursor.restore(location));
 	auto position = cursor.currentPosition();
 	EXPECT_TRUE(position.has_value());
@@ -23,9 +23,9 @@ std::string currentFen(const scid::database::Game& game,
 	return buf;
 }
 
-bool nextPgn(scid::database::Game& game,
+bool nextPgn(scid::core::Game& game,
              scid::core::MovetextLocation& location) {
-	scid::core::GameCursor cursor(game.coreGame());
+	scid::core::GameCursor cursor(game);
 	EXPECT_TRUE(cursor.restore(location));
 	if (!scid::core::pgn::nextLocation(cursor))
 		return false;
@@ -40,10 +40,10 @@ TEST(Test_PrintFen, castling_flag_kside_from_pgn) {
 	    "[FEN \"Brbnk1r1/3pppq1/8/ppp3pp/PPP3PP/8/3PPPQ1/bRBNK1R1 w KQkq - "
 	    "0 1\"]"
 	    "1. Rxa1 Rxa8 2. Ra3 Ra6 3. Rh3 Rh6 4. Rhh1 Rhh8 5. O-O O-O";
-	scid::database::Game game;
+	scid::core::Game game;
 	scid::core::MovetextLocation location;
 	scid::database::PgnParseLog parseLog;
-	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game.coreGame(),
+	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game,
 	                                         location, parseLog));
 	location = {};
 
@@ -70,10 +70,10 @@ TEST(Test_PrintFen, castling_flag_qside_from_pgn) {
 	    "[FEN \"Br2k1r1/1b1ppn2/8/pppQ1pPp/PPPq1PP1/8/1B1PPN2/bR2K1R1 b "
 	    "KQkq - 0 1\"]"
 	    "1... Rg6 2. Rg3 Ra6 3. Ra3 Raxa8 4. Raxa1 O-O-O 5. O-O-O";
-	scid::database::Game game;
+	scid::core::Game game;
 	scid::core::MovetextLocation location;
 	scid::database::PgnParseLog parseLog;
-	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game.coreGame(),
+	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game,
 	                                         location, parseLog));
 	location = {};
 

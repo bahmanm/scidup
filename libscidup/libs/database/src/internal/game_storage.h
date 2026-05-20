@@ -3,6 +3,8 @@
 #include "scidup/database/bytebuf.h"
 #include "scidup/core/position.h"
 #include "scidup/database/common.h"
+#include "scidup/database/indexentry.h"
+#include "scidup/database/namebase.h"
 
 #include <cstddef>
 #include <utility>
@@ -11,11 +13,6 @@
 namespace scid::core {
 class Game;
 } // namespace scid::core
-
-namespace scid::database {
-class IndexEntry;
-struct TagRoster;
-} // namespace scid::database
 
 namespace scid::database::game_storage {
 

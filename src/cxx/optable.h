@@ -15,13 +15,14 @@
 #ifndef SCID_OPTABLE_H
 #define SCID_OPTABLE_H
 
+#include "scidup/core/dstring.h"
 #include "scidup/core/game_result.h"
 #include "scidup/core/movetext_location.h"
 #include "scidup/core/notation.h"
 #include "scidup/database/common.h"
 #include "scidup/database/game_id.h"
-#include "scidup/database/game.h"
 #include "scidup/database/indexentry.h"
+#include "scidup/database/misc.h"
 #include "scidup/eco/code.h"
 #include <string>
 

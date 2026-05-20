@@ -1,5 +1,3 @@
-#include "scidup/database/game.h"
-
 #include "scidup/database/bytebuf.h"
 #include "scidup/database/common.h"
 #include "game_search.h"
@@ -552,12 +550,12 @@ bool game_search::materialMatch(bool promotionsFlag, ByteBuffer& buf,
                            oppBishops, sameBishops, minDiff, maxDiff);
 }
 
-bool game_search::exactMatch(Game& game, Position* pos, ByteBuffer* buf,
-                             gameExactMatchT searchType) {
-    return exactMatches(game.coreGame(), pos, buf, searchType);
+bool game_search::exactMatch(const scid::core::Game& game, Position* pos,
+                             ByteBuffer* buf, gameExactMatchT searchType) {
+    return exactMatches(game, pos, buf, searchType);
 }
 
-bool game_search::varExactMatch(Game& game, Position* pos,
+bool game_search::varExactMatch(const scid::core::Game& game, Position* pos,
                                 gameExactMatchT searchType) {
     const auto whitePawnFyles = searchType == GAME_EXACT_MATCH_Fyles
                                     ? pawnFylesFor(*pos, WP)
@@ -565,9 +563,8 @@ bool game_search::varExactMatch(Game& game, Position* pos,
     const auto blackPawnFyles = searchType == GAME_EXACT_MATCH_Fyles
                                     ? pawnFylesFor(*pos, BP)
                                     : std::array<uint, 8>{};
-    auto const& coreGame = game.coreGame();
-    Position startPosition = startPositionFor(coreGame);
-    return varExactMatchLine(coreGame.movetext().mainline, startPosition, pos,
+    Position startPosition = startPositionFor(game);
+    return varExactMatchLine(game.movetext().mainline, startPosition, pos,
                              searchType, whitePawnFyles, blackPawnFyles);
 }
 

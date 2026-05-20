@@ -18,7 +18,7 @@
 #include "codec.h"
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/movetext_cursor.h"
-#include "scidup/database/game.h"
+#include "scidup/core/game.h"
 #include "scidup/database/index.h"
 #include "scidup/database/misc.h"
 #include "scidup/database/namebase.h"
@@ -35,35 +35,35 @@
 namespace {
 
 std::optional<scid::database::Position>
-currentPosition(const scid::database::Game& game,
+currentPosition(const scid::core::Game& game,
                 scid::core::MovetextLocation location) {
-	scid::core::GameCursor cursor(game.coreGame());
+	scid::core::GameCursor cursor(game);
 	EXPECT_TRUE(cursor.restore(location));
 	auto position = cursor.currentPosition();
 	EXPECT_TRUE(position.has_value());
 	return position;
 }
 
-void setCurrentComment(scid::database::Game& game,
+void setCurrentComment(scid::core::Game& game,
                        scid::core::MovetextLocation location,
                        std::string_view comment) {
-	scid::core::MovetextCursor cursor(game.coreGame());
+	scid::core::MovetextCursor cursor(game);
 	ASSERT_TRUE(cursor.restore(location));
 	ASSERT_TRUE(cursor.setComment(comment));
 }
 
-void addMove(scid::database::Game& game,
+void addMove(scid::core::Game& game,
              scid::core::MovetextLocation& location,
              scid::database::simpleMoveT const& move) {
-	scid::core::MovetextCursor cursor(game.coreGame());
+	scid::core::MovetextCursor cursor(game);
 	ASSERT_TRUE(cursor.restore(location));
 	cursor.addMove({move.from, move.to, move.promote, move.isCastle() != 0});
 	location = cursor.location();
 }
 
-void addVariation(scid::database::Game& game,
+void addVariation(scid::core::Game& game,
                   scid::core::MovetextLocation& location) {
-	scid::core::MovetextCursor cursor(game.coreGame());
+	scid::core::MovetextCursor cursor(game);
 	ASSERT_TRUE(cursor.restore(location));
 	ASSERT_TRUE(cursor.previous());
 	ASSERT_NE(nullptr, cursor.addVariation());
@@ -109,7 +109,7 @@ public:
 };
 
 template <int nGames, int maxMoves, int maxCommentLen> class GameGenerator {
-	typedef std::vector<std::unique_ptr<scid::database::Game>> Vec;
+	typedef std::vector<std::unique_ptr<scid::core::Game>> Vec;
 	Vec v_;
 	std::vector<std::vector<scid::database::byte>> encoded_;
 	std::mt19937 mt_;
@@ -151,12 +151,12 @@ private:
 		void encodeGames() {
 			for (auto& game : v_) {
 				scid::database::game_storage::encode(
-				    game->coreGame(), game->scidFlags(), encoded_.emplace_back());
+				    *game, "", encoded_.emplace_back());
 			}
 		}
 
-	std::unique_ptr<scid::database::Game> genGame() {
-		auto res = std::unique_ptr<scid::database::Game>(new scid::database::Game);
+	std::unique_ptr<scid::core::Game> genGame() {
+		auto res = std::unique_ptr<scid::core::Game>(new scid::core::Game);
 		scid::core::MovetextLocation location;
 		scid::database::MoveList mlist;
 		for (auto i = rand(0, maxMoves); i > 0; --i) {
@@ -175,7 +175,7 @@ private:
 			if (rand(0, 6) == 0)
 				setCurrentComment(*res, location, rand_comment());
 
-			scid::core::GameCursor cursor(res->coreGame());
+			scid::core::GameCursor cursor(*res);
 			[[maybe_unused]] const bool restored = cursor.restore(location);
 			ASSERT(restored);
 			int varOp = rand(0, 80 + int(cursor.variationDepth()) * 20);
@@ -184,7 +184,7 @@ private:
 			} else if (varOp > 80) {
 				if (cursor.exitVariation()) {
 					location = cursor.location();
-					scid::core::GameCursor nextCursor(res->coreGame());
+					scid::core::GameCursor nextCursor(*res);
 					[[maybe_unused]] const bool nextRestored =
 					    nextCursor.restore(location);
 					ASSERT(nextRestored);

@@ -333,10 +333,10 @@ public:
 
     enum {
         // scid::database::IndexEntry Flag types:
-        IDX_FLAG_START      =  0,   // scid::database::Game has own start position.
-        IDX_FLAG_PROMO      =  1,   // scid::database::Game contains promotion(s).
-        IDX_FLAG_UPROMO     =  2,   // scid::database::Game contains promotion(s).
-        IDX_FLAG_DELETE     =  3,   // scid::database::Game marked for deletion.
+        IDX_FLAG_START      =  0,   // Game has own start position.
+        IDX_FLAG_PROMO      =  1,   // Game contains promotion(s).
+        IDX_FLAG_UPROMO     =  2,   // Game contains promotion(s).
+        IDX_FLAG_DELETE     =  3,   // Game marked for deletion.
         IDX_FLAG_WHITE_OP   =  4,   // White openings flag.
         IDX_FLAG_BLACK_OP   =  5,   // Black openings flag.
         IDX_FLAG_MIDDLEGAME =  6,   // Middlegames flag.

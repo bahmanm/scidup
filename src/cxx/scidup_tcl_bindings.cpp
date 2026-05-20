@@ -34,7 +34,6 @@
 #include "scidup/core/pgn/traversal.h"
 #include "engine.h"
 #include "scidup/database/game_id.h"
-#include "scidup/database/game.h"
 #include "optable.h"
 #include "scidup/eco/book.h"
 #include "game_search.h"
@@ -55,6 +54,7 @@
 #include "ui.h"
 #include "scidup_release.h"
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <cstdarg>
 #include <cstdio>
@@ -1319,7 +1319,7 @@ UI_res_t sc_base_duplicates(scid::database::scidBaseT* dbase, UI_handle_t ti, in
 /// CLIPBASE functions
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // sc_clipbase:
-//    scid::database::Game clipbase functions.
+//    Game clipbase functions.
 //    Copies a game to, or pastes from, the clipbase database.
 int
 sc_clipbase (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
@@ -2231,7 +2231,8 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             auto exportFile = fopen(exportFileName, "wb");
             if (exportFile == NULL) return errorResult (ti, "Error opening file for exporting games.");
             auto old_language = scid::database::language;
-            scid::database::Game g;
+            scid::core::Game game;
+            std::array<char, 22> scidFlags{};
             auto encodeOptions = scid::database::defaultLegacyGameEncodeOptions();
             if (scid::database::strCompare("LaTeX", argv[6]) == 0) {
                 encodeOptions.legacyFormat = scid::database::PGN_FORMAT_LaTeX;
@@ -2253,13 +2254,13 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                 for (size_t i = 0; i < count; ++i) {
                     const scid::database::IndexEntry* ie = dbase->getIndexEntry(idxList[i]);
                     // Skip any corrupt games:
-                    if (dbase->getGame(*ie, g.coreGame(), g.scidFlagsData(),
-                                       g.scidFlagsCapacity()) !=
+                    if (dbase->getGame(*ie, game, scidFlags.data(),
+                                       scidFlags.size()) !=
                         scid::database::OK) continue;
 
                     std::pair<const char*, unsigned> pgn =
                         scid::database::legacy_pgn::encode(
-                            g.coreGame(), g.scidFlags(), encodeOptions, 75, true);
+                            game, scidFlags.data(), encodeOptions, 75, true);
                     if (pgn.second != fwrite(pgn.first, 1, pgn.second, exportFile)) {
                         err = scid::database::ERROR_FileWrite;
                         break;
@@ -2618,7 +2619,7 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             case EOPT_NUMCOLUMNS_OFF: numColumns = false;      break;
             case EOPT_NUMCOLUMNS_ON:  numColumns = true;       break;
             case EOPT_GNUMBER:
-                // scid::database::Game number to print the crosstable for is
+                // Game number to print the crosstable for is
                 // given in the next argument:
                 if (arg+1 >= argc) { return errorResult (ti, usageMsg); }
                 gameNumber = scid::database::strGetUnsigned (argv[arg+1]);
@@ -2978,7 +2979,7 @@ int sc_game_import(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // sc_game_info:
-//    Return the scid::database::Game Info string for the active game.
+//    Return the Game info string for the active game.
 //    The returned text includes color codes.
 int
 sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
@@ -4819,19 +4820,19 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::database::errorT err1 = scid::database::OK;
     scid::database::errorT err2 = scid::database::OK;
     if (updated1) {
-        scid::database::Game game;
-        err1 = db->getGame(ie1, game.coreGame(), game.scidFlagsData(),
-                           game.scidFlagsCapacity());
+        scid::core::Game game;
+        std::array<char, 22> scidFlags{};
+        err1 = db->getGame(ie1, game, scidFlags.data(), scidFlags.size());
         if (err1 == scid::database::OK) {
-            err1 = db->saveGame(game.coreGame(), game.scidFlags(), gn1 - 1);
+            err1 = db->saveGame(game, scidFlags.data(), gn1 - 1);
         }
     }
     if (updated2) {
-        scid::database::Game game;
-        err2 = db->getGame(ie2, game.coreGame(), game.scidFlagsData(),
-                           game.scidFlagsCapacity());
+        scid::core::Game game;
+        std::array<char, 22> scidFlags{};
+        err2 = db->getGame(ie2, game, scidFlags.data(), scidFlags.size());
         if (err2 == scid::database::OK) {
-            err2 = db->saveGame(game.coreGame(), game.scidFlags(), gn2 - 1);
+            err2 = db->saveGame(game, scidFlags.data(), gn2 - 1);
         }
     }
     db->setDuplicates(std::move(duplicates));
@@ -5300,28 +5301,27 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             if (auto err = pos.ReadFromFENorUCI(argv[2]))
                 return UI_Result(ti, err);
 
-            auto game = scid::database::Game();
+            auto game = scid::core::Game();
             scid::core::MovetextLocation location;
-            resetStartPosition(game.coreGame(), location, pos);
+            resetStartPosition(game, location, pos);
             if (const auto len = std::strlen(argv[3])) {
                 scid::database::PgnParseLog pgn;
                 if (!scid::database::pgnParseGame(argv[3], len,
-                                                  game.coreGame(), location,
-                                                  pgn))
+                                                  game, location, pgn))
                     return UI_Result(ti, scid::database::ERROR_InvalidMove);
             }
 
             {
-                scid::core::GameCursor cursor(game.coreGame());
+                scid::core::GameCursor cursor(game);
                 cursor.toEnd();
                 location = cursor.location();
             }
-            auto finalPos = currentPosition(game.coreGame(), location);
+            auto finalPos = currentPosition(game, location);
             if (!finalPos)
                 return UI_Result(ti, scid::database::ERROR, "Error reading position.");
             finalPos->MakeLongStr(boardStr);
             auto lastmove = scid::core::notation::previousMoveUci(
-                game.coreGame(), location);
+                game, location);
             UI_List result(2);
             result.push_back(boardStr);
             result.push_back(lastmove);
@@ -5463,16 +5463,16 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         auto res = pos.MakeCoordMoves(argv[3], std::strlen(argv[3]), &sanMoves);
         if (res != scid::database::OK) { // If MakeCoordMoves failed, try if scid::database::pgnParseGame works
             scid::database::PgnParseLog log;
-            scid::database::Game game;
+            scid::core::Game game;
             scid::core::MovetextLocation location;
             if (pos.ReadFromFENorUCI(argv[2]) == scid::database::OK &&
-                (resetStartPosition(game.coreGame(), location, pos), true) &&
+                (resetStartPosition(game, location, pos), true) &&
                 scid::database::pgnParseGame(argv[3], std::strlen(argv[3]),
-                                             game.coreGame(), location, log) &&
+                                             game, location, log) &&
                 log.log.empty()) {
                 std::string moves;
                 for (auto const& move :
-                     game.coreGame().movetext().mainline.moves) {
+                     game.movetext().mainline.moves) {
                     moves.push_back(' ');
                     moves.append(move.action.longNotation());
                 }
@@ -8179,8 +8179,7 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
     size_t startFilterCount = filter->size();
 
     // Here is the loop that searches on each game:
-    scid::database::Game tmpGame;
-    scid::database::Game* g = &tmpGame;
+    scid::core::Game game;
     scid::database::gamenumT gameNum = 0;
     for (scid::database::gamenumT n = dbase->numGames(); gameNum < n; gameNum++) {
         if ((gameNum % 5000) == 0) {  // Update the percentage done bar:
@@ -8262,34 +8261,34 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
         }
         scid::database::uint ply = 0;
         if (useVars) {
-            g->clear();
-            scid::database::game_storage::decodeMovesOnly(g->coreGame(), bbuf);
+            game.clear();
+            scid::database::game_storage::decodeMovesOnly(game, bbuf);
             scid::core::MovetextLocation location;
             // Try matching the game without variations first:
             if (ply == 0  &&  possibleMatch) {
                 if (scid::database::game_search::exactMatch(
-                        *g, pos, nullptr, searchType)) {
-                    ply = currentPly(g->coreGame(), location) + 1;
+                        game, pos, nullptr, searchType)) {
+                    ply = currentPly(game, location) + 1;
                 }
             }
             if (ply == 0  &&  possibleFlippedMatch) {
                 if (scid::database::game_search::exactMatch(
-                        *g, posFlip, nullptr, searchType)) {
-                    ply = currentPly(g->coreGame(), location) + 1;
+                        game, posFlip, nullptr, searchType)) {
+                    ply = currentPly(game, location) + 1;
                 }
             }
             if (ply == 0  &&  possibleMatch) {
                 location = {};
                 if (scid::database::game_search::varExactMatch(
-                        *g, pos, searchType)) {
-                    ply = currentPly(g->coreGame(), location) + 1;
+                        game, pos, searchType)) {
+                    ply = currentPly(game, location) + 1;
                 }
             }
             if (ply == 0  &&  possibleFlippedMatch) {
                 location = {};
                 if (scid::database::game_search::varExactMatch(
-                        *g, posFlip, searchType)) {
-                    ply = currentPly(g->coreGame(), location) + 1;
+                        game, posFlip, searchType)) {
+                    ply = currentPly(game, location) + 1;
                 }
             }
         } else {
@@ -8298,15 +8297,15 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
             if (possibleMatch) {
                 auto bbuf_clone = bbuf;
                 if (scid::database::game_search::exactMatch(
-                        *g, pos, &bbuf_clone, searchType)) {
+                        game, pos, &bbuf_clone, searchType)) {
                     // Set its auto-load move number to the matching move:
-                    ply = currentPly(g->coreGame(), location) + 1;
+                    ply = currentPly(game, location) + 1;
                 }
             }
             if (ply == 0  &&  possibleFlippedMatch) {
                 if (scid::database::game_search::exactMatch(
-                        *g, posFlip, &bbuf, searchType)) {
-                    ply = currentPly(g->coreGame(), location) + 1;
+                        game, posFlip, &bbuf, searchType)) {
+                    ply = currentPly(game, location) + 1;
                 }
             }
         }

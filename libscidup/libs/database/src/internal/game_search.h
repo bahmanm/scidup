@@ -1,13 +1,13 @@
 #pragma once
 
 #include "scidup/core/board.h"
+#include "scidup/core/game.h"
 
 #include <cstddef>
 
 namespace scid::database {
 
 class ByteBuffer;
-class Game;
 class Position;
 
 // Pattern filter for material searches.
@@ -33,9 +33,10 @@ bool materialMatch(bool promotionsFlag, ByteBuffer& buf, byte* min, byte* max,
                    patternT* ptn, std::size_t ptnSize, int minPly, int maxPly,
                    int matchLength, bool oppBishops, bool sameBishops,
                    int minDiff, int maxDiff);
-bool exactMatch(Game& game, Position* pos, ByteBuffer* buf,
+bool exactMatch(const scid::core::Game& game, Position* pos, ByteBuffer* buf,
                 gameExactMatchT searchType);
-bool varExactMatch(Game& game, Position* pos, gameExactMatchT searchType);
+bool varExactMatch(const scid::core::Game& game, Position* pos,
+                   gameExactMatchT searchType);
 
 } // namespace game_search
 

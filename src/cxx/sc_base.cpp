@@ -19,7 +19,6 @@
 #include "scidup/database/common.h"
 #include "dbasepool.h"
 #include "game_positions.h"
-#include "scidup/database/game.h"
 #include "scidup/database/game_id.h"
 #include "nag_format.h"
 #include "scidup/database/misc.h"
@@ -30,6 +29,7 @@
 #include "scidup_app_tree.h"
 #include "ui.h"
 #include <algorithm>
+#include <array>
 #include <cstring>
 #include <filesystem>
 #include <map>
@@ -169,11 +169,12 @@ UI_res_t sc_base_copygames(scid::database::scidBaseT* dbase, UI_handle_t ti, int
 			    ti, scid::database::ERROR_BadArg,
 			    "sc_base copygames error: wrong <gameNum|filterName>");
 
-		scid::database::Game game;
-		err = dbase->getGame(*ie, game.coreGame(), game.scidFlagsData(),
-		                     game.scidFlagsCapacity());
+		scid::core::Game game;
+		std::array<char, 22> scidFlags{};
+		err = dbase->getGame(*ie, game, scidFlags.data(),
+		                     scidFlags.size());
 		if (err == scid::database::OK) {
-			err = targetBase->saveGame(game.coreGame(), game.scidFlags());
+			err = targetBase->saveGame(game, scidFlags.data());
 		}
 	}
 	return UI_Result(ti, err);
@@ -515,13 +516,13 @@ UI_res_t sc_base_getGame(scid::database::scidBaseT* dbase, UI_handle_t ti, int a
 	if (!ie)
 		return UI_Result(ti, scid::database::ERROR_BadArg, usage);
 
-	scid::database::Game game;
+	scid::core::Game game;
+	std::array<char, 22> scidFlags{};
 	scid::database::errorT err =
-	    dbase->getGame(*ie, game.coreGame(), game.scidFlagsData(),
-	                   game.scidFlagsCapacity());
+	    dbase->getGame(*ie, game, scidFlags.data(), scidFlags.size());
 	if (err != scid::database::OK)
 		return UI_Result(ti, err);
-	return sc_base_getGameHelper(ti, game.coreGame());
+	return sc_base_getGameHelper(ti, game);
 }
 
 /**

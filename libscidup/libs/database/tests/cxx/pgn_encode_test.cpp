@@ -20,7 +20,7 @@
  * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "scidup/database/game.h"
+#include "scidup/core/game.h"
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/movetext_cursor.h"
 #include "scidup/core/pgn/encode.h"
@@ -34,16 +34,16 @@
 namespace {
 
 std::optional<scid::database::Position>
-currentPosition(const scid::database::Game& game,
+currentPosition(const scid::core::Game& game,
                 scid::core::MovetextLocation location) {
-	scid::core::GameCursor cursor(game.coreGame());
+	scid::core::GameCursor cursor(game);
 	EXPECT_TRUE(cursor.restore(location));
 	auto position = cursor.currentPosition();
 	EXPECT_TRUE(position.has_value());
 	return position;
 }
 
-scid::database::simpleMoveT makeCurrentMove(scid::database::Game& game,
+scid::database::simpleMoveT makeCurrentMove(scid::core::Game& game,
                                             scid::core::MovetextLocation location,
                                             scid::database::squareT from,
                                             scid::database::squareT to) {
@@ -53,17 +53,17 @@ scid::database::simpleMoveT makeCurrentMove(scid::database::Game& game,
 	return move;
 }
 
-void setCurrentComment(scid::database::Game& game,
+void setCurrentComment(scid::core::Game& game,
                        scid::core::MovetextLocation location,
                        std::string_view comment) {
-	scid::core::MovetextCursor cursor(game.coreGame());
+	scid::core::MovetextCursor cursor(game);
 	ASSERT_TRUE(cursor.restore(location));
 	ASSERT_TRUE(cursor.setComment(comment));
 }
 
-void addMove(scid::database::Game& game, scid::core::MovetextLocation& location,
+void addMove(scid::core::Game& game, scid::core::MovetextLocation& location,
              scid::database::simpleMoveT const& move) {
-	scid::core::MovetextCursor cursor(game.coreGame());
+	scid::core::MovetextCursor cursor(game);
 	ASSERT_TRUE(cursor.restore(location));
 	cursor.addMove({move.from, move.to, move.promote, move.isCastle() != 0});
 	location = cursor.location();
@@ -219,7 +219,7 @@ TEST(Test_PgnEncode, encode_comment) {
 TEST(Test_PgnEncode, encode_game) {
 	using namespace std::literals;
 	{
-		scid::database::Game empty;
+		scid::core::Game empty;
 		auto expected = "[Event\0\"\"]\n"sv
 		                "[Site\0\"\"]\n"sv
 		                "[Date\0\"????.??.??\"]\n"sv
@@ -229,13 +229,13 @@ TEST(Test_PgnEncode, encode_game) {
 		                "[Result\0\"*\"]\n"sv
 		                "\n*\n"sv;
 		std::string pgn;
-		scid::core::pgn::encode_game(empty.coreGame(), pgn);
+		scid::core::pgn::encode_game(empty, pgn);
 		EXPECT_EQ(pgn, expected);
 	}
 	{
-		scid::database::Game game;
+		scid::core::Game game;
 		scid::core::MovetextLocation location;
-		game.coreGame().setEco("A01");
+		game.setEco("A01");
 		setCurrentComment(game, location, "before the move");
 		auto sm = makeCurrentMove(game, location, scid::database::E2, scid::database::E4);
 		addMove(game, location, sm);
@@ -253,14 +253,14 @@ TEST(Test_PgnEncode, encode_game) {
 		                "1.e4\0{after the move}\n"sv
 		                "*\n"sv;
 		std::string pgn;
-		scid::core::pgn::encode_game(game.coreGame(), pgn);
+		scid::core::pgn::encode_game(game, pgn);
 		EXPECT_EQ(pgn, expected);
 	}
 }
 
 TEST(Test_PgnEncode, encode) {
 	{
-		scid::database::Game empty;
+		scid::core::Game empty;
 		auto expected = "[Event \"\"]\n"
 		                "[Site \"\"]\n"
 		                "[Date \"????.??.??\"]\n"
@@ -270,11 +270,11 @@ TEST(Test_PgnEncode, encode) {
 		                "[Result \"*\"]\n"
 		                "\n*\n";
 		std::string pgn;
-		scid::core::pgn::encode(empty.coreGame(), pgn);
+		scid::core::pgn::encode(empty, pgn);
 		EXPECT_STREQ(pgn.c_str(), expected);
 	}
 	{
-		scid::database::Game game;
+		scid::core::Game game;
 		scid::core::MovetextLocation location;
 		setCurrentComment(game, location, "before the move");
 		auto sm = makeCurrentMove(game, location, scid::database::E2, scid::database::E4);
@@ -291,7 +291,7 @@ TEST(Test_PgnEncode, encode) {
 		                "{before the move} 1.e4 {after the move}\n"
 		                "*\n";
 		std::string pgn;
-		scid::core::pgn::encode(game.coreGame(), pgn);
+		scid::core::pgn::encode(game, pgn);
 		EXPECT_STREQ(pgn.c_str(), expected);
 	}
 	{
@@ -299,9 +299,9 @@ TEST(Test_PgnEncode, encode) {
 		    "[ECO \"B01\"]\n"
 		    "{pre} 1. e4 {comm} ({pre var} 1. d4 d5 {end var with comm}) 1... "
 		    "e5 $1 {nag} (1... c5 $2) 2. Nf3 {last}";
-		scid::database::Game game;
+		scid::core::Game game;
 		scid::database::pgn::parse_game({src.data(), src.data() + src.size()},
-		                scid::database::PgnVisitor{game.coreGame()});
+		                scid::database::PgnVisitor{game});
 		auto expected =
 		    "[Event \"\"]\n"
 		    "[Site \"\"]\n"
@@ -316,7 +316,7 @@ TEST(Test_PgnEncode, encode) {
 		    "$1 {nag}\n(1...c5 $2) 2.Nf3 {last}\n"
 		    "*\n";
 		std::string pgn;
-		scid::core::pgn::encode(game.coreGame(), pgn);
+		scid::core::pgn::encode(game, pgn);
 		EXPECT_STREQ(pgn.c_str(), expected);
 	}
 }

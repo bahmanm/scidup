@@ -12,7 +12,6 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/filter.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_search.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_storage.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/game_lifecycle.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/index.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/legacy_pgn.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/matsig.cpp"
@@ -31,7 +30,6 @@ set(
     SCIDUP_DATABASE_PUBLIC_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/bytebuf.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/common.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_id.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/gameview.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/hfilter.h"
