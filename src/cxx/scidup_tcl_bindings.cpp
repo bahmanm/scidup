@@ -31,6 +31,7 @@
 #include "scidup/core/movetext_cursor.h"
 #include "scidup/core/nags.h"
 #include "scidup/core/notation.h"
+#include "scidup/core/pgn/encode.h"
 #include "scidup/core/pgn/traversal.h"
 #include "engine.h"
 #include "scidup/database/game_id.h"
@@ -4037,10 +4038,19 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         thisArg += 2;
     }
 
-    std::pair<const char*, unsigned> pgnBuf =
-        scid::database::legacy_pgn::encode(g->coreGame(), g->scidFlags(),
-                                           encodeOptions, lineWidth);
-    AppendResult (ti, pgnBuf.first, NULL);
+    if (encodeOptions.legacyFormat == scid::database::PGN_FORMAT_Plain &&
+        encodeOptions.style ==
+            (PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS) &&
+        encodeOptions.htmlStyle == 0 && lineWidth == 99999) {
+        std::string pgn;
+        scid::core::pgn::encode<99999>(g->coreGame(), pgn);
+        AppendResult(ti, pgn.c_str(), NULL);
+    } else {
+        std::pair<const char*, unsigned> pgnBuf =
+            scid::database::legacy_pgn::encode(g->coreGame(), g->scidFlags(),
+                                               encodeOptions, lineWidth);
+        AppendResult(ti, pgnBuf.first, NULL);
+    }
     return TCL_OK;
 }
 
