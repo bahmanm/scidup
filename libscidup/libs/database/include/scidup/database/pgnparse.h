@@ -24,6 +24,7 @@
 #ifndef SCID_PGNPARSE_H
 #define SCID_PGNPARSE_H
 
+#include "scidup/core/movetext_location.h"
 #include "scidup/database/game.h"
 #include <cstddef>
 #include <string>
@@ -53,6 +54,8 @@ struct PgnParseLog {
  */
 bool pgnParseGame(const char* input, size_t inputLen, Game& game,
                   PgnParseLog& log);
+bool pgnParseGame(const char* input, size_t inputLen, Game& game,
+                  scid::core::MovetextLocation& location, PgnParseLog& log);
 
 } // namespace scid::database
 #endif // idndef SCID_PGNPARSE_H

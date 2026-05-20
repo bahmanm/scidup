@@ -16,10 +16,26 @@
 
 namespace scid::database {
 
-inline std::string_view currentMoveComment(const Game& game) {
+inline scid::core::MovetextLocation currentLocation(
+    const Game& game, const scid::core::MovetextLocation* location) {
+	return location ? *location : game.coreLocation();
+}
+
+inline void setCurrentLocation(Game& game,
+                               scid::core::MovetextLocation* location,
+                               scid::core::MovetextLocation value) {
+	if (location) {
+		*location = value;
+	} else {
+		game.restoreLocation(value);
+	}
+}
+
+inline std::string_view currentMoveComment(
+    const Game& game, const scid::core::MovetextLocation* location = nullptr) {
 	scid::core::GameCursor cursor(game.coreGame());
 	[[maybe_unused]] const bool restored = cursor.restore(
-	    game.coreLocation());
+	    currentLocation(game, location));
 	ASSERT(restored);
 
 	if (auto move = cursor.previousMove())
@@ -29,21 +45,28 @@ inline std::string_view currentMoveComment(const Game& game) {
 	return game.coreGame().movetext().initialComment;
 }
 
-inline bool setCurrentMoveComment(Game& game, std::string_view comment) {
+inline bool setCurrentMoveComment(
+    Game& game, std::string_view comment,
+    const scid::core::MovetextLocation* location = nullptr) {
 	scid::core::MovetextCursor cursor(game.coreGame());
-	[[maybe_unused]] const bool restored = cursor.restore(game.coreLocation());
+	[[maybe_unused]] const bool restored =
+	    cursor.restore(currentLocation(game, location));
 	ASSERT(restored);
 	return cursor.setComment(comment);
 }
 
-inline bool addCurrentMoveNag(Game& game, byte nag) {
+inline bool addCurrentMoveNag(
+    Game& game, byte nag,
+    const scid::core::MovetextLocation* location = nullptr) {
 	scid::core::MovetextCursor cursor(game.coreGame());
-	[[maybe_unused]] const bool restored = cursor.restore(game.coreLocation());
+	[[maybe_unused]] const bool restored =
+	    cursor.restore(currentLocation(game, location));
 	ASSERT(restored);
 	return cursor.addPreviousMoveNag(nag);
 }
 
-inline errorT resetStartFen(Game& game, const char* fen) {
+inline errorT resetStartFen(Game& game, scid::core::MovetextLocation* location,
+                            const char* fen) {
 	Position position;
 	if (auto err = position.ReadFromFEN(fen))
 		return err;
@@ -51,12 +74,13 @@ inline errorT resetStartFen(Game& game, const char* fen) {
 	game.coreGame().clearMovetext();
 	game.coreGame().setStartPosition(position);
 
-	game.restoreLocation(scid::core::MovetextLocation{});
+	setCurrentLocation(game, location, scid::core::MovetextLocation{});
 	return OK;
 }
 
 class PgnVisitor {
 	Game& game;
+	scid::core::MovetextLocation* location_;
 	std::vector<std::pair<size_t, std::string>> errors_;
 	size_t linenum_ = 0;
 	int nErrorsAllowed_ = 2;
@@ -64,7 +88,9 @@ class PgnVisitor {
 	using TView = std::pair<const char*, const char*>;
 
 public:
-	explicit PgnVisitor(Game& g) : game(g) {}
+	explicit PgnVisitor(Game& g,
+	                    scid::core::MovetextLocation* location = nullptr)
+	    : game(g), location_(location) {}
 
 	auto const& errors() const { return errors_; }
 	size_t lineNumber() const { return linenum_; }
@@ -88,11 +114,12 @@ public:
 		}
 
 		linenum_ += pgn::trim(comment);
-		auto str = std::string(currentMoveComment(game));
+		auto str = std::string(currentMoveComment(game, location_));
 		auto prevSz = str.size();
 		str.append(comment.first, comment.second);
 		linenum_ += pgn::normalize(str, prevSz);
-		[[maybe_unused]] const bool updated = setCurrentMoveComment(game, str);
+		[[maybe_unused]] const bool updated =
+		    setCurrentMoveComment(game, str, location_);
 		ASSERT(updated);
 		return true;
 	}
@@ -105,7 +132,7 @@ public:
 	void visitPGN_EPD(TView line) {
 		ASSERT(nErrorsAllowed_ >= 0);
 		std::string tmp(line.first, line.second);
-		if (resetStartFen(game, tmp.c_str()) == OK) {
+		if (resetStartFen(game, location_, tmp.c_str()) == OK) {
 			auto opcode = std::find_if(
 			    line.first, line.second, [spaces = 0](char ch) mutable {
 				    return (ch == ' ') ? spaces++ == 4 : spaces == 4;
@@ -125,7 +152,7 @@ public:
 			return true;
 
 		auto nag_code = game_parseNag(token);
-		if (nag_code == 0 || !addCurrentMoveNag(game, nag_code))
+		if (nag_code == 0 || !addCurrentMoveNag(game, nag_code, location_))
 			return logErr("Invalid annotation symbol: ", token);
 
 		return true;
@@ -161,7 +188,7 @@ public:
 
 		scid::core::GameCursor cursor(game.coreGame());
 		[[maybe_unused]] const bool restored = cursor.restore(
-		    game.coreLocation());
+		    currentLocation(game, location_));
 		ASSERT(restored);
 		auto position = cursor.currentPosition();
 		if (!position)
@@ -177,11 +204,11 @@ public:
 		}
 		scid::core::MovetextCursor moveCursor(game.coreGame());
 		[[maybe_unused]] const bool moveRestored =
-		    moveCursor.restore(game.coreLocation());
+		    moveCursor.restore(currentLocation(game, location_));
 		ASSERT(moveRestored);
 		moveCursor.addMove(
 		    {sm.from, sm.to, sm.promote, sm.isCastle() != 0});
-		game.restoreLocation(moveCursor.location());
+		setCurrentLocation(game, location_, moveCursor.location());
 		return true;
 	}
 
@@ -243,11 +270,12 @@ public:
 			return true;
 
 		scid::core::MovetextCursor cursor(game.coreGame());
-		[[maybe_unused]] const bool restored = cursor.restore(game.coreLocation());
+		[[maybe_unused]] const bool restored =
+		    cursor.restore(currentLocation(game, location_));
 		ASSERT(restored);
 		if (!cursor.previous() || !cursor.addVariation())
 			return logFatalErr("Failed to add a new variation.");
-		game.restoreLocation(cursor.location());
+		setCurrentLocation(game, location_, cursor.location());
 
 		return true;
 	}
@@ -257,11 +285,12 @@ public:
 			return true;
 
 		scid::core::GameCursor cursor(game.coreGame());
-		[[maybe_unused]] const bool restored = cursor.restore(game.coreLocation());
+		[[maybe_unused]] const bool restored =
+		    cursor.restore(currentLocation(game, location_));
 		ASSERT(restored);
 		if (!cursor.exitVariation() || !cursor.next())
 			return logFatalErr("Failed to exit from variation.");
-		game.restoreLocation(cursor.location());
+		setCurrentLocation(game, location_, cursor.location());
 
 		return true;
 	}
@@ -403,7 +432,7 @@ private:
 			}
 			if (std::equal(tag, tag + 3, "FEN")) {
 				std::string tmp{value.first, value.second};
-				return resetStartFen(game, tmp.c_str()) == OK;
+				return resetStartFen(game, location_, tmp.c_str()) == OK;
 			}
 			break;
 		case 4:
