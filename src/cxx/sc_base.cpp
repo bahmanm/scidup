@@ -19,6 +19,7 @@
 #include "scidup/database/common.h"
 #include "dbasepool.h"
 #include "game_positions.h"
+#include "scidup/database/game.h"
 #include "scidup/database/game_id.h"
 #include "nag_format.h"
 #include "scidup/database/misc.h"
@@ -448,7 +449,8 @@ UI_res_t sc_base_gameslist(scid::database::scidBaseT* dbase, UI_handle_t ti, int
 	return UI_Result(ti, scid::database::OK, res);
 }
 
-static UI_res_t sc_base_getGameHelper(UI_handle_t ti, scid::database::Game& game) {
+static UI_res_t sc_base_getGameHelper(UI_handle_t ti,
+                                      const scid::core::Game& game) {
 	auto positions = scid::database::gamepos::collectPositions(game);
 	UI_List res(positions.size());
 	UI_List posInfo(6);
@@ -504,7 +506,7 @@ UI_res_t sc_base_getGame(scid::database::scidBaseT* dbase, UI_handle_t ti, int a
 	auto editor = scidup::app::editor::gameSession(*dbase);
 	if (live && gNum > 0 && editor.matchesLoadedGame(gNum - 1)) {
 		auto location = editor.location();
-		auto res = sc_base_getGameHelper(ti, editor.game());
+		auto res = sc_base_getGameHelper(ti, editor.game().coreGame());
 		editor.setLocation(location);
 		return res;
 	}
@@ -519,7 +521,7 @@ UI_res_t sc_base_getGame(scid::database::scidBaseT* dbase, UI_handle_t ti, int a
 	                   game.scidFlagsCapacity());
 	if (err != scid::database::OK)
 		return UI_Result(ti, err);
-	return sc_base_getGameHelper(ti, game);
+	return sc_base_getGameHelper(ti, game.coreGame());
 }
 
 /**

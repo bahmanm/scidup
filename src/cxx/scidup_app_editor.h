@@ -2,42 +2,69 @@
 #define SCIDUP_APP_EDITOR_H
 
 // ScidUp application state. This is intentionally not part of the database
-// library boundary: the database loads and saves Game objects, while ScidUp
-// owns the current editing session, dirty state, undo/redo, and push/pop state.
+// library boundary: ScidUp owns the current editing session, dirty state,
+// undo/redo, push/pop state, core Game, and application/database Scid flags.
 
+#include "scidup/core/game.h"
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/movetext_location.h"
-#include "scidup/database/game.h"
 #include "scidup/database/game_id.h"
 #include "scidup/database/scidbase.h"
 #include "scidup_app_undo_redo.h"
+#include <algorithm>
+#include <array>
 #include <memory>
 #include <optional>
+#include <string_view>
 #include <unordered_map>
 
 namespace scidup::app::editor {
 
+class EditableGame {
+	scid::core::Game coreGame_;
+	std::array<char, 22> scidFlags_{};
+
+public:
+	scid::core::Game& coreGame() { return coreGame_; }
+	const scid::core::Game& coreGame() const { return coreGame_; }
+
+	void clear() {
+		coreGame_.clear();
+		scidFlags_[0] = 0;
+	}
+
+	void setScidFlags(const char* flags, std::size_t len) {
+		scidFlags_.fill(0);
+		std::copy_n(flags, std::min(scidFlags_.size() - 1, len),
+		            scidFlags_.data());
+	}
+
+	const char* scidFlags() const { return scidFlags_.data(); }
+	char* scidFlagsData() { return scidFlags_.data(); }
+	std::size_t scidFlagsCapacity() const { return scidFlags_.size(); }
+
+	EditableGame* clone() const { return new EditableGame(*this); }
+};
+
 struct GameSnapshot {
-	std::unique_ptr<scid::database::Game> game;
+	std::unique_ptr<EditableGame> game;
 	scid::core::MovetextLocation location;
 
-	GameSnapshot()
-	    : game(std::make_unique<scid::database::Game>()), location() {}
-	GameSnapshot(scid::database::Game* game,
-	             scid::core::MovetextLocation location)
+	GameSnapshot() : game(std::make_unique<EditableGame>()), location() {}
+	GameSnapshot(EditableGame* game, scid::core::MovetextLocation location)
 	    : game(game), location(location) {}
 
 	GameSnapshot* clone() const { return new GameSnapshot(game->clone(), location); }
 };
 
 struct PushPopState {
-	scid::database::Game* game = nullptr;
+	EditableGame* game = nullptr;
 	bool dirty = false;
 	scid::core::MovetextLocation location;
 };
 
 struct State {
-	std::unique_ptr<scid::database::Game> game = std::make_unique<scid::database::Game>();
+	std::unique_ptr<EditableGame> game = std::make_unique<EditableGame>();
 	scid::core::MovetextLocation location;
 	std::optional<scid::database::gamenumT> loadedGameId;
 	bool dirty = false;
@@ -47,7 +74,7 @@ struct State {
 	~State() { delete deprecatedPushPop.game; }
 
 	void reset() {
-		game = std::make_unique<scid::database::Game>();
+		game = std::make_unique<EditableGame>();
 		location = {};
 		loadedGameId.reset();
 		dirty = false;
@@ -80,7 +107,7 @@ class GameSession {
 public:
 	explicit GameSession(scid::database::scidBaseT& base) : base_(&base) {}
 
-	scid::database::Game& game() const { return *state().game; }
+	EditableGame& game() const { return *state().game; }
 	scid::core::MovetextLocation location() const { return state().location; }
 	void setLocation(scid::core::MovetextLocation location) const {
 		state().location = location;
@@ -132,7 +159,7 @@ public:
 
 	void resetToNewGame() const { state().reset(); }
 
-	void replace(scid::database::Game* game, scid::core::MovetextLocation location,
+	void replace(EditableGame* game, scid::core::MovetextLocation location,
 	             std::optional<scid::database::gamenumT> gameId,
 	             bool dirty) const {
 		auto& s = state();
@@ -188,7 +215,7 @@ public:
 
 	void push(bool copy) const {
 		auto& s = state();
-		scid::database::Game* next = copy ? s.game->clone() : new scid::database::Game;
+		EditableGame* next = copy ? s.game->clone() : new EditableGame;
 		if (s.deprecatedPushPop.game) {
 			delete s.deprecatedPushPop.game;
 		}

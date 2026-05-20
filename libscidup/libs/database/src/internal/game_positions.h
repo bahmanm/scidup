@@ -3,7 +3,7 @@
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/notation.h"
 #include "scidup/core/pgn/traversal.h"
-#include "scidup/database/game.h"
+#include "scidup/database/common.h"
 
 #include <cstdint>
 #include <string>
@@ -39,8 +39,8 @@ struct GamePos {
  * @param dest: the container where the GamePos objects are appended.
  */
 template <typename TCont>
-inline void collectPositions(Game& game, TCont& dest) {
-	scid::core::GameCursor cursor(game.coreGame());
+inline void collectPositions(const scid::core::Game& game, TCont& dest) {
+	scid::core::GameCursor cursor(game);
 	do {
 		if (cursor.isAtVariationStart() && !cursor.isAtGameStart())
 			continue;
@@ -61,10 +61,10 @@ inline void collectPositions(Game& game, TCont& dest) {
 		} else if (auto variation = cursor.currentVariation()) {
 			gamepos.comment = variation->initialComment;
 		} else {
-			gamepos.comment = game.coreGame().movetext().initialComment;
+			gamepos.comment = game.movetext().initialComment;
 		}
 		gamepos.lastMoveSAN = scid::core::notation::previousSan(
-		    game.coreGame(), cursor.location());
+		    game, cursor.location());
 
 	} while (scid::core::pgn::nextLocation(cursor));
 }
@@ -75,7 +75,7 @@ inline void collectPositions(Game& game, TCont& dest) {
  * @returns a std::vector containing the GamePos objects corresponding to all
  * the positions of @e game.
  */
-inline std::vector<GamePos> collectPositions(Game& game) {
+inline std::vector<GamePos> collectPositions(const scid::core::Game& game) {
 	std::vector<GamePos> res;
 	collectPositions(game, res);
 	return res;

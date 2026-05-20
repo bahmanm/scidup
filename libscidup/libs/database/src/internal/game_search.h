@@ -29,10 +29,10 @@ enum gameExactMatchT : int {
 
 namespace game_search {
 
-bool materialMatch(Game& game, bool promotionsFlag, ByteBuffer& buf, byte* min,
-                   byte* max, patternT* ptn, std::size_t ptnSize, int minPly,
-                   int maxPly, int matchLength, bool oppBishops,
-                   bool sameBishops, int minDiff, int maxDiff);
+bool materialMatch(bool promotionsFlag, ByteBuffer& buf, byte* min, byte* max,
+                   patternT* ptn, std::size_t ptnSize, int minPly, int maxPly,
+                   int matchLength, bool oppBishops, bool sameBishops,
+                   int minDiff, int maxDiff);
 bool exactMatch(Game& game, Position* pos, ByteBuffer* buf,
                 gameExactMatchT searchType);
 bool varExactMatch(Game& game, Position* pos, gameExactMatchT searchType);

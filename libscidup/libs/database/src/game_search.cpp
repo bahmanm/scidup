@@ -541,8 +541,8 @@ bool exactMatches(const scid::core::Game& game, Position* searchPos,
 
 } // end of anonymous namespace
 
-bool game_search::materialMatch([[maybe_unused]] Game& game, bool promotionsFlag,
-                                ByteBuffer& buf, byte* min, byte* max,
+bool game_search::materialMatch(bool promotionsFlag, ByteBuffer& buf,
+                                byte* min, byte* max,
                                 patternT* patterns, std::size_t patternCount,
                                 int minPly, int maxPly, int matchLength,
                                 bool oppBishops, bool sameBishops, int minDiff,

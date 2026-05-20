@@ -26,36 +26,36 @@
 
 namespace {
 
-scid::core::GameCursor currentCursor(const scid::database::Game& game,
+scid::core::GameCursor currentCursor(const scid::core::Game& game,
                                      scid::core::MovetextLocation location) {
-    scid::core::GameCursor cursor(game.coreGame());
+    scid::core::GameCursor cursor(game);
     [[maybe_unused]] const bool restored = cursor.restore(location);
     ASSERT(restored);
     return cursor;
 }
 
-scid::core::GameCursor currentCursor(const scid::database::Game& game) {
+scid::core::GameCursor currentCursor(const scid::core::Game& game) {
     return currentCursor(game, scid::core::MovetextLocation{});
 }
 
-bool isAtStart(const scid::database::Game& game,
+bool isAtStart(const scid::core::Game& game,
                scid::core::MovetextLocation location) {
     return currentCursor(game, location).isAtGameStart();
 }
 
-bool isAtVariationStart(const scid::database::Game& game,
+bool isAtVariationStart(const scid::core::Game& game,
                         scid::core::MovetextLocation location) {
     return currentCursor(game, location).isAtVariationStart();
 }
 
 std::optional<scid::database::Position>
-currentPosition(const scid::database::Game& game,
+currentPosition(const scid::core::Game& game,
                 scid::core::MovetextLocation location = {}) {
     return currentCursor(game, location).currentPosition();
 }
 
 std::optional<scid::database::simpleMoveT>
-currentMove(const scid::database::Game& game,
+currentMove(const scid::core::Game& game,
             scid::core::MovetextLocation location) {
     auto cursor = currentCursor(game, location);
     auto position = cursor.currentPosition();
@@ -156,25 +156,25 @@ OpLine::Init (void)
 }
 
 void
-OpLine::Init (scid::database::Game * g, scid::core::MovetextLocation location,
+OpLine::Init (scid::core::Game * g, scid::core::MovetextLocation location,
               const scid::database::IndexEntry * ie, scid::database::gamenumT gameNum,
               scid::database::uint maxExtraMoves, scid::database::uint maxThemeMoveNumber)
 {
-    White = scid::database::strDuplicate (g->coreGame().white().name.c_str());
-    Black = scid::database::strDuplicate (g->coreGame().black().name.c_str());
-    Site = scid::database::strDuplicate (g->coreGame().site().c_str());
+    White = scid::database::strDuplicate (g->white().name.c_str());
+    Black = scid::database::strDuplicate (g->black().name.c_str());
+    Site = scid::database::strDuplicate (g->site().c_str());
 
     WhiteID = ie->GetWhite();
     BlackID = ie->GetBlack();
     GameNumber = gameNum;
 
-    Date = g->coreGame().date();
-    Result = g->coreGame().result();
-    NumMoves = (g->coreGame().mainlineHalfMoveCount() + 1) / 2;
-    EcoCode = scidup::eco::fromString(g->coreGame().eco().c_str());
-    WhiteElo = g->coreGame().white().rating.value;
-    BlackElo = g->coreGame().black().rating.value;
-    AvgElo = g->coreGame().averageRating();
+    Date = g->date();
+    Result = g->result();
+    NumMoves = (g->mainlineHalfMoveCount() + 1) / 2;
+    EcoCode = scidup::eco::fromString(g->eco().c_str());
+    WhiteElo = g->white().rating.value;
+    BlackElo = g->black().rating.value;
+    AvgElo = g->averageRating();
     Length = 0;
     StartPly = static_cast<scid::database::uint>(currentCursor(*g, location).ply());
     auto startLocation = location;
@@ -530,7 +530,7 @@ OpLine::PrintSummary (scid::database::DString * dstr, scid::database::uint forma
 
 
 void
-OpTable::Init (const char * type, scid::database::Game * g,
+OpTable::Init (const char * type, scid::core::Game * g,
                scid::core::MovetextLocation location, scidup::eco::Book * ebook)
 {
     Type = scid::database::strDuplicate (type);
@@ -2046,13 +2046,13 @@ OpTable::AvgElo (scid::database::colorT color, scid::database::uint * count, sci
 }
 
 scid::database::uint
-OpTable::AddMoveOrder (scid::database::Game * g,
+OpTable::AddMoveOrder (scid::core::Game * g,
                        scid::core::MovetextLocation location)
 {
     scid::database::uint id = 0;
     int index = -1;
     const auto moves = scid::core::notation::partialMoveList(
-        g->coreGame(),
+        (*g),
         static_cast<scid::database::uint>(currentCursor(*g, location).ply()));
 
     // Search for this move order in the current list:

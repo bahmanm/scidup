@@ -16,6 +16,7 @@
 
 #include "scidup/database/game_id.h"
 #include "game_positions.h"
+#include "scidup/database/game.h"
 #include "scidup/database/scidbase.h"
 #include "scidup/database/pgnparse.h"
 #include <string>
@@ -291,9 +292,9 @@ auto collectPositions(const scid::database::scidBaseT& dbase, scid::database::ga
 	if (ie_bounds && ie &&
 	    dbase.getGame(*ie_bounds, game.coreGame(), game.scidFlagsData(),
 	                  game.scidFlagsCapacity()) == scid::database::OK)
-		return scid::database::gamepos::collectPositions(game);
+		return scid::database::gamepos::collectPositions(game.coreGame());
 
-	return decltype(scid::database::gamepos::collectPositions(game))();
+	return decltype(scid::database::gamepos::collectPositions(game.coreGame()))();
 }
 
 TEST_F(Test_Scidbase, getGamePos1) {
