@@ -4,14 +4,18 @@ namespace scid::database {
 
 namespace {
 
-bool pgnParseGameImpl(const char* input, size_t inputLen, Game& game,
+bool pgnParseGameImpl(const char* input, size_t inputLen,
+                      scid::core::Game& game,
                       scid::core::MovetextLocation* location,
-                      PgnParseLog& log) {
+                      PgnParseLog& log,
+                      std::optional<std::string>* scidFlags) {
 	struct VisitorNoEOF : public PgnVisitor {
-		VisitorNoEOF(Game& g, scid::core::MovetextLocation* location)
-		    : PgnVisitor(g, location) {}
+		VisitorNoEOF(scid::core::Game& g,
+		             scid::core::MovetextLocation* location,
+		             std::optional<std::string>* scidFlags)
+		    : PgnVisitor(g, location, scidFlags) {}
 		void visitPGN_inputEOF() {}
-	} visitor(game, location);
+	} visitor(game, location, scidFlags);
 
 	auto parse = pgn::parse_game({input, input + inputLen}, visitor);
 	if (!pgn_impl::logGame(log, parse.first, visitor))
@@ -26,15 +30,18 @@ bool pgnParseGameImpl(const char* input, size_t inputLen, Game& game,
 
 } // namespace
 
-bool pgnParseGame(const char* input, size_t inputLen, Game& game,
-                  PgnParseLog& log) {
+bool pgnParseGame(const char* input, size_t inputLen,
+                  scid::core::Game& game, PgnParseLog& log,
+                  std::optional<std::string>* scidFlags) {
 	scid::core::MovetextLocation location;
-	return pgnParseGameImpl(input, inputLen, game, &location, log);
+	return pgnParseGameImpl(input, inputLen, game, &location, log, scidFlags);
 }
 
-bool pgnParseGame(const char* input, size_t inputLen, Game& game,
-                  scid::core::MovetextLocation& location, PgnParseLog& log) {
-	return pgnParseGameImpl(input, inputLen, game, &location, log);
+bool pgnParseGame(const char* input, size_t inputLen,
+                  scid::core::Game& game,
+                  scid::core::MovetextLocation& location, PgnParseLog& log,
+                  std::optional<std::string>* scidFlags) {
+	return pgnParseGameImpl(input, inputLen, game, &location, log, scidFlags);
 }
 
 } // namespace scid::database

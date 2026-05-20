@@ -297,7 +297,7 @@ auto collectPositions(const scid::database::scidBaseT& dbase, scid::database::ga
 TEST_F(Test_Scidbase, getGamePos1) {
 	scid::database::Game game;
 	scid::database::PgnParseLog parseLog;
-	ASSERT_TRUE(scid::database::pgnParseGame(test_pgnShort.c_str(), test_pgnShort.size(), game,
+	ASSERT_TRUE(scid::database::pgnParseGame(test_pgnShort.c_str(), test_pgnShort.size(), game.coreGame(),
 	                         parseLog));
 	ASSERT_STREQ(parseLog.log.c_str(), "");
 
@@ -324,7 +324,7 @@ TEST_F(Test_Scidbase, getGamePos1) {
 TEST_F(Test_Scidbase, getGamePos2) {
 	scid::database::Game game;
 	scid::database::PgnParseLog parseLog;
-	ASSERT_TRUE(scid::database::pgnParseGame(test_pgnShort.c_str(), test_pgnShort.size(), game,
+	ASSERT_TRUE(scid::database::pgnParseGame(test_pgnShort.c_str(), test_pgnShort.size(), game.coreGame(),
 	                         parseLog));
 	ASSERT_STREQ(parseLog.log.c_str(), "");
 

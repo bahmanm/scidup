@@ -31,7 +31,7 @@ void expect_roundtrip(std::string_view pgn) {
 	scid::database::Game original;
 	scid::core::MovetextLocation originalLocation;
 	scid::database::PgnParseLog parseLog;
-	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), original,
+	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), original.coreGame(),
 	                                         originalLocation,
 	                                         parseLog));
 

@@ -24,9 +24,10 @@
 #ifndef SCID_PGNPARSE_H
 #define SCID_PGNPARSE_H
 
+#include "scidup/core/game.h"
 #include "scidup/core/movetext_location.h"
-#include "scidup/database/game.h"
 #include <cstddef>
+#include <optional>
 #include <string>
 
 namespace scid::database {
@@ -42,20 +43,23 @@ struct PgnParseLog {
 };
 
 /**
- * Convert PGN text into a SCID's Game object.
+ * Convert PGN text into a core Game object.
  * @param input:    the memory containing the PGN text.
  * @param inputLen: the number of chars in @e input.
  * @param game:     the Game object where the game will be stored.
  *                  The object is not automatically cleared so that moves can
  *                  be added to an already existing one.
  * @param log:      stores eventual parsing error.
+ * @param scidFlags: optional output for the database/application ScidFlags tag.
  * @returns true if a game was parsed successfully (maybe with errors, but
  * without ignoring any part), false otherwise.
  */
-bool pgnParseGame(const char* input, size_t inputLen, Game& game,
-                  PgnParseLog& log);
-bool pgnParseGame(const char* input, size_t inputLen, Game& game,
-                  scid::core::MovetextLocation& location, PgnParseLog& log);
+bool pgnParseGame(const char* input, size_t inputLen, scid::core::Game& game,
+                  PgnParseLog& log,
+                  std::optional<std::string>* scidFlags = nullptr);
+bool pgnParseGame(const char* input, size_t inputLen, scid::core::Game& game,
+                  scid::core::MovetextLocation& location, PgnParseLog& log,
+                  std::optional<std::string>* scidFlags = nullptr);
 
 } // namespace scid::database
 #endif // idndef SCID_PGNPARSE_H

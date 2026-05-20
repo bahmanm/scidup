@@ -31,6 +31,7 @@
 #include "scidup/core/pgn/encode.h"
 #include <algorithm>
 #include <cstring>
+#include <optional>
 #include <vector>
 
 namespace scid::database {
@@ -96,7 +97,8 @@ public:
 		}
 
 		game.clear();
-		PgnVisitor visitor(game);
+		std::optional<std::string> scidFlags;
+		PgnVisitor visitor(game.coreGame(), nullptr, &scidFlags);
 		auto parse = pgn::parse_game(
 		    {buf_.data() + nParsed_, buf_.data() + nRead_}, visitor);
 
@@ -117,7 +119,10 @@ public:
 
 		nParsed_ += parse.first;
 		pgn_impl::logGame(parseLog_, parse.first, visitor);
-		if (eof && !parse.second && currentMoveComment(game).empty())
+		if (scidFlags) {
+			game.setScidFlags(scidFlags->data(), scidFlags->size());
+		}
+		if (eof && !parse.second && currentMoveComment(game.coreGame()).empty())
 			return ERROR_NotFound;
 
 		return OK;

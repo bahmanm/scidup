@@ -2940,9 +2940,14 @@ int sc_game_import(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 	}
 
 	scid::database::PgnParseLog pgn;
+	std::optional<std::string> scidFlags;
 	auto location = editor.location();
 	auto ok = scid::database::pgnParseGame(argv[2], std::strlen(argv[2]),
-	                                       editor.game(), location, pgn);
+	                                       editor.game().coreGame(), location,
+	                                       pgn, &scidFlags);
+	if (scidFlags) {
+		editor.game().setScidFlags(scidFlags->data(), scidFlags->size());
+	}
 	editor.setLocation(location);
 
 	if (new_variation && isAtEmptyVariation(editor.game(), editor.location())) {
@@ -5127,9 +5132,15 @@ int sc_move_addSan(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 	for (int i = 2; i < argc; ++i) {
 		editor.setDirty();
 		auto location = editor.location();
+		std::optional<std::string> scidFlags;
 		if (!scid::database::pgnParseGame(argv[i], std::strlen(argv[i]),
-		                                  editor.game(), location, parser))
+		                                  editor.game().coreGame(), location,
+		                                  parser, &scidFlags))
 			return UI_Result(ti, scid::database::ERROR_InvalidMove, argv[i]);
+		if (scidFlags) {
+			editor.game().setScidFlags(scidFlags->data(),
+			                           scidFlags->size());
+		}
 		editor.setLocation(location);
 	}
 	return UI_Result(ti, scid::database::OK);
@@ -5274,8 +5285,9 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             resetStartPosition(game, location, pos);
             if (const auto len = std::strlen(argv[3])) {
                 scid::database::PgnParseLog pgn;
-                if (!scid::database::pgnParseGame(argv[3], len, game,
-                                                  location, pgn))
+                if (!scid::database::pgnParseGame(argv[3], len,
+                                                  game.coreGame(), location,
+                                                  pgn))
                     return UI_Result(ti, scid::database::ERROR_InvalidMove);
             }
 
@@ -5436,7 +5448,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             if (pos.ReadFromFENorUCI(argv[2]) == scid::database::OK &&
                 (resetStartPosition(game, location, pos), true) &&
                 scid::database::pgnParseGame(argv[3], std::strlen(argv[3]),
-                                             game, location, log) &&
+                                             game.coreGame(), location, log) &&
                 log.log.empty()) {
                 std::string moves;
                 for (auto const& move :

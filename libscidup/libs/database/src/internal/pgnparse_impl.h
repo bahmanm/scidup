@@ -3,9 +3,11 @@
 
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/movetext_cursor.h"
+#include "scidup/eco/code.h"
 #include "pgn_lexer.h"
 #include "nag_format.h"
 #include "scidup/database/pgnparse.h"
+#include "scidup/database/indexentry.h"
 #include "scidup/database/misc.h"
 #include <algorithm>
 #include <optional>
@@ -17,12 +19,13 @@
 namespace scid::database {
 
 inline scid::core::MovetextLocation currentLocation(
-    const Game& game, const scid::core::MovetextLocation* location) {
+    const scid::core::Game& game,
+    const scid::core::MovetextLocation* location) {
 	(void)game;
 	return location ? *location : scid::core::MovetextLocation{};
 }
 
-inline void setCurrentLocation(Game& game,
+inline void setCurrentLocation(scid::core::Game& game,
                                scid::core::MovetextLocation* location,
                                scid::core::MovetextLocation value) {
 	if (location) {
@@ -32,8 +35,9 @@ inline void setCurrentLocation(Game& game,
 }
 
 inline std::string_view currentMoveComment(
-    const Game& game, const scid::core::MovetextLocation* location = nullptr) {
-	scid::core::GameCursor cursor(game.coreGame());
+    const scid::core::Game& game,
+    const scid::core::MovetextLocation* location = nullptr) {
+	scid::core::GameCursor cursor(game);
 	[[maybe_unused]] const bool restored = cursor.restore(
 	    currentLocation(game, location));
 	ASSERT(restored);
@@ -42,13 +46,13 @@ inline std::string_view currentMoveComment(
 		return move->metadata.comment;
 	if (auto variation = cursor.currentVariation())
 		return variation->initialComment;
-	return game.coreGame().movetext().initialComment;
+	return game.movetext().initialComment;
 }
 
 inline bool setCurrentMoveComment(
-    Game& game, std::string_view comment,
+    scid::core::Game& game, std::string_view comment,
     const scid::core::MovetextLocation* location = nullptr) {
-	scid::core::MovetextCursor cursor(game.coreGame());
+	scid::core::MovetextCursor cursor(game);
 	[[maybe_unused]] const bool restored =
 	    cursor.restore(currentLocation(game, location));
 	ASSERT(restored);
@@ -56,32 +60,34 @@ inline bool setCurrentMoveComment(
 }
 
 inline bool addCurrentMoveNag(
-    Game& game, byte nag,
+    scid::core::Game& game, byte nag,
     const scid::core::MovetextLocation* location = nullptr) {
-	scid::core::MovetextCursor cursor(game.coreGame());
+	scid::core::MovetextCursor cursor(game);
 	[[maybe_unused]] const bool restored =
 	    cursor.restore(currentLocation(game, location));
 	ASSERT(restored);
 	return cursor.addPreviousMoveNag(nag);
 }
 
-inline errorT resetStartFen(Game& game, scid::core::MovetextLocation* location,
+inline errorT resetStartFen(scid::core::Game& game,
+                            scid::core::MovetextLocation* location,
                             const char* fen) {
 	Position position;
 	if (auto err = position.ReadFromFEN(fen))
 		return err;
 
-	game.coreGame().clearMovetext();
-	game.coreGame().setStartPosition(position);
+	game.clearMovetext();
+	game.setStartPosition(position);
 
 	setCurrentLocation(game, location, scid::core::MovetextLocation{});
 	return OK;
 }
 
 class PgnVisitor {
-	Game& game;
+	scid::core::Game& game;
 	scid::core::MovetextLocation ownedLocation_;
 	scid::core::MovetextLocation* location_;
+	std::optional<std::string>* scidFlags_;
 	std::vector<std::pair<size_t, std::string>> errors_;
 	size_t linenum_ = 0;
 	int nErrorsAllowed_ = 2;
@@ -89,9 +95,12 @@ class PgnVisitor {
 	using TView = std::pair<const char*, const char*>;
 
 public:
-	explicit PgnVisitor(Game& g,
-	                    scid::core::MovetextLocation* location = nullptr)
-	    : game(g), location_(location ? location : &ownedLocation_) {}
+	explicit PgnVisitor(scid::core::Game& g,
+	                    scid::core::MovetextLocation* location = nullptr,
+	                    std::optional<std::string>* scidFlags = nullptr)
+	    : game(g),
+	      location_(location ? location : &ownedLocation_),
+	      scidFlags_(scidFlags) {}
 
 	auto const& errors() const { return errors_; }
 	size_t lineNumber() const { return linenum_; }
@@ -175,9 +184,9 @@ public:
 			ASSERT(resultCh == '*');
 		}
 
-		auto prev_result = game.coreGame().result();
+		auto prev_result = game.result();
 		if (result != prev_result) {
-			game.coreGame().setResult(result);
+			game.setResult(result);
 			if (prev_result != RESULT_None && nErrorsAllowed_ >= 0)
 				logErr("Final result did not match the header tag.");
 		}
@@ -187,7 +196,7 @@ public:
 		if (nErrorsAllowed_ < 0)
 			return true;
 
-		scid::core::GameCursor cursor(game.coreGame());
+		scid::core::GameCursor cursor(game);
 		[[maybe_unused]] const bool restored = cursor.restore(
 		    currentLocation(game, location_));
 		ASSERT(restored);
@@ -203,7 +212,7 @@ public:
 
 			return logFatalErr("Failed to parse the move: ", tok);
 		}
-		scid::core::MovetextCursor moveCursor(game.coreGame());
+		scid::core::MovetextCursor moveCursor(game);
 		[[maybe_unused]] const bool moveRestored =
 		    moveCursor.restore(currentLocation(game, location_));
 		ASSERT(moveRestored);
@@ -270,7 +279,7 @@ public:
 		if (nErrorsAllowed_ < 0)
 			return true;
 
-		scid::core::MovetextCursor cursor(game.coreGame());
+		scid::core::MovetextCursor cursor(game);
 		[[maybe_unused]] const bool restored =
 		    cursor.restore(currentLocation(game, location_));
 		ASSERT(restored);
@@ -285,7 +294,7 @@ public:
 		if (nErrorsAllowed_ < 0)
 			return true;
 
-		scid::core::GameCursor cursor(game.coreGame());
+		scid::core::GameCursor cursor(game);
 		[[maybe_unused]] const bool restored =
 		    cursor.restore(currentLocation(game, location_));
 		ASSERT(restored);
@@ -321,20 +330,20 @@ private:
 	bool parseTagResult(TView str) {
 		auto len = std::distance(str.first, str.second);
 		if (len > 0 && *str.first == '*') {
-			game.coreGame().setResult(RESULT_None);
+			game.setResult(RESULT_None);
 			return true;
 		}
 		if (len >= 3) {
 			if (std::equal(str.first, str.first + 3, "1-0")) {
-				game.coreGame().setResult(RESULT_White);
+				game.setResult(RESULT_White);
 				return true;
 			}
 			if (std::equal(str.first, str.first + 3, "0-1")) {
-				game.coreGame().setResult(RESULT_Black);
+				game.setResult(RESULT_Black);
 				return true;
 			}
 			if (std::equal(str.first, str.first + 3, "1/2")) {
-				game.coreGame().setResult(RESULT_Draw);
+				game.setResult(RESULT_Draw);
 				return true;
 			}
 		}
@@ -361,17 +370,17 @@ private:
 			res = 0;
 		}
 		if (col == WHITE) {
-			game.coreGame().setWhiteRating(
+			game.setWhiteRating(
 			    {static_cast<ratingT>(elo), rType});
 		} else {
-			game.coreGame().setBlackRating(
+			game.setBlackRating(
 			    {static_cast<ratingT>(elo), rType});
 		}
 		return res;
 	}
 
 	std::optional<std::string> parsedTagValue(std::string_view tag) const {
-		auto const& coreGame = game.coreGame();
+		auto const& coreGame = game;
 		char strBuf[256];
 
 		if (tag == "Event")
@@ -428,7 +437,7 @@ private:
 				scidup::eco::String ecoStr;
 				scidup::eco::toExtendedString(
 				    scidup::eco::fromString(tmp.c_str()), ecoStr);
-				game.coreGame().setEco(ecoStr);
+				game.setEco(ecoStr);
 				return true;
 			}
 			if (std::equal(tag, tag + 3, "FEN")) {
@@ -439,7 +448,7 @@ private:
 		case 4:
 			if (std::equal(tag, tag + 4, "Date")) {
 				const auto date = date_parsePGNTag(value);
-				game.coreGame().setDate(date);
+				game.setDate(date);
 				return !date_isPartial(date);
 			}
 			break;
@@ -449,33 +458,34 @@ private:
 			break;
 		case 7:
 			if (std::equal(tag, tag + 7, "UTCDate") &&
-			    game.coreGame().date() == ZERO_DATE) {
+			    game.date() == ZERO_DATE) {
 				const auto date = date_parsePGNTag(value);
 				if (!date_isPartial(date))
-					game.coreGame().setDate(date);
+					game.setDate(date);
 			}
 			break;
 		case 9:
 			if (std::equal(tag, tag + 9, "EventDate")) {
 				const auto date = date_parsePGNTag(value);
-				game.coreGame().setEventDate(date);
+				game.setEventDate(date);
 				return !date_isPartial(date);
 			}
 			if (std::equal(tag, tag + 9, "ScidFlags")) {
-				game.setScidFlags(value.first,
-				                  std::distance(value.first, value.second));
+				if (scidFlags_) {
+					*scidFlags_ = std::string(value.first, value.second);
+				}
 				return true;
 			}
 			break;
 		}
 		if (tagLen >= 8) {
 			if (std::equal(tag, tag + 5, "White") &&
-			    game.coreGame().white().rating.value == 0) {
+			    game.white().rating.value == 0) {
 				auto res = parseRating(WHITE, tag + 5, tagLen - 5, value);
 				if (res >= 0)
 					return res;
 			} else if (std::equal(tag, tag + 5, "Black") &&
-			           game.coreGame().black().rating.value == 0) {
+			           game.black().rating.value == 0) {
 				auto res = parseRating(BLACK, tag + 5, tagLen - 5, value);
 				if (res >= 0)
 					return res;
@@ -483,7 +493,7 @@ private:
 		}
 		size_t valueLen = std::distance(value.first, value.second);
 		auto& str =
-		    game.coreGame().addTag({tag, tagLen}, {value.first, valueLen});
+		    game.addTag({tag, tagLen}, {value.first, valueLen});
 		linenum_ += pgn::normalize<true>(str, 0);
 		return true;
 	}

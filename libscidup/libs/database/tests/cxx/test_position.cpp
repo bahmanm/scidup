@@ -43,7 +43,7 @@ TEST(Test_PrintFen, castling_flag_kside_from_pgn) {
 	scid::database::Game game;
 	scid::core::MovetextLocation location;
 	scid::database::PgnParseLog parseLog;
-	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game,
+	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game.coreGame(),
 	                                         location, parseLog));
 	location = {};
 
@@ -73,7 +73,7 @@ TEST(Test_PrintFen, castling_flag_qside_from_pgn) {
 	scid::database::Game game;
 	scid::core::MovetextLocation location;
 	scid::database::PgnParseLog parseLog;
-	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game,
+	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game.coreGame(),
 	                                         location, parseLog));
 	location = {};
 

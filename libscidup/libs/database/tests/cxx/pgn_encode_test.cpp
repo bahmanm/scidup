@@ -301,7 +301,7 @@ TEST(Test_PgnEncode, encode) {
 		    "e5 $1 {nag} (1... c5 $2) 2. Nf3 {last}";
 		scid::database::Game game;
 		scid::database::pgn::parse_game({src.data(), src.data() + src.size()},
-		                scid::database::PgnVisitor{game});
+		                scid::database::PgnVisitor{game.coreGame()});
 		auto expected =
 		    "[Event \"\"]\n"
 		    "[Site \"\"]\n"
