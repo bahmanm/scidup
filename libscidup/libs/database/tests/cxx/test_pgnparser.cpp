@@ -96,7 +96,7 @@ TEST(Test_PgnParser, UTF8_char) {
 	ASSERT_TRUE(scid::database::pgnParseGame(pgnUTF8.data(), pgnUTF8.size(), game, errors));
 	EXPECT_TRUE(errors.log.empty());
 	auto pgn = scid::database::legacy_pgn::encode(
-	    game,
+	    game.coreGame(), game.scidFlags(),
 	    {PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
 	         PGN_STYLE_SCIDFLAGS,
 	     scid::database::PGN_FORMAT_Plain,
@@ -116,7 +116,7 @@ TEST(Test_PgnParser, Latin1_char) {
 	ASSERT_TRUE(scid::database::pgnParseGame(pgnLatin1.data(), pgnLatin1.size(), game, errors));
 	EXPECT_TRUE(errors.log.empty());
 	auto pgn = scid::database::legacy_pgn::encode(
-	    game,
+	    game.coreGame(), game.scidFlags(),
 	    {PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
 	         PGN_STYLE_SCIDFLAGS,
 	     scid::database::PGN_FORMAT_Plain,
@@ -229,7 +229,8 @@ TEST(Test_PgnParser, EPD) {
 	EXPECT_TRUE(parseLog.log.size() > last_log.size());
 	EXPECT_STREQ(expected_game,
 	             scid::database::legacy_pgn::encode(
-	                 game, scid::database::defaultLegacyGameEncodeOptions(),
+	                 game.coreGame(), game.scidFlags(),
+	                 scid::database::defaultLegacyGameEncodeOptions(),
 	                 1024, true)
 	                 .first);
 
@@ -422,7 +423,8 @@ TEST(Test_PgnParser, TagPairs) {
 		ASSERT_TRUE(scid::database::pgnParseGame(src.c_str(), src.size(), game, parseLog));
 		ASSERT_EQ(!parseLog.log.size(), !errors);
 		auto pgn = scid::database::legacy_pgn::encode(
-		    game, scid::database::defaultLegacyGameEncodeOptions(), 75, true);
+		    game.coreGame(), game.scidFlags(),
+		    scid::database::defaultLegacyGameEncodeOptions(), 75, true);
 		src.assign(pgn.first, pgn.second);
 		ASSERT_STREQ(src.c_str(), expect.c_str());
 	};

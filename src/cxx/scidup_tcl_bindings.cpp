@@ -656,7 +656,7 @@ exportGame (scid::database::Game * g, FILE * exportFile,
 
     options.htmlStyle = htmlDiagStyle;
     std::pair<const char*, unsigned> pgn = scid::database::legacy_pgn::encode(
-        *g, options, 75, true,
+        g->coreGame(), g->scidFlags(), options, 75, true,
         options.legacyFormat != scid::database::PGN_FORMAT_LaTeX);
     //size_t nWrited =
     fwrite(pgn.first, 1, pgn.second, exportFile);
@@ -2251,8 +2251,8 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                     if (dbase->getGame(*ie, g) != scid::database::OK) continue;
 
                     std::pair<const char*, unsigned> pgn =
-                        scid::database::legacy_pgn::encode(g, encodeOptions,
-                                                           75, true);
+                        scid::database::legacy_pgn::encode(
+                            g.coreGame(), g.scidFlags(), encodeOptions, 75, true);
                     if (pgn.second != fwrite(pgn.first, 1, pgn.second, exportFile)) {
                         err = scid::database::ERROR_FileWrite;
                         break;
@@ -4020,7 +4020,8 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     std::pair<const char*, unsigned> pgnBuf =
-        scid::database::legacy_pgn::encode(*g, encodeOptions, lineWidth);
+        scid::database::legacy_pgn::encode(g->coreGame(), g->scidFlags(),
+                                           encodeOptions, lineWidth);
     AppendResult (ti, pgnBuf.first, NULL);
     return TCL_OK;
 }
@@ -8952,8 +8953,9 @@ sc_search_header (ClientData, Tcl_Interp * ti, scid::database::scidBaseT* base, 
 				        0,
 				    };
 				const char* buf =
-				    scid::database::legacy_pgn::encode(*scratchGame,
-				                                       encodeOptions)
+				    scid::database::legacy_pgn::encode(
+				        scratchGame->coreGame(), scratchGame->scidFlags(),
+				        encodeOptions)
 				        .first;
 					for (scid_tcl_size m = 0; m < pgnTextCount; m++) {
 						if (match) {

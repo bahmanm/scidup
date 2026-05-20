@@ -1,13 +1,14 @@
 #include "nag_format.h"
 #include "legacy_pgn.h"
 #include "piece_translation.h"
+#include "scidup/core/game.h"
 #include "scidup/database/common.h"
-#include "scidup/database/game.h"
 #include "scidup/database/misc.h"
 #include "scidup/core/dstring.h"
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/nags.h"
 #include "scidup/core/notation.h"
+#include "scidup/eco/code.h"
 #include "textbuf.h"
 
 #include <algorithm>
@@ -82,14 +83,16 @@ static std::string sanForMove(Position& position, scid::core::Move const& move,
 }
 
 struct LegacyGamePgnEncoder {
-	Game& game;
+	const scid::core::Game& game;
+	const char* scidFlags;
 	TextBuffer* tb;
 	LegacyGameEncodeOptions options;
 	uint numMovesPrinted = 1;
 
 	static std::pair<const char*, unsigned>
-	encodeToPgnText(Game& game, LegacyGameEncodeOptions options,
-	                uint lineWidth, bool newLineAtEnd,
+	encodeToPgnText(const scid::core::Game& game, const char* scidFlags,
+	                LegacyGameEncodeOptions options, uint lineWidth,
+	                bool newLineAtEnd,
 	                bool newLineToSpaces);
 
 	errorT encode();
@@ -169,7 +172,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
             lineStartComment = variation->initialComment;
         }
     } else {
-        lineStartComment = game.coreGame().initialComment();
+        lineStartComment = game.initialComment();
     }
 
     // If this is a variation and it starts with a comment, print it:
@@ -622,7 +625,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
 //      Write a game in PGN to a textbuffer.
 //
 errorT LegacyGamePgnEncoder::encode() {
-    auto& coreGame = game.coreGame();
+    auto const& coreGame = game;
     const auto& BlackElo = coreGame.black().rating.value;
     const auto& BlackRatingType = coreGame.black().rating.type;
     const auto& Date = coreGame.date();
@@ -630,7 +633,7 @@ errorT LegacyGamePgnEncoder::encode() {
     const auto& EventDate = coreGame.eventDate();
     const auto& Result = coreGame.result();
     const auto& RoundStr = coreGame.round();
-    const auto* scidFlags = game.scidFlags();
+    const auto* scidFlags = this->scidFlags ? this->scidFlags : "";
     const auto& SiteStr = coreGame.site();
     auto* startPos = coreGame.startPosition();
     const auto& WhiteElo = coreGame.white().rating.value;
@@ -753,12 +756,14 @@ errorT LegacyGamePgnEncoder::encode() {
             if (options.isLatexFormat()) {
                 tb->PrintString ("\n\\begin{diagram}\n");
                 DString dstr;
-                startPos->DumpLatexBoard (&dstr);
+                Position diagramPosition = *startPos;
+                diagramPosition.DumpLatexBoard (&dstr);
                 tb->PrintString (dstr.Data());
                 tb->PrintString ("\n\\end{diagram}\n");
             } else if (options.isHtmlFormat()) {
                 DString dstr;
-                startPos->DumpHtmlBoard (&dstr, options.htmlStyle, NULL);
+                Position diagramPosition = *startPos;
+                diagramPosition.DumpHtmlBoard (&dstr, options.htmlStyle, NULL);
                 tb->PrintString (dstr.Data());
             } else {
 	                auto* out = std::copy_n("Position: ", 10, temp);
@@ -873,14 +878,15 @@ errorT LegacyGamePgnEncoder::encode() {
 }
 
 std::pair<const char*, unsigned> LegacyGamePgnEncoder::encodeToPgnText(
-    Game& game, LegacyGameEncodeOptions options, uint lineWidth,
-    bool newLineAtEnd, bool newLineToSpaces) {
+    const scid::core::Game& game, const char* scidFlags,
+    LegacyGameEncodeOptions options, uint lineWidth, bool newLineAtEnd,
+    bool newLineToSpaces) {
     static TextBuffer tbuf;
 
     tbuf.Empty();
     tbuf.SetWrapColumn(lineWidth ? lineWidth : tbuf.GetBufferSize());
     tbuf.NewlinesToSpaces(newLineToSpaces);
-    LegacyGamePgnEncoder{game, &tbuf, options}.encode();
+    LegacyGamePgnEncoder{game, scidFlags, &tbuf, options}.encode();
     if (newLineAtEnd) {
         tbuf.NewLine();
     }
@@ -889,10 +895,11 @@ std::pair<const char*, unsigned> LegacyGamePgnEncoder::encodeToPgnText(
 }
 
 std::pair<const char*, unsigned> legacy_pgn::encode(
-    Game& game, LegacyGameEncodeOptions options, unsigned lineWidth,
-    bool newLineAtEnd, bool newLineToSpaces) {
+    const scid::core::Game& game, const char* scidFlags,
+    LegacyGameEncodeOptions options, unsigned lineWidth, bool newLineAtEnd,
+    bool newLineToSpaces) {
     return LegacyGamePgnEncoder::encodeToPgnText(
-        game, options, lineWidth, newLineAtEnd, newLineToSpaces);
+        game, scidFlags, options, lineWidth, newLineAtEnd, newLineToSpaces);
 }
 
 } // namespace scid::database

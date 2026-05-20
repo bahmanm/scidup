@@ -264,11 +264,13 @@ TEST(Test_Game, clone) {
 		ASSERT_EQ(nextCoreSan(game, location), nextCoreSan(*clone, cloneLocation));
 
 		auto pgnGame =
-		    scid::database::legacy_pgn::encode(game, scidFlagsPgnOptions(), 75,
+		    scid::database::legacy_pgn::encode(game.coreGame(), game.scidFlags(),
+		                                       scidFlagsPgnOptions(), 75,
 		                                       true);
 
 		auto pgnClone = scid::database::legacy_pgn::encode(
-		    *clone, scidFlagsPgnOptions(), 75, true);
+		    clone->coreGame(), clone->scidFlags(), scidFlagsPgnOptions(), 75,
+		    true);
 
 		ASSERT_TRUE(std::equal(pgnClone.first, pgnClone.first + pgnClone.second,
 		                       pgnGame.first, pgnGame.first + pgnGame.second));
@@ -283,9 +285,11 @@ TEST(Test_Game, WriteToPGNDoesNotMutateOptions) {
 	    0,
 	};
 
-	auto first = scid::database::legacy_pgn::encode(game, options, 75, true);
+	auto first = scid::database::legacy_pgn::encode(
+	    game.coreGame(), game.scidFlags(), options, 75, true);
 	std::string firstPgn(first.first, first.second);
-	auto second = scid::database::legacy_pgn::encode(game, options, 75, true);
+	auto second = scid::database::legacy_pgn::encode(
+	    game.coreGame(), game.scidFlags(), options, 75, true);
 
 	EXPECT_EQ(firstPgn, std::string(second.first, second.second));
 }

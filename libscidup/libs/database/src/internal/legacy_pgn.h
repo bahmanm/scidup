@@ -1,17 +1,17 @@
 #pragma once
 
 #include "legacy_encode_options.h"
+#include "scidup/core/game.h"
 
 #include <utility>
 
 namespace scid::database {
 
-class Game;
-
 namespace legacy_pgn {
 
 std::pair<const char*, unsigned> encode(
-    Game& game,
+    const scid::core::Game& game,
+    const char* scidFlags,
     LegacyGameEncodeOptions options = defaultLegacyGameEncodeOptions(),
     unsigned lineWidth = 0,
     bool newLineAtEnd = false,
