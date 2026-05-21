@@ -53,7 +53,7 @@ TEST(Test_PositionSAN, MakeSANStringFromUCI) {
 
 TEST(Test_PositionMoveAction, ParsesAppliesAndFormatsSan) {
 	scid::core::Position pos = scid::core::Position::getStdStart();
-	scid::core::MoveAction action;
+	scid::core::MoveSpec action;
 
 	ASSERT_EQ(scid::core::OK, pos.parseMoveAction(action, "e4"));
 	EXPECT_EQ(scid::core::E2, action.from);
@@ -80,7 +80,7 @@ TEST(Test_PositionMoveAction, ParsesCoordinateCastlingAndPromotion) {
 		scid::core::Position pos;
 		ASSERT_EQ(scid::core::OK,
 		          pos.ReadFromFEN("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1"));
-		scid::core::MoveAction action;
+		scid::core::MoveSpec action;
 		ASSERT_EQ(scid::core::OK,
 		          pos.readCoordinateMoveAction(action, "e1g1", false));
 		EXPECT_EQ(scid::core::E1, action.from);
@@ -97,7 +97,7 @@ TEST(Test_PositionMoveAction, ParsesCoordinateCastlingAndPromotion) {
 		scid::core::Position pos;
 		ASSERT_EQ(scid::core::OK,
 		          pos.ReadFromFEN("k7/6P1/8/8/8/8/8/7K w - - 0 1"));
-		scid::core::MoveAction action;
+		scid::core::MoveSpec action;
 		ASSERT_EQ(scid::core::OK,
 		          pos.readCoordinateMoveAction(action, "g7g8q", false));
 		EXPECT_EQ(scid::core::G7, action.from);

@@ -181,7 +181,7 @@ bool varExactMatchLine(scid::core::MoveSequence const& line,
             }
         }
 
-        (void)currentPosition.applyMove(move.action);
+        (void)currentPosition.applyMove(move.spec);
     }
 
     return line.moves.empty() &&
@@ -302,7 +302,7 @@ bool materialMatches(bool promotionsFlag, ByteBuffer& buf, scid::core::byte* min
 
       Next_Move:
         {
-            scid::core::MoveAction action;
+            scid::core::MoveSpec action;
             err = game_storage::decodeMainlineMove(buf, currentPosition, action);
             if (err == scid::core::OK) {
                 err = currentPosition.applyMove(action);
@@ -473,13 +473,13 @@ bool exactMatches(const scid::core::Game& game, scid::core::Position* searchPos,
 
     Move_Forward:
         {
-            scid::core::MoveAction nextMove;
+            scid::core::MoveSpec nextMove;
             if (buf == NULL) {
                 if (memoryLine == nullptr ||
                     memoryMoveIndex >= memoryLine->moves.size()) {
                     err = scid::core::ERROR_EndOfMoveList;
                 } else {
-                    nextMove = memoryLine->moves[memoryMoveIndex].action;
+                    nextMove = memoryLine->moves[memoryMoveIndex].spec;
                     memoryMoveIndex++;
                     err = scid::core::OK;
                 }

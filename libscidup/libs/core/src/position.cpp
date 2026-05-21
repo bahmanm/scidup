@@ -38,12 +38,12 @@ bool valid_sqlist(pieceT* begin, size_t n, pieceT* board) {
 	       && std::count(kings.begin(), kings.end(), KING) == 1;
 }
 
-MoveAction moveActionFrom(simpleMoveT const& sm) {
+MoveSpec moveActionFrom(simpleMoveT const& sm) {
 	return {sm.from, sm.to, sm.promote, sm.isCastle() != 0};
 }
 
 errorT simpleMoveFromAction(Position const& position,
-                            MoveAction const& action,
+                            MoveSpec const& action,
                             simpleMoveT& move) {
 	if (action.isNull()) {
 		position.makeMove(action.from, action.to, PAWN, move);
@@ -1448,7 +1448,7 @@ Position::IsPromoMove (squareT from, squareT to)
     return 0;
 }
 
-errorT Position::parseMoveAction(MoveAction& action, std::string_view notation) {
+errorT Position::parseMoveAction(MoveSpec& action, std::string_view notation) {
 	simpleMoveT move;
 	auto err = ParseMove(&move, notation.data(), notation.data() + notation.size());
 	if (err != OK)
@@ -1458,7 +1458,7 @@ errorT Position::parseMoveAction(MoveAction& action, std::string_view notation) 
 	return OK;
 }
 
-errorT Position::readCoordinateMoveAction(MoveAction& action,
+errorT Position::readCoordinateMoveAction(MoveSpec& action,
                                           std::string_view notation,
                                           bool reverse) {
 	simpleMoveT move;
@@ -1470,7 +1470,7 @@ errorT Position::readCoordinateMoveAction(MoveAction& action,
 	return OK;
 }
 
-std::string Position::makeSan(MoveAction const& action, sanFlagT flag) {
+std::string Position::makeSan(MoveSpec const& action, sanFlagT flag) {
 	simpleMoveT move;
 	if (auto err = simpleMoveFromAction(*this, action, move); err != OK)
 		return {};
@@ -1480,7 +1480,7 @@ std::string Position::makeSan(MoveAction const& action, sanFlagT flag) {
 	return san;
 }
 
-errorT Position::applyMove(MoveAction const& action) {
+errorT Position::applyMove(MoveSpec const& action) {
 	simpleMoveT move;
 	if (auto err = simpleMoveFromAction(*this, action, move); err != OK)
 		return err;

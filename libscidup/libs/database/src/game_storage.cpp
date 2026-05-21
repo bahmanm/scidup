@@ -243,7 +243,7 @@ scid::core::byte pieceListIndex(const scid::core::Position& position,
 
 template <typename DestT>
 void encodeMove(const scid::core::Position& position,
-                const scid::core::MoveAction& action,
+                const scid::core::MoveSpec& action,
                 DestT& dest) {
 	const auto from =
 	    action.isNull() ? position.GetKingSquare(position.GetToMove())
@@ -301,7 +301,7 @@ void encodeMovelistLine(bool markComments,
                         DestT& dest,
                         MovelistStats& stats) {
 	for (auto const& coreMove : line.moves) {
-		encodeMove(position, coreMove.action, dest);
+		encodeMove(position, coreMove.spec, dest);
 
 		for (auto nag : coreMove.metadata.nags) {
 			dest.emplace_back(ENCODE_NAG);
@@ -323,7 +323,7 @@ void encodeMovelistLine(bool markComments,
 			dest.emplace_back(ENCODE_END_MARKER);
 		}
 
-		(void)position.applyMove(coreMove.action);
+		(void)position.applyMove(coreMove.spec);
 	}
 }
 
@@ -353,7 +353,7 @@ scid::core::errorT decodeMovelist(ByteBuffer& buf, scid::core::Game& game,
 	struct VariationFrame {
 		scid::core::Position resumePosition;
 		scid::core::Position resumePositionBeforeMove;
-		scid::core::MoveAction resumeMove;
+		scid::core::MoveSpec resumeMove;
 	};
 
 	scid::core::MovetextCursor cursor(game);
@@ -362,8 +362,8 @@ scid::core::errorT decodeMovelist(ByteBuffer& buf, scid::core::Game& game,
 	                        : scid::core::Position::getStdStart();
 	std::vector<VariationFrame> variationStack;
 	std::optional<scid::core::Position> positionBeforePreviousMove;
-	std::optional<scid::core::MoveAction> previousMove;
-	scid::core::MoveAction action;
+	std::optional<scid::core::MoveSpec> previousMove;
+	scid::core::MoveSpec action;
 	int varDepth = 0;
 	for (;;) {
 		auto [err, val] = game_storage::ByteBufferAccess::nextMove(
@@ -589,23 +589,23 @@ std::pair<bool, bool> mainlineInfo(const scid::core::Position* customStart,
 	unsigned hpCount = 0;
 	scid::core::byte hpVal[8] = {};
 	scid::core::Position pos = customStart ? *customStart : scid::core::Position::getStdStart();
-	std::vector<scid::core::MoveAction> moves;
+	std::vector<scid::core::MoveSpec> moves;
 	moves.reserve(mainline.moves.size());
 
 	auto hpOld = HPSIG_StdStart; // All 16 pawns are on their home squares.
 	for (auto const& coreMove : mainline.moves) {
 		++nHalfMoves;
 
-		if (coreMove.action.promotion != scid::core::EMPTY) {
+		if (coreMove.spec.promotion != scid::core::EMPTY) {
 			PromoFlag = true;
-			if (scid::core::piece_Type(coreMove.action.promotion) !=
+			if (scid::core::piece_Type(coreMove.spec.promotion) !=
 			    scid::core::QUEEN) {
 				UnderPromosFlag = true;
 			}
 		}
 
-		(void)pos.applyMove(coreMove.action);
-		moves.push_back(coreMove.action);
+		(void)pos.applyMove(coreMove.spec);
+		moves.push_back(coreMove.spec);
 		if (!customStart) {
 			const auto hpNew = pos.GetHPSig();
 			if (unsigned changed = hpOld - hpNew) {
@@ -778,7 +778,7 @@ scid::core::errorT game_storage::decodeEncodedMove(
     ByteBuffer& buf,
     scid::core::byte val,
     const scid::core::Position& pos,
-    scid::core::MoveAction& action) {
+    scid::core::MoveSpec& action) {
 	const scid::core::colorT toMove = pos.GetToMove();
 	const scid::core::squareT from = pos.GetList(toMove)[val >> 4];
 	if (from > scid::core::H8)
@@ -821,7 +821,7 @@ scid::core::errorT game_storage::decodeEncodedMove(
 scid::core::errorT game_storage::decodeMainlineMove(
     ByteBuffer& buf,
     const scid::core::Position& pos,
-    scid::core::MoveAction& action) {
+    scid::core::MoveSpec& action) {
 	auto [err, val] = ByteBufferAccess::nextLineMove(buf);
 	if (err)
 		return err;

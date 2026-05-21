@@ -42,7 +42,7 @@ currentPosition(const scid::core::Game& game,
 	return position;
 }
 
-scid::core::MoveAction makeCurrentMove(scid::core::Game& game,
+scid::core::MoveSpec makeCurrentMove(scid::core::Game& game,
                                        scid::core::MovetextLocation location,
                                        scid::core::squareT from,
                                        scid::core::squareT to) {
@@ -60,7 +60,7 @@ void setCurrentComment(scid::core::Game& game,
 }
 
 void addMove(scid::core::Game& game, scid::core::MovetextLocation& location,
-             scid::core::MoveAction const& move) {
+             scid::core::MoveSpec const& move) {
 	scid::core::MovetextCursor cursor(game);
 	ASSERT_TRUE(cursor.restore(location));
 	cursor.addMove(move);

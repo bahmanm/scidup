@@ -78,7 +78,7 @@ scidup::eco::Error ReadLine(scidup::eco::Position& pos, const char* s) {
 			s++;
 		}
 
-		scid::core::MoveAction action;
+		scid::core::MoveSpec action;
 		scidup::eco::Error err =
 		    pos.parseMoveAction(action, {begin, static_cast<std::size_t>(s - begin)});
 		if (err != scidup::eco::OK)

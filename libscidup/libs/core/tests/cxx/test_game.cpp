@@ -157,9 +157,9 @@ TEST(CoreGameTest, AppendsMainlineMovesWithMetadataAndVariations) {
 	ASSERT_EQ(1U, game.movetext().mainline.moves.size());
 	EXPECT_EQ(1U, game.mainlineHalfMoveCount());
 	auto const& savedMove = game.movetext().mainline.moves[0];
-	EXPECT_EQ(scid::core::E2, savedMove.action.from);
-	EXPECT_EQ(scid::core::E4, savedMove.action.to);
-	EXPECT_EQ(scid::core::EMPTY, savedMove.action.promotion);
+	EXPECT_EQ(scid::core::E2, savedMove.spec.from);
+	EXPECT_EQ(scid::core::E4, savedMove.spec.to);
+	EXPECT_EQ(scid::core::EMPTY, savedMove.spec.promotion);
 	EXPECT_EQ("e4", savedMove.san);
 	EXPECT_EQ("Best by test", savedMove.metadata.comment);
 	ASSERT_EQ(1U, savedMove.metadata.nags.size());
@@ -168,22 +168,22 @@ TEST(CoreGameTest, AppendsMainlineMovesWithMetadataAndVariations) {
 	EXPECT_EQ("Alternative line", savedMove.childVariations[0].initialComment);
 	ASSERT_EQ(1U, savedMove.childVariations[0].line.moves.size());
 	EXPECT_EQ(scid::core::D4,
-	          savedMove.childVariations[0].line.moves[0].action.to);
+	          savedMove.childVariations[0].line.moves[0].spec.to);
 }
 
 TEST(CoreGameTest, MoveActionFormatsLongNotation) {
 	EXPECT_EQ("e2e4",
-	          (scid::core::MoveAction{scid::core::E2,
+	          (scid::core::MoveSpec{scid::core::E2,
 	                                  scid::core::E4,
 	                                  scid::core::EMPTY})
 	              .longNotation());
 	EXPECT_EQ("a7a8q",
-	          (scid::core::MoveAction{scid::core::A7,
+	          (scid::core::MoveSpec{scid::core::A7,
 	                                  scid::core::A8,
 	                                  scid::core::QUEEN})
 	              .longNotation());
 
-	scid::core::MoveAction nullMove{scid::core::E1,
+	scid::core::MoveSpec nullMove{scid::core::E1,
 	                                scid::core::E1,
 	                                scid::core::EMPTY};
 	EXPECT_TRUE(nullMove.isNull());

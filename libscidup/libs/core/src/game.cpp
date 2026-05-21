@@ -37,11 +37,11 @@ void stripMoveSequence(MoveSequence& sequence,
 }
 } // namespace
 
-bool MoveAction::isNull() const {
+bool MoveSpec::isNull() const {
 	return from == to && !castling;
 }
 
-std::string MoveAction::longNotation() const {
+std::string MoveSpec::longNotation() const {
 	if (isNull())
 		return "0000";
 
@@ -294,14 +294,14 @@ Variation& Move::addVariation(std::string_view initialComment) {
 	return variation;
 }
 
-Move& MoveSequence::appendMove(MoveAction action) {
+Move& MoveSequence::appendMove(MoveSpec spec) {
 	auto& move = moves.emplace_back();
-	move.action = action;
+	move.spec = spec;
 	return move;
 }
 
-Move& Game::appendMainlineMove(MoveAction action) {
-	return movetext_.mainline.appendMove(action);
+Move& Game::appendMainlineMove(MoveSpec spec) {
+	return movetext_.mainline.appendMove(spec);
 }
 
 void Game::setInitialComment(std::string_view value) {

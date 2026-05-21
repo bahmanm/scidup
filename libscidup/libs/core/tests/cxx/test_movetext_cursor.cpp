@@ -4,7 +4,7 @@
 
 namespace {
 
-scid::core::MoveAction quiet(scid::core::squareT from,
+scid::core::MoveSpec quiet(scid::core::squareT from,
                              scid::core::squareT to) {
 	return {from, to, scid::core::EMPTY};
 }
@@ -26,8 +26,8 @@ TEST(CoreMovetextCursorTest, AddsMainlineMovesAtCursorAndAdvances) {
 
 	auto const& mainline = game.movetext().mainline.moves;
 	ASSERT_EQ(2U, mainline.size());
-	EXPECT_EQ("e2e4", mainline[0].action.longNotation());
-	EXPECT_EQ("e7e5", mainline[1].action.longNotation());
+	EXPECT_EQ("e2e4", mainline[0].spec.longNotation());
+	EXPECT_EQ("e7e5", mainline[1].spec.longNotation());
 }
 
 TEST(CoreMovetextCursorTest, ReplacesContinuationWhenAddingBeforeLineEnd) {
@@ -41,8 +41,8 @@ TEST(CoreMovetextCursorTest, ReplacesContinuationWhenAddingBeforeLineEnd) {
 
 	auto const& mainline = game.movetext().mainline.moves;
 	ASSERT_EQ(2U, mainline.size());
-	EXPECT_EQ("e2e4", mainline[0].action.longNotation());
-	EXPECT_EQ("c7c5", mainline[1].action.longNotation());
+	EXPECT_EQ("e2e4", mainline[0].spec.longNotation());
+	EXPECT_EQ("c7c5", mainline[1].spec.longNotation());
 	EXPECT_EQ(2U, cursor.ply());
 	EXPECT_TRUE(cursor.isAtGameEnd());
 }
@@ -75,7 +75,7 @@ TEST(CoreMovetextCursorTest, AddsVariationToNextMoveAndEntersIt) {
 	EXPECT_EQ(nullptr, cursor.currentVariation());
 	EXPECT_EQ(0U, cursor.variationDepth());
 	ASSERT_NE(nullptr, cursor.nextMove());
-	EXPECT_EQ("e2e4", cursor.nextMove()->action.longNotation());
+	EXPECT_EQ("e2e4", cursor.nextMove()->spec.longNotation());
 }
 
 TEST(CoreMovetextCursorTest, SetsPreviousMoveMetadataAtCursor) {
@@ -177,7 +177,7 @@ TEST(CoreMovetextCursorTest, SavesAndRestoresVariationLocation) {
 	EXPECT_EQ(1U, cursor.variationDepth());
 	EXPECT_EQ(1U, cursor.ply());
 	ASSERT_NE(nullptr, cursor.previousMove());
-	EXPECT_EQ("d2d4", cursor.previousMove()->action.longNotation());
+	EXPECT_EQ("d2d4", cursor.previousMove()->spec.longNotation());
 }
 
 TEST(CoreMovetextCursorTest, TruncatesMainlineAtCursor) {
@@ -194,7 +194,7 @@ TEST(CoreMovetextCursorTest, TruncatesMainlineAtCursor) {
 	ASSERT_EQ(1U, game.movetext().mainline.moves.size());
 	EXPECT_TRUE(cursor.isAtLineEnd());
 	EXPECT_EQ("e2e4",
-	          game.movetext().mainline.moves[0].action.longNotation());
+	          game.movetext().mainline.moves[0].spec.longNotation());
 }
 
 TEST(CoreMovetextCursorTest, TruncatesVariationLineAtCursor) {
@@ -213,7 +213,7 @@ TEST(CoreMovetextCursorTest, TruncatesVariationLineAtCursor) {
 
 	ASSERT_EQ(1U, variation->line.moves.size());
 	EXPECT_TRUE(cursor.isAtLineEnd());
-	EXPECT_EQ("d2d4", variation->line.moves[0].action.longNotation());
+	EXPECT_EQ("d2d4", variation->line.moves[0].spec.longNotation());
 }
 
 TEST(CoreMovetextCursorTest, DeletesCurrentVariationAndExitsToParent) {
@@ -234,13 +234,13 @@ TEST(CoreMovetextCursorTest, DeletesCurrentVariationAndExitsToParent) {
 
 	EXPECT_EQ(0U, cursor.variationDepth());
 	ASSERT_NE(nullptr, cursor.nextMove());
-	EXPECT_EQ("e2e4", cursor.nextMove()->action.longNotation());
+	EXPECT_EQ("e2e4", cursor.nextMove()->spec.longNotation());
 	auto const& variations =
 	    game.movetext().mainline.moves[0].childVariations;
 	ASSERT_EQ(1U, variations.size());
 	EXPECT_EQ("Queen pawn alternative", variations[0].initialComment);
 	ASSERT_EQ(1U, variations[0].line.moves.size());
-	EXPECT_EQ("d2d4", variations[0].line.moves[0].action.longNotation());
+	EXPECT_EQ("d2d4", variations[0].line.moves[0].spec.longNotation());
 }
 
 TEST(CoreMovetextCursorTest, RefusesToDeleteVariationFromMainline) {
@@ -252,7 +252,7 @@ TEST(CoreMovetextCursorTest, RefusesToDeleteVariationFromMainline) {
 	EXPECT_FALSE(cursor.deleteVariation());
 	ASSERT_EQ(1U, game.movetext().mainline.moves.size());
 	EXPECT_EQ("e2e4",
-	          game.movetext().mainline.moves[0].action.longNotation());
+	          game.movetext().mainline.moves[0].spec.longNotation());
 }
 
 TEST(CoreMovetextCursorTest, PromotesCurrentVariationToFirst) {
@@ -274,7 +274,7 @@ TEST(CoreMovetextCursorTest, PromotesCurrentVariationToFirst) {
 	EXPECT_EQ(1U, cursor.variationDepth());
 	EXPECT_EQ(0U, cursor.variationIndex());
 	ASSERT_NE(nullptr, cursor.previousMove());
-	EXPECT_EQ("c2c4", cursor.previousMove()->action.longNotation());
+	EXPECT_EQ("c2c4", cursor.previousMove()->spec.longNotation());
 	auto const& variations =
 	    game.movetext().mainline.moves[0].childVariations;
 	ASSERT_EQ(2U, variations.size());
@@ -291,7 +291,7 @@ TEST(CoreMovetextCursorTest, RefusesToPromoteVariationFromMainline) {
 	EXPECT_FALSE(cursor.promoteVariationToFirst());
 	ASSERT_EQ(1U, game.movetext().mainline.moves.size());
 	EXPECT_EQ("e2e4",
-	          game.movetext().mainline.moves[0].action.longNotation());
+	          game.movetext().mainline.moves[0].spec.longNotation());
 }
 
 TEST(CoreMovetextCursorTest, PromotesCurrentVariationToMainline) {
@@ -315,21 +315,21 @@ TEST(CoreMovetextCursorTest, PromotesCurrentVariationToMainline) {
 	EXPECT_EQ(0U, cursor.variationDepth());
 	EXPECT_TRUE(cursor.isAtGameEnd());
 	ASSERT_NE(nullptr, cursor.previousMove());
-	EXPECT_EQ("c7c5", cursor.previousMove()->action.longNotation());
+	EXPECT_EQ("c7c5", cursor.previousMove()->spec.longNotation());
 	auto const& mainline = game.movetext().mainline.moves;
 	ASSERT_EQ(2U, mainline.size());
-	EXPECT_EQ("c2c4", mainline[0].action.longNotation());
-	EXPECT_EQ("c7c5", mainline[1].action.longNotation());
+	EXPECT_EQ("c2c4", mainline[0].spec.longNotation());
+	EXPECT_EQ("c7c5", mainline[1].spec.longNotation());
 
 	auto const& variations = mainline[0].childVariations;
 	ASSERT_EQ(2U, variations.size());
 	EXPECT_EQ("English alternative", variations[0].initialComment);
 	ASSERT_EQ(2U, variations[0].line.moves.size());
-	EXPECT_EQ("e2e4", variations[0].line.moves[0].action.longNotation());
-	EXPECT_EQ("e7e5", variations[0].line.moves[1].action.longNotation());
+	EXPECT_EQ("e2e4", variations[0].line.moves[0].spec.longNotation());
+	EXPECT_EQ("e7e5", variations[0].line.moves[1].spec.longNotation());
 	EXPECT_EQ("Queen pawn alternative", variations[1].initialComment);
 	ASSERT_EQ(1U, variations[1].line.moves.size());
-	EXPECT_EQ("d2d4", variations[1].line.moves[0].action.longNotation());
+	EXPECT_EQ("d2d4", variations[1].line.moves[0].spec.longNotation());
 }
 
 TEST(CoreMovetextCursorTest, RefusesToPromoteEmptyVariationToMainlineAsNoOp) {
@@ -344,7 +344,7 @@ TEST(CoreMovetextCursorTest, RefusesToPromoteEmptyVariationToMainlineAsNoOp) {
 	EXPECT_EQ(1U, cursor.variationDepth());
 	ASSERT_EQ(1U, game.movetext().mainline.moves.size());
 	EXPECT_EQ("e2e4",
-	          game.movetext().mainline.moves[0].action.longNotation());
+	          game.movetext().mainline.moves[0].spec.longNotation());
 }
 
 TEST(CoreMovetextCursorTest, TruncatesBeforeMainlineCursor) {
@@ -362,8 +362,8 @@ TEST(CoreMovetextCursorTest, TruncatesBeforeMainlineCursor) {
 	EXPECT_TRUE(cursor.isAtGameStart());
 	auto const& mainline = game.movetext().mainline.moves;
 	ASSERT_EQ(2U, mainline.size());
-	EXPECT_EQ("e7e5", mainline[0].action.longNotation());
-	EXPECT_EQ("g1f3", mainline[1].action.longNotation());
+	EXPECT_EQ("e7e5", mainline[0].spec.longNotation());
+	EXPECT_EQ("g1f3", mainline[1].spec.longNotation());
 }
 
 TEST(CoreMovetextCursorTest, TruncatesBeforeVariationCursor) {
@@ -383,7 +383,7 @@ TEST(CoreMovetextCursorTest, TruncatesBeforeVariationCursor) {
 	EXPECT_TRUE(cursor.isAtGameStart());
 	auto const& mainline = game.movetext().mainline.moves;
 	ASSERT_EQ(1U, mainline.size());
-	EXPECT_EQ("c7c5", mainline[0].action.longNotation());
+	EXPECT_EQ("c7c5", mainline[0].spec.longNotation());
 }
 
 } // namespace

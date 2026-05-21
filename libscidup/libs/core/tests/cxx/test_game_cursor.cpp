@@ -4,7 +4,7 @@
 
 namespace {
 
-scid::core::MoveAction quiet(scid::core::squareT from,
+scid::core::MoveSpec quiet(scid::core::squareT from,
                              scid::core::squareT to) {
 	return {from, to, scid::core::EMPTY};
 }
@@ -48,9 +48,9 @@ TEST(CoreGameCursorTest, MovesNextAndPreviousThroughMainline) {
 	EXPECT_FALSE(cursor.isAtGameEnd());
 	EXPECT_EQ(1U, cursor.ply());
 	ASSERT_NE(nullptr, cursor.previousMove());
-	EXPECT_EQ("e2e4", cursor.previousMove()->action.longNotation());
+	EXPECT_EQ("e2e4", cursor.previousMove()->spec.longNotation());
 	ASSERT_NE(nullptr, cursor.nextMove());
-	EXPECT_EQ("e7e5", cursor.nextMove()->action.longNotation());
+	EXPECT_EQ("e7e5", cursor.nextMove()->spec.longNotation());
 
 	ASSERT_TRUE(cursor.next());
 	EXPECT_TRUE(cursor.isAtLineEnd());
@@ -58,7 +58,7 @@ TEST(CoreGameCursorTest, MovesNextAndPreviousThroughMainline) {
 	EXPECT_TRUE(cursor.isAtGameEnd());
 	EXPECT_EQ(nullptr, cursor.nextMove());
 	ASSERT_NE(nullptr, cursor.previousMove());
-	EXPECT_EQ("e7e5", cursor.previousMove()->action.longNotation());
+	EXPECT_EQ("e7e5", cursor.previousMove()->spec.longNotation());
 	EXPECT_FALSE(cursor.next());
 
 	ASSERT_TRUE(cursor.previous());
@@ -82,7 +82,7 @@ TEST(CoreGameCursorTest, SavesAndRestoresLocation) {
 	ASSERT_TRUE(cursor.restore(location));
 	EXPECT_EQ(1U, cursor.ply());
 	ASSERT_NE(nullptr, cursor.nextMove());
-	EXPECT_EQ("d7d5", cursor.nextMove()->action.longNotation());
+	EXPECT_EQ("d7d5", cursor.nextMove()->spec.longNotation());
 }
 
 TEST(CoreGameCursorTest, ReturnsMainlineMovesToCursor) {
@@ -95,8 +95,8 @@ TEST(CoreGameCursorTest, ReturnsMainlineMovesToCursor) {
 	auto moves = cursor.movesToCursor();
 
 	ASSERT_EQ(2U, moves.size());
-	EXPECT_EQ("d2d4", moves[0]->action.longNotation());
-	EXPECT_EQ("d7d5", moves[1]->action.longNotation());
+	EXPECT_EQ("d2d4", moves[0]->spec.longNotation());
+	EXPECT_EQ("d7d5", moves[1]->spec.longNotation());
 }
 
 TEST(CoreGameCursorTest, ReturnsVariationMovesToCursor) {
@@ -116,8 +116,8 @@ TEST(CoreGameCursorTest, ReturnsVariationMovesToCursor) {
 	auto moves = cursor.movesToCursor();
 
 	ASSERT_EQ(2U, moves.size());
-	EXPECT_EQ("e2e4", moves[0]->action.longNotation());
-	EXPECT_EQ("e7e5", moves[1]->action.longNotation());
+	EXPECT_EQ("e2e4", moves[0]->spec.longNotation());
+	EXPECT_EQ("e7e5", moves[1]->spec.longNotation());
 }
 
 TEST(CoreGameCursorTest, ReturnsNestedVariationMovesToCursor) {
@@ -140,8 +140,8 @@ TEST(CoreGameCursorTest, ReturnsNestedVariationMovesToCursor) {
 	auto moves = cursor.movesToCursor();
 
 	ASSERT_EQ(2U, moves.size());
-	EXPECT_EQ("e2e4", moves[0]->action.longNotation());
-	EXPECT_EQ("c7c5", moves[1]->action.longNotation());
+	EXPECT_EQ("e2e4", moves[0]->spec.longNotation());
+	EXPECT_EQ("c7c5", moves[1]->spec.longNotation());
 }
 
 TEST(CoreGameCursorTest, ReturnsCurrentPositionAtMainlineLocation) {
@@ -202,14 +202,14 @@ TEST(CoreGameCursorTest, SeeksToMainlineStartAndEnd) {
 	EXPECT_EQ(0U, cursor.variationDepth());
 	EXPECT_TRUE(cursor.isAtGameStart());
 	ASSERT_NE(nullptr, cursor.nextMove());
-	EXPECT_EQ("e2e4", cursor.nextMove()->action.longNotation());
+	EXPECT_EQ("e2e4", cursor.nextMove()->spec.longNotation());
 
 	ASSERT_TRUE(cursor.enterVariation(0));
 	cursor.toEnd();
 	EXPECT_EQ(0U, cursor.variationDepth());
 	EXPECT_TRUE(cursor.isAtGameEnd());
 	ASSERT_NE(nullptr, cursor.previousMove());
-	EXPECT_EQ("e7e5", cursor.previousMove()->action.longNotation());
+	EXPECT_EQ("e7e5", cursor.previousMove()->spec.longNotation());
 }
 
 TEST(CoreGameCursorTest, SeeksToMainlinePly) {
@@ -225,9 +225,9 @@ TEST(CoreGameCursorTest, SeeksToMainlinePly) {
 	ASSERT_TRUE(cursor.toPly(2));
 	EXPECT_EQ(2U, cursor.ply());
 	ASSERT_NE(nullptr, cursor.previousMove());
-	EXPECT_EQ("e7e5", cursor.previousMove()->action.longNotation());
+	EXPECT_EQ("e7e5", cursor.previousMove()->spec.longNotation());
 	ASSERT_NE(nullptr, cursor.nextMove());
-	EXPECT_EQ("g1f3", cursor.nextMove()->action.longNotation());
+	EXPECT_EQ("g1f3", cursor.nextMove()->spec.longNotation());
 	EXPECT_FALSE(cursor.isAtGameEnd());
 
 	ASSERT_TRUE(cursor.toPly(1));
@@ -240,14 +240,14 @@ TEST(CoreGameCursorTest, SeeksToMainlinePly) {
 	EXPECT_EQ(0U, cursor.variationDepth());
 	EXPECT_EQ(2U, cursor.ply());
 	ASSERT_NE(nullptr, cursor.previousMove());
-	EXPECT_EQ("e7e5", cursor.previousMove()->action.longNotation());
+	EXPECT_EQ("e7e5", cursor.previousMove()->spec.longNotation());
 	ASSERT_NE(nullptr, cursor.nextMove());
-	EXPECT_EQ("g1f3", cursor.nextMove()->action.longNotation());
+	EXPECT_EQ("g1f3", cursor.nextMove()->spec.longNotation());
 
 	EXPECT_FALSE(cursor.toPly(10));
 	EXPECT_EQ(2U, cursor.ply());
 	ASSERT_NE(nullptr, cursor.nextMove());
-	EXPECT_EQ("g1f3", cursor.nextMove()->action.longNotation());
+	EXPECT_EQ("g1f3", cursor.nextMove()->spec.longNotation());
 }
 
 TEST(CoreGameCursorTest, EntersAndExitsVariationFromNextMove) {
@@ -286,7 +286,7 @@ TEST(CoreGameCursorTest, EntersAndExitsVariationFromNextMove) {
 	ASSERT_TRUE(cursor.exitVariation());
 	EXPECT_EQ(0U, cursor.variationDepth());
 	ASSERT_NE(nullptr, cursor.nextMove());
-	EXPECT_EQ("e2e4", cursor.nextMove()->action.longNotation());
+	EXPECT_EQ("e2e4", cursor.nextMove()->spec.longNotation());
 }
 
 TEST(CoreGameCursorTest, SavesAndRestoresVariationLocation) {

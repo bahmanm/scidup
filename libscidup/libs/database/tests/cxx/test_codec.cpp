@@ -54,7 +54,7 @@ void setCurrentComment(scid::core::Game& game,
 
 void addMove(scid::core::Game& game,
              scid::core::MovetextLocation& location,
-             scid::core::MoveAction const& move) {
+             scid::core::MoveSpec const& move) {
 	scid::core::MovetextCursor cursor(game);
 	ASSERT_TRUE(cursor.restore(location));
 	cursor.addMove(move);

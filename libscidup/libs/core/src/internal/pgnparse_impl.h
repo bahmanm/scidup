@@ -206,7 +206,7 @@ public:
 		if (!position)
 			return logFatalErr("Failed to parse the move: ", tok);
 
-		scid::core::MoveAction action;
+		scid::core::MoveSpec action;
 		auto err = position->parseMoveAction(
 		    action, std::string_view(tok.first, tok.second - tok.first));
 		if (err != scid::core::OK) {

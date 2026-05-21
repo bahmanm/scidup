@@ -29,7 +29,7 @@ std::optional<scid::core::Position> positionAfter(
     std::size_t count) {
 	auto position = startPosition(game);
 	for (std::size_t i = 0; i < count; ++i) {
-		if (position.applyMove(moves[i]->action) != scid::core::OK)
+		if (position.applyMove(moves[i]->spec) != scid::core::OK)
 			return {};
 	}
 	return position;
@@ -41,7 +41,7 @@ std::string makeSan(scid::core::Position& position,
 	if (!move.san.empty())
 		return move.san;
 
-	return position.makeSan(move.action, flag);
+	return position.makeSan(move.spec, flag);
 }
 
 std::string currentPositionUci(const Game& game, MovetextLocation location) {
@@ -52,13 +52,13 @@ std::string currentPositionUci(const Game& game, MovetextLocation location) {
 	auto cursor = cursorAt(game, location);
 
 	for (const auto* move : cursor.movesToCursor()) {
-		[[maybe_unused]] const auto err = position.applyMove(move->action);
+		[[maybe_unused]] const auto err = position.applyMove(move->spec);
 		assert(err == scid::core::OK);
-		if (move->action.isNull()) {
+		if (move->spec.isNull()) {
 			position.PrintFEN(fen, sizeof(fen));
 			moves.clear();
 		} else {
-			moves.push_back(move->action.longNotation());
+			moves.push_back(move->spec.longNotation());
 		}
 	}
 
@@ -82,7 +82,7 @@ std::string previousMoveUci(const Game& game, MovetextLocation location) {
 	const auto move = cursor.previousMove();
 	if (!move)
 		return {};
-	return move->action.longNotation();
+	return move->spec.longNotation();
 }
 
 std::string nextMoveUci(const Game& game, MovetextLocation location) {
@@ -90,7 +90,7 @@ std::string nextMoveUci(const Game& game, MovetextLocation location) {
 	const auto move = cursor.nextMove();
 	if (!move)
 		return {};
-	return move->action.longNotation();
+	return move->spec.longNotation();
 }
 
 std::string previousSan(const Game& game, MovetextLocation location) {
@@ -154,7 +154,7 @@ std::string partialMoveList(const Game& game, std::size_t plyCount) {
 			out.push_back(' ');
 		out += entry;
 
-		if (position.applyMove(move->action) != scid::core::OK)
+		if (position.applyMove(move->spec) != scid::core::OK)
 			break;
 		cursor.next();
 	}

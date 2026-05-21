@@ -6,7 +6,7 @@
 
 namespace {
 
-scid::core::MoveAction quiet(scid::core::squareT from,
+scid::core::MoveSpec quiet(scid::core::squareT from,
                              scid::core::squareT to) {
 	return {from, to, scid::core::EMPTY};
 }

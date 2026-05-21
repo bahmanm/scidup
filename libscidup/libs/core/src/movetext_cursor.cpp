@@ -203,7 +203,7 @@ bool MovetextCursor::toPly(std::size_t ply) {
 	return true;
 }
 
-Move& MovetextCursor::addMove(MoveAction action) {
+Move& MovetextCursor::addMove(MoveSpec action) {
 	auto& line = currentLine();
 	if (nextIndex_ < line.moves.size())
 		line.moves.erase(line.moves.begin() + nextIndex_, line.moves.end());

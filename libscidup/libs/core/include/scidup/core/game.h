@@ -49,7 +49,7 @@ struct GameHeader {
 	std::vector<TagPair> tags;
 };
 
-struct MoveAction {
+struct MoveSpec {
 	scid::core::squareT from = scid::core::NULL_SQUARE;
 	scid::core::squareT to = scid::core::NULL_SQUARE;
 	scid::core::pieceT promotion = scid::core::EMPTY;
@@ -69,14 +69,14 @@ struct Variation;
 struct Move {
 	Variation& addVariation(std::string_view initialComment = {});
 
-	MoveAction action;
+	MoveSpec spec;
 	std::string san;
 	MoveMetadata metadata;
 	std::vector<Variation> childVariations;
 };
 
 struct MoveSequence {
-	Move& appendMove(MoveAction action);
+	Move& appendMove(MoveSpec spec);
 
 	std::vector<Move> moves;
 };
@@ -143,7 +143,7 @@ public:
 	void clearStartPosition();
 	long long initialPlyCounter() const;
 
-	Move& appendMainlineMove(MoveAction action);
+	Move& appendMainlineMove(MoveSpec spec);
 	void setInitialComment(std::string_view value);
 	void clearMovetext();
 	void stripMovetext(bool variations, bool comments, bool nags);

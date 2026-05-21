@@ -253,7 +253,7 @@ currentPosition(const scid::core::Game& game,
 	return cursor.currentPosition();
 }
 
-static std::optional<scid::core::MoveAction>
+static std::optional<scid::core::MoveSpec>
 currentMove(const scid::core::Game& game,
             scid::core::MovetextLocation location) {
 	scid::core::GameCursor cursor(game);
@@ -264,7 +264,7 @@ currentMove(const scid::core::Game& game,
 	if (!move)
 		return std::nullopt;
 
-	return move->action;
+	return move->spec;
 }
 
 static std::optional<scid::core::MovetextLocation>
@@ -3600,7 +3600,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         gameLocation = cursor.location();
     }
     bool atLastMove = isAtEnd(game.coreGame(), gameLocation);
-    std::optional<scid::core::MoveAction> move;
+    std::optional<scid::core::MoveSpec> move;
     if (atLastMove) {
         // At end of game, so remember final game move for replicating
         // at the start of the variation:
@@ -5462,7 +5462,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                 for (auto const& move :
                      game.movetext().mainline.moves) {
                     moves.push_back(' ');
-                    moves.append(move.action.longNotation());
+                    moves.append(move.spec.longNotation());
                 }
                 std::string str;
                 if (scid::core::OK == pos.MakeCoordMoves(moves.data(), moves.size(), &str))

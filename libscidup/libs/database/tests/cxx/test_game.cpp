@@ -50,8 +50,8 @@ void expectMoveAction(const scid::core::Move* move,
                       scid::core::squareT from,
                       scid::core::squareT to) {
 	ASSERT_NE(nullptr, move);
-	EXPECT_EQ(from, move->action.from);
-	EXPECT_EQ(to, move->action.to);
+	EXPECT_EQ(from, move->spec.from);
+	EXPECT_EQ(to, move->spec.to);
 }
 
 scid::database::LegacyGameEncodeOptions scidFlagsPgnOptions() {
@@ -96,7 +96,7 @@ std::string_view currentMoveComment(
 	return game.initialComment();
 }
 
-scid::core::MoveAction makeCurrentMove(scid::core::Game& game,
+scid::core::MoveSpec makeCurrentMove(scid::core::Game& game,
                                        scid::core::MovetextLocation location,
                                        scid::core::squareT from,
                                        scid::core::squareT to) {
@@ -107,7 +107,7 @@ scid::core::MoveAction makeCurrentMove(scid::core::Game& game,
 
 void addMove(scid::core::Game& game,
              scid::core::MovetextLocation& location,
-             scid::core::MoveAction const& move) {
+             scid::core::MoveSpec const& move) {
 	scid::core::MovetextCursor cursor(game);
 	ASSERT_TRUE(cursor.restore(location));
 	cursor.addMove(move);
@@ -233,7 +233,7 @@ std::string nextLegacySan(scid::core::Game& game,
 	if (!position || !move)
 		return {};
 
-	return position->makeSan(move->action, scid::core::SAN_MATETEST);
+	return position->makeSan(move->spec, scid::core::SAN_MATETEST);
 }
 
 } // namespace
@@ -619,12 +619,12 @@ TEST(Test_Game, coreGameMovetextMirrorsProgrammaticVariationAdds) {
 
 	auto const& mainline = game.movetext().mainline.moves;
 	ASSERT_EQ(1U, mainline.size());
-	EXPECT_EQ("e2e4", mainline[0].action.longNotation());
+	EXPECT_EQ("e2e4", mainline[0].spec.longNotation());
 	ASSERT_EQ(1U, mainline[0].childVariations.size());
 
 	auto const& variation = mainline[0].childVariations[0].line.moves;
 	ASSERT_EQ(1U, variation.size());
-	EXPECT_EQ("d2d4", variation[0].action.longNotation());
+	EXPECT_EQ("d2d4", variation[0].spec.longNotation());
 }
 
 TEST(Test_Game, stateQueriesMirrorCoreCursorForProgrammaticVariation) {

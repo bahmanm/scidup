@@ -49,7 +49,7 @@ public:
 	void toEnd();
 	bool toPly(std::size_t ply);
 
-	Move& addMove(MoveAction action);
+	Move& addMove(MoveSpec action);
 	Variation* addVariation(std::string_view initialComment = {});
 	bool setPreviousMoveMetadata(MoveMetadata metadata);
 	bool setPreviousMoveSan(std::string_view san);

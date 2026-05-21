@@ -54,7 +54,7 @@ std::vector<const Move*> GameCursor::movesToCursor() const {
 std::optional<scid::core::Position> GameCursor::currentPosition() const {
 	auto position = startPosition(game_);
 	for (const auto* move : movesToCursor()) {
-		if (position.applyMove(move->action) != scid::core::OK)
+		if (position.applyMove(move->spec) != scid::core::OK)
 			return std::nullopt;
 	}
 	return position;

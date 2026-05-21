@@ -22,7 +22,7 @@ void writeFile(const std::filesystem::path& path, std::string_view contents) {
 }
 
 void play(scid::core::Position& position, std::string_view san) {
-	scid::core::MoveAction action;
+	scid::core::MoveSpec action;
 	ASSERT_EQ(scid::core::OK, position.parseMoveAction(action, san));
 	ASSERT_EQ(scid::core::OK, position.applyMove(action));
 }

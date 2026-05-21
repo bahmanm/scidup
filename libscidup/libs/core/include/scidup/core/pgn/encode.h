@@ -252,7 +252,7 @@ inline std::string san_for_move(scid::core::Position& position,
 	if (!move.san.empty())
 		return move.san;
 
-	return position.makeSan(move.action, flag);
+	return position.makeSan(move.spec, flag);
 }
 
 template <int hard_len = 0, typename TCont>
@@ -349,7 +349,7 @@ void encode_core_line(MoveSequence const& line,
 			}
 		}
 
-		(void)position.applyMove(move.action);
+		(void)position.applyMove(move.spec);
 	}
 }
 

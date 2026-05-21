@@ -457,7 +457,7 @@ scidBaseT::inferEcoCode(const IndexEntry& ie, const scidup::eco::Book& book,
 			ecoCode = eco;
 		}
 
-		scid::core::MoveAction action;
+		scid::core::MoveSpec action;
 		if (game_storage::decodeMainlineMove(data, currentPosition, action) !=
 		    scid::core::OK)
 			break;

@@ -54,14 +54,14 @@ currentPosition(const scid::core::Game& game,
     return currentCursor(game, location).currentPosition();
 }
 
-std::optional<scid::core::MoveAction>
+std::optional<scid::core::MoveSpec>
 currentMove(const scid::core::Game& game,
             scid::core::MovetextLocation location) {
     auto cursor = currentCursor(game, location);
     auto move = cursor.nextMove();
     if (!move)
         return std::nullopt;
-    return move->action;
+    return move->spec;
 }
 
 } // namespace

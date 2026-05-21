@@ -12,7 +12,7 @@ class Position;
 namespace scid::core {
 class Game;
 class MovetextLocation;
-struct MoveAction;
+struct MoveSpec;
 
 namespace notation {
 

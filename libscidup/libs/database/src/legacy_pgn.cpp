@@ -78,7 +78,7 @@ static std::string sanForMove(scid::core::Position& position,
         return move.san;
     }
 
-    return position.makeSan(move.action, flag);
+    return position.makeSan(move.spec, flag);
 }
 
 struct LegacyGamePgnEncoder {
@@ -156,7 +156,7 @@ scid::core::errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool i
     // Print null moves:
     if ((options.style & PGN_STYLE_NO_NULL_MOVES) && !inComment &&
             options.isPlainFormat() && initialCoreMove &&
-            initialCoreMove->action.isNull()) {
+            initialCoreMove->spec.isNull()) {
         inComment = true;
         tb->PrintString(preCommentStr);
         preCommentStr = "";
@@ -206,13 +206,13 @@ scid::core::errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool i
         if (!afterCoreMove.next()) {
             return scid::core::ERROR;
         }
-        const bool isNullMove = coreMove->action.isNull();
+        const bool isNullMove = coreMove->spec.isNull();
         const bool isLastMoveInLine = afterCoreMove.isAtLineEnd();
         const auto* nextCoreMove = afterCoreMove.nextMove();
         bool commentLine = false;
 
         auto positionAfterMove = position;
-        if (positionAfterMove.applyMove(coreMove->action) != scid::core::OK) {
+        if (positionAfterMove.applyMove(coreMove->spec) != scid::core::OK) {
             return scid::core::ERROR;
         }
         const auto san = sanForMove(
@@ -419,7 +419,7 @@ scid::core::errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool i
                     (options.style & PGN_STYLE_NO_NULL_MOVES)) {
                     // If this move has no variations, but the next move
                     // is a null move, enter inComment mode:
-                    if (nextCoreMove && nextCoreMove->action.isNull() &&
+                    if (nextCoreMove && nextCoreMove->spec.isNull() &&
                           ((!(options.style & PGN_STYLE_VARS))  ||
                             nextCoreMove->childVariations.empty())) {
                         inComment = true;
