@@ -23,8 +23,6 @@
 #include "scidup/core/pgn/traversal.h"
 #include "scidup/database/scidbase.h"
 #include "game_storage.h"
-#include "scidup_app_legacy_pgn.h"
-#include "scidup_app_nag_format.h"
 #include "piece_translation.h"
 #include "scidup/core/pgn/decode.h"
 #include <algorithm>
@@ -52,15 +50,6 @@ void expectMoveAction(const scid::core::Move* move,
 	ASSERT_NE(nullptr, move);
 	EXPECT_EQ(from, move->spec.from);
 	EXPECT_EQ(to, move->spec.to);
-}
-
-scidup::app::LegacyGameEncodeOptions scidFlagsPgnOptions() {
-	return {
-	    PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
-	        PGN_STYLE_SCIDFLAGS,
-	    scidup::app::PGN_FORMAT_Plain,
-	    0,
-	};
 }
 
 std::optional<scid::core::Position>
@@ -224,18 +213,6 @@ scid::core::errorT resetGameStartFen(scid::core::Game& game,
 	return scid::core::OK;
 }
 
-std::string nextLegacySan(scid::core::Game& game,
-                          scid::core::MovetextLocation location) {
-	scid::core::GameCursor cursor(game);
-	EXPECT_TRUE(cursor.restore(location));
-	auto position = cursor.currentPosition();
-	auto* move = cursor.nextMove();
-	if (!position || !move)
-		return {};
-
-	return position->makeSan(move->spec, scid::core::SAN_MATETEST);
-}
-
 } // namespace
 
 TEST(Test_Game, clone) {
@@ -271,74 +248,7 @@ TEST(Test_Game, clone) {
 		    std::equal(board, board + 66, clonePosition->GetBoard()));
 
 		ASSERT_EQ(nextCoreSan(game, location), nextCoreSan(clone, cloneLocation));
-
-		auto pgnGame =
-		    scidup::app::legacy_pgn::encode(game, scidFlags.data(),
-		                                       scidFlagsPgnOptions(), 75,
-		                                       true);
-
-		auto pgnClone = scidup::app::legacy_pgn::encode(
-		    clone, scidFlags.data(), scidFlagsPgnOptions(), 75,
-		    true);
-
-		ASSERT_TRUE(std::equal(pgnClone.first, pgnClone.first + pgnClone.second,
-		                       pgnGame.first, pgnGame.first + pgnGame.second));
 	}
-}
-
-TEST(Test_Game, WriteToPGNDoesNotMutateOptions) {
-	scid::core::Game game;
-	const auto options = scidup::app::LegacyGameEncodeOptions{
-	    PGN_STYLE_TAGS | PGN_STYLE_COLUMN,
-	    scidup::app::PGN_FORMAT_Plain,
-	    0,
-	};
-
-	auto first = scidup::app::legacy_pgn::encode(
-	    game, "", options, 75, true);
-	std::string firstPgn(first.first, first.second);
-	auto second = scidup::app::legacy_pgn::encode(
-	    game, "", options, 75, true);
-
-	EXPECT_EQ(firstPgn, std::string(second.first, second.second));
-}
-
-TEST(Test_Game, LegacyGameEncodeOptionsFormatFromString) {
-	scidup::app::gameFormatT format = scidup::app::PGN_FORMAT_Color;
-
-	ASSERT_TRUE(
-	    scidup::app::LegacyGameEncodeOptions::legacyFormatFromString(
-	        "pgn", &format));
-	EXPECT_TRUE(
-	    (scidup::app::LegacyGameEncodeOptions{0, format, 0}
-	         .isPlainFormat()));
-
-	ASSERT_TRUE(
-	    scidup::app::LegacyGameEncodeOptions::legacyFormatFromString(
-	        "html", &format));
-	EXPECT_TRUE(
-	    (scidup::app::LegacyGameEncodeOptions{0, format, 0}.isHtmlFormat()));
-
-	ASSERT_TRUE(
-	    scidup::app::LegacyGameEncodeOptions::legacyFormatFromString(
-	        "latex", &format));
-	const auto options = scidup::app::LegacyGameEncodeOptions{0, format, 0};
-	EXPECT_TRUE(options.isLatexFormat());
-
-	EXPECT_FALSE(
-	    scidup::app::LegacyGameEncodeOptions::legacyFormatFromString(
-	        "unknown", &format));
-}
-
-TEST(Test_Game, LegacyNagFormatKeepsStyledExportOutput) {
-	char nagText[20] = {};
-	scidup::app::game_printNag(scid::core::NAG_Diagram, nagText, true,
-	                              scidup::app::PGN_FORMAT_HTML);
-	EXPECT_STREQ("<i>(D)</i>", nagText);
-
-	scidup::app::game_printNag(scid::core::NAG_GoodMove, nagText, false,
-	                              scidup::app::PGN_FORMAT_LaTeX);
-	EXPECT_STREQ("\\$1", nagText);
 }
 
 TEST(Test_Game, LegacyPieceTranslation) {
@@ -992,7 +902,7 @@ template <typename DataT> std::string decode_game(DataT const& data) {
 	std::string moves;
 	do {
 		moves += ' ';
-		moves.append(nextLegacySan(game, location));
+		moves.append(nextCoreSan(game, location));
 		scid::core::GameCursor cursor(game);
 		EXPECT_TRUE(cursor.restore(location));
 		if (!cursor.next())
