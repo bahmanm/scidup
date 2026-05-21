@@ -656,13 +656,32 @@ exportGame (const scid::core::Game& game, const char* scidFlags,
     }
 
     options.htmlStyle = htmlDiagStyle;
-    std::pair<const char*, unsigned> pgn = scid::database::legacy_pgn::encode(
-        game, scidFlags, options, 75, true,
-        options.legacyFormat != scid::database::PGN_FORMAT_LaTeX);
-    //size_t nWrited =
-    fwrite(pgn.first, 1, pgn.second, exportFile);
-    //TODO:
-    //if (nWrited != db->tbuf->GetByteCount()) error
+    const auto corePgnStyle =
+        PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
+        PGN_STYLE_SYMBOLS;
+    if (options.legacyFormat == scid::database::PGN_FORMAT_Plain &&
+        (options.style & ~corePgnStyle) == 0) {
+        std::string pgn;
+        scid::core::pgn::encode<75>(
+            game, pgn,
+            scid::core::pgn::EncodeOptions{
+                .symbolicNags = (options.style & PGN_STYLE_SYMBOLS) != 0,
+                .includeSupplementalTags = (options.style & PGN_STYLE_TAGS) != 0,
+                .includeComments = (options.style & PGN_STYLE_COMMENTS) != 0,
+                .includeVariations = (options.style & PGN_STYLE_VARS) != 0,
+                .lineWidth = 75,
+            });
+        fwrite(pgn.data(), 1, pgn.size(), exportFile);
+        fputc('\n', exportFile);
+    } else {
+        std::pair<const char*, unsigned> pgn = scid::database::legacy_pgn::encode(
+            game, scidFlags, options, 75, true,
+            options.legacyFormat != scid::database::PGN_FORMAT_LaTeX);
+        //size_t nWrited =
+        fwrite(pgn.first, 1, pgn.second, exportFile);
+        //TODO:
+        //if (nWrited != db->tbuf->GetByteCount()) error
+    }
     scid::database::language = old_language;
 }
 
@@ -2258,12 +2277,39 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                                        scidFlags.size()) !=
                         scid::database::OK) continue;
 
-                    std::pair<const char*, unsigned> pgn =
-                        scid::database::legacy_pgn::encode(
-                            game, scidFlags.data(), encodeOptions, 75, true);
-                    if (pgn.second != fwrite(pgn.first, 1, pgn.second, exportFile)) {
-                        err = scid::database::ERROR_FileWrite;
-                        break;
+                    const auto corePgnStyle =
+                        PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
+                        PGN_STYLE_SYMBOLS;
+                    if (encodeOptions.legacyFormat ==
+                            scid::database::PGN_FORMAT_Plain &&
+                        (encodeOptions.style & ~corePgnStyle) == 0) {
+                        std::string pgn;
+                        scid::core::pgn::encode<75>(
+                            game, pgn,
+                            scid::core::pgn::EncodeOptions{
+                                .symbolicNags =
+                                    (encodeOptions.style & PGN_STYLE_SYMBOLS) != 0,
+                                .includeSupplementalTags =
+                                    (encodeOptions.style & PGN_STYLE_TAGS) != 0,
+                                .includeComments =
+                                    (encodeOptions.style & PGN_STYLE_COMMENTS) != 0,
+                                .includeVariations =
+                                    (encodeOptions.style & PGN_STYLE_VARS) != 0,
+                                .lineWidth = 75,
+                            });
+                        if (pgn.size() != fwrite(pgn.data(), 1, pgn.size(), exportFile) ||
+                            fputc('\n', exportFile) == EOF) {
+                            err = scid::database::ERROR_FileWrite;
+                            break;
+                        }
+                    } else {
+                        std::pair<const char*, unsigned> pgn =
+                            scid::database::legacy_pgn::encode(
+                                game, scidFlags.data(), encodeOptions, 75, true);
+                        if (pgn.second != fwrite(pgn.first, 1, pgn.second, exportFile)) {
+                            err = scid::database::ERROR_FileWrite;
+                            break;
+                        }
                     }
                     if ((i % 1024 == 0) && !progress.report(i, count)) {
                         err = scid::database::ERROR_UserCancel;
