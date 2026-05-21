@@ -21,7 +21,7 @@
 #include "scidup/core/notation.h"
 #include "scidup/database/common.h"
 #include "scidup/database/game_id.h"
-#include "scidup/database/indexentry.h"
+#include "scidup/database/game_info.h"
 #include "scidup/database/misc.h"
 #include "scidup/eco/code.h"
 #include <string>
@@ -113,16 +113,16 @@ class OpLine
 
     void Init (void);
     void Init (scid::core::Game * g, scid::core::MovetextLocation location,
-               const scid::database::IndexEntry * ie, scid::database::gamenumT gameNum,
+               const scid::database::GameInfo& info, scid::database::gamenumT gameNum,
                scid::core::uint maxExtraMoves, scid::core::uint maxThemeMoveNumber);
     void Destroy (void);
 
   public:
     OpLine () { Init(); }
     OpLine (scid::core::Game * g, scid::core::MovetextLocation location,
-            const scid::database::IndexEntry * ie, scid::database::gamenumT gnum,
+            const scid::database::GameInfo& info, scid::database::gamenumT gnum,
             scid::core::uint max, scid::core::uint tm) {
-        Init (g, location, ie, gnum, max, tm);
+        Init (g, location, info, gnum, max, tm);
     }
     ~OpLine() { Destroy(); }
     void SetPositionalThemes (scid::core::Position * pos);

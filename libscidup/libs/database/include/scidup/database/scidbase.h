@@ -24,6 +24,7 @@
 #include "scidup/core/fullmove.h"
 #include "scidup/core/board.h"
 #include "scidup/database/game_id.h"
+#include "scidup/database/game_info.h"
 #include "scidup/database/hfilter.h"
 #include "scidup/database/index.h"
 #include "scidup/database/namebase.h"
@@ -131,6 +132,12 @@ struct scidBaseT {
 		static_assert(std::is_unsigned_v<gamenumT>);
 		return g < numGames() ? getIndexEntry(g) : nullptr;
 	}
+	GameInfo gameInfo(gamenumT g) const;
+	std::optional<GameInfo> gameInfoBounds(gamenumT g) const {
+		static_assert(std::is_unsigned_v<gamenumT>);
+		return g < numGames() ? std::optional<GameInfo>{gameInfo(g)}
+		                      : std::nullopt;
+	}
 	TagRoster tagRoster(gamenumT gnum) const {
 		return tagRoster(*getIndexEntry(gnum));
 	}
@@ -160,13 +167,25 @@ struct scidBaseT {
 	                char* scidFlags, std::size_t scidFlagsLen) const;
 	scid::core::errorT loadGame(gamenumT gNum, scid::core::Game& dest,
 	               char* scidFlags, std::size_t scidFlagsLen) const;
+	scid::core::errorT loadGameMovesOnly(gamenumT gNum,
+	                                     scid::core::Game& dest) const;
 	scid::core::errorT loadGameMovesOnly(const IndexEntry& ie,
 	                                     scid::core::Game& dest) const;
+	scid::core::errorT gameTags(
+	    gamenumT gNum,
+	    std::vector<std::pair<std::string, std::string>>& dest) const;
+	scid::core::errorT loadStandardTags(gamenumT gNum,
+	                                    scid::core::Game& dest,
+	                                    char* scidFlags,
+	                                    std::size_t scidFlagsLen) const;
 	scid::core::errorT gameTags(
 	    const IndexEntry& ie,
 	    std::vector<std::pair<std::string, std::string>>& dest) const;
 	std::vector<scid::core::FullMove> mainlineMoves(
+	    gamenumT gNum, std::size_t maxPly) const;
+	std::vector<scid::core::FullMove> mainlineMoves(
 	    const IndexEntry* ie, std::size_t maxPly) const;
+	std::string moveSAN(gamenumT gNum, int plyToSkip, int count) const;
 	std::string moveSAN(const IndexEntry* ie, int plyToSkip, int count) const;
 	std::optional<scidup::eco::Code> inferEcoCode(
 	    const IndexEntry& ie, const scidup::eco::Book& book,
@@ -180,7 +199,27 @@ struct scidBaseT {
 	                               bool possibleFlippedMatch,
 	                               gameExactMatchT searchType,
 	                               scid::core::uint& ply) const;
+	scid::core::errorT searchBoard(gamenumT gNum,
+	                               scid::core::Game& game,
+	                               scid::core::Position* pos,
+	                               scid::core::Position* posFlip,
+	                               bool useVariations,
+	                               bool possibleMatch,
+	                               bool possibleFlippedMatch,
+	                               gameExactMatchT searchType,
+	                               scid::core::uint& ply) const;
 	bool materialSearchMatch(const IndexEntry& ie, bool possibleMatch,
+	                         bool possibleFlippedMatch,
+	                         scid::core::byte* min, scid::core::byte* max,
+	                         scid::core::byte* minFlipped,
+	                         scid::core::byte* maxFlipped,
+	                         patternT* patterns, std::size_t patternCount,
+	                         patternT* flippedPatterns,
+	                         std::size_t flippedPatternCount, int minPly,
+	                         int maxPly, int matchLength, bool oppBishops,
+	                         bool sameBishops, int minDiff,
+	                         int maxDiff) const;
+	bool materialSearchMatch(gamenumT gNum, bool possibleMatch,
 	                         bool possibleFlippedMatch,
 	                         scid::core::byte* min, scid::core::byte* max,
 	                         scid::core::byte* minFlipped,

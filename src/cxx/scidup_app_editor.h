@@ -115,11 +115,6 @@ public:
 
 	std::optional<scid::database::gamenumT> loadedGameId() const { return state().loadedGameId; }
 
-	const scid::database::IndexEntry* loadedIndexEntry() const {
-		const auto gameId = loadedGameId();
-		return gameId ? base_->getIndexEntry(*gameId) : nullptr;
-	}
-
 	void setLoadedGameId(std::optional<scid::database::gamenumT> gameId) const {
 		state().loadedGameId = gameId;
 	}

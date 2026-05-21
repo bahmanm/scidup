@@ -10,6 +10,7 @@ set(
     SCIDUP_DATABASE_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/codec_scid4.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/filter.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/game_info.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_search.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_storage.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/index.cpp"
@@ -29,6 +30,7 @@ set(
     SCIDUP_DATABASE_PUBLIC_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/common.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_id.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_info.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/hfilter.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/index.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/indexentry.h"

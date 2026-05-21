@@ -161,18 +161,15 @@ UI_res_t sc_base_copygames(scid::database::scidBaseT* dbase, UI_handle_t ti, int
 		err = targetBase->importGames(dbase, filter, UI_CreateProgress(ti));
 	} else {
 		scid::core::uint gNum = scid::database::strGetUnsigned(argv[3]);
-		const scid::database::IndexEntry* ie = (gNum > 0)
-		                           ? dbase->getIndexEntry_bounds(gNum - 1)
-		                           : nullptr;
-		if (ie == nullptr)
+		if (gNum == 0 || gNum > dbase->numGames())
 			return UI_Result(
 			    ti, scid::core::ERROR_BadArg,
 			    "sc_base copygames error: wrong <gameNum|filterName>");
 
 		scid::core::Game game;
 		std::array<char, 22> scidFlags{};
-		err = dbase->loadGame(*ie, game, scidFlags.data(),
-		                     scidFlags.size());
+		err = dbase->loadGame(gNum - 1, game, scidFlags.data(),
+		                      scidFlags.size());
 		if (err == scid::core::OK) {
 			err = targetBase->saveGame(game, scidFlags.data());
 		}
@@ -264,7 +261,7 @@ UI_res_t sc_base_gameflag(scid::database::scidBaseT* dbase, UI_handle_t ti, int 
 		cmd = 3;
 	else if (std::strcmp("invert", argv[4]) == 0)
 		cmd = 4;
-	scid::core::uint flagType = scid::database::IndexEntry::CharToFlagMask(argv[5][0]);
+	scid::core::uint flagType = scid::database::gameFlagMaskFromChar(argv[5][0]);
 	if (flagType != 0 && cmd != 0) {
 		const scid::database::HFilter filter = scidup::app::tree::resolveFilter(*dbase, argv[3]);
 		if (filter != 0) {
@@ -376,20 +373,20 @@ UI_res_t sc_base_gameslist(scid::database::scidBaseT* dbase, UI_handle_t ti, int
 		ASSERT(filter->get(idx) != 0);
 		scid::core::uint ply = filter->get(idx) -1;
 
-		const scid::database::IndexEntry* ie = dbase->getIndexEntry(idx);
-		const auto tags = dbase->tagRoster(*ie);
+		const auto info = dbase->gameInfo(idx);
+		const auto tags = dbase->tagRoster(idx);
 
 		ginfo.clear();
 		ginfo.push_back(idx +1);
-		ginfo.push_back(scid::core::RESULT_STR[ie->GetResult()]);
-		ginfo.push_back((ie->GetNumHalfMoves() + 1) / 2);
+		ginfo.push_back(scid::core::RESULT_STR[info.result]);
+		ginfo.push_back((info.halfMoveCount + 1) / 2);
 		ginfo.push_back(tags.white);
 		std::string eloStr;
-		scid::core::ratingT welo = ie->GetWhiteElo();
+		scid::core::ratingT welo = info.whiteElo;
 		if (welo != 0) {
 			eloStr = std::to_string(welo);
 		} else {
-			welo = dbase->peakElo(ie->GetWhite());
+			welo = dbase->peakElo(info.white);
 			eloStr = std::to_string(welo);
 			if (welo != 0) {
 				eloStr.insert(eloStr.begin(), '(');
@@ -398,11 +395,11 @@ UI_res_t sc_base_gameslist(scid::database::scidBaseT* dbase, UI_handle_t ti, int
 		}
 		ginfo.push_back(eloStr);
 		ginfo.push_back(tags.black);
-		scid::core::ratingT belo = ie->GetBlackElo();
+		scid::core::ratingT belo = info.blackElo;
 		if (belo != 0) {
 			eloStr = std::to_string(belo);
 		} else {
-			belo = dbase->peakElo(ie->GetBlack());
+			belo = dbase->peakElo(info.black);
 			eloStr = std::to_string(belo);
 			if (belo != 0) {
 				eloStr.insert(eloStr.begin(), '(');
@@ -411,35 +408,35 @@ UI_res_t sc_base_gameslist(scid::database::scidBaseT* dbase, UI_handle_t ti, int
 		}
 		ginfo.push_back(eloStr);
 		char buf_date[16];
-		scid::core::date_DecodeToString(ie->GetDate(), buf_date);
+		scid::core::date_DecodeToString(info.date, buf_date);
 		ginfo.push_back(buf_date);
 		ginfo.push_back(tags.event);
 		ginfo.push_back(tags.round);
 		ginfo.push_back(tags.site);
-		ginfo.push_back(ie->GetNagCount());
-		ginfo.push_back(ie->GetCommentCount());
-		ginfo.push_back(ie->GetVariationCount());
+		ginfo.push_back(info.nagCount);
+		ginfo.push_back(info.commentCount);
+		ginfo.push_back(info.variationCount);
 		char deleted[2] = {0};
-		deleted[0] = (ie->GetDeleteFlag()) ? 'D' : ' ';
+		deleted[0] = info.hasDeleteFlag() ? 'D' : ' ';
 		ginfo.push_back(deleted);
 		char flags[16];
-		ie->GetFlagStr (flags, "WBMENPTKQ!?U123456");
+		info.flagString(flags, "WBMENPTKQ!?U123456");
 		ginfo.push_back(flags);
 		scidup::eco::String ecoStr;
-		scidup::eco::toExtendedString(ie->GetEcoCode(), ecoStr);
+		scidup::eco::toExtendedString(info.ecoCode, ecoStr);
 		ginfo.push_back(ecoStr);
-		std::string endMaterial = scid::database::matsig_makeString(ie->GetFinalMatSig());
+		std::string endMaterial = scid::database::matsig_makeString(info.finalMaterial);
 		ginfo.push_back(endMaterial);
 		char startpos[2] = {0};
-		startpos[0] = (ie->GetStartFlag()) ? 'S' : ' ';
+		startpos[0] = info.hasStartFlag() ? 'S' : ' ';
 		ginfo.push_back(startpos);
 		char buf_eventdate[16];
-		scid::core::date_DecodeToString (ie->GetEventDate(), buf_eventdate);
+		scid::core::date_DecodeToString(info.eventDate, buf_eventdate);
 		ginfo.push_back(buf_eventdate);
-		ginfo.push_back(ie->GetYear());
+		ginfo.push_back(info.year());
 		ginfo.push_back((welo + belo)/2);
-		ginfo.push_back(ie->GetRating());
-		ginfo.push_back(dbase->moveSAN(ie, ply, 10));
+		ginfo.push_back(info.rating());
+		ginfo.push_back(dbase->moveSAN(idx, ply, 10));
 
 		res.push_back(std::to_string(idx+1) + "_" + std::to_string(ply));
 		res.push_back(ginfo);
@@ -510,14 +507,13 @@ UI_res_t sc_base_getGame(scid::database::scidBaseT* dbase, UI_handle_t ti, int a
 		return res;
 	}
 
-	auto ie = (gNum > 0) ? dbase->getIndexEntry_bounds(gNum - 1) : nullptr;
-	if (!ie)
+	if (gNum == 0 || gNum > dbase->numGames())
 		return UI_Result(ti, scid::core::ERROR_BadArg, usage);
 
 	scid::core::Game game;
 	std::array<char, 22> scidFlags{};
 	scid::core::errorT err =
-	    dbase->loadGame(*ie, game, scidFlags.data(), scidFlags.size());
+	    dbase->loadGame(gNum - 1, game, scidFlags.data(), scidFlags.size());
 	if (err != scid::core::OK)
 		return UI_Result(ti, err);
 	return sc_base_getGameHelper(ti, game);
@@ -660,7 +656,7 @@ UI_res_t sc_base_sortcache(scid::database::scidBaseT* dbase, UI_handle_t ti, int
  *            A10 returns the sum of all the A10,A10a,A10a1...A10z4
  *            An empty string returns the sum of all valid ECO codes
  * flag ?  -> {number of games with the ? flag set}
- *            ? must be a valid flag char (see scid::database::IndexEntry::CharToFlag())
+ *            ? must be a valid flag char (see scid::database::gameFlagIndexFromChar())
  * flags   -> {n_games with D flag set} {n_games with W flag set} {n_games with B flag set}
  * ratings -> {minimum elo} {maximum elo {mean elo}
  * results -> {number of games won by white} {number of draws} {number of
@@ -699,14 +695,14 @@ UI_res_t sc_base_stats(const scid::database::scidBaseT* dbase, UI_handle_t ti, i
 		res.push_back(count == 0 ? 0.0 : score / count / 10.0);
 		break; }
 	case OPT_FLAG: {
-		scid::core::uint flag = (argc != 5) ? 0 : scid::database::IndexEntry::CharToFlag(*(argv[4]));
+		scid::core::uint flag = (argc != 5) ? 0 : scid::database::gameFlagIndexFromChar(*(argv[4]));
 		if (flag == 0) return UI_Result(ti, scid::core::ERROR_BadArg, usage);
 		res.push_back(stats.flagCount[flag]);
 		break; }
 	case OPT_FLAGS:
-		res.push_back(stats.flagCount[scid::database::IndexEntry::CharToFlag('D')]);
-		res.push_back(stats.flagCount[scid::database::IndexEntry::CharToFlag('W')]);
-		res.push_back(stats.flagCount[scid::database::IndexEntry::CharToFlag('B')]);
+		res.push_back(stats.flagCount[scid::database::gameFlagIndexFromChar('D')]);
+		res.push_back(stats.flagCount[scid::database::gameFlagIndexFromChar('W')]);
+		res.push_back(stats.flagCount[scid::database::gameFlagIndexFromChar('B')]);
 		break;
 	case OPT_RATINGS:
 		res.push_back(stats.minRating);
@@ -768,9 +764,8 @@ UI_res_t sc_base_taglist(scid::database::scidBaseT& dbase, UI_handle_t ti) {
 		if ((gnum % 1024 == 0) && !progress.report(gnum, n))
 			return UI_Result(ti, scid::core::ERROR_UserCancel);
 
-		const auto ie = dbase.getIndexEntry(gnum);
 		std::vector<std::pair<std::string, std::string>> tags;
-		const auto err = dbase.gameTags(*ie, tags);
+		const auto err = dbase.gameTags(gnum, tags);
 		for (auto const& [tag, _] : tags) {
 			auto it = tag_freq.find(tag);
 			if (it == tag_freq.end())
@@ -937,18 +932,17 @@ UI_res_t sc_base_player_elo(const scid::database::scidBaseT& dbase, UI_handle_t 
 		return UI_Result(ti, scid::core::OK);
 
 	std::map<unsigned, scid::core::ratingT> eloByMonth;
-	auto getPlayerElo = [](auto idx_entry, auto player_id) -> scid::core::ratingT {
-		ASSERT(idx_entry);
-		if (idx_entry->GetWhite() == player_id)
-			return idx_entry->GetWhiteElo();
-		if (idx_entry->GetBlack() == player_id)
-			return idx_entry->GetBlackElo();
+	auto getPlayerElo = [](const auto& info, auto player_id) -> scid::core::ratingT {
+		if (info.white == player_id)
+			return info.whiteElo;
+		if (info.black == player_id)
+			return info.blackElo;
 		return 0;
 	};
 	for (auto gnum : filter) {
-		const scid::database::IndexEntry* ie = dbase.getIndexEntry(gnum);
-		if (auto elo = getPlayerElo(ie, id)) {
-			auto date = ie->GetDate();
+		const auto info = dbase.gameInfo(gnum);
+		if (auto elo = getPlayerElo(info, id)) {
+			auto date = info.date;
 			auto year = scid::core::date_GetYear(date);
 			auto month = scid::core::date_GetMonth(date);
 			if (month > 0) {

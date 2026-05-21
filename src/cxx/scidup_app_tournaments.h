@@ -25,17 +25,17 @@ struct TourneyGame {
 	db::gamenumT gnum_;
 	scid::core::resultT result_;
 
-	TourneyGame(const db::IndexEntry* ie, db::gamenumT gnum) {
-		siteID_ = ie->GetSite();
-		eventID_ = ie->GetEvent();
-		eventDate_ = ie->GetEventDate();
-		whiteID_ = ie->GetWhite();
-		blackID_ = ie->GetBlack();
-		wElo_ = ie->GetWhiteElo();
-		bElo_ = ie->GetBlackElo();
-		date_ = ie->GetDate();
+	TourneyGame(const db::GameInfo& info, db::gamenumT gnum) {
+		siteID_ = info.site;
+		eventID_ = info.event;
+		eventDate_ = info.eventDate;
+		whiteID_ = info.white;
+		blackID_ = info.black;
+		wElo_ = info.whiteElo;
+		bElo_ = info.blackElo;
+		date_ = info.date;
 		gnum_ = gnum;
-		result_ = ie->GetResult();
+		result_ = info.result;
 	}
 };
 
@@ -125,7 +125,7 @@ public:
 
 		games_.reserve(filter->size());
 		for (auto gnum : filter) {
-			games_.emplace_back(dbase->getIndexEntry(gnum), gnum);
+			games_.emplace_back(dbase->gameInfo(gnum), gnum);
 		}
 
 		std::sort(games_.begin(), games_.end(),

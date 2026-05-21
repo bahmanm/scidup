@@ -211,9 +211,8 @@ UI_res_t sc_filter_search_tags(UI_handle_t ti, const scid::database::scidBaseT& 
 			return UI_Result(ti, scid::core::ERROR_UserCancel);
 
 		bool remove = true;
-		auto ie = dbase.getIndexEntry(gnum);
 		std::vector<std::pair<std::string, std::string>> tags;
-		dbase.gameTags(*ie, tags);
+		dbase.gameTags(gnum, tags);
 		for (auto const& [tag, value] : tags) {
 			if (strMatch(tag, tagName) && strMatch(value, tagValue))
 				remove = false;

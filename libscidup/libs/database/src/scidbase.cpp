@@ -73,6 +73,36 @@ std::string_view codecName(CodecType codec) {
 	return {};
 }
 
+GameInfo makeGameInfo(const IndexEntry& ie) {
+	GameInfo info;
+	info.offset = ie.GetOffset();
+	info.length = ie.GetLength();
+	info.white = ie.GetWhite();
+	info.black = ie.GetBlack();
+	info.event = ie.GetEvent();
+	info.site = ie.GetSite();
+	info.round = ie.GetRound();
+	info.whiteElo = ie.GetWhiteElo();
+	info.blackElo = ie.GetBlackElo();
+	info.whiteRatingType = ie.GetWhiteRatingType();
+	info.blackRatingType = ie.GetBlackRatingType();
+	info.date = ie.GetDate();
+	info.eventDate = ie.GetEventDate();
+	info.result = ie.GetResult();
+	info.variationCount = ie.GetVariationCount();
+	info.commentCount = ie.GetCommentCount();
+	info.nagCount = ie.GetNagCount();
+	info.halfMoveCount = ie.GetNumHalfMoves();
+	info.finalMaterial = ie.GetFinalMatSig();
+	info.storedLineCode = ie.GetStoredLineCode();
+	info.ecoCode = ie.GetEcoCode();
+	info.flags = ie.GetRawFlags();
+	std::copy_n(ie.GetHomePawnData(), info.homePawnData.size(),
+	            info.homePawnData.begin());
+	info.chessStd = ie.isChessStd();
+	return info;
+}
+
 } // namespace
 
 std::pair<ICodecDatabase*, scid::core::errorT>
@@ -254,6 +284,11 @@ scid::core::errorT scidBaseT::loadGame(gamenumT gNum, scid::core::Game& dest,
 	return loadGame(*ie, dest, scidFlags, scidFlagsLen);
 }
 
+GameInfo scidBaseT::gameInfo(gamenumT g) const {
+	assert(g < numGames());
+	return makeGameInfo(*getIndexEntry(g));
+}
+
 GameView scidBaseT::gameView(const IndexEntry* ie) const {
 	auto data = storage_->codec->getGameMoves(*ie);
 	if (data) {
@@ -293,6 +328,14 @@ scid::core::errorT scidBaseT::loadGameMovesOnly(const IndexEntry& ie,
 	return game_storage::decodeMovesOnly(dest, data);
 }
 
+scid::core::errorT scidBaseT::loadGameMovesOnly(gamenumT gNum,
+                                                scid::core::Game& dest) const {
+	const auto* ie = getIndexEntry_bounds(gNum);
+	if (!ie)
+		return scid::core::ERROR_BadArg;
+	return loadGameMovesOnly(*ie, dest);
+}
+
 scid::core::errorT scidBaseT::gameTags(
     const IndexEntry& ie,
     std::vector<std::pair<std::string, std::string>>& dest) const {
@@ -300,6 +343,27 @@ scid::core::errorT scidBaseT::gameTags(
 	return data.decodeTags([&](auto const& tag, auto const& value) {
 		dest.emplace_back(tag, value);
 	});
+}
+
+scid::core::errorT scidBaseT::gameTags(
+    gamenumT gNum,
+    std::vector<std::pair<std::string, std::string>>& dest) const {
+	const auto* ie = getIndexEntry_bounds(gNum);
+	if (!ie)
+		return scid::core::ERROR_BadArg;
+	return gameTags(*ie, dest);
+}
+
+scid::core::errorT scidBaseT::loadStandardTags(gamenumT gNum,
+                                               scid::core::Game& dest,
+                                               char* scidFlags,
+                                               std::size_t scidFlagsLen) const {
+	const auto* ie = getIndexEntry_bounds(gNum);
+	if (!ie)
+		return scid::core::ERROR_BadArg;
+	game_storage::loadStandardTags(dest, scidFlags, scidFlagsLen, *ie,
+	                               tagRoster(*ie));
+	return scid::core::OK;
 }
 
 std::vector<scid::core::FullMove>
@@ -315,9 +379,24 @@ scidBaseT::mainlineMoves(const IndexEntry* ie, std::size_t maxPly) const {
 	return moves;
 }
 
+std::vector<scid::core::FullMove>
+scidBaseT::mainlineMoves(gamenumT gNum, std::size_t maxPly) const {
+	const auto* ie = getIndexEntry_bounds(gNum);
+	if (!ie)
+		return {};
+	return mainlineMoves(ie, maxPly);
+}
+
 std::string scidBaseT::moveSAN(const IndexEntry* ie, int plyToSkip,
                                int count) const {
 	return gameView(ie).getMoveSAN(plyToSkip, count);
+}
+
+std::string scidBaseT::moveSAN(gamenumT gNum, int plyToSkip, int count) const {
+	const auto* ie = getIndexEntry_bounds(gNum);
+	if (!ie)
+		return {};
+	return moveSAN(ie, plyToSkip, count);
 }
 
 std::optional<scidup::eco::Code>
@@ -408,6 +487,18 @@ scid::core::errorT scidBaseT::searchBoard(
 	return scid::core::OK;
 }
 
+scid::core::errorT scidBaseT::searchBoard(
+    gamenumT gNum, scid::core::Game& game, scid::core::Position* pos,
+    scid::core::Position* posFlip, bool useVariations, bool possibleMatch,
+    bool possibleFlippedMatch, gameExactMatchT searchType,
+    scid::core::uint& ply) const {
+	const auto* ie = getIndexEntry_bounds(gNum);
+	if (!ie)
+		return scid::core::ERROR_BadArg;
+	return searchBoard(*ie, game, pos, posFlip, useVariations, possibleMatch,
+	                   possibleFlippedMatch, searchType, ply);
+}
+
 bool scidBaseT::materialSearchMatch(
     const IndexEntry& ie, bool possibleMatch, bool possibleFlippedMatch,
     scid::core::byte* min, scid::core::byte* max,
@@ -436,6 +527,24 @@ bool scidBaseT::materialSearchMatch(
 		    sameBishops, minDiff, maxDiff);
 	}
 	return result;
+}
+
+bool scidBaseT::materialSearchMatch(
+    gamenumT gNum, bool possibleMatch, bool possibleFlippedMatch,
+    scid::core::byte* min, scid::core::byte* max,
+    scid::core::byte* minFlipped, scid::core::byte* maxFlipped,
+    patternT* patterns, std::size_t patternCount, patternT* flippedPatterns,
+    std::size_t flippedPatternCount, int minPly, int maxPly, int matchLength,
+    bool oppBishops, bool sameBishops, int minDiff, int maxDiff) const {
+	const auto* ie = getIndexEntry_bounds(gNum);
+	if (!ie)
+		return false;
+	return materialSearchMatch(*ie, possibleMatch, possibleFlippedMatch, min,
+	                           max, minFlipped, maxFlipped, patterns,
+	                           patternCount, flippedPatterns,
+	                           flippedPatternCount, minPly, maxPly,
+	                           matchLength, oppBishops, sameBishops, minDiff,
+	                           maxDiff);
 }
 
 bool scidBaseT::setPositionSearchFilter(

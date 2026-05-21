@@ -37,7 +37,6 @@
 #include "scidup/database/game_id.h"
 #include "optable.h"
 #include "scidup/eco/book.h"
-#include "game_storage.h"
 #include "legacy_pgn.h"
 #include "piece_translation.h"
 #include "polyglot.h"
@@ -845,10 +844,10 @@ sc_base_export (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 }
 
                 // Print the game, skipping any corrupt games:
-                const scid::database::IndexEntry* ie = db->getIndexEntry(i);
-                if (ie->GetLength() == 0) { continue; }
-                if (db->loadGame(*ie, g->coreGame(), g->scidFlagsData(),
-                                g->scidFlagsCapacity()) != scid::core::OK) {
+                const auto info = db->gameInfo(i);
+                if (info.length == 0) { continue; }
+                if (db->loadGame(i, g->coreGame(), g->scidFlagsData(),
+                                 g->scidFlagsCapacity()) != scid::core::OK) {
                     continue;
                 }
                 exportGame (g->coreGame(), g->scidFlags(), exportFile,
@@ -938,14 +937,14 @@ sc_base_piecetrack (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             }
         }
 
-        const scid::database::IndexEntry* ie = db->getIndexEntry(gnum);
+        const auto info = db->gameInfo(gnum);
 
         // Skip games with non-standard start or no moves:
-        if (ie->GetStartFlag()) { continue; }
-        if (ie->GetLength() == 0) { continue; }
+        if (info.hasStartFlag()) { continue; }
+        if (info.length == 0) { continue; }
 
         // Skip games too short to be useful:
-        if (ie->GetNumHalfMoves() < minPly) { continue; }
+        if (info.halfMoveCount < minPly) { continue; }
 
         // Set up piece tracking for this game:
         bool movedTo[64] = { false };
@@ -957,7 +956,7 @@ sc_base_piecetrack (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         // the game is reached:
         scid::core::uint plyCount = 0;
         bool stopGame = false;
-        for (auto move : db->mainlineMoves(ie, maxPly)) {
+        for (auto move : db->mainlineMoves(gnum, maxPly)) {
             ++plyCount;
             scid::core::squareT toSquare = move.getTo();
             scid::core::squareT fromSquare = move.getFrom();
@@ -1090,36 +1089,37 @@ struct dupCriteriaT {
 
 bool
 checkDuplicate (scid::database::scidBaseT * base,
-                const scid::database::IndexEntry * ie1, const scid::database::IndexEntry * ie2,
+                scid::database::gamenumT gnum1, const scid::database::GameInfo& info1,
+                scid::database::gamenumT gnum2, const scid::database::GameInfo& info2,
                 dupCriteriaT * cr)
 {
-    if (ie1->GetDeleteFlag()  ||  ie2->GetDeleteFlag()) { return false; }
+    if (info1.hasDeleteFlag()  ||  info2.hasDeleteFlag()) { return false; }
     if (cr->sameEvent) {
-        if (ie1->GetEvent() != ie2->GetEvent()) { return false; }
+        if (info1.event != info2.event) { return false; }
     }
     if (cr->sameSite) {
-        if (ie1->GetSite() != ie2->GetSite()) { return false; }
+        if (info1.site != info2.site) { return false; }
     }
     if (cr->sameRound) {
-        if (ie1->GetRound() != ie2->GetRound()) { return false; }
+        if (info1.round != info2.round) { return false; }
     }
     if (cr->sameYear) {
-        if (ie1->GetYear() != ie2->GetYear()) { return false; }
+        if (info1.year() != info2.year()) { return false; }
     }
     if (cr->sameMonth) {
-        if (ie1->GetMonth() != ie2->GetMonth()) { return false; }
+        if (info1.month() != info2.month()) { return false; }
     }
     if (cr->sameDay) {
-        if (ie1->GetDay() != ie2->GetDay()) { return false; }
+        if (info1.day() != info2.day()) { return false; }
     }
     if (cr->sameResult) {
-        if (ie1->GetResult() != ie2->GetResult()) { return false; }
+        if (info1.result != info2.result) { return false; }
     }
     if (cr->sameEcoCode) {
         scidup::eco::String a;
         scidup::eco::String b;
-        scidup::eco::toBasicString(ie1->GetEcoCode(), a);
-        scidup::eco::toBasicString(ie2->GetEcoCode(), b);
+        scidup::eco::toBasicString(info1.ecoCode, a);
+        scidup::eco::toBasicString(info2.ecoCode, b);
         if (a[0] != b[0]  ||  a[1] != b[1]  ||  a[2] != b[2]) { return false; }
     }
 
@@ -1129,10 +1129,10 @@ checkDuplicate (scid::database::scidBaseT * base,
     // of the games (or both) have only one move or no moves, return true
     // as long as they have the same year, site and round:
 
-    if (ie1->GetNumHalfMoves() <= 2  ||  ie2->GetNumHalfMoves() <= 2) {
-        if (ie1->GetYear() == ie2->GetYear()  &&
-            ie1->GetSite() == ie2->GetSite()  &&
-            ie1->GetRound() == ie2->GetRound()) {
+    if (info1.halfMoveCount <= 2  ||  info2.halfMoveCount <= 2) {
+        if (info1.year() == info2.year()  &&
+            info1.site == info2.site  &&
+            info1.round == info2.round) {
             return true;
         }
     }
@@ -1141,13 +1141,13 @@ checkDuplicate (scid::database::scidBaseT * base,
     // of the shorter game:
 
     if (cr->sameMoves) {
-        const scid::core::byte * hpData1 = ie1->GetHomePawnData();
-        const scid::core::byte * hpData2 = ie2->GetHomePawnData();
+        const scid::core::byte * hpData1 = info1.homePawnData.data();
+        const scid::core::byte * hpData2 = info2.homePawnData.data();
         if (! scid::database::hpSig_Prefix (hpData1, hpData2)) { return false; }
         // Now we have to check the actual moves of the games:
-        scid::core::uint length = std::min(ie1->GetNumHalfMoves(), ie2->GetNumHalfMoves());
-        std::string a = base->moveSAN(ie1, 0, length);
-        std::string b = base->moveSAN(ie2, 0, length);
+        scid::core::uint length = std::min(info1.halfMoveCount, info2.halfMoveCount);
+        std::string a = base->moveSAN(gnum1, 0, length);
+        std::string b = base->moveSAN(gnum2, 0, length);
         return (a == b);
     }
     return true;
@@ -1247,13 +1247,13 @@ UI_res_t sc_base_duplicates(scid::database::scidBaseT* dbase, UI_handle_t ti, in
             ? std::vector<uint32_t>()
             : dbase->getNameBase()->generateHashMap(scid::database::NAME_PLAYER);
     for (scid::database::gamenumT i=0; i < numGames; i++) {
-        const scid::database::IndexEntry* ie = dbase->getIndexEntry(i);
-        if (! ie->GetDeleteFlag()  /* &&  !ie->GetStartFlag() */
-            &&  (!skipShortGames  ||  ie->GetNumHalfMoves() >= 10)
+        const auto info = dbase->gameInfo(i);
+        if (! info.hasDeleteFlag()  /* &&  !info.hasStartFlag() */
+            &&  (!skipShortGames  ||  info.halfMoveCount >= 10)
             &&  (!onlyFilterGames  ||  dbase->defaultFilterGet(i) > 0)) {
 
-            uint32_t wh = ie->GetWhite();
-            uint32_t bl = ie->GetBlack();
+            uint32_t wh = info.white;
+            uint32_t bl = info.black;
             if (!criteria.exactNames) {
                 wh = hashMap[wh];
                 bl = hashMap[bl];
@@ -1280,22 +1280,23 @@ UI_res_t sc_base_duplicates(scid::database::scidBaseT* dbase, UI_handle_t ti, in
             if (!progress.report(i, numGames)) break;
         }
         const gNumListT& head = hash[i];
-        const scid::database::IndexEntry* ieHead = dbase->getIndexEntry(head.gNumber);
+        const auto headInfo = dbase->gameInfo(head.gNumber);
 
         for (size_t comp=i+1; comp < n_hash; comp++) {
             const gNumListT& compare = hash[comp];
             if (compare.hash != head.hash) break;
 
-            const scid::database::IndexEntry* ieComp = dbase->getIndexEntry(compare.gNumber);
+            const auto compareInfo = dbase->gameInfo(compare.gNumber);
 
-            if (checkDuplicate(dbase, ieHead, ieComp, &criteria)) {
+            if (checkDuplicate(dbase, head.gNumber, headInfo, compare.gNumber,
+                               compareInfo, &criteria)) {
                 duplicates[head.gNumber] = compare.gNumber + 1;
                 duplicates[compare.gNumber] = head.gNumber + 1;
 
-                auto isImmune = [&](const scid::database::IndexEntry* ie) {
-                    if (keepAllCommentedGames && ie->GetCommentsFlag())
+                auto isImmune = [&](const scid::database::GameInfo& info) {
+                    if (keepAllCommentedGames && info.hasComments())
                         return true;
-                    return keepAllGamesWithVars && ie->GetVariationsFlag();
+                    return keepAllGamesWithVars && info.hasVariations();
                 };
 
                 // Decide which game should get deleted:
@@ -1306,21 +1307,21 @@ UI_res_t sc_base_duplicates(scid::database::scidBaseT* dbase, UI_handle_t ti, in
                     deleteHead = (head.gNumber > compare.gNumber);
                 } else {
                     ASSERT(deleteStrategy == DELETE_SHORTER);
-                    scid::core::uint a = ieHead->GetNumHalfMoves();
-                    scid::core::uint b = ieComp->GetNumHalfMoves();
+                    scid::core::uint a = headInfo.halfMoveCount;
+                    scid::core::uint b = compareInfo.halfMoveCount;
                     deleteHead = (a <= b);
-                    if (a == b && isImmune(ieHead))
+                    if (a == b && isImmune(headInfo))
                         deleteHead = false;
                 }
 
                 scid::database::gamenumT gnumDelete = compare.gNumber;
-                const scid::database::IndexEntry* ieDelete = ieComp;
+                const scid::database::GameInfo* deleteInfo = &compareInfo;
                 if (deleteHead) {
                     gnumDelete = head.gNumber;
-                    ieDelete = ieHead;
+                    deleteInfo = &headInfo;
                 }
                 // Delete whichever game is to be deleted:
-                if (!isImmune(ieDelete)) {
+                if (!isImmune(*deleteInfo)) {
                     filter->set(gnumDelete, 1);
                 }
             }
@@ -1811,10 +1812,10 @@ sc_filter_freq (scid::database::scidBaseT* dbase, const scid::database::HFilter&
 
     if (eloMode) {
         for (scid::core::uint gnum=0, n = dbase->numGames(); gnum < n; gnum++) {
-            const scid::database::IndexEntry* ie = dbase->getIndexEntry(gnum);
+            const auto info = dbase->gameInfo(gnum);
             if ( guessElo ) {
-                scid::core::uint wElo = ie->GetWhiteElo();
-                scid::core::uint bElo = ie->GetBlackElo();
+                scid::core::uint wElo = info.whiteElo;
+                scid::core::uint bElo = info.blackElo;
                 scid::core::uint bothElo = wElo + bElo;
                 if (wElo == 0  &&  bElo != 0) {
                     bothElo += (bElo > 2200 ? 2200 : bElo);
@@ -1829,8 +1830,8 @@ sc_filter_freq (scid::database::scidBaseT* dbase, const scid::database::HFilter&
                 }
             } else {
                 //Klimmek: if lowest Elo in the Range: count them
-                scid::core::uint mini = ie->GetWhiteElo();
-                if ( mini > ie->GetBlackElo() ) mini = ie->GetBlackElo();
+                scid::core::uint mini = info.whiteElo;
+                if ( mini > info.blackElo ) mini = info.blackElo;
                 if (mini < minElo  ||  mini >= maxElo)
                     continue;
                 allCount++;
@@ -1842,8 +1843,8 @@ sc_filter_freq (scid::database::scidBaseT* dbase, const scid::database::HFilter&
     } else if ( moveMode ) {
         //Klimmek: count games with x Moves minMove=NumberHalfmove and maxMove Numberhalfmove+1
         for (scid::core::uint gnum=0, n = dbase->numGames(); gnum < n; gnum++) {
-            const scid::database::IndexEntry* ie = dbase->getIndexEntry(gnum);
-            scid::core::uint move = ie->GetNumHalfMoves();
+            const auto info = dbase->gameInfo(gnum);
+            scid::core::uint move = info.halfMoveCount;
             if (move >= minMove  &&  move <= maxMove) {
                 allCount++;
                 if (filter.get(gnum) != 0) {
@@ -1854,8 +1855,8 @@ sc_filter_freq (scid::database::scidBaseT* dbase, const scid::database::HFilter&
     }
     else { // datemode
         for (scid::core::uint gnum=0, n = dbase->numGames(); gnum < n; gnum++) {
-            const scid::database::IndexEntry* ie = dbase->getIndexEntry(gnum);
-            scid::core::dateT date = ie->GetDate();
+            const auto info = dbase->gameInfo(gnum);
+            scid::core::dateT date = info.date;
             if (date >= startDate  &&  date <= endDate) {
                 allCount++;
                 if (filter.get(gnum) != 0) {
@@ -1980,40 +1981,40 @@ sc_filter_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::core::uint total = 0;
     const scid::database::HFilter filter = db->getFilter("dbfilter");
     for (scid::core::uint i=0, n = db->numGames(); i < n; i++) {
-        const scid::database::IndexEntry* ie = db->getIndexEntry(i);
+        const auto info = db->gameInfo(i);
         if (filter.get(i)) {
             if ( max == 0 ) { //Old Statistic :
                 if (statType == STATS_ELO  &&
-                    (ie->GetWhiteElo() < min  ||  ie->GetBlackElo() < min)) {
+                    (info.whiteElo < min  ||  info.blackElo < min)) {
                     continue;
                 }
                 if (statType == STATS_YEAR
-                    &&  scid::core::date_GetYear(ie->GetDate()) < min) {
+                    &&  info.year() < min) {
                     continue;
                 }
             } else { //Klimmek:  new statistic: evaluation in intervals
                 //count all games where player with highest Elo is in the specific range
                 if (statType == STATS_ELO ) {
                     if (inv_max) {
-                        scid::core::uint maxi = ie->GetWhiteElo();
-                        if ( maxi < ie->GetBlackElo() ) maxi = ie->GetBlackElo();
+                        scid::core::uint maxi = info.whiteElo;
+                        if ( maxi < info.blackElo ) maxi = info.blackElo;
                         if (maxi < min  ||  maxi >= max)
                             continue;
                     }
                     else {
                 //count all games where player with lowest Elo is in the specific range
-                        scid::core::uint mini = ie->GetWhiteElo();
-                        if ( mini > ie->GetBlackElo() ) mini = ie->GetBlackElo();
+                        scid::core::uint mini = info.whiteElo;
+                        if ( mini > info.blackElo ) mini = info.blackElo;
                         if (mini < min  ||  mini >= max)
                             continue;
                     }
                 }
                 if (statType == STATS_YEAR
-                    &&  ( scid::core::date_GetYear(ie->GetDate()) < min || scid::core::date_GetYear(ie->GetDate()) >= max) ) {
+                    &&  (info.year() < min || info.year() >= max) ) {
                     continue;
                 }
             }
-            results[ie->GetResult()]++;
+            results[info.result]++;
             total++;
         }
     }
@@ -2239,10 +2240,9 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             count = dbase->listGames(argv[4], 0, count, filter, idxList);
             scid::core::errorT err = scid::core::OK;
                 for (size_t i = 0; i < count; ++i) {
-                    const scid::database::IndexEntry* ie = dbase->getIndexEntry(idxList[i]);
                     // Skip any corrupt games:
-                    if (dbase->loadGame(*ie, game, scidFlags.data(),
-                                       scidFlags.size()) !=
+                    if (dbase->loadGame(idxList[i], game, scidFlags.data(),
+                                        scidFlags.size()) !=
                         scid::core::OK) continue;
 
                     const auto corePgnStyle =
@@ -2512,13 +2512,13 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 //    Event and Site, and a Date within the specified range or
 //    have the specified non-zero EventDate.
 static inline bool
-isCrosstableGame (const scid::database::IndexEntry* ie, scid::database::idNumberT siteID, scid::database::idNumberT eventID,
+isCrosstableGame (const scid::database::GameInfo& info, scid::database::idNumberT siteID, scid::database::idNumberT eventID,
                   scid::core::dateT eventDate)
 {
-    if (ie->GetSite() != siteID  ||  ie->GetEvent() != eventID) {
+    if (info.site != siteID  ||  info.event != eventID) {
         return false;
     }
-    scid::core::dateT EventDate = ie->GetEventDate();
+    scid::core::dateT EventDate = info.eventDate;
     if (eventDate != 0  && EventDate != 0 && EventDate != eventDate) {
         return false;
     }
@@ -2663,12 +2663,12 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         if (gameNumber > db->numGames()) {
             return setResult (ti, "Invalid game number");
         }
-        const scid::database::IndexEntry* ie = db->getIndexEntry(gameNumber - 1);
-        if (ie->GetLength() == 0) {
+        const auto info = db->gameInfo(gameNumber - 1);
+        if (info.length == 0) {
             return errorResult (ti, "Error: empty game file record.");
         }
-        if (db->loadGame(*ie, g->coreGame(), g->scidFlagsData(),
-                        g->scidFlagsCapacity()) != scid::core::OK) {
+        if (db->loadGame(gameNumber - 1, g->coreGame(), g->scidFlagsData(),
+                         g->scidFlagsCapacity()) != scid::core::OK) {
             return errorResult (ti, "Error reading game file.");
         }
     }
@@ -2717,14 +2717,14 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     const scidup::spelling::SpellChecker* spell = spellChk.get();
     bool tableFullMessage = false;
     for (scid::core::uint i=0, n = db->numGames(); i < n; i++) {
-        const scid::database::IndexEntry* ie = db->getIndexEntry(i);
-        if (ie->GetDeleteFlag()  &&  !useDeletedGames) { continue; }
-        if (! isCrosstableGame (ie, siteId, eventId, eventDate)) {
+        const auto info = db->gameInfo(i);
+        if (info.hasDeleteFlag()  &&  !useDeletedGames) { continue; }
+        if (! isCrosstableGame (info, siteId, eventId, eventDate)) {
             continue;
         }
-        scid::database::idNumberT whiteId = ie->GetWhite();
+        scid::database::idNumberT whiteId = info.white;
         const char * whiteName = db->getNameBase()->GetName (scid::database::NAME_PLAYER, whiteId);
-        scid::database::idNumberT blackId = ie->GetBlack();
+        scid::database::idNumberT blackId = info.black;
         const char * blackName = db->getNameBase()->GetName (scid::database::NAME_PLAYER, blackId);
 
         // Ensure we have two different players:
@@ -2743,8 +2743,8 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         }
 
         // Add the two players to the crosstable:
-        if (ctable->AddPlayer (whiteId, whiteName, ie->GetWhiteElo(), spell) != scid::core::OK  ||
-            ctable->AddPlayer (blackId, blackName, ie->GetBlackElo(), spell) != scid::core::OK)
+        if (ctable->AddPlayer (whiteId, whiteName, info.whiteElo, spell) != scid::core::OK  ||
+            ctable->AddPlayer (blackId, blackName, info.blackElo, spell) != scid::core::OK)
         {
             if (! tableFullMessage) {
                 tableFullMessage = true;
@@ -2753,9 +2753,9 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             continue;
         }
 
-        scid::core::uint round = scid::database::strGetUnsigned (db->getNameBase()->GetName (scid::database::NAME_ROUND, ie->GetRound()));
-        scid::core::dateT date = ie->GetDate();
-        scid::core::resultT result = ie->GetResult();
+        scid::core::uint round = scid::database::strGetUnsigned (db->getNameBase()->GetName (scid::database::NAME_ROUND, info.round));
+        scid::core::dateT date = info.date;
+        scid::core::resultT result = info.result;
         ctable->AddResult (i+1, whiteId, blackId, result, round, date);
         if (date < firstSeenDate) { firstSeenDate = date; }
         if (date > lastSeenDate) { lastSeenDate = date; }
@@ -2878,13 +2878,13 @@ sc_game_find (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // First, check if the specified game number matches all fields:
     if (db->numGames() > gnum) {
         scid::core::uint score = 0;
-        const scid::database::IndexEntry* ie = db->getIndexEntry(gnum);
-        if (ie->GetWhite() == white) { score++; }
-        if (ie->GetBlack() == black) { score++; }
-        if (ie->GetSite() == site) { score++; }
-        if (ie->GetRound() == round) { score++; }
-        if (ie->GetYear() == year) { score++; }
-        if (ie->GetResult() == result) { score++; }
+        const auto info = db->gameInfo(gnum);
+        if (info.white == white) { score++; }
+        if (info.black == black) { score++; }
+        if (info.site == site) { score++; }
+        if (info.round == round) { score++; }
+        if (info.year() == year) { score++; }
+        if (info.result == result) { score++; }
         if (score == 6) { return setUintResult (ti, gnum+1); }
     }
 
@@ -2894,13 +2894,13 @@ sc_game_find (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     for (scid::core::uint i=0, n = db->numGames(); i < n; i++) {
         scid::core::uint score = 0;
-        const scid::database::IndexEntry* ie = db->getIndexEntry(i);
-        if (ie->GetWhite() == white) { score++; }
-        if (ie->GetBlack() == black) { score++; }
-        if (ie->GetSite() == site) { score++; }
-        if (ie->GetRound() == round) { score++; }
-        if (ie->GetYear() == year) { score++; }
-        if (ie->GetResult() == result) { score++; }
+        const auto info = db->gameInfo(i);
+        if (info.white == white) { score++; }
+        if (info.black == black) { score++; }
+        if (info.site == site) { score++; }
+        if (info.round == round) { score++; }
+        if (info.year() == year) { score++; }
+        if (info.result == result) { score++; }
         // Update if the best score, favouring the specified game number
         // in the case of a tie:
         if (score > bestScore  ||  (score == bestScore  &&  gnum == i)) {
@@ -3198,13 +3198,13 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     if (loadedGameId) {
         // Check if this game is deleted or has other user-settable flags:
-        const scid::database::IndexEntry* ie = db->getIndexEntry(*loadedGameId);
-        if (ie->GetDeleteFlag()) {
+        const auto info = db->gameInfo(*loadedGameId);
+        if (info.hasDeleteFlag()) {
             AppendResult (ti, "   <gray>(",
                               translate (ti, "deleted"), ")</gray>", NULL);
         }
         char userFlags[16];
-        if (ie->GetFlagStr (userFlags, NULL) != 0) {
+        if (info.flagString(userFlags, NULL) != 0) {
             // Print other flags set for this game:
             const char * flagStr = userFlags;
             // Skip over "D" for Deleted, as it is indicated above:
@@ -3541,10 +3541,9 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     // Load the merge game:
 
-    const scid::database::IndexEntry* ie = base->getIndexEntry(gnum);
 	auto* merge = scratchGame;
 	merge->clear();
-    if (base->loadGameMovesOnly(*ie, merge->coreGame()) != scid::core::OK) {
+    if (base->loadGameMovesOnly(gnum, merge->coreGame()) != scid::core::OK) {
         return errorResult (ti, "Error decoding game.");
     }
     scid::core::MovetextLocation mergeLocation;
@@ -3688,11 +3687,12 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     // Finally, add a comment describing the merge-game details:
-    const auto tags = base->tagRoster(*ie);
-    const auto welo = ie->GetWhiteElo();
-    const auto belo = ie->GetBlackElo();
+    const auto tags = base->tagRoster(gnum);
+    const auto info = base->gameInfo(gnum);
+    const auto welo = info.whiteElo;
+    const auto belo = info.blackElo;
     auto dstr = scid::core::DString();
-    dstr.Append(scid::core::RESULT_LONGSTR[ie->GetResult()]);
+    dstr.Append(scid::core::RESULT_LONGSTR[info.result]);
     const auto mergeHalfMoves = merge->coreGame().mainlineHalfMoveCount();
     if (ply < mergeHalfMoves) {
         dstr.Append("(", (mergeHalfMoves + 1) / 2, ")");
@@ -3709,7 +3709,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     dstr.Append(" / ", tags.event);
     dstr.Append(" (", tags.round, ")");
     dstr.Append(", ", tags.site);
-    dstr.Append(" ", ie->GetYear());
+    dstr.Append(" ", info.year());
     if (!setCurrentComment(game.coreGame(), gameLocation, dstr.Data()))
         return UI_Result(ti, scid::core::ERROR, "Error updating comment.");
 
@@ -3882,7 +3882,7 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
             // Ignore newer games if requested:
             if (olderGamesOnly) {
-                if (base->getIndexEntry(i)->GetDate() >= currentDate) continue;
+                if (base->gameInfo(i).date >= currentDate) continue;
             }
             if (count++ != 0) break;
         }
@@ -3989,12 +3989,12 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             if (value < 1  ||  value > base->numGames()) {
                 return setResult (ti, "Invalid game number");
             }
-            const scid::database::IndexEntry* ie = base->getIndexEntry(value - 1);
-            if (ie->GetLength() == 0) {
+            const auto info = base->gameInfo(value - 1);
+            if (info.length == 0) {
                 return errorResult (ti, "Error: empty game file record.");
             }
-            if (base->loadGame(*ie, g->coreGame(), g->scidFlagsData(),
-                              g->scidFlagsCapacity()) != scid::core::OK) {
+            if (base->loadGame(value - 1, g->coreGame(), g->scidFlagsData(),
+                               g->scidFlagsCapacity()) != scid::core::OK) {
                 return errorResult (ti, "Error reading game file.");
             }
 
@@ -4137,12 +4137,12 @@ sc_game_save (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         gnum = scid::database::INVALID_GAMEID;
     } else {
         gnum -= 1;
-        const scid::database::IndexEntry* ieOld = dbase->getIndexEntry_bounds(gnum);
-        if (ieOld == 0) return scid::core::ERROR_BadArg;
+        const auto oldInfo = dbase->gameInfoBounds(gnum);
+        if (!oldInfo) return scid::core::ERROR_BadArg;
         // User-settable flags were scid::database::stored in currGame when the game
         // was loaded, but the user may have changed them.
-        char buf[scid::database::IndexEntry::IDX_NUM_FLAGS + 1];
-        ieOld->GetFlagStr(buf, "WBMENPTKQ!?U123456");
+        char buf[scid::database::GAME_FLAG_COUNT + 1];
+        oldInfo->flagString(buf, "WBMENPTKQ!?U123456");
         currGame.setScidFlags(buf, std::strlen(buf));
     }
     scid::core::errorT res =
@@ -4219,9 +4219,8 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
 	auto* g = scratchGame;
 		scid::database::gamenumT gnum = scid::database::strGetUnsigned(argv[3]);
 		if (gnum > 0) {
-			auto ie = base.getIndexEntry_bounds(gnum - 1);
-			if (!ie ||
-			    base.loadGame(*ie, scratchGame->coreGame(),
+			if (gnum > base.numGames() ||
+			    base.loadGame(gnum - 1, scratchGame->coreGame(),
 			                 scratchGame->scidFlagsData(),
 			                 scratchGame->scidFlagsCapacity()) !=
 			        scid::core::OK) {
@@ -4381,9 +4380,9 @@ sc_game_tags_get (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         tagName = argv[4];
         if (db->numGames() > 0) {
             g = scratchGame;
-            const scid::database::IndexEntry* ie = db->getIndexEntry(db->numGames() - 1);
-            if (db->loadGame(*ie, g->coreGame(), g->scidFlagsData(),
-                            g->scidFlagsCapacity()) != scid::core::OK) {
+            if (db->loadGame(db->numGames() - 1, g->coreGame(),
+                             g->scidFlagsData(),
+                             g->scidFlagsCapacity()) != scid::core::OK) {
                 return errorResult (ti, "Error reading game file.");
             }
         }
@@ -4636,12 +4635,11 @@ sc_game_tags_reload(ClientData, Tcl_Interp*, int, const char**)
 {
     auto editor = scidup::app::editor::gameSession(*db);
     if (!db->isOpen()) { return TCL_OK; }
-    const auto ie = editor.loadedIndexEntry();
-    if (!ie) { return TCL_OK; }
+    const auto loadedGameId = editor.loadedGameId();
+    if (!loadedGameId) { return TCL_OK; }
     char scidFlags[22];
-    scid::database::game_storage::loadStandardTags(
-        editor.game().coreGame(), scidFlags, sizeof(scidFlags), *ie,
-        db->tagRoster(*ie));
+    db->loadStandardTags(*loadedGameId, editor.game().coreGame(), scidFlags,
+                         sizeof(scidFlags));
     editor.game().setScidFlags(scidFlags, sizeof(scidFlags));
     return TCL_OK;
 }
@@ -6191,7 +6189,11 @@ sc_name_edit (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     auto inCTable = [&](const scid::database::IndexEntry& ie) {
         if (editSelection != EDIT_CTABLE)
             return true;
-        return isCrosstableGame(&ie, siteId, eventId, eventDate);
+        if (ie.GetSite() != siteId || ie.GetEvent() != eventId)
+            return false;
+        const auto entryEventDate = ie.GetEventDate();
+        return eventDate == 0 || entryEventDate == 0 ||
+               entryEventDate == eventDate;
     };
 
     std::string filter =
@@ -6436,8 +6438,8 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (setFilter || setOpponent) db->defaultFilterFill(0);
 
     for (scid::core::uint i=0, n = db->numGames(); i < n; i++) {
-        const scid::database::IndexEntry* ie = db->getIndexEntry(i);
-        scidup::eco::Code ecoCode = ie->GetEcoCode();
+        const auto info = db->gameInfo(i);
+        scidup::eco::Code ecoCode = info.ecoCode;
         int ecoClass = -1;
         if (ecoCode != scidup::eco::ECO_None) {
             scidup::eco::String ecoStr;
@@ -6448,14 +6450,14 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             }
         }
 
-        scid::core::resultT result = ie->GetResult();
-        scid::database::idNumberT whiteId = ie->GetWhite();
-        scid::database::idNumberT blackId = ie->GetBlack();
+        scid::core::resultT result = info.result;
+        scid::database::idNumberT whiteId = info.white;
+        scid::database::idNumberT blackId = info.black;
         scid::core::dateT date = scid::core::ZERO_DATE;
 
         // Track statistics as white and black:
         if (whiteId == id) {
-            date = ie->GetDate();
+            date = info.date;
             if (ecoClass >= 0) {
                 ecoCount[scid::core::WHITE][ecoClass]++;
                 ecoScore[scid::core::WHITE][ecoClass] += scid::core::RESULT_SCORE[result];
@@ -6483,7 +6485,7 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 db->defaultFilterSet(i, 1);
             }
         } else if (blackId == id) {
-            date = ie->GetDate();
+            date = info.date;
             result = scid::core::RESULT_OPPOSITE[result];
             if (ecoClass >= 0) {
                 ecoCount[scid::core::BLACK][ecoClass]++;
@@ -7057,11 +7059,11 @@ sc_name_plist (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     std::vector<PlayerActivity> activity(nPlayers);
     for (scid::database::gamenumT gnum=0, n = dbase->numGames(); gnum < n; gnum++) {
-        const scid::database::IndexEntry* ie = dbase->getIndexEntry(gnum);
-        scid::core::dateT date = ie->GetDate();
+        const auto info = dbase->gameInfo(gnum);
+        scid::core::dateT date = info.date;
         if (scid::core::date_GetYear(date) > 0) {
-            activity[ie->GetWhite()].addDate(date);
-            activity[ie->GetBlack()].addDate(date);
+            activity[info.white].addDate(date);
+            activity[info.black].addDate(date);
         }
     }
 
@@ -7482,10 +7484,10 @@ avgGameLength (scid::core::resultT result)
     scid::core::uint sum = 0;
     scid::core::uint count = 0;
     for (scid::database::gamenumT i=0, n = db->numGames(); i < n; i++) {
-        const scid::database::IndexEntry* ie = db->getIndexEntry(i);
-        if (result == ie->GetResult()) {
+        const auto info = db->gameInfo(i);
+        if (result == info.result) {
             count++;
-            sum += ((ie->GetNumHalfMoves() + 1) / 2);
+            sum += ((info.halfMoveCount + 1) / 2);
         }
     }
     if (count == 0) { return 0; }
@@ -7777,10 +7779,10 @@ sc_report_create (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         }
 
         scid::core::byte ply = db->defaultFilterGet(gnum);
-        const scid::database::IndexEntry* ie = db->getIndexEntry(gnum);
+        const auto info = db->gameInfo(gnum);
         if (ply != 0) {
             scid::core::MovetextLocation scratchLocation;
-            if (db->loadGame(*ie, scratchGame->coreGame(),
+            if (db->loadGame(gnum, scratchGame->coreGame(),
                             scratchGame->scidFlagsData(),
                             scratchGame->scidFlagsCapacity()) !=
                 scid::core::OK) {
@@ -7796,7 +7798,7 @@ sc_report_create (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             if (ply != 0) {
                 scid::core::uint moveOrderID =
                     report->AddMoveOrder (&scratchGame->coreGame(), scratchLocation);
-                OpLine * line = new OpLine (&scratchGame->coreGame(), scratchLocation, ie, gnum+1,
+                OpLine * line = new OpLine (&scratchGame->coreGame(), scratchLocation, info, gnum+1,
                                             maxExtraMoves, maxThemeMoveNumber);
                 if (report->Add (line)) {
                     line->SetMoveOrderID (moveOrderID);
@@ -7805,7 +7807,7 @@ sc_report_create (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 }
             }
         }
-        report->AddEndMaterial (ie->GetFinalMatSig(), (ply != 0));
+        report->AddEndMaterial (info.finalMaterial, (ply != 0));
     }
     progress.report(1,1);
 
@@ -8234,8 +8236,8 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
             }
         }
 
-        const scid::database::IndexEntry* ie = dbase->getIndexEntry(gameNum);
-        if (ie->GetLength() == 0) {
+        const auto info = dbase->gameInfo(gameNum);
+        if (info.length == 0) {
             // Skip games with no gamefile record:
             filter.set (gameNum, 0);
             continue;
@@ -8243,17 +8245,17 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
 
         // Set "useVars" to true only if the search specified searching
         // in variations, AND this game has variations:
-        bool useVars = searchInVars && ie->GetVariationsFlag();
+        bool useVars = searchInVars && info.hasVariations();
 
         bool possibleMatch = true;
         bool possibleFlippedMatch = flip;
 
         // Apply speedups if we are not searching in variations:
         if (! useVars) {
-            if (! ie->GetStartFlag()) {
+            if (! info.hasStartFlag()) {
                 // Speedups that only apply to standard start games:
                 if (useHpSigSpeedup  &&  hpSig != 0xFFFF) {
-                    const scid::core::byte * hpData = ie->GetHomePawnData();
+                    const scid::core::byte * hpData = info.homePawnData.data();
                     if (! scid::database::hpSig_PossibleMatch (hpSig, hpData)) {
                         possibleMatch = false;
                     }
@@ -8268,16 +8270,16 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
             // If this game has no promotions, check the material of its final
             // position, since the searched position might be unreachable:
             if (possibleMatch) {
-                if (!scid::database::matsig_isReachable (msig, ie->GetFinalMatSig(),
-                                         ie->GetPromotionsFlag(),
-                                         ie->GetUnderPromoFlag())) {
+                if (!scid::database::matsig_isReachable (msig, info.finalMaterial,
+                                         info.hasPromotionsFlag(),
+                                         info.hasUnderPromoFlag())) {
                         possibleMatch = false;
                     }
             }
             if (possibleFlippedMatch) {
-                if (!scid::database::matsig_isReachable (msigFlip, ie->GetFinalMatSig(),
-                                         ie->GetPromotionsFlag(),
-                                         ie->GetUnderPromoFlag())) {
+                if (!scid::database::matsig_isReachable (msigFlip, info.finalMaterial,
+                                         info.hasPromotionsFlag(),
+                                         info.hasUnderPromoFlag())) {
                         possibleFlippedMatch = false;
                     }
             }
@@ -8291,7 +8293,7 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
         // At this point, the game needs to be loaded:
         scid::core::uint ply = 0;
         auto searchErr = dbase->searchBoard(
-            *ie, game, pos, posFlip, useVars, possibleMatch,
+            gameNum, game, pos, posFlip, useVars, possibleMatch,
             possibleFlippedMatch, searchType, ply);
         if (searchErr != scid::core::OK) {
             return errorResult (ti, "Error reading game file.");
@@ -8620,13 +8622,13 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             filter.set (gameNum, 1);
         }
 
-        const scid::database::IndexEntry* ie = db->getIndexEntry(gameNum);
-        if (ie->GetLength() == 0) {  // Skip games with no gamefile record
+        const auto info = db->gameInfo(gameNum);
+        if (info.length == 0) {  // Skip games with no gamefile record
             filter.set (gameNum, 0);
             continue;
         }
 
-        if (ie->GetNumHalfMoves() < minMoves  &&  ! ie->GetStartFlag()) {
+        if (info.halfMoveCount < minMoves  &&  ! info.hasStartFlag()) {
             // Skip games without enough moves to match, if they
             // have the standard starting position:
             filter.set (gameNum, 0);
@@ -8638,16 +8640,16 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         // First, eliminate games that cannot match from their final
         // material signature:
-        if (checkMsig  &&  !scid::database::matsig_isReachable (msig, ie->GetFinalMatSig(),
-                                                ie->GetPromotionsFlag(),
-                                                ie->GetUnderPromoFlag()))
+        if (checkMsig  &&  !scid::database::matsig_isReachable (msig, info.finalMaterial,
+                                                info.hasPromotionsFlag(),
+                                                info.hasUnderPromoFlag()))
         {
             possibleMatch = false;
         }
         if (flip  &&  checkMsig
-                &&  !scid::database::matsig_isReachable (msigFlipped, ie->GetFinalMatSig(),
-                                         ie->GetPromotionsFlag(),
-                                         ie->GetUnderPromoFlag()))
+                &&  !scid::database::matsig_isReachable (msigFlipped, info.finalMaterial,
+                                         info.hasPromotionsFlag(),
+                                         info.hasUnderPromoFlag()))
         {
             possibleFlippedMatch = false;
         }
@@ -8658,14 +8660,14 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         // at home need not be loaded:
 
         if (possibleMatch  &&  hpExcludeMask != scid::database::HPSIG_Empty) {
-            scid::core::uint gameFinalHP = scid::database::hpSig_Final (ie->GetHomePawnData());
+            scid::core::uint gameFinalHP = scid::database::hpSig_Final (info.homePawnData.data());
             // If any bit is set in both, this game cannot match:
             if ((gameFinalHP & hpExcludeMask) != 0) {
                 possibleMatch = false;
             }
         }
         if (possibleFlippedMatch  &&  hpExMaskFlip != scid::database::HPSIG_Empty) {
-            scid::core::uint gameFinalHP = scid::database::hpSig_Final (ie->GetHomePawnData());
+            scid::core::uint gameFinalHP = scid::database::hpSig_Final (info.homePawnData.data());
             // If any bit is set in both, this game cannot match:
             if ((gameFinalHP & hpExMaskFlip) != 0) {
                 possibleFlippedMatch = false;
@@ -8679,7 +8681,7 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         // Now, the game must be loaded and searched:
         bool result = db->materialSearchMatch(
-            *ie, possibleMatch, possibleFlippedMatch, min, max, minFlipped,
+            gameNum, possibleMatch, possibleFlippedMatch, min, max, minFlipped,
             maxFlipped, patt.data(), patt.size(), flippedPatt.data(),
             flippedPatt.size(), minPly, maxPly, matchLength, oppBishops,
             sameBishops, matDiff[0], matDiff[1]);
@@ -8919,11 +8921,11 @@ sc_search_header (ClientData, Tcl_Interp * ti, scid::database::scidBaseT* base, 
         // Skip any games not in the filter:
         if (filter.get(i) == 0) continue;
 
-        const scid::database::IndexEntry* ie = base->getIndexEntry(i);
+        const auto info = base->gameInfo(i);
 
 		auto matchGameHeader = [&]() {
 			//TODO: this trick does not work if there is a custom start position
-			scid::core::uint halfmoves = ie->GetNumHalfMoves();
+			scid::core::uint halfmoves = info.halfMoveCount;
 			if ((halfmoves % 2) == 0) { // This game ends with White to move
 				if (!wToMove) {
 					return false;
@@ -8935,10 +8937,10 @@ sc_search_header (ClientData, Tcl_Interp * ti, scid::database::scidBaseT* base, 
 			}
 
 			// Last, we check the players
-			if (!mWhite.empty() && !mWhite[ie->GetWhite()]) {
+			if (!mWhite.empty() && !mWhite[info.white]) {
 				return false;
 			}
-			if (!mBlack.empty() && !mBlack[ie->GetBlack()]) {
+			if (!mBlack.empty() && !mBlack[info.black]) {
 				return false;
 			}
 
@@ -8954,7 +8956,7 @@ sc_search_header (ClientData, Tcl_Interp * ti, scid::database::scidBaseT* base, 
         // generating the PGN representation of each game.
 
 		if (match && pgnTextCount > 0) {
-			if (base->loadGame(*ie, scratchGame->coreGame(),
+			if (base->loadGame(i, scratchGame->coreGame(),
 			                  scratchGame->scidFlagsData(),
 			                  scratchGame->scidFlagsCapacity()) !=
 			    scid::core::OK) {

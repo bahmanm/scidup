@@ -157,15 +157,15 @@ OpLine::Init (void)
 
 void
 OpLine::Init (scid::core::Game * g, scid::core::MovetextLocation location,
-              const scid::database::IndexEntry * ie, scid::database::gamenumT gameNum,
+              const scid::database::GameInfo& info, scid::database::gamenumT gameNum,
               scid::core::uint maxExtraMoves, scid::core::uint maxThemeMoveNumber)
 {
     White = scid::database::strDuplicate (g->white().name.c_str());
     Black = scid::database::strDuplicate (g->black().name.c_str());
     Site = scid::database::strDuplicate (g->site().c_str());
 
-    WhiteID = ie->GetWhite();
-    BlackID = ie->GetBlack();
+    WhiteID = info.white;
+    BlackID = info.black;
     GameNumber = gameNum;
 
     Date = g->date();
@@ -189,7 +189,7 @@ OpLine::Init (scid::core::Game * g, scid::core::MovetextLocation location,
     scid::core::uint columnMoves = OPTABLE_COLUMNS * 2;
     scid::core::uint maxLineMoves = (OPTABLE_COLUMNS + maxExtraMoves) * 2;
     if (maxLineMoves > OPLINE_MOVES) { maxLineMoves = OPLINE_MOVES; }
-    EgTheme = endgameTheme (ie->GetFinalMatSig());
+    EgTheme = endgameTheme (info.finalMaterial);
 
     // First read in just the moves that will appear in table columns:
     scid::core::uint i = 0;
