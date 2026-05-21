@@ -40,7 +40,6 @@
 #include "game_search.h"
 #include "game_storage.h"
 #include "legacy_pgn.h"
-#include "nag_format.h"
 #include "piece_translation.h"
 #include "polyglot.h"
 #include "scidup/core/position.h"
@@ -3279,12 +3278,11 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (printNags  &&  !nags.empty()  &&  !hideNextMove) {
         AppendResult (ti, "<red>", NULL);
         for (scid::database::uint nagCount = 0 ; nagCount < nags.size(); nagCount++) {
-            char nagstr[20];
-            game_printNag (nags[nagCount], nagstr, true, scid::database::PGN_FORMAT_Plain);
+            const auto nagstr = scid::core::formatNag(nags[nagCount], true);
             if (nagCount > 0  ||  (nagstr[0] != '!' && nagstr[0] != '?')) {
                 AppendResult (ti, " ", NULL);
             }
-            AppendResult (ti, nagstr, NULL);
+            AppendResult (ti, nagstr.c_str(), NULL);
         }
         AppendResult (ti, "</red>", NULL);
     }
@@ -3319,12 +3317,11 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (printNags  &&  !hideNextMove  &&  !nags.empty()) {
         AppendResult (ti, "<red>", NULL);
         for (scid::database::uint nagCount = 0 ; nagCount < nags.size(); nagCount++) {
-            char nagstr[20];
-            game_printNag (nags[nagCount], nagstr, true, scid::database::PGN_FORMAT_Plain);
+            const auto nagstr = scid::core::formatNag(nags[nagCount], true);
             if (nagCount > 0  ||  (nagstr[0] != '!' && nagstr[0] != '?')) {
                 AppendResult (ti, " ", NULL);
             }
-            AppendResult (ti, nagstr, NULL);
+            AppendResult (ti, nagstr.c_str(), NULL);
         }
         AppendResult (ti, "</red>", NULL);
     }
@@ -3384,8 +3381,8 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             if (!firstNags.empty() &&
                 firstNags.front() >= scid::core::NAG_GoodMove &&
                 firstNags.front() <= scid::core::NAG_DubiousMove) {
-                game_printNag (firstNags.front(), s, true, scid::database::PGN_FORMAT_Plain);
-                AppendResult (ti, "<red>", s, "</red>", NULL);
+                const auto nagstr = scid::core::formatNag(firstNags.front(), true);
+                AppendResult (ti, "<red>", nagstr.c_str(), "</red>", NULL);
             }
             AppendResult (ti, "</run>", NULL);
         }
@@ -4264,14 +4261,12 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
                 auto nags = nextMoveNags(g->coreGame(), location);
                 if (!nags.empty()) {
                     for (scid::database::uint nagCount = 0 ; nagCount < nags.size(); nagCount++) {
-                        char nagstr[20];
-                        game_printNag (nags[nagCount], nagstr, true,
-                                       scid::database::PGN_FORMAT_Plain);
+                        const auto nagstr = scid::core::formatNag(nags[nagCount], true);
                         if (nagCount > 0  ||
                               (nagstr[0] != '!' && nagstr[0] != '?')) {
                             scid::database::strAppend (temp, " ");
                         }
-                        scid::database::strAppend (temp, nagstr);
+                        scid::database::strAppend (temp, nagstr.c_str());
                     }
                 }
                 moves.push_back(temp);
@@ -5524,7 +5519,7 @@ sc_pos_addNag (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 	}
 	else
 	{
-		scid::database::byte nag = scid::database::game_parseNag({nagStr, nagStr + std::strlen(nagStr)});
+		scid::database::byte nag = scid::core::parseNag(nagStr);
 		if (nag != 0) {
 			if (!addCurrentNag(editor.game().coreGame(), editor.location(), nag))
 				return UI_Result(ti, scid::database::ERROR, "Error updating annotations.");
@@ -5723,9 +5718,8 @@ sc_pos_getNags(ClientData, Tcl_Interp* ti, int, const char**)
         return setResult (ti, "0");
     }
     for (auto nag : nags) {
-        char temp[20];
-        game_printNag (nag, temp, true, scid::database::PGN_FORMAT_Plain);
-        AppendResult (ti, temp, " ", NULL);
+        const auto text = scid::core::formatNag(nag, true);
+        AppendResult (ti, text.c_str(), " ", NULL);
     }
 
     return TCL_OK;

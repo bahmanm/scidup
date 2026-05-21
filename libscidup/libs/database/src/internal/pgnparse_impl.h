@@ -3,9 +3,9 @@
 
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/movetext_cursor.h"
+#include "scidup/core/nags.h"
 #include "scidup/eco/code.h"
 #include "pgn_lexer.h"
-#include "nag_format.h"
 #include "scidup/database/pgnparse.h"
 #include "scidup/database/indexentry.h"
 #include "scidup/database/misc.h"
@@ -161,7 +161,8 @@ public:
 		if (nErrorsAllowed_ < 0)
 			return true;
 
-		auto nag_code = game_parseNag(token);
+		auto nag_code = scid::core::parseNag(
+		    std::string_view(token.first, token.second - token.first));
 		if (nag_code == 0 || !addCurrentMoveNag(game, nag_code, location_))
 			return logErr("Invalid annotation symbol: ", token);
 
@@ -207,7 +208,8 @@ public:
 		simpleMoveT sm;
 		auto err = position->ParseMove(&sm, tok.first, tok.second);
 		if (err != OK) {
-			if (game_parseNag(tok))
+			if (scid::core::parseNag(
+			        std::string_view(tok.first, tok.second - tok.first)))
 				return visitPGN_NAG(tok);
 
 			return logFatalErr("Failed to parse the move: ", tok);

@@ -60,7 +60,6 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/legacy_pgn.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/nag_format.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/naglatex.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/nagtext.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/piece_translation.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/pgn_lexer.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/pgnparse_impl.h"

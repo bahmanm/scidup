@@ -19,8 +19,8 @@
 #include "scidup/database/common.h"
 #include "dbasepool.h"
 #include "game_positions.h"
+#include "scidup/core/nags.h"
 #include "scidup/database/game_id.h"
-#include "nag_format.h"
 #include "scidup/database/misc.h"
 #include "scidup/database/scidbase.h"
 #include "scidup/eco/code.h"
@@ -462,11 +462,9 @@ static UI_res_t sc_base_getGameHelper(UI_handle_t ti,
 		posInfo.push_back(pos.FEN);
 		std::string nags;
 		for (const auto& nag : pos.NAGs) {
-			char temp[16];
-			game_printNag(nag, temp, true, scid::database::PGN_FORMAT_Plain);
 			if (!nags.empty())
 				nags += ' ';
-			nags += temp;
+			nags += scid::core::formatNag(nag, true);
 		}
 		posInfo.push_back(nags);
 		posInfo.push_back(pos.comment);

@@ -16,9 +16,9 @@
 // 7-bit rewritten 
 // following http://www.exeterchessclub.org.uk/nags.html
 
-namespace scid::database {
+namespace scid::core {
 
-const char * evalNagsRegular [] = 
+const char* plainNagSymbols[] =
 { 
    "",                //         0 null annotation
    "!",               // $1      1 good move (traditional "!")
@@ -252,4 +252,4 @@ const char * evalNagsRegular [] =
 // to follow
 
 
-} // namespace scid::database
+} // namespace scid::core

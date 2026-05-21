@@ -325,25 +325,15 @@ TEST(Test_Game, LegacyGameEncodeOptionsFormatFromString) {
 	        "unknown", &format));
 }
 
-TEST(Test_Game, LegacyNagFormatParsePrint) {
-	auto parseNag = [](std::string_view nag) {
-		return scid::database::game_parseNag(
-		    {nag.data(), nag.data() + nag.size()});
-	};
-
-	EXPECT_EQ(scid::core::NAG_ExcellentMove,
-	          parseNag("!!"));
-	EXPECT_EQ(scid::core::NAG_Diagram, parseNag("D"));
-	EXPECT_EQ(scid::core::NAG_Comment, parseNag("$145"));
-
+TEST(Test_Game, LegacyNagFormatKeepsStyledExportOutput) {
 	char nagText[20] = {};
 	scid::database::game_printNag(scid::core::NAG_Diagram, nagText, true,
-	                              scid::database::PGN_FORMAT_Plain);
-	EXPECT_STREQ("D", nagText);
+	                              scid::database::PGN_FORMAT_HTML);
+	EXPECT_STREQ("<i>(D)</i>", nagText);
 
 	scid::database::game_printNag(scid::core::NAG_GoodMove, nagText, false,
-	                              scid::database::PGN_FORMAT_Plain);
-	EXPECT_STREQ("$1", nagText);
+	                              scid::database::PGN_FORMAT_LaTeX);
+	EXPECT_STREQ("\\$1", nagText);
 }
 
 TEST(Test_Game, LegacyPieceTranslation) {

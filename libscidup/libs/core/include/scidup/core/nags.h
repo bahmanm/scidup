@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
+#include <string_view>
 
 namespace scid::core {
 
@@ -73,5 +75,9 @@ const std::uint8_t
     NAG_Without = 215;
 
 const std::uint8_t MAX_NAGS_ARRAY = 215;
+
+std::string formatNag(std::uint8_t nag, bool asSymbol);
+std::string_view nagSymbol(std::uint8_t nag);
+std::uint8_t parseNag(std::string_view text);
 
 } // namespace scid::core
