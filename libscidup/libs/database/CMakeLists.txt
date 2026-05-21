@@ -14,10 +14,8 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_search.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_storage.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/index.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/legacy_pgn.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/matsig.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/misc.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/nag_format.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/piece_translation.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/scidbase.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/searchpos.cpp"
@@ -55,9 +53,6 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_search.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_storage.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/gameview.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/legacy_encode_options.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/legacy_pgn.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/nag_format.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/naglatex.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/piece_translation.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/searchpos.h"
@@ -118,12 +113,19 @@ if( BUILD_TESTING )
     add_executable(
         scidup_tests_database_cpp
         ${SCIDUP_DATABASE_TEST_SOURCES} )
+    target_sources(
+        scidup_tests_database_cpp
+        PRIVATE
+            "${CMAKE_SOURCE_DIR}/src/cxx/scidup_app_legacy_pgn.cpp"
+            "${CMAKE_SOURCE_DIR}/src/cxx/scidup_app_nag_format.cpp" )
     target_compile_definitions(
         scidup_tests_database_cpp
         PRIVATE SCIDUP_TEST_RESOURCES_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/tests/cxx/\" )
     target_include_directories(
         scidup_tests_database_cpp
-        PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/internal" )
+        PRIVATE
+            "${CMAKE_SOURCE_DIR}/src/cxx"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/internal" )
     target_link_libraries(
         scidup_tests_database_cpp
         PRIVATE ScidUp::Database gtest_main )

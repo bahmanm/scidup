@@ -1,4 +1,4 @@
-#include "nag_format.h"
+#include "scidup_app_nag_format.h"
 
 #include "scidup/core/nags.h"
 #include "scidup/database/common.h"
@@ -7,7 +7,7 @@
 #include <cstdio>
 #include <cstring>
 
-namespace scid::database {
+namespace scidup::app {
 
 void game_printNag(scid::core::byte nag, char* str, bool asSymbol, gameFormatT format) {
 	ASSERT(str != NULL);
@@ -18,14 +18,14 @@ void game_printNag(scid::core::byte nag, char* str, bool asSymbol, gameFormatT f
 	}
 
 	if (asSymbol && format == PGN_FORMAT_LaTeX &&
-	    nag >= (sizeof evalNagsLatex / sizeof(const char*))) {
+	    nag >= (sizeof(scid::database::evalNagsLatex) / sizeof(const char*))) {
 		*str = 0;
 		return;
 	}
 
 	if (asSymbol) {
 		if (format == PGN_FORMAT_LaTeX) {
-			strcpy(str, evalNagsLatex[nag]);
+			strcpy(str, scid::database::evalNagsLatex[nag]);
 		} else if (format == PGN_FORMAT_HTML &&
 		           nag == scid::core::NAG_Diagram) {
 			strcpy(str, "<i>(D)</i>");
@@ -40,4 +40,4 @@ void game_printNag(scid::core::byte nag, char* str, bool asSymbol, gameFormatT f
 	}
 }
 
-} // namespace scid::database
+} // namespace scidup::app

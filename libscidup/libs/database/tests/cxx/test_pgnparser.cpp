@@ -15,7 +15,7 @@
 */
 
 #include "scidup/core/game.h"
-#include "legacy_pgn.h"
+#include "scidup_app_legacy_pgn.h"
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/pgn/decode.h"
 #include <algorithm>
@@ -107,11 +107,11 @@ TEST(Test_PgnParser, UTF8_char) {
 	scid::core::pgn::ParseLog errors;
 	ASSERT_TRUE(scid::core::pgn::parseGame(pgnUTF8.data(), pgnUTF8.size(), game, errors));
 	EXPECT_TRUE(errors.log.empty());
-	auto pgn = scid::database::legacy_pgn::encode(
+	auto pgn = scidup::app::legacy_pgn::encode(
 	    game, "",
 	    {PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
 	         PGN_STYLE_SCIDFLAGS,
-	     scid::database::PGN_FORMAT_Plain,
+	     scidup::app::PGN_FORMAT_Plain,
 	     0},
 	    75, true);
 
@@ -127,11 +127,11 @@ TEST(Test_PgnParser, Latin1_char) {
 	scid::core::pgn::ParseLog errors;
 	ASSERT_TRUE(scid::core::pgn::parseGame(pgnLatin1.data(), pgnLatin1.size(), game, errors));
 	EXPECT_TRUE(errors.log.empty());
-	auto pgn = scid::database::legacy_pgn::encode(
+	auto pgn = scidup::app::legacy_pgn::encode(
 	    game, "",
 	    {PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
 	         PGN_STYLE_SCIDFLAGS,
-	     scid::database::PGN_FORMAT_Plain,
+	     scidup::app::PGN_FORMAT_Plain,
 	     0},
 	    75, true);
 
@@ -238,9 +238,9 @@ TEST(Test_PgnParser, EPD) {
 	                         game, parseLog));
 	EXPECT_TRUE(parseLog.log.size() > last_log.size());
 	EXPECT_STREQ(expected_game,
-	             scid::database::legacy_pgn::encode(
+	             scidup::app::legacy_pgn::encode(
 	                 game, "",
-	                 scid::database::defaultLegacyGameEncodeOptions(),
+	                 scidup::app::defaultLegacyGameEncodeOptions(),
 	                 1024, true)
 	                 .first);
 
@@ -382,9 +382,9 @@ TEST(Test_PgnParser, TagPairs) {
 
 		ASSERT_TRUE(scid::core::pgn::parseGame(src.c_str(), src.size(), game, parseLog));
 		ASSERT_EQ(!parseLog.log.size(), !errors);
-		auto pgn = scid::database::legacy_pgn::encode(
+		auto pgn = scidup::app::legacy_pgn::encode(
 		    game, "",
-		    scid::database::defaultLegacyGameEncodeOptions(), 75, true);
+		    scidup::app::defaultLegacyGameEncodeOptions(), 75, true);
 		src.assign(pgn.first, pgn.second);
 		ASSERT_STREQ(src.c_str(), expect.c_str());
 	};

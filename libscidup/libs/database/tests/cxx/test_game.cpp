@@ -23,8 +23,8 @@
 #include "scidup/core/pgn/traversal.h"
 #include "scidup/database/scidbase.h"
 #include "game_storage.h"
-#include "legacy_pgn.h"
-#include "nag_format.h"
+#include "scidup_app_legacy_pgn.h"
+#include "scidup_app_nag_format.h"
 #include "piece_translation.h"
 #include "scidup/core/pgn/decode.h"
 #include <algorithm>
@@ -54,11 +54,11 @@ void expectMoveAction(const scid::core::Move* move,
 	EXPECT_EQ(to, move->spec.to);
 }
 
-scid::database::LegacyGameEncodeOptions scidFlagsPgnOptions() {
+scidup::app::LegacyGameEncodeOptions scidFlagsPgnOptions() {
 	return {
 	    PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
 	        PGN_STYLE_SCIDFLAGS,
-	    scid::database::PGN_FORMAT_Plain,
+	    scidup::app::PGN_FORMAT_Plain,
 	    0,
 	};
 }
@@ -273,11 +273,11 @@ TEST(Test_Game, clone) {
 		ASSERT_EQ(nextCoreSan(game, location), nextCoreSan(clone, cloneLocation));
 
 		auto pgnGame =
-		    scid::database::legacy_pgn::encode(game, scidFlags.data(),
+		    scidup::app::legacy_pgn::encode(game, scidFlags.data(),
 		                                       scidFlagsPgnOptions(), 75,
 		                                       true);
 
-		auto pgnClone = scid::database::legacy_pgn::encode(
+		auto pgnClone = scidup::app::legacy_pgn::encode(
 		    clone, scidFlags.data(), scidFlagsPgnOptions(), 75,
 		    true);
 
@@ -288,56 +288,56 @@ TEST(Test_Game, clone) {
 
 TEST(Test_Game, WriteToPGNDoesNotMutateOptions) {
 	scid::core::Game game;
-	const auto options = scid::database::LegacyGameEncodeOptions{
+	const auto options = scidup::app::LegacyGameEncodeOptions{
 	    PGN_STYLE_TAGS | PGN_STYLE_COLUMN,
-	    scid::database::PGN_FORMAT_Plain,
+	    scidup::app::PGN_FORMAT_Plain,
 	    0,
 	};
 
-	auto first = scid::database::legacy_pgn::encode(
+	auto first = scidup::app::legacy_pgn::encode(
 	    game, "", options, 75, true);
 	std::string firstPgn(first.first, first.second);
-	auto second = scid::database::legacy_pgn::encode(
+	auto second = scidup::app::legacy_pgn::encode(
 	    game, "", options, 75, true);
 
 	EXPECT_EQ(firstPgn, std::string(second.first, second.second));
 }
 
 TEST(Test_Game, LegacyGameEncodeOptionsFormatFromString) {
-	scid::database::gameFormatT format = scid::database::PGN_FORMAT_Color;
+	scidup::app::gameFormatT format = scidup::app::PGN_FORMAT_Color;
 
 	ASSERT_TRUE(
-	    scid::database::LegacyGameEncodeOptions::legacyFormatFromString(
+	    scidup::app::LegacyGameEncodeOptions::legacyFormatFromString(
 	        "pgn", &format));
 	EXPECT_TRUE(
-	    (scid::database::LegacyGameEncodeOptions{0, format, 0}
+	    (scidup::app::LegacyGameEncodeOptions{0, format, 0}
 	         .isPlainFormat()));
 
 	ASSERT_TRUE(
-	    scid::database::LegacyGameEncodeOptions::legacyFormatFromString(
+	    scidup::app::LegacyGameEncodeOptions::legacyFormatFromString(
 	        "html", &format));
 	EXPECT_TRUE(
-	    (scid::database::LegacyGameEncodeOptions{0, format, 0}.isHtmlFormat()));
+	    (scidup::app::LegacyGameEncodeOptions{0, format, 0}.isHtmlFormat()));
 
 	ASSERT_TRUE(
-	    scid::database::LegacyGameEncodeOptions::legacyFormatFromString(
+	    scidup::app::LegacyGameEncodeOptions::legacyFormatFromString(
 	        "latex", &format));
-	const auto options = scid::database::LegacyGameEncodeOptions{0, format, 0};
+	const auto options = scidup::app::LegacyGameEncodeOptions{0, format, 0};
 	EXPECT_TRUE(options.isLatexFormat());
 
 	EXPECT_FALSE(
-	    scid::database::LegacyGameEncodeOptions::legacyFormatFromString(
+	    scidup::app::LegacyGameEncodeOptions::legacyFormatFromString(
 	        "unknown", &format));
 }
 
 TEST(Test_Game, LegacyNagFormatKeepsStyledExportOutput) {
 	char nagText[20] = {};
-	scid::database::game_printNag(scid::core::NAG_Diagram, nagText, true,
-	                              scid::database::PGN_FORMAT_HTML);
+	scidup::app::game_printNag(scid::core::NAG_Diagram, nagText, true,
+	                              scidup::app::PGN_FORMAT_HTML);
 	EXPECT_STREQ("<i>(D)</i>", nagText);
 
-	scid::database::game_printNag(scid::core::NAG_GoodMove, nagText, false,
-	                              scid::database::PGN_FORMAT_LaTeX);
+	scidup::app::game_printNag(scid::core::NAG_GoodMove, nagText, false,
+	                              scidup::app::PGN_FORMAT_LaTeX);
 	EXPECT_STREQ("\\$1", nagText);
 }
 

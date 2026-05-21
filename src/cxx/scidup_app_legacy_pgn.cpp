@@ -1,5 +1,5 @@
-#include "nag_format.h"
-#include "legacy_pgn.h"
+#include "scidup_app_nag_format.h"
+#include "scidup_app_legacy_pgn.h"
 #include "piece_translation.h"
 #include "scidup/core/game.h"
 #include "scidup/database/common.h"
@@ -17,19 +17,19 @@
 #include <string>
 #include <string_view>
 
-namespace scid::database {
+namespace scidup::app {
 
 bool LegacyGameEncodeOptions::legacyFormatFromString(const char* str,
                                                      gameFormatT* fmt) {
-	if (strIsCasePrefix(str, "Plain")) {
+	if (scid::database::strIsCasePrefix(str, "Plain")) {
 		*fmt = PGN_FORMAT_Plain;
-	} else if (strIsCasePrefix(str, "PGN")) {
+	} else if (scid::database::strIsCasePrefix(str, "PGN")) {
 		*fmt = PGN_FORMAT_Plain;
-	} else if (strIsCasePrefix(str, "HTML")) {
+	} else if (scid::database::strIsCasePrefix(str, "HTML")) {
 		*fmt = PGN_FORMAT_HTML;
-	} else if (strIsCasePrefix(str, "LaTeX")) {
+	} else if (scid::database::strIsCasePrefix(str, "LaTeX")) {
 		*fmt = PGN_FORMAT_LaTeX;
-	} else if (strIsCasePrefix(str, "Color")) {
+	} else if (scid::database::strIsCasePrefix(str, "Color")) {
 		*fmt = PGN_FORMAT_Color;
 	} else {
 		return false;
@@ -40,7 +40,7 @@ bool LegacyGameEncodeOptions::legacyFormatFromString(const char* str,
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // writeComment:
 //    Called by WriteMoveList to write a single comment.
-static void writeComment(TextBuffer* tb, const char* preStr,
+static void writeComment(scid::database::TextBuffer* tb, const char* preStr,
                          const char* comment, const char* postStr,
                          bool colorFormat, scid::core::uint numMovesPrinted) {
     const char* s = comment;
@@ -84,7 +84,7 @@ static std::string sanForMove(scid::core::Position& position,
 struct LegacyGamePgnEncoder {
 	const scid::core::Game& game;
 	const char* scidFlags;
-	TextBuffer* tb;
+	scid::database::TextBuffer* tb;
 	LegacyGameEncodeOptions options;
 	scid::core::uint numMovesPrinted = 1;
 
@@ -180,7 +180,7 @@ scid::core::errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool i
         const char* comment = lineStartCommentStorage.c_str();
         if (*comment && (options.style & PGN_STYLE_STRIP_MARKS)) {
             strippedComment = comment;
-            strTrimMarkCodes(strippedComment.data());
+            scid::database::strTrimMarkCodes(strippedComment.data());
             comment = strippedComment.data();
         }
         if (*comment) {
@@ -314,7 +314,7 @@ scid::core::errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool i
             // translate pieces
             auto translatedSan = san;
             translatedSan.push_back('\0');
-            transPieces(translatedSan.data());
+            scid::database::transPieces(translatedSan.data());
             tb->PrintWord (translatedSan.data());
         }
         colWidth -= (int) san.size();
@@ -411,7 +411,7 @@ scid::core::errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool i
             const char* comment = moveComment.c_str();
             if (*comment && (options.style & PGN_STYLE_STRIP_MARKS)) {
                 strippedComment = moveComment;
-                strTrimMarkCodes(strippedComment.data());
+                scid::database::strTrimMarkCodes(strippedComment.data());
                 comment = strippedComment.data();
             }
             if (*comment) {
@@ -467,7 +467,7 @@ scid::core::errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool i
                 } else {
                     tb->PrintSpace();
                 }
-                if (printDiagrams  &&  strIsPrefix ("#", comment)) {
+                if (printDiagrams  &&  scid::database::strIsPrefix ("#", comment)) {
                     if (options.isLatexFormat()) {
                         tb->PrintString ("\n\\begin{diagram}\n");
                     }
@@ -876,7 +876,7 @@ std::pair<const char*, unsigned> LegacyGamePgnEncoder::encodeToPgnText(
     const scid::core::Game& game, const char* scidFlags,
     LegacyGameEncodeOptions options, scid::core::uint lineWidth, bool newLineAtEnd,
     bool newLineToSpaces) {
-    static TextBuffer tbuf;
+    static scid::database::TextBuffer tbuf;
 
     tbuf.Empty();
     tbuf.SetWrapColumn(lineWidth ? lineWidth : tbuf.GetBufferSize());
@@ -897,4 +897,4 @@ std::pair<const char*, unsigned> legacy_pgn::encode(
         game, scidFlags, options, lineWidth, newLineAtEnd, newLineToSpaces);
 }
 
-} // namespace scid::database
+} // namespace scidup::app

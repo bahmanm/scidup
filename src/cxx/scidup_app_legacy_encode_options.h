@@ -1,6 +1,6 @@
 #pragma once
 
-namespace scid::database {
+namespace scidup::app {
 
 // TODO [Game]: Keep this as legacy export/encode compatibility. These flags
 // mix plain PGN, HTML, LaTeX, color tags, and UI formatting concerns; they
@@ -28,7 +28,7 @@ struct LegacyGameEncodeOptions {
 	void removeStyle(unsigned mask) { style &= ~mask; }
 };
 
-} // namespace scid::database
+} // namespace scidup::app
 
 #define PGN_STYLE_TAGS 1
 #define PGN_STYLE_COMMENTS 2
@@ -44,7 +44,7 @@ struct LegacyGameEncodeOptions {
 #define PGN_STYLE_NO_NULL_MOVES 2048
 #define PGN_STYLE_UNICODE 4096
 
-namespace scid::database {
+namespace scidup::app {
 
 inline LegacyGameEncodeOptions defaultLegacyGameEncodeOptions() {
 	return {
@@ -54,4 +54,4 @@ inline LegacyGameEncodeOptions defaultLegacyGameEncodeOptions() {
 	};
 }
 
-} // namespace scid::database
+} // namespace scidup::app

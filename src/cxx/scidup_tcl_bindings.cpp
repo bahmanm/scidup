@@ -37,7 +37,7 @@
 #include "scidup/database/game_id.h"
 #include "optable.h"
 #include "scidup/eco/book.h"
-#include "legacy_pgn.h"
+#include "scidup_app_legacy_pgn.h"
 #include "piece_translation.h"
 #include "polyglot.h"
 #include "scidup/core/position.h"
@@ -644,14 +644,14 @@ sc_base_inUse (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 void
 exportGame (const scid::core::Game& game, const char* scidFlags,
             FILE * exportFile,
-            scid::database::LegacyGameEncodeOptions options)
+            scidup::app::LegacyGameEncodeOptions options)
 {
     char old_language = scid::database::language;
 
     // Format-specific settings:
     switch (options.legacyFormat) {
-    case scid::database::PGN_FORMAT_HTML:
-    case scid::database::PGN_FORMAT_LaTeX:
+    case scidup::app::PGN_FORMAT_HTML:
+    case scidup::app::PGN_FORMAT_LaTeX:
         options.addStyle(PGN_STYLE_SHORT_HEADER);
         break;
     default:
@@ -663,7 +663,7 @@ exportGame (const scid::core::Game& game, const char* scidFlags,
     const auto corePgnStyle =
         PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
         PGN_STYLE_SYMBOLS;
-    if (options.legacyFormat == scid::database::PGN_FORMAT_Plain &&
+    if (options.legacyFormat == scidup::app::PGN_FORMAT_Plain &&
         (options.style & ~corePgnStyle) == 0) {
         std::string pgn;
         scid::core::pgn::encode<75>(
@@ -678,9 +678,9 @@ exportGame (const scid::core::Game& game, const char* scidFlags,
         fwrite(pgn.data(), 1, pgn.size(), exportFile);
         fputc('\n', exportFile);
     } else {
-        std::pair<const char*, unsigned> pgn = scid::database::legacy_pgn::encode(
+        std::pair<const char*, unsigned> pgn = scidup::app::legacy_pgn::encode(
             game, scidFlags, options, 75, true,
-            options.legacyFormat != scid::database::PGN_FORMAT_LaTeX);
+            options.legacyFormat != scidup::app::PGN_FORMAT_LaTeX);
         //size_t nWrited =
         fwrite(pgn.first, 1, pgn.second, exportFile);
         //TODO:
@@ -698,7 +698,7 @@ sc_base_export (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     bool exportFilter = false;
     bool appendToFile = false;
-    scid::database::gameFormatT outputFormat = scid::database::PGN_FORMAT_Plain;
+    scidup::app::gameFormatT outputFormat = scidup::app::PGN_FORMAT_Plain;
     const char * startText = "";
     const char * endText = "";
     const char * usage = "Usage: sc_base export current|filter PGN|HTML|LaTeX <pgn_filename> options...";
@@ -725,7 +725,7 @@ sc_base_export (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult (ti, usage);
     }
 
-    if (! scid::database::LegacyGameEncodeOptions::legacyFormatFromString(
+    if (! scidup::app::LegacyGameEncodeOptions::legacyFormatFromString(
             argv[3], &outputFormat)) {
         return errorResult (ti, usage);
     }
@@ -806,14 +806,14 @@ sc_base_export (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
     // Write start text or find the place in the file to append games:
     if (appendToFile) {
-        if (outputFormat == scid::database::PGN_FORMAT_Plain) {
+        if (outputFormat == scidup::app::PGN_FORMAT_Plain) {
             fseek (exportFile, 0, SEEK_END);
         } else {
             fseek (exportFile, 0, SEEK_SET);
             const char * endMarker = "";
-            if (outputFormat == scid::database::PGN_FORMAT_HTML) {
+            if (outputFormat == scidup::app::PGN_FORMAT_HTML) {
                 endMarker = "</body>";
-            } else if (outputFormat == scid::database::PGN_FORMAT_LaTeX) {
+            } else if (outputFormat == scidup::app::PGN_FORMAT_LaTeX) {
                 endMarker = "\\end{document}";
             }
             char line [1024];
@@ -2210,14 +2210,14 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             auto old_language = scid::database::language;
             scid::core::Game game;
             std::array<char, 22> scidFlags{};
-            auto encodeOptions = scid::database::defaultLegacyGameEncodeOptions();
+            auto encodeOptions = scidup::app::defaultLegacyGameEncodeOptions();
             if (scid::database::strCompare("LaTeX", argv[6]) == 0) {
-                encodeOptions.legacyFormat = scid::database::PGN_FORMAT_LaTeX;
+                encodeOptions.legacyFormat = scidup::app::PGN_FORMAT_LaTeX;
                 encodeOptions.style = PGN_STYLE_TAGS | PGN_STYLE_COMMENTS |
                     PGN_STYLE_VARS | PGN_STYLE_SHORT_HEADER | PGN_STYLE_SYMBOLS |
                     PGN_STYLE_INDENT_VARS;
             } else { //Default to PGN
-                encodeOptions.legacyFormat = scid::database::PGN_FORMAT_Plain;
+                encodeOptions.legacyFormat = scidup::app::PGN_FORMAT_Plain;
                 encodeOptions.style = PGN_STYLE_TAGS | PGN_STYLE_COMMENTS |
                     PGN_STYLE_VARS;
                 scid::database::language = 0;
@@ -2238,7 +2238,7 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                         PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
                         PGN_STYLE_SYMBOLS;
                     if (encodeOptions.legacyFormat ==
-                            scid::database::PGN_FORMAT_Plain &&
+                            scidup::app::PGN_FORMAT_Plain &&
                         (encodeOptions.style & ~corePgnStyle) == 0) {
                         std::string pgn;
                         scid::core::pgn::encode<75>(
@@ -2261,7 +2261,7 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                         }
                     } else {
                         std::pair<const char*, unsigned> pgn =
-                            scid::database::legacy_pgn::encode(
+                            scidup::app::legacy_pgn::encode(
                                 game, scidFlags.data(), encodeOptions, 75, true);
                         if (pgn.second != fwrite(pgn.first, 1, pgn.second, exportFile)) {
                             err = scid::core::ERROR_FileWrite;
@@ -3929,7 +3929,7 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     auto editor = scidup::app::editor::gameSession(*base);
     auto* g = &editor.game();
     scid::core::uint lineWidth = 99999;
-    auto encodeOptions = scid::database::defaultLegacyGameEncodeOptions();
+    auto encodeOptions = scidup::app::defaultLegacyGameEncodeOptions();
 
     // Parse all the command options:
     // Note that every option takes a value so options/values always occur
@@ -3984,8 +3984,8 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
         } else if (index == OPT_FORMAT) {
             // The option value should be "plain", "html" or "latex".
-            scid::database::gameFormatT format;
-            if (! scid::database::LegacyGameEncodeOptions::legacyFormatFromString(
+            scidup::app::gameFormatT format;
+            if (! scidup::app::LegacyGameEncodeOptions::legacyFormatFromString(
                     argv[thisArg + 1], &format)) {
                 return errorResult (ti, "Invalid -format option.");
             }
@@ -4042,7 +4042,7 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         (encodeOptions.style & PGN_STYLE_VARS) != 0;
     const bool symbolicNags =
         (encodeOptions.style & PGN_STYLE_SYMBOLS) != 0;
-    if (encodeOptions.legacyFormat == scid::database::PGN_FORMAT_Plain &&
+    if (encodeOptions.legacyFormat == scidup::app::PGN_FORMAT_Plain &&
         (encodeOptions.style & ~corePgnStyle) == 0 &&
         encodeOptions.htmlStyle == 0) {
         std::string pgn;
@@ -4058,7 +4058,7 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         AppendResult(ti, pgn.c_str(), NULL);
     } else {
         std::pair<const char*, unsigned> pgnBuf =
-            scid::database::legacy_pgn::encode(g->coreGame(), g->scidFlags(),
+            scidup::app::legacy_pgn::encode(g->coreGame(), g->scidFlags(),
                                                encodeOptions, lineWidth);
         AppendResult(ti, pgnBuf.first, NULL);
     }

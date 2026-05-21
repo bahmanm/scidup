@@ -1,11 +1,11 @@
 #pragma once
 
-#include "legacy_encode_options.h"
+#include "scidup_app_legacy_encode_options.h"
 #include "scidup/core/game.h"
 
 #include <utility>
 
-namespace scid::database {
+namespace scidup::app {
 
 namespace legacy_pgn {
 
@@ -19,4 +19,4 @@ std::pair<const char*, unsigned> encode(
 
 } // namespace legacy_pgn
 
-} // namespace scid::database
+} // namespace scidup::app
