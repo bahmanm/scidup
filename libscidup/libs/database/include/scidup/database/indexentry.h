@@ -25,7 +25,6 @@
 #include "scidup/database/common.h"
 #include "scidup/core/date.h"
 #include "scidup/database/game_id.h"
-#include "scidup/eco/code.h"
 #include "scidup/database/matsig.h"
 #include <cstring> //memcmp
 
@@ -108,7 +107,7 @@ public:
     uint16_t  GetNumHalfMoves() const { return numHalfMoves_; }
     matSigT   GetFinalMatSig() const { return finalMatSig_; }
     scid::core::byte      GetStoredLineCode() const { return storedLineCode_; }
-    scidup::eco::Code GetEcoCode() const { return ECOcode_; }
+    EcoCode GetEcoCode() const { return ECOcode_; }
     bool      GetFlag(uint32_t mask) const { return (flags_ & mask) == mask; }
     uint32_t  GetRawFlags() const { return flags_; }
     uint16_t  GetRaw4bitsCounts() const {
@@ -212,7 +211,7 @@ public:
         storedLineCode_ = b;
         ASSERT(GetStoredLineCode() == b);
     }
-    void SetEcoCode(scidup::eco::Code eco) {
+    void SetEcoCode(EcoCode eco) {
         ECOcode_ = eco;
         ASSERT(GetEcoCode() == eco);
     }

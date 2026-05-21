@@ -21,6 +21,7 @@
 #include "scidup/core/rating.h"
 #include <assert.h>
 #include <cstddef>
+#include <cstdint>
 #define ASSERT(f) assert(f)
 
 
@@ -30,6 +31,9 @@ namespace scid::database {
 
 typedef unsigned short versionT;
 const versionT SCID_VERSION = 400;     // Current file format version = 4.0
+
+using EcoCode = std::uint16_t;
+inline constexpr EcoCode ECO_CODE_NONE = 0;
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

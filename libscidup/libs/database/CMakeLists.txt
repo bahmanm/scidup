@@ -9,6 +9,7 @@ find_package( Threads REQUIRED )
 set(
     SCIDUP_DATABASE_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/codec_scid4.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/eco_code.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/filter.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_info.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_search.cpp"
@@ -48,6 +49,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_scid4.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_scid5.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/containers.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/eco_code.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/filebuf.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_positions.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_search.h"
@@ -85,7 +87,7 @@ target_include_directories(
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/internal" )
 target_link_libraries(
     scidup_database
-    PUBLIC ScidUp::Core ScidUp::Eco Threads::Threads )
+    PUBLIC ScidUp::Core Threads::Threads )
 
 if( PROJECT_IS_TOP_LEVEL )
     include( CTest )

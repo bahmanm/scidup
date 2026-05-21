@@ -1459,6 +1459,89 @@ sc_eco (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 //
 //    If the database is read-only, games can still be classified but
 //    the results will not be scid::database::stored to the database file.
+scid::database::EcoCode
+inferEcoCode(const scid::core::Game& game, const scidup::eco::Book& book,
+             bool extendedCodes) {
+    auto currentPosition = game.startPosition()
+                               ? *game.startPosition()
+                               : scid::core::Position::getStdStart();
+
+    scid::database::EcoCode ecoCode = scid::database::ECO_CODE_NONE;
+    auto recordCurrentPosition = [&]() {
+        if (currentPosition.TotalMaterial() < book.fewestPieces())
+            return false;
+
+        const auto eco = book.findEco(currentPosition);
+        if (eco != scidup::eco::ECO_None)
+            ecoCode = eco;
+
+        return true;
+    };
+
+    bool finalPositionIsValid = true;
+    for (const auto& move : game.movetext().mainline.moves) {
+        if (!recordCurrentPosition())
+            break;
+        if (currentPosition.applyMove(move.spec) != scid::core::OK) {
+            finalPositionIsValid = false;
+            break;
+        }
+    }
+    if (finalPositionIsValid)
+        recordCurrentPosition();
+
+    if (!extendedCodes)
+        ecoCode = scidup::eco::basicCode(ecoCode);
+
+    return ecoCode;
+}
+
+std::pair<scid::core::errorT, size_t>
+classifyEcoCodes(scid::database::scidBaseT& dbase,
+                 scid::database::HFilter filter,
+                 const scid::database::Progress& progress,
+                 const scidup::eco::Book& book,
+                 bool classifyExistingCodes,
+                 bool extendedCodes,
+                 std::optional<scid::core::dateT> minDate) {
+    size_t changes = 0;
+    size_t progressDone = 0;
+    const size_t progressTotal = filter->size();
+
+    for (auto gnum : filter) {
+        if ((++progressDone % 8192 == 0) &&
+            !progress.report(progressDone, progressTotal))
+            return {scid::core::ERROR_UserCancel, changes};
+
+        const auto* ie = dbase.getIndexEntry(gnum);
+        if (ie->GetLength() == 0)
+            continue;
+        if (!classifyExistingCodes && ie->GetEcoCode() != 0)
+            continue;
+        if (minDate && ie->GetDate() < *minDate)
+            continue;
+
+        scid::core::Game game;
+        const auto loadErr = dbase.loadGameMovesOnly(*ie, game);
+        if (loadErr != scid::core::OK)
+            continue;
+
+        auto ecoCode = inferEcoCode(game, book, extendedCodes);
+        if (ie->GetEcoCode() == ecoCode)
+            continue;
+
+        scid::database::GameInfoUpdate update;
+        update.ecoCode = ecoCode;
+        if (const auto err = dbase.updateGameInfo(gnum, update);
+            err != scid::core::OK)
+            return {err, changes};
+
+        ++changes;
+    }
+
+    return {scid::core::OK, changes};
+}
+
 int
 sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
@@ -1489,19 +1572,16 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         startDate = scid::core::date_EncodeFromString (&(argv[2][5]));
     }
 
-    scid::database::scidBaseT& dbase = *db;
     std::string filter =
-        (option == ECO_FILTER) ? "dbfilter" : dbase.newFilter();
-    auto hf = scidup::app::tree::resolveFilter(dbase, filter);
-    scid::database::scidBaseT::EcoClassificationOptions classifyOptions;
-    classifyOptions.classifyExistingCodes = option != ECO_NOCODE;
-    classifyOptions.extendedCodes = extendedCodes;
-    if (option == ECO_DATE)
-        classifyOptions.minDate = startDate;
-    auto changes = dbase.classifyEcoCodes(
-        hf, UI_CreateProgress(ti), *ecoBook, classifyOptions);
+        (option == ECO_FILTER) ? "dbfilter" : db->newFilter();
+    auto hf = scidup::app::tree::resolveFilter(*db, filter);
+    auto changes = classifyEcoCodes(
+        *db, hf, UI_CreateProgress(ti), *ecoBook, option != ECO_NOCODE,
+        extendedCodes,
+        option == ECO_DATE ? std::optional<scid::core::dateT>{startDate}
+                           : std::nullopt);
     if (option == ECO_FILTER)
-        dbase.deleteFilter(filter.c_str());
+        db->deleteFilter(filter.c_str());
 
     return UI_Result(ti, changes.first, changes.second);
 }

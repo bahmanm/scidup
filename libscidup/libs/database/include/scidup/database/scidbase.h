@@ -29,7 +29,6 @@
 #include "scidup/database/index.h"
 #include "scidup/database/namebase.h"
 #include "scidup/database/tree.h"
-#include "scidup/eco/code.h"
 #include <array>
 #include <cassert>
 #include <memory>
@@ -38,10 +37,6 @@
 #include <string_view>
 #include <unordered_map>
 #include <vector>
-
-namespace scidup::eco {
-class Book;
-}
 
 namespace scid::core {
 class Position;
@@ -72,12 +67,6 @@ enum gameExactMatchT : int {
 };
 
 struct scidBaseT {
-	struct EcoClassificationOptions {
-		bool classifyExistingCodes = true;
-		bool extendedCodes = false;
-		std::optional<scid::core::dateT> minDate;
-	};
-
 	struct RatingUpdateStats {
 		scid::core::uint changedRatings = 0;
 		scid::core::uint changedGames = 0;
@@ -199,12 +188,6 @@ struct scidBaseT {
 	    const IndexEntry* ie, std::size_t maxPly) const;
 	std::string moveSAN(gamenumT gNum, int plyToSkip, int count) const;
 	std::string moveSAN(const IndexEntry* ie, int plyToSkip, int count) const;
-	std::optional<scidup::eco::Code> inferEcoCode(
-	    const IndexEntry& ie, const scidup::eco::Book& book,
-	    bool extendedCodes) const;
-	std::pair<scid::core::errorT, size_t> classifyEcoCodes(
-	    HFilter filter, const Progress& progress, const scidup::eco::Book& book,
-	    EcoClassificationOptions options);
 	std::pair<scid::core::errorT, size_t>
 	replaceGameDates(HFilter filter, const Progress& progress,
 	                 scid::core::dateT oldDate, scid::core::dateT newDate);

@@ -54,8 +54,9 @@ Use these headers when working with game lists, tags and names:
 Most consumers should retrieve metadata through `scidBaseT` instead of owning
 `Index` or `NameBase` directly. Game and index metadata dates use the compact
 `scidup/core/date.h` value type, and game results use the compact
-`scidup/core/game_result.h` value type. ECO code parsing, formatting and
-normalisation live in `scidup/eco/code.h`.
+`scidup/core/game_result.h` value type. Database ECO metadata is stored as a
+compact `EcoCode` integer; presentation and opening-book classification live
+outside the database library.
 
 # 4. Filters And Query Helpers
 

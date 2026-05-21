@@ -5,6 +5,7 @@
 #include "scidup/database/indexentry.h"
 #include "scidup/database/matsig.h"
 #include "scidup/database/namebase.h"
+#include "eco_code.h"
 #include "game_storage.h"
 #include "stored.h"
 
@@ -41,8 +42,8 @@ void game_storage::loadStandardTags(scid::core::Game& game, char* scidFlags,
 	game.setWhiteRating({ie.GetWhiteElo(), ie.GetWhiteRatingType()});
 	game.setBlackRating({ie.GetBlackElo(), ie.GetBlackRatingType()});
 	game.setResult(ie.GetResult());
-	scidup::eco::String ecoStr;
-	scidup::eco::toExtendedString(ie.GetEcoCode(), ecoStr);
+	eco_code::String ecoStr;
+	eco_code::toExtendedString(ie.GetEcoCode(), ecoStr);
 	game.setEco(ecoStr);
 	if (scidFlags && scidFlagsLen > 0) {
 		char flags[22];
@@ -676,7 +677,7 @@ std::pair<IndexEntry, TagRoster> game_storage::encode(
 	ie.SetDate(header.event.date);
 	ie.SetEventDate(header.event.eventDate);
 	ie.SetResult(header.result);
-	ie.SetEcoCode(scidup::eco::fromString(header.eco.c_str()));
+	ie.SetEcoCode(eco_code::fromString(header.eco.c_str()));
 	ie.SetWhiteElo(header.white.rating.value);
 	ie.SetBlackElo(header.black.rating.value);
 	ie.SetWhiteRatingType(header.white.rating.type);

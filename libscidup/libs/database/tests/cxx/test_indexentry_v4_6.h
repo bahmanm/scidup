@@ -23,7 +23,6 @@
 
 #include "scidup/core/date.h"
 #include "scidup/core/game_result.h"
-#include "scidup/eco/code.h"
 #include "scidup/database/common.h"
 #include "scidup/database/matsig.h"
 #include "scidup/database/namebase.h"
@@ -68,7 +67,7 @@ class IndexEntry
     uint16_t  Flags;
     uint16_t  VarCounts;         // Counters for comments, variations, etc.
                                  // VarCounts also stores the result.
-    scidup::eco::Code EcoCode;           // ECO code
+    scid::database::EcoCode EcoCode;           // ECO code
     scid::core::dateT     Dates;             // Date and EventDate fields.
     scid::core::ratingT      WhiteElo;
     scid::core::ratingT      BlackElo;
@@ -219,7 +218,7 @@ public:
     }
     scid::core::ratingTypeT GetWhiteRatingType () const { return u16_high_4 (WhiteElo); }
     scid::core::ratingTypeT GetBlackRatingType () const { return u16_high_4 (BlackElo); }
-    scidup::eco::Code GetEcoCode() const { return EcoCode; }
+    scid::database::EcoCode GetEcoCode() const { return EcoCode; }
     scid::core::ushort GetNumHalfMoves () const { return NumHalfMoves; }
     scid::core::byte   GetRating(const scid::database::NameBase* nb) const;
 
@@ -255,7 +254,7 @@ public:
     void SetBlackRatingType (scid::core::ratingTypeT b) {
         BlackElo = u16_set_high_4 (BlackElo, b);
     }
-    void SetEcoCode(scidup::eco::Code eco) { EcoCode = eco; }
+    void SetEcoCode(scid::database::EcoCode eco) { EcoCode = eco; }
     void SetNumHalfMoves (scid::core::ushort b)  { NumHalfMoves = b; }
 
 
@@ -465,7 +464,7 @@ IndexEntry::Init ()
     SetDate (scid::core::ZERO_DATE);
     SetEventDate (scid::core::ZERO_DATE);
     SetResult (scid::core::RESULT_None);
-    SetEcoCode(scidup::eco::ECO_None);
+    SetEcoCode(scid::database::ECO_CODE_NONE);
     SetFinalMatSig (scid::database::MATSIG_Empty);
     for (scid::core::uint i=0; i < HPSIG_SIZE; i++) {
         HomePawnData[i] = 0;

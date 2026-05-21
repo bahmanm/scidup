@@ -3,9 +3,9 @@
 #include "scidup/core/date.h"
 #include "scidup/core/game_result.h"
 #include "scidup/core/rating.h"
+#include "scidup/database/common.h"
 #include "scidup/database/game_id.h"
 #include "scidup/database/matsig.h"
-#include "scidup/eco/code.h"
 #include <array>
 #include <cstdint>
 #include <optional>
@@ -65,7 +65,7 @@ struct GameInfo {
 	std::uint16_t halfMoveCount = 0;
 	matSigT finalMaterial = 0;
 	scid::core::byte storedLineCode = 0;
-	scidup::eco::Code ecoCode = scidup::eco::ECO_None;
+	EcoCode ecoCode = ECO_CODE_NONE;
 	std::uint32_t flags = 0;
 	std::array<scid::core::byte, 9> homePawnData = {};
 	bool chessStd = true;
@@ -90,9 +90,11 @@ struct GameInfoUpdate {
 	std::optional<idNumberT> round;
 	std::optional<scid::core::ratingT> whiteElo;
 	std::optional<scid::core::ratingT> blackElo;
+	std::optional<EcoCode> ecoCode;
 
 	bool empty() const {
-		return !date && !event && !round && !whiteElo && !blackElo;
+		return !date && !event && !round && !whiteElo && !blackElo &&
+		       !ecoCode;
 	}
 };
 

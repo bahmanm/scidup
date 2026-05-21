@@ -22,13 +22,13 @@
 #include "codec_pgn.h"
 #include "codec_scid4.h"
 #include "codec_scid5.h"
+#include "eco_code.h"
 #include "game_search.h"
 #include "game_storage.h"
 #include "gameview.h"
 #include "searchpos.h"
 #include "scidup/database/common.h"
 #include "scidup/database/game_id.h"
-#include "scidup/eco/book.h"
 #include "sortcache.h"
 #include "stored.h"
 #include <algorithm>
@@ -308,6 +308,8 @@ scid::core::errorT scidBaseT::updateGameInfo(gamenumT g,
 		ie.SetWhiteElo(*update.whiteElo);
 	if (update.blackElo)
 		ie.SetBlackElo(*update.blackElo);
+	if (update.ecoCode)
+		ie.SetEcoCode(*update.ecoCode);
 
 	auto duplicates = extractDuplicates();
 	scid::core::Game game;
@@ -427,71 +429,6 @@ std::string scidBaseT::moveSAN(gamenumT gNum, int plyToSkip, int count) const {
 	if (!ie)
 		return {};
 	return moveSAN(ie, plyToSkip, count);
-}
-
-std::optional<scidup::eco::Code>
-scidBaseT::inferEcoCode(const IndexEntry& ie, const scidup::eco::Book& book,
-                        bool extendedCodes) const {
-	auto data = gameData(ie);
-	scid::core::Position currentPosition;
-	if (data.decodeTags([](auto, auto) {}) != scid::core::OK)
-		return std::nullopt;
-
-	const auto [errStartPos, fen] = data.decodeStartBoard();
-	if (errStartPos)
-		return std::nullopt;
-	if (fen) {
-		if (currentPosition.ReadFromFEN(fen) != scid::core::OK)
-			return std::nullopt;
-	} else {
-		currentPosition.StdStart();
-	}
-
-	scidup::eco::Code ecoCode = scidup::eco::ECO_None;
-	for (;;) {
-		if (currentPosition.TotalMaterial() < book.fewestPieces())
-			break;
-
-		const auto eco = book.findEco(currentPosition);
-		if (eco != scidup::eco::ECO_None) {
-			ecoCode = eco;
-		}
-
-		scid::core::MoveSpec action;
-		if (game_storage::decodeMainlineMove(data, currentPosition, action) !=
-		    scid::core::OK)
-			break;
-
-		if (currentPosition.applyMove(action) != scid::core::OK)
-			break;
-	}
-
-	if (!extendedCodes) {
-		ecoCode = scidup::eco::basicCode(ecoCode);
-	}
-	return ecoCode;
-}
-
-std::pair<scid::core::errorT, size_t> scidBaseT::classifyEcoCodes(
-    HFilter filter, const Progress& progress, const scidup::eco::Book& book,
-    EcoClassificationOptions options) {
-	return transformIndex(filter, progress, [&](IndexEntry& ie) {
-		if (ie.GetLength() == 0)
-			return false;
-
-		if (!options.classifyExistingCodes && ie.GetEcoCode() != 0)
-			return false;
-
-		if (options.minDate && ie.GetDate() < *options.minDate)
-			return false;
-
-		auto ecoCode = inferEcoCode(ie, book, options.extendedCodes);
-		if (!ecoCode || ie.GetEcoCode() == *ecoCode)
-			return false;
-
-		ie.SetEcoCode(*ecoCode);
-		return true;
-	});
 }
 
 std::pair<scid::core::errorT, size_t>
@@ -1026,14 +963,14 @@ scidBaseT::Stats::Stats(const scidBaseT* dbase) {
 		}
 
 		scid::core::resultT result = ie->GetResult();
-		scidup::eco::Code eco = ie->GetEcoCode();
+		EcoCode eco = ie->GetEcoCode();
 		if (eco == 0) {
 			ecoEmpty_.count++;
 			ecoEmpty_.results[result]++;
 		} else {
 			ecoValid_.count++;
 			ecoValid_.results[result]++;
-			eco = scidup::eco::reduce(eco);
+			eco = eco_code::reduce(eco);
 			ecoStats_[eco].count++;
 			ecoStats_[eco].results[result]++;
 			eco /= 27;
@@ -1056,10 +993,10 @@ scidBaseT::Stats::getEcoStats(const char* ecoStr) const {
 	if (*ecoStr == 0)
 		return &ecoValid_;
 
-	scidup::eco::Code eco = scidup::eco::fromString(ecoStr);
+	EcoCode eco = eco_code::fromString(ecoStr);
 	if (eco == 0)
 		return 0;
-	eco = scidup::eco::reduce(eco);
+	eco = eco_code::reduce(eco);
 
 	switch (strlen(ecoStr)) {
 	case 0:
