@@ -213,7 +213,7 @@ UI_res_t sc_filter_search_tags(UI_handle_t ti, const scid::database::scidBaseT& 
 
 		bool remove = true;
 		auto ie = dbase.getIndexEntry(gnum);
-		dbase.getGame(*ie).decodeTags([&](auto const& tag, auto const& value) {
+		dbase.gameData(*ie).decodeTags([&](auto const& tag, auto const& value) {
 			if (strMatch(tag, tagName) && strMatch(value, tagValue))
 				remove = false;
 		});

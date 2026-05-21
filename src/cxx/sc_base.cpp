@@ -173,7 +173,7 @@ UI_res_t sc_base_copygames(scid::database::scidBaseT* dbase, UI_handle_t ti, int
 
 		scid::core::Game game;
 		std::array<char, 22> scidFlags{};
-		err = dbase->getGame(*ie, game, scidFlags.data(),
+		err = dbase->loadGame(*ie, game, scidFlags.data(),
 		                     scidFlags.size());
 		if (err == scid::core::OK) {
 			err = targetBase->saveGame(game, scidFlags.data());
@@ -441,7 +441,7 @@ UI_res_t sc_base_gameslist(scid::database::scidBaseT* dbase, UI_handle_t ti, int
 		ginfo.push_back(ie->GetYear());
 		ginfo.push_back((welo + belo)/2);
 		ginfo.push_back(ie->GetRating());
-		ginfo.push_back(dbase->getGame(ie).getMoveSAN(ply, 10));
+		ginfo.push_back(dbase->gameView(ie).getMoveSAN(ply, 10));
 
 		res.push_back(std::to_string(idx+1) + "_" + std::to_string(ply));
 		res.push_back(ginfo);
@@ -519,7 +519,7 @@ UI_res_t sc_base_getGame(scid::database::scidBaseT* dbase, UI_handle_t ti, int a
 	scid::core::Game game;
 	std::array<char, 22> scidFlags{};
 	scid::core::errorT err =
-	    dbase->getGame(*ie, game, scidFlags.data(), scidFlags.size());
+	    dbase->loadGame(*ie, game, scidFlags.data(), scidFlags.size());
 	if (err != scid::core::OK)
 		return UI_Result(ti, err);
 	return sc_base_getGameHelper(ti, game);
@@ -771,7 +771,7 @@ UI_res_t sc_base_taglist(scid::database::scidBaseT& dbase, UI_handle_t ti) {
 			return UI_Result(ti, scid::core::ERROR_UserCancel);
 
 		const auto ie = dbase.getIndexEntry(gnum);
-		const auto err = dbase.getGame(*ie).decodeTags(
+		const auto err = dbase.gameData(*ie).decodeTags(
 		    [&](auto const& tag, auto const&) {
 			    auto it = tag_freq.find(tag);
 			    if (it == tag_freq.end())

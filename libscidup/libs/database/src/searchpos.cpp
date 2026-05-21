@@ -30,7 +30,7 @@ bool SearchPos::setFilterStdStart(scidBaseT const& base, HFilter& filter) const 
 	for (gamenumT i = 0, n = base.numGames(); i < n; i++) {
 		const IndexEntry* ie = base.getIndexEntry(i);
 		if (ie->GetStartFlag()) {
-			int ply = base.getGame(ie).search<scid::core::WHITE>(board_);
+			int ply = base.gameView(ie).search<scid::core::WHITE>(board_);
 			filter.set(i, (ply > 255) ? 255 : ply);
 		}
 	}
@@ -48,7 +48,7 @@ bool SearchPos::SetFilter(scidBaseT const& base, HFilter& filter,
 		if (ply >= 0) {
 			filter.set(i, static_cast<scid::core::byte>(ply + 1));
 		} else if (ply == -1) {
-			ply = base.getGame(ie).search<TOMOVE>(board_);
+			ply = base.gameView(ie).search<TOMOVE>(board_);
 			if (ply != 0)
 				filter.set(i, (ply > 255) ? 255 : ply);
 		}
@@ -90,12 +90,12 @@ std::pair<int, scid::core::FullMove> SearchPos::match(scidBaseT const& base,
 	if (ply >= 0) {
 		auto move = StoredLine::getMove(ie->GetStoredLineCode(), ply);
 		if (!move)
-			move = base.getGame(ie).getMove(ply);
+			move = base.gameView(ie).getMove(ply);
 
 		return {ply + 1, move};
 	}
 
-	auto gameview = base.getGame(ie);
+	auto gameview = base.gameView(ie);
 	ply = (toMove_ == scid::core::WHITE) ? gameview.search<scid::core::WHITE>(board_)
 	                         : gameview.search<scid::core::BLACK>(board_);
 	if (ply > 0)

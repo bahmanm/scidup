@@ -292,7 +292,7 @@ auto collectPositions(const scid::database::scidBaseT& dbase, scid::database::ga
 	scid::core::Game game;
 	std::array<char, 22> scidFlags{};
 	if (ie_bounds && ie &&
-	    dbase.getGame(*ie_bounds, game, scidFlags.data(),
+	    dbase.loadGame(*ie_bounds, game, scidFlags.data(),
 	                  scidFlags.size()) == scid::core::OK)
 		return scid::database::gamepos::collectPositions(game);
 

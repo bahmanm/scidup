@@ -851,7 +851,7 @@ sc_base_export (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 // Print the game, skipping any corrupt games:
                 const scid::database::IndexEntry* ie = db->getIndexEntry(i);
                 if (ie->GetLength() == 0) { continue; }
-                if (db->getGame(*ie, g->coreGame(), g->scidFlagsData(),
+                if (db->loadGame(*ie, g->coreGame(), g->scidFlagsData(),
                                 g->scidFlagsCapacity()) != scid::core::OK) {
                     continue;
                 }
@@ -960,7 +960,7 @@ sc_base_piecetrack (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         // Process each game move until the maximum ply or end of
         // the game is reached:
         scid::core::uint plyCount = 0;
-        db->getGame(ie).mainLine([&](auto move) {
+        db->gameView(ie).mainLine([&](auto move) {
             if (plyCount++ >= maxPly)
                 return false;
 
@@ -1147,8 +1147,8 @@ checkDuplicate (scid::database::scidBaseT * base,
         if (! scid::database::hpSig_Prefix (hpData1, hpData2)) { return false; }
         // Now we have to check the actual moves of the games:
         scid::core::uint length = std::min(ie1->GetNumHalfMoves(), ie2->GetNumHalfMoves());
-        std::string a = base->getGame(ie1).getMoveSAN(0, length);
-        std::string b = base->getGame(ie2).getMoveSAN(0, length);
+        std::string a = base->gameView(ie1).getMoveSAN(0, length);
+        std::string b = base->gameView(ie2).getMoveSAN(0, length);
         return (a == b);
     }
     return true;
@@ -1496,7 +1496,7 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         if (option == ECO_DATE && ie.GetDate() < startDate)
             return false;
 
-        auto bbuf = dbase.getGame(ie);
+        auto bbuf = dbase.gameData(ie);
         scid::core::Position currentPosition;
         if (bbuf.decodeTags([](auto, auto) {}) != scid::core::OK)
             return false;
@@ -2275,7 +2275,7 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                 for (size_t i = 0; i < count; ++i) {
                     const scid::database::IndexEntry* ie = dbase->getIndexEntry(idxList[i]);
                     // Skip any corrupt games:
-                    if (dbase->getGame(*ie, game, scidFlags.data(),
+                    if (dbase->loadGame(*ie, game, scidFlags.data(),
                                        scidFlags.size()) !=
                         scid::core::OK) continue;
 
@@ -2701,7 +2701,7 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         if (ie->GetLength() == 0) {
             return errorResult (ti, "Error: empty game file record.");
         }
-        if (db->getGame(*ie, g->coreGame(), g->scidFlagsData(),
+        if (db->loadGame(*ie, g->coreGame(), g->scidFlagsData(),
                         g->scidFlagsCapacity()) != scid::core::OK) {
             return errorResult (ti, "Error reading game file.");
         }
@@ -3576,7 +3576,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // Load the merge game:
 
     const scid::database::IndexEntry* ie = base->getIndexEntry(gnum);
-    auto bbuf = base->getGame(*ie);
+    auto bbuf = base->gameData(*ie);
     auto* merge = scratchGame;
     merge->clear();
     if (scid::database::game_storage::decodeMovesOnly(merge->coreGame(), bbuf) !=
@@ -4029,7 +4029,7 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             if (ie->GetLength() == 0) {
                 return errorResult (ti, "Error: empty game file record.");
             }
-            if (base->getGame(*ie, g->coreGame(), g->scidFlagsData(),
+            if (base->loadGame(*ie, g->coreGame(), g->scidFlagsData(),
                               g->scidFlagsCapacity()) != scid::core::OK) {
                 return errorResult (ti, "Error reading game file.");
             }
@@ -4257,7 +4257,7 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
 		if (gnum > 0) {
 			auto ie = base.getIndexEntry_bounds(gnum - 1);
 			if (!ie ||
-			    base.getGame(*ie, scratchGame->coreGame(),
+			    base.loadGame(*ie, scratchGame->coreGame(),
 			                 scratchGame->scidFlagsData(),
 			                 scratchGame->scidFlagsCapacity()) !=
 			        scid::core::OK) {
@@ -4418,7 +4418,7 @@ sc_game_tags_get (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         if (db->numGames() > 0) {
             g = scratchGame;
             const scid::database::IndexEntry* ie = db->getIndexEntry(db->numGames() - 1);
-            if (db->getGame(*ie, g->coreGame(), g->scidFlagsData(),
+            if (db->loadGame(*ie, g->coreGame(), g->scidFlagsData(),
                             g->scidFlagsCapacity()) != scid::core::OK) {
                 return errorResult (ti, "Error reading game file.");
             }
@@ -4893,7 +4893,7 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (updated1) {
         scid::core::Game game;
         std::array<char, 22> scidFlags{};
-        err1 = db->getGame(ie1, game, scidFlags.data(), scidFlags.size());
+        err1 = db->loadGame(ie1, game, scidFlags.data(), scidFlags.size());
         if (err1 == scid::core::OK) {
             err1 = db->saveGame(game, scidFlags.data(), gn1 - 1);
         }
@@ -4901,7 +4901,7 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (updated2) {
         scid::core::Game game;
         std::array<char, 22> scidFlags{};
-        err2 = db->getGame(ie2, game, scidFlags.data(), scidFlags.size());
+        err2 = db->loadGame(ie2, game, scidFlags.data(), scidFlags.size());
         if (err2 == scid::core::OK) {
             err2 = db->saveGame(game, scidFlags.data(), gn2 - 1);
         }
@@ -7816,7 +7816,7 @@ sc_report_create (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         const scid::database::IndexEntry* ie = db->getIndexEntry(gnum);
         if (ply != 0) {
             scid::core::MovetextLocation scratchLocation;
-            if (db->getGame(*ie, scratchGame->coreGame(),
+            if (db->loadGame(*ie, scratchGame->coreGame(),
                             scratchGame->scidFlagsData(),
                             scratchGame->scidFlagsCapacity()) !=
                 scid::core::OK) {
@@ -8325,7 +8325,7 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
         }
 
         // At this point, the game needs to be loaded:
-        auto bbuf = dbase->getGame(*ie);
+        auto bbuf = dbase->gameData(*ie);
         if (!bbuf) {
             return errorResult (ti, "Error reading game file.");
         }
@@ -8761,7 +8761,7 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         }
 
         // Now, the game must be loaded and searched:
-        auto bbuf = db->getGame(*ie);
+        auto bbuf = db->gameData(*ie);
         if (!bbuf) {
             continue;
         }
@@ -9053,7 +9053,7 @@ sc_search_header (ClientData, Tcl_Interp * ti, scid::database::scidBaseT* base, 
         // generating the PGN representation of each game.
 
 		if (match && pgnTextCount > 0) {
-			if (base->getGame(*ie, scratchGame->coreGame(),
+			if (base->loadGame(*ie, scratchGame->coreGame(),
 			                  scratchGame->scidFlagsData(),
 			                  scratchGame->scidFlagsCapacity()) !=
 			    scid::core::OK) {

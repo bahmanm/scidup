@@ -244,7 +244,7 @@ TEST(Test_Game, clone) {
 		scid::core::Game game;
 		std::array<char, 22> scidFlags{};
 		ASSERT_EQ(scid::core::OK,
-		          dbase.getGame(*dbase.getIndexEntry(0), game,
+		          dbase.loadGame(*dbase.getIndexEntry(0), game,
 		                        scidFlags.data(), scidFlags.size()));
 		scid::core::MovetextLocation location;
 
@@ -358,7 +358,7 @@ TEST(Test_Game, locationInPGN) {
 		ASSERT_NE(nullptr, dbase.getIndexEntry_bounds(0));
 
 		scid::core::Game game;
-		 auto bufGame = dbase.getGame(*dbase.getIndexEntry(0));
+		 auto bufGame = dbase.gameData(*dbase.getIndexEntry(0));
 		 ASSERT_TRUE(bufGame);
 		 game.clear();
 		 ASSERT_EQ(scid::core::OK,
@@ -401,7 +401,7 @@ TEST(Test_Game, toStart_toEnd) {
 	scid::core::Game game;
 	std::array<char, 22> scidFlags{};
 	ASSERT_EQ(scid::core::OK,
-	          dbase.getGame(*ie, game, scidFlags.data(), scidFlags.size()));
+	          dbase.loadGame(*ie, game, scidFlags.data(), scidFlags.size()));
 	scid::core::MovetextLocation location;
 
 	for (int i = 0; i < 10; i++) {

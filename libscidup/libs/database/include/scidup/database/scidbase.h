@@ -126,10 +126,10 @@ struct scidBaseT {
 		return peakEloCache_[playerID];
 	}
 
-		GameView getGame(const IndexEntry* ie) const;
-		ByteBuffer getGame(const IndexEntry& ie) const;
-	scid::core::errorT getGame(const IndexEntry& ie, scid::core::Game& dest,
-	              char* scidFlags, std::size_t scidFlagsLen) const;
+	GameView gameView(const IndexEntry* ie) const;
+	ByteBuffer gameData(const IndexEntry& ie) const;
+	scid::core::errorT loadGame(const IndexEntry& ie, scid::core::Game& dest,
+	                char* scidFlags, std::size_t scidFlagsLen) const;
 	scid::core::errorT loadGame(gamenumT gNum, scid::core::Game& dest,
 	               char* scidFlags, std::size_t scidFlagsLen) const;
 

@@ -248,10 +248,10 @@ scid::core::errorT scidBaseT::loadGame(gamenumT gNum, scid::core::Game& dest,
 	const auto* ie = getIndexEntry_bounds(gNum);
 	if (!ie)
 		return scid::core::ERROR_BadArg;
-	return getGame(*ie, dest, scidFlags, scidFlagsLen);
+	return loadGame(*ie, dest, scidFlags, scidFlagsLen);
 }
 
-GameView scidBaseT::getGame(const IndexEntry* ie) const {
+GameView scidBaseT::gameView(const IndexEntry* ie) const {
 	auto data = storage_->codec->getGameMoves(*ie);
 	if (data) {
 		auto [errPos, fen] = data.decodeStartBoard();
@@ -269,16 +269,16 @@ GameView scidBaseT::getGame(const IndexEntry* ie) const {
 	return GameView({nullptr, 0});
 }
 
-ByteBuffer scidBaseT::getGame(const IndexEntry& ie) const {
+ByteBuffer scidBaseT::gameData(const IndexEntry& ie) const {
 	return storage_->codec->getGameData(ie.GetOffset(), ie.GetLength());
 }
 
-scid::core::errorT scidBaseT::getGame(const IndexEntry& ie, scid::core::Game& dest,
-                          char* scidFlags,
-                          std::size_t scidFlagsLen) const {
+scid::core::errorT scidBaseT::loadGame(const IndexEntry& ie, scid::core::Game& dest,
+                           char* scidFlags,
+                           std::size_t scidFlagsLen) const {
 	auto err = game_storage::decode(dest, scidFlags, scidFlagsLen, ie,
 	                                tagRoster(ie),
-	                                getGame(ie));
+	                                gameData(ie));
 	return err;
 }
 
@@ -320,7 +320,7 @@ scidBaseT::stripGames(HFilter hfilter, const Progress& progress,
 		bool changed = false;
 		tagsBuf.clear();
 		IndexEntry const& ie = *getIndexEntry(gnum);
-		auto gamedata = getGame(ie);
+		auto gamedata = gameData(ie);
 		auto err = gamedata.decodeTags(
 		    [&](auto const& tag, auto const& value) {
 			    if (std::find(removeTags.begin(), removeTags.end(), tag) !=
@@ -720,7 +720,7 @@ std::vector<TreeNode> scidBaseT::getTreeStat(const HFilter& filter) const {
 		const IndexEntry* ie = getIndexEntry(gnum);
 		scid::core::FullMove move = StoredLine::getMove(ie->GetStoredLineCode(), ply);
 		if (!move)
-			move = getGame(ie).getMove(ply);
+			move = gameView(ie).getMove(ply);
 
 		auto it = std::find_if(
 		    res.begin(), res.end(),
