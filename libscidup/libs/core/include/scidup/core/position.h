@@ -256,7 +256,7 @@ public:
     void        applyMoveAction (MoveAction * sm);
     void        undoMoveAction(MoveAction const& sm);
 
-    void        MakeSANString (MoveAction * sm, char * s, sanFlagT flag);
+    void        writeMoveActionSan(MoveAction* sm, char* s, sanFlagT flag);
 
     errorT      MakeCoordMoves(const char* moves, size_t movesLen, std::string* toSAN = nullptr);
     errorT      readCoordinateMoveAction(MoveAction* m, const char* s,

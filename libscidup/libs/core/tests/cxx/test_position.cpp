@@ -20,7 +20,7 @@ auto parse_move(PosT& pos, MoveT dest, std::string_view move) {
 
 } // namespace
 
-TEST(Test_PositionSAN, MakeSANStringFromUCI) {
+TEST(Test_PositionSAN, WritesMoveActionSanFromUCI) {
 	static const char* positions[] = {
 	    "2k4r/ppprnp1p/5pq1/1P2b3/P1R1P3/Q1N2N2/5PPP/4K1R1 b - - 0 22",
 	    "h8d8", "Rhd8", "d7d8", "Rdd8",
@@ -46,7 +46,7 @@ TEST(Test_PositionSAN, MakeSANStringFromUCI) {
 
 		scid::core::MoveAction sm;
 		ASSERT_EQ(scid::core::OK, pos.readCoordinateMoveAction(&sm, *it++, int(slen), false));
-		pos.MakeSANString(&sm, buf, scid::core::SAN_MATETEST);
+		pos.writeMoveActionSan(&sm, buf, scid::core::SAN_MATETEST);
 		EXPECT_STREQ(*it, buf);
 	}
 }

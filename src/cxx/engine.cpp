@@ -2216,7 +2216,7 @@ Engine::PrintPV (scid::core::uint depth, int score, const char * note)
             Output  ("%u.", Pos.GetFullMoveCount());
         }
         scid::core::sanStringT s;
-        Pos.MakeSANString (sm, s, scid::core::SAN_MATETEST);
+        Pos.writeMoveActionSan (sm, s, scid::core::SAN_MATETEST);
         Output ("%s", s);
         Pos.applyMoveAction (sm);
     }

@@ -5585,7 +5585,7 @@ sc_pos_analyze (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     char moveStr[20];
     moveStr[0] = 0;
     if (mlist.Size() > 0) {
-        pos->MakeSANString (mlist.Get(0), moveStr, scid::core::SAN_MATETEST);
+        pos->writeMoveActionSan (mlist.Get(0), moveStr, scid::core::SAN_MATETEST);
     }
     UI_List res(2);
     res.push_back(score);
@@ -5896,7 +5896,7 @@ UI_res_t sc_pos_moves(UI_handle_t ti, int argc, const char** argv) {
     UI_List res(moves.Size() * (coordMoves ? 2 : 1));
     for (auto& sm : moves) {
         char buf[64];
-        pos->MakeSANString(&sm, buf, scid::core::SAN_CHECKTEST);
+        pos->writeMoveActionSan(&sm, buf, scid::core::SAN_CHECKTEST);
         res.push_back(buf);
         if (coordMoves) {
             *sm.toLongNotation(buf) = '\0';

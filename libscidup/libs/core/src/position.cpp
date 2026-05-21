@@ -1476,7 +1476,7 @@ std::string Position::makeSan(MoveSpec const& spec, sanFlagT flag) {
 		return {};
 
 	sanStringT san = {};
-	MakeSANString(&move, san, flag);
+	writeMoveActionSan(&move, san, flag);
 	return san;
 }
 
@@ -1800,13 +1800,12 @@ Position::MaterialValue (colorT c)
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Position::MakeSANString():
-//      Make the SAN string for a simpleMove.
+// Position::writeMoveActionSan():
+//      Write the SAN string for a MoveAction.
 //      The parameter 'sanFlag' indicates whether '+' and '#' symbols
 //      should be added to checking or mating moves.
 //
-void
-Position::MakeSANString (MoveAction * m, char * s, sanFlagT flag)
+void Position::writeMoveActionSan(MoveAction* m, char* s, sanFlagT flag)
 {
     assert(m != NULL  &&  s != NULL);
     assert(m->from == List[ToMove][ListPos[m->from]]);
@@ -1930,7 +1929,7 @@ errorT Position::MakeCoordMoves(const char* moves, size_t moveslen,
 
         if (toSAN) {
             sanStringT san;
-            MakeSANString(&sm, san,
+            writeMoveActionSan(&sm, san,
                           moves != end ? SAN_CHECKTEST : SAN_MATETEST);
             if (WhiteToMove()) {
                 toSAN->append(std::to_string(GetFullMoveCount()));
