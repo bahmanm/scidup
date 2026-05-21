@@ -105,10 +105,10 @@ private:
     void GenCheckEvasions(MoveList* mlist, pieceT mask, genMovesT genType,
                           SquareList* checkSquares);
 
-    errorT ReadMove(simpleMoveT* sm, const char* str, size_t slen, pieceT p) const;
-    errorT ReadMoveCastle(simpleMoveT* sm, std::string_view str) const;
-    errorT ReadMovePawn(simpleMoveT* sm, const char* str, size_t slen, fyleT from);
-    errorT ReadMoveKing(simpleMoveT* sm, const char* str, size_t slen) const;
+    errorT ReadMove(MoveAction* sm, const char* str, size_t slen, pieceT p) const;
+    errorT ReadMoveCastle(MoveAction* sm, std::string_view str) const;
+    errorT ReadMovePawn(MoveAction* sm, const char* str, size_t slen, fyleT from);
+    errorT ReadMoveKing(MoveAction* sm, const char* str, size_t slen) const;
 
     template <typename TFunc>
     bool under_attack(squareT target_sq, squareT captured_sq,
@@ -236,7 +236,7 @@ public:
 
     uint        Mobility (pieceT p, colorT color, squareT from);
     bool        IsKingInCheck () { return (CalcNumChecks() > 0); }
-    bool        IsKingInCheck (simpleMoveT const& sm);
+    bool        IsKingInCheck (MoveAction const& sm);
     bool        IsKingInMate ();
     bool        IsLegal ();
 
@@ -249,17 +249,17 @@ public:
     std::string makeSan(MoveSpec const& action, sanFlagT flag);
     errorT      applyMove(MoveSpec const& action);
 
-    void        makeMove(squareT from, squareT to, pieceT promo, simpleMoveT& res) const;
-    void        fillMove(simpleMoveT& sm) const;
-    void        DoSimpleMove(simpleMoveT const& sm);
-    void        DoSimpleMove (simpleMoveT * sm);    // move execution ...
-    void        UndoSimpleMove(simpleMoveT const& sm);  // ... and taking back
+    void        makeMove(squareT from, squareT to, pieceT promo, MoveAction& res) const;
+    void        fillMove(MoveAction& sm) const;
+    void        DoSimpleMove(MoveAction const& sm);
+    void        DoSimpleMove (MoveAction * sm);    // move execution ...
+    void        UndoSimpleMove(MoveAction const& sm);  // ... and taking back
 
-    void        MakeSANString (simpleMoveT * sm, char * s, sanFlagT flag);
+    void        MakeSANString (MoveAction * sm, char * s, sanFlagT flag);
 
     errorT      MakeCoordMoves(const char* moves, size_t movesLen, std::string* toSAN = nullptr);
-    errorT      ReadCoordMove(simpleMoveT* m, const char* s, size_t slen, bool reverse);
-    errorT      ParseMove(simpleMoveT* sm, const char* begin, const char* end);
+    errorT      ReadCoordMove(MoveAction* m, const char* s, size_t slen, bool reverse);
+    errorT      ParseMove(MoveAction* sm, const char* begin, const char* end);
 
     // Board I/O
     void        MakeLongStr (char* str) const;

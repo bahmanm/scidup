@@ -2374,7 +2374,7 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             auto pos = currentPosition(editor.game().coreGame(), editor.location());
             if (!pos)
                 return UI_Result(ti, scid::core::ERROR, "Error reading position.");
-            scid::core::simpleMoveT sm;
+            scid::core::MoveAction sm;
             auto end = argv[2] + std::strlen(argv[2]);
             if (auto err = pos->ParseMove(&sm, argv[2], end))
                 return UI_Result(ti, err);
@@ -5119,7 +5119,7 @@ sc_move_add (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (!pos)
         return errorResult(ti, "Error adding move.");
 
-    scid::core::simpleMoveT sm;
+    scid::core::MoveAction sm;
     scid::core::errorT err = pos->ReadCoordMove(&sm, s, s[4] == 0 ? 4 : 5, true);
     if (err == scid::core::OK) {
         scid::core::MovetextCursor cursor(editor.game().coreGame());
@@ -5680,7 +5680,7 @@ sc_pos_bestSquare (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // the chess engine search selected it.
     // Find the other square in the best move and return it:
 
-    scid::core::simpleMoveT * sm = mlist.Get(0);
+    scid::core::MoveAction * sm = mlist.Get(0);
     ASSERT (sq == sm->from  ||  sq == sm->to);
     scid::core::squareT bestSq = sm->from;
     if (sm->from == sq) { bestSq = sm->to; }
@@ -7830,7 +7830,7 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     auto calc_eco = [&](auto const& move) {
         scidup::eco::Code eco = scidup::eco::ECO_None;
         if (ecoBook && move) {
-            scid::core::simpleMoveT sm;
+            scid::core::MoveAction sm;
             if (move.isCastle()) {
                 auto side = move.getTo() > move.getFrom() ? scid::core::KING : scid::core::QUEEN;
                 searchPos.makeMove(move.getFrom(), move.getFrom(), side, sm);

@@ -1507,7 +1507,7 @@ Engine::SearchRoot (int depth, int alpha, int beta, scid::core::MoveList * mlist
     return bestScore;
 }
 
-static bool isLegalMove(scid::core::Position const& pos, scid::core::simpleMoveT const& sm) {
+static bool isLegalMove(scid::core::Position const& pos, scid::core::MoveAction const& sm) {
     return pos.IsLegalMove(sm.from, sm.to, sm.promote) &&
            sm.movingPiece == pos.GetPiece(sm.from);
 }

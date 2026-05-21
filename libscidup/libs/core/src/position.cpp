@@ -38,13 +38,13 @@ bool valid_sqlist(pieceT* begin, size_t n, pieceT* board) {
 	       && std::count(kings.begin(), kings.end(), KING) == 1;
 }
 
-MoveSpec moveActionFrom(simpleMoveT const& sm) {
+MoveSpec moveSpecFrom(MoveAction const& sm) {
 	return {sm.from, sm.to, sm.promote, sm.isCastle() != 0};
 }
 
-errorT simpleMoveFromAction(Position const& position,
-                            MoveSpec const& action,
-                            simpleMoveT& move) {
+errorT moveActionFromSpec(Position const& position,
+                          MoveSpec const& action,
+                          MoveAction& move) {
 	if (action.isNull()) {
 		position.makeMove(action.from, action.to, PAWN, move);
 		return OK;
@@ -1324,7 +1324,7 @@ Position::CalcAttacks (colorT side, squareT target, SquareList * fromSquares) co
 //   move could not have left the king in check.
 //
 bool
-Position::IsKingInCheck (simpleMoveT const& sm)
+Position::IsKingInCheck (MoveAction const& sm)
 {
     pieceT p = (sm.promote == EMPTY) ? piece_Type(sm.movingPiece) : sm.promote;
 
@@ -1449,30 +1449,30 @@ Position::IsPromoMove (squareT from, squareT to)
 }
 
 errorT Position::parseMoveAction(MoveSpec& action, std::string_view notation) {
-	simpleMoveT move;
+	MoveAction move;
 	auto err = ParseMove(&move, notation.data(), notation.data() + notation.size());
 	if (err != OK)
 		return err;
 
-	action = moveActionFrom(move);
+	action = moveSpecFrom(move);
 	return OK;
 }
 
 errorT Position::readCoordinateMoveAction(MoveSpec& action,
                                           std::string_view notation,
                                           bool reverse) {
-	simpleMoveT move;
+	MoveAction move;
 	auto err = ReadCoordMove(&move, notation.data(), notation.size(), reverse);
 	if (err != OK)
 		return err;
 
-	action = moveActionFrom(move);
+	action = moveSpecFrom(move);
 	return OK;
 }
 
 std::string Position::makeSan(MoveSpec const& action, sanFlagT flag) {
-	simpleMoveT move;
-	if (auto err = simpleMoveFromAction(*this, action, move); err != OK)
+	MoveAction move;
+	if (auto err = moveActionFromSpec(*this, action, move); err != OK)
 		return {};
 
 	sanStringT san = {};
@@ -1481,22 +1481,22 @@ std::string Position::makeSan(MoveSpec const& action, sanFlagT flag) {
 }
 
 errorT Position::applyMove(MoveSpec const& action) {
-	simpleMoveT move;
-	if (auto err = simpleMoveFromAction(*this, action, move); err != OK)
+	MoveAction move;
+	if (auto err = moveActionFromSpec(*this, action, move); err != OK)
 		return err;
 
 	DoSimpleMove(move);
 	return OK;
 }
 
-/// Make a simpleMoveT.
+/// Make a MoveAction.
 /// If @e promo != INVALID_PIECE it is a special move:
 /// promo == PAWN -> null move
 /// from != to -> promotion
 /// from == to && PAWN == KING -> castle kingside
 /// from == to && PAWN != KING -> castle queenside
 void Position::makeMove(squareT from, squareT to, pieceT promo,
-                        simpleMoveT& res) const {
+                        MoveAction& res) const {
 	res.castling = 0;
 	if (promo == EMPTY || promo == INVALID_PIECE) { // NORMAL MOVE
 		res.from = from;
@@ -1526,8 +1526,8 @@ void Position::makeMove(squareT from, squareT to, pieceT promo,
 }
 
 /// Use the current position to retrieve all the information needed to create a
-/// SimpleMove which can also be used in UndoSimpleMove.
-void Position::fillMove(simpleMoveT& sm) const {
+/// MoveAction which can also be used in UndoSimpleMove.
+void Position::fillMove(MoveAction& sm) const {
 	const auto from = sm.from;
 	const auto to = sm.to;
 	sm.movingPiece = GetPiece(sm.from);
@@ -1563,7 +1563,7 @@ void Position::fillMove(simpleMoveT& sm) const {
 //      fields in the simpleMove structure so it can be undone.
 //
 void
-Position::DoSimpleMove (simpleMoveT * sm)
+Position::DoSimpleMove (MoveAction * sm)
 {
     assert(sm != NULL);
     // update move fields that (maybe) have not yet been set:
@@ -1571,7 +1571,7 @@ Position::DoSimpleMove (simpleMoveT * sm)
 	DoSimpleMove(*sm);
 }
 
-void Position::DoSimpleMove(simpleMoveT const& sm) {
+void Position::DoSimpleMove(MoveAction const& sm) {
     const auto from = sm.from;
     const auto to = sm.to;
     const auto promo = sm.promote;
@@ -1685,7 +1685,7 @@ void Position::DoSimpleMove(simpleMoveT const& sm) {
 // Position::UndoSimpleMove():
 //      Take back a simple move that has been made with DoSimpleMove().
 //
-void Position::UndoSimpleMove(simpleMoveT const& sm) {
+void Position::UndoSimpleMove(MoveAction const& sm) {
     const squareT from = sm.from;
     const squareT to = sm.to;
     const auto pieceNum = ListPos[to];
@@ -1806,7 +1806,7 @@ Position::MaterialValue (colorT c)
 //      should be added to checking or mating moves.
 //
 void
-Position::MakeSANString (simpleMoveT * m, char * s, sanFlagT flag)
+Position::MakeSANString (MoveAction * m, char * s, sanFlagT flag)
 {
     assert(m != NULL  &&  s != NULL);
     assert(m->from == List[ToMove][ListPos[m->from]]);
@@ -1922,7 +1922,7 @@ errorT Position::MakeCoordMoves(const char* moves, size_t moveslen,
     moves = std::find_if_not(moves, end, is_space);
 
     while (auto len = std::find_if(moves, end, is_space) - moves) {
-        simpleMoveT sm;
+        MoveAction sm;
         if (auto err = ReadCoordMove(&sm, moves, len, false))
             return err;
 
@@ -1957,7 +1957,7 @@ errorT Position::MakeCoordMoves(const char* moves, size_t moveslen,
 //      If "reverse" is true, coordinates in reverse order are acceptable,
 //      e.g. "f3g1" for 1.Nf3.
 //
-errorT Position::ReadCoordMove(simpleMoveT* m, const char* str, size_t slen,
+errorT Position::ReadCoordMove(MoveAction* m, const char* str, size_t slen,
                                bool reverse) {
     assert(m != NULL && str != NULL);
 
@@ -2002,7 +2002,7 @@ static size_t trimCheck(const char* str, size_t slen) {
 	return slen;
 }
 
-errorT Position::ReadMovePawn(simpleMoveT* sm, const char* str, size_t slen,
+errorT Position::ReadMovePawn(MoveAction* sm, const char* str, size_t slen,
                               fyleT frFyle) {
 	assert(sm != NULL && str != NULL && frFyle <= H_FYLE);
 
@@ -2080,7 +2080,7 @@ errorT Position::ReadMovePawn(simpleMoveT* sm, const char* str, size_t slen,
 	return ERROR_InvalidMove;
 }
 
-errorT Position::ReadMoveKing(simpleMoveT* sm, const char* str,
+errorT Position::ReadMoveKing(MoveAction* sm, const char* str,
                               size_t slen) const {
 	assert(sm != NULL && str != NULL);
 
@@ -2116,7 +2116,7 @@ errorT Position::ReadMoveKing(simpleMoveT* sm, const char* str,
 //      generates the legal move it corresponds to.
 //      Returns: OK or ERROR_InvalidMove.
 //
-errorT Position::ReadMove(simpleMoveT* sm, const char* str, size_t slen,
+errorT Position::ReadMove(MoveAction* sm, const char* str, size_t slen,
                           pieceT piece) const {
 	assert(sm != NULL && str != NULL);
 	assert(piece == QUEEN || piece == ROOK || piece == BISHOP ||
@@ -2167,7 +2167,7 @@ errorT Position::ReadMove(simpleMoveT* sm, const char* str, size_t slen,
 	                                              // (ambiguous) moves match.
 }
 
-errorT Position::ReadMoveCastle(simpleMoveT* sm, std::string_view str) const {
+errorT Position::ReadMoveCastle(MoveAction* sm, std::string_view str) const {
 	bool king_side = true;
 	if (str == "O-O" || str == "OO") {
 		// side = KSIDE;
@@ -2187,7 +2187,7 @@ errorT Position::ReadMoveCastle(simpleMoveT* sm, std::string_view str) const {
 
 // Parse a single move from SAN-style (Nf3) or UCI (g1f3) notation.
 // If the move is legal, it stores the result in @e sm.
-errorT Position::ParseMove(simpleMoveT* sm, const char* str,
+errorT Position::ParseMove(MoveAction* sm, const char* str,
                            const char* strEnd) {
 	assert(str != NULL);
 

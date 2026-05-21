@@ -20,10 +20,10 @@ const uint  MAX_LEGAL_MOVES = 256;  // max. length of the moves list
 ///////////////////////////////////////////////////////////////////////////
 //  MoveList:  Data Structures
 
-// *** SimpleMove: less expensive to store than a full move as defined
-//      in game.h, but still fully undoable.
+// *** MoveAction: a position-resolved move record which is less expensive to
+//      store than a full game move, but still fully undoable.
 //
-struct simpleMoveT
+struct MoveAction
 {
     squareT  from;
     squareT  to;
@@ -78,7 +78,7 @@ struct simpleMoveT
 	}
 };
 
-struct ScoredMove : public simpleMoveT {
+struct ScoredMove : public MoveAction {
 	std::int32_t score; // used for alpha/beta ordering.
 
 	bool operator<(const ScoredMove& b) const {
@@ -87,7 +87,7 @@ struct ScoredMove : public simpleMoveT {
 	}
 };
 
-// typedef std::vector<simpleMoveT> MoveList;
+// typedef std::vector<MoveAction> MoveList;
 class MoveList {
 	uint ListSize = 0;
 	ScoredMove Moves[MAX_LEGAL_MOVES];

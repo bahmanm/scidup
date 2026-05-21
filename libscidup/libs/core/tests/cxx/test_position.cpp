@@ -44,7 +44,7 @@ TEST(Test_PositionSAN, MakeSANStringFromUCI) {
 			continue;
 		}
 
-		scid::core::simpleMoveT sm;
+		scid::core::MoveAction sm;
 		ASSERT_EQ(scid::core::OK, pos.ReadCoordMove(&sm, *it++, int(slen), false));
 		pos.MakeSANString(&sm, buf, scid::core::SAN_MATETEST);
 		EXPECT_STREQ(*it, buf);
@@ -140,7 +140,7 @@ TEST(Test_ReadFromFen, ParsesCountersAndEpTarget) {
 }
 
 TEST(Test_PositionDoSimpleMove, RestoresCastlingFlags) {
-	std::vector<scid::core::simpleMoveT> moves;
+	std::vector<scid::core::MoveAction> moves;
 	char buf[1024];
 	scid::core::Position pos;
 	ASSERT_EQ(scid::core::OK,

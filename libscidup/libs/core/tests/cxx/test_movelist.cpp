@@ -10,14 +10,14 @@ namespace {
 
 using namespace scid::core;
 
-std::string longNotation(simpleMoveT const& move) {
+std::string longNotation(MoveAction const& move) {
 	char buf[UCI_MOVE_STRING_SIZE] = {};
 	char* end = move.toLongNotation(buf);
 	return {buf, end};
 }
 
 TEST(MoveListTest, DetectsNullMoves) {
-	simpleMoveT move{};
+	MoveAction move{};
 	move.from = E1;
 	move.to = E1;
 	move.movingPiece = WK;
@@ -35,7 +35,7 @@ TEST(MoveListTest, DetectsNullMoves) {
 }
 
 TEST(MoveListTest, DetectsCastlingDirection) {
-	simpleMoveT move{};
+	MoveAction move{};
 	move.from = E1;
 	move.to = H1;
 	move.castling = 1;
@@ -53,7 +53,7 @@ TEST(MoveListTest, DetectsCastlingDirection) {
 }
 
 TEST(MoveListTest, WritesLongNotation) {
-	simpleMoveT move{};
+	MoveAction move{};
 	move.from = E2;
 	move.to = E4;
 	move.promote = EMPTY;
