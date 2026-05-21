@@ -7833,10 +7833,10 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             scid::core::MoveAction sm;
             if (move.isCastle()) {
                 auto side = move.getTo() > move.getFrom() ? scid::core::KING : scid::core::QUEEN;
-                searchPos.makeMove(move.getFrom(), move.getFrom(), side, sm);
+                searchPos.makeMoveAction(move.getFrom(), move.getFrom(), side, sm);
             } else {
                 auto promo = move.isPromo() ? move.getPromo() : scid::core::INVALID_PIECE;
-                searchPos.makeMove(move.getFrom(), move.getTo(), promo, sm);
+                searchPos.makeMoveAction(move.getFrom(), move.getTo(), promo, sm);
             }
             searchPos.applyMoveAction(sm);
             eco = ecoBook->findEco(searchPos);

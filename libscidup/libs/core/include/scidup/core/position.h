@@ -249,8 +249,9 @@ public:
     std::string makeSan(MoveSpec const& spec, sanFlagT flag);
     errorT      applyMove(MoveSpec const& spec);
 
-    void        makeMove(squareT from, squareT to, pieceT promo, MoveAction& res) const;
-    void        fillMove(MoveAction& sm) const;
+    void        makeMoveAction(squareT from, squareT to, pieceT promo,
+                               MoveAction& res) const;
+    void        fillMoveAction(MoveAction& sm) const;
     void        applyMoveAction(MoveAction const& sm);
     void        applyMoveAction (MoveAction * sm);
     void        undoMoveAction(MoveAction const& sm);
