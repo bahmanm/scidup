@@ -46,13 +46,13 @@ errorT moveActionFromSpec(Position const& position,
                           MoveSpec const& spec,
                           MoveAction& move) {
 	if (spec.isNull()) {
-		position.makeMoveAction(spec.from, spec.to, PAWN, move);
+		position.resolveMove(spec.from, spec.to, PAWN, move);
 		return OK;
 	}
 
 	if (spec.castling) {
 		const bool kingSide = spec.to > spec.from;
-		position.makeMoveAction(spec.from, spec.from,
+		position.resolveMove(spec.from, spec.from,
 		                  kingSide ? KING : QUEEN, move);
 		return OK;
 	}
@@ -60,7 +60,7 @@ errorT moveActionFromSpec(Position const& position,
 	if (position.IsLegalMove(spec.from, spec.to, spec.promotion) != 1)
 		return ERROR_InvalidMove;
 
-	position.makeMoveAction(spec.from, spec.to, spec.promotion, move);
+	position.resolveMove(spec.from, spec.to, spec.promotion, move);
 	return OK;
 }
 } // namespace
@@ -203,7 +203,7 @@ Position::AddLegalMove (MoveList * mlist, squareT from, squareT to, pieceT promo
 {
     assert(mlist != NULL);
     auto& sm = mlist->emplace_back();
-    makeMoveAction(from, to, promo, sm);
+    resolveMove(from, to, promo, sm);
 }
 
 
@@ -364,10 +364,10 @@ void Position::GenCastling(MoveList* mlist) {
 	const squareT from = GetKingSquare();
 
 	if (canCastle(true))
-		makeMoveAction(from, from, KING, mlist->emplace_back());
+		resolveMove(from, from, KING, mlist->emplace_back());
 
 	if (canCastle(false))
-		makeMoveAction(from, from, QUEEN, mlist->emplace_back());
+		resolveMove(from, from, QUEEN, mlist->emplace_back());
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1149,9 +1149,9 @@ int Position::TreeCalcAttacks(squareT target) {
 	int maxScore = -2;
 	int zeroCount = 0;
 	for (auto const& sm : moves) {
-		applyMoveAction(sm);
+		apply(sm);
 		int score = TreeCalcAttacks(target);
-		undoMoveAction(sm);
+		undo(sm);
 		if (score == 0 && ++zeroCount > 1)
 			return -2;
 		if (score > maxScore)
@@ -1476,7 +1476,7 @@ std::string Position::makeSan(MoveSpec const& spec, sanFlagT flag) {
 		return {};
 
 	sanStringT san = {};
-	writeMoveActionSan(&move, san, flag);
+	writeSan(&move, san, flag);
 	return san;
 }
 
@@ -1485,8 +1485,12 @@ errorT Position::applyMove(MoveSpec const& spec) {
 	if (auto err = moveActionFromSpec(*this, spec, move); err != OK)
 		return err;
 
-	applyMoveAction(move);
+	apply(move);
 	return OK;
+}
+
+errorT Position::resolveMove(MoveSpec const& spec, MoveAction& action) const {
+	return moveActionFromSpec(*this, spec, action);
 }
 
 /// Make a MoveAction.
@@ -1495,7 +1499,7 @@ errorT Position::applyMove(MoveSpec const& spec) {
 /// from != to -> promotion
 /// from == to && PAWN == KING -> castle kingside
 /// from == to && PAWN != KING -> castle queenside
-void Position::makeMoveAction(squareT from, squareT to, pieceT promo,
+void Position::resolveMove(squareT from, squareT to, pieceT promo,
                               MoveAction& res) const {
 	res.castling = 0;
 	if (promo == EMPTY || promo == INVALID_PIECE) { // NORMAL MOVE
@@ -1526,7 +1530,7 @@ void Position::makeMoveAction(squareT from, squareT to, pieceT promo,
 }
 
 /// Use the current position to retrieve all the information needed to create a
-/// MoveAction which can also be used in undoMoveAction.
+/// MoveAction which can also be used in undo.
 void Position::fillMoveAction(MoveAction& sm) const {
 	const auto from = sm.from;
 	const auto to = sm.to;
@@ -1558,20 +1562,20 @@ void Position::fillMoveAction(MoveAction& sm) const {
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Position::applyMoveAction():
+// Position::apply():
 //      Make the move on the board and update all the necessary
 //      fields in the MoveAction structure so it can be undone.
 //
 void
-Position::applyMoveAction (MoveAction * sm)
+Position::apply (MoveAction * sm)
 {
     assert(sm != NULL);
     // update move fields that (maybe) have not yet been set:
 	fillMoveAction(*sm);
-	applyMoveAction(*sm);
+	apply(*sm);
 }
 
-void Position::applyMoveAction(MoveAction const& sm) {
+void Position::apply(MoveAction const& sm) {
     const auto from = sm.from;
     const auto to = sm.to;
     const auto promo = sm.promote;
@@ -1682,10 +1686,10 @@ void Position::applyMoveAction(MoveAction const& sm) {
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Position::undoMoveAction():
-//      Take back a move action that has been made with applyMoveAction().
+// Position::undo():
+//      Take back a move action that has been made with apply().
 //
-void Position::undoMoveAction(MoveAction const& sm) {
+void Position::undo(MoveAction const& sm) {
     const squareT from = sm.from;
     const squareT to = sm.to;
     const auto pieceNum = ListPos[to];
@@ -1800,12 +1804,12 @@ Position::MaterialValue (colorT c)
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Position::writeMoveActionSan():
+// Position::writeSan():
 //      Write the SAN string for a MoveAction.
 //      The parameter 'sanFlag' indicates whether '+' and '#' symbols
 //      should be added to checking or mating moves.
 //
-void Position::writeMoveActionSan(MoveAction* m, char* s, sanFlagT flag)
+void Position::writeSan(MoveAction* m, char* s, sanFlagT flag)
 {
     assert(m != NULL  &&  s != NULL);
     assert(m->from == List[ToMove][ListPos[m->from]]);
@@ -1891,7 +1895,7 @@ void Position::writeMoveActionSan(MoveAction* m, char* s, sanFlagT flag)
     // Now do the check or mate symbol:
     if (flag != SAN_NO_CHECKTEST) {
         // Now we make the move to test for check:
-        applyMoveAction (m);
+        apply (m);
         if (IsKingInCheck(*m)) {
             char ch = '+';
             if (flag == SAN_MATETEST) {
@@ -1901,7 +1905,7 @@ void Position::writeMoveActionSan(MoveAction* m, char* s, sanFlagT flag)
             }
             *c++ = ch;
         }
-        undoMoveAction (*m);
+        undo (*m);
     }
     *c = 0;
 }
@@ -1929,7 +1933,7 @@ errorT Position::applyCoordinateMoves(const char* moves, size_t moveslen,
 
         if (toSAN) {
             sanStringT san;
-            writeMoveActionSan(&sm, san,
+            writeSan(&sm, san,
                                moves != end ? SAN_CHECKTEST : SAN_MATETEST);
             if (WhiteToMove()) {
                 toSAN->append(std::to_string(GetFullMoveCount()));
@@ -1943,7 +1947,7 @@ errorT Position::applyCoordinateMoves(const char* moves, size_t moveslen,
                 toSAN->push_back(' ');
         }
 
-        applyMoveAction(sm);
+        apply(sm);
     }
     return OK;
 }
@@ -1983,9 +1987,9 @@ errorT Position::readCoordinateMoveAction(MoveAction* m, const char* str,
         return ERROR_InvalidMove;
 
     if (legal == 1) {
-        makeMoveAction(from, to, promote, *m);
+        resolveMove(from, to, promote, *m);
     } else {
-        makeMoveAction(from, from, legal == 2 ? KING : QUEEN, *m);
+        resolveMove(from, from, legal == 2 ? KING : QUEEN, *m);
     }
     return OK;
 }
@@ -2049,13 +2053,13 @@ errorT Position::readPawnMoveAction(MoveAction* sm, const char* str, size_t slen
 		const auto to = square_Make(toFyle, toRank);
 		const auto pawn = piece_Make(ToMove, PAWN);
 		if (GetPiece(from) == pawn && IsLegalMove(from, to, promo)) {
-			makeMoveAction(from, to, promo, *sm);
+			resolveMove(from, to, promo, *sm);
 			return true;
 		}
 		if (frFyle == toFyle) {
 			from += (ToMove == WHITE) ? -8 : +8;
 			if (GetPiece(from) == pawn && IsLegalMove(from, to, promo)) {
-				makeMoveAction(from, to, promo, *sm);
+				resolveMove(from, to, promo, *sm);
 				return true;
 			}
 		}
@@ -2105,7 +2109,7 @@ errorT Position::readKingMoveAction(MoveAction* sm, const char* str,
 	if (under_attack(to, to, not_empty))
 		return ERROR_InvalidMove;
 
-	makeMoveAction(from, to, INVALID_PIECE, *sm);
+	resolveMove(from, to, INVALID_PIECE, *sm);
 	return OK;
 }
 
@@ -2159,7 +2163,7 @@ errorT Position::readPieceMoveAction(MoveAction* sm, const char* str,
 			continue;
 
 		++matchCount;
-		makeMoveAction(from, to, INVALID_PIECE, *sm);
+		resolveMove(from, to, INVALID_PIECE, *sm);
 	}
 	return (matchCount == 1) ? OK                 // ok.
 	                         : ERROR_InvalidMove; // No match, or too many
@@ -2177,7 +2181,7 @@ errorT Position::readCastleMoveAction(MoveAction* sm,
 		return ERROR_InvalidMove;
 
 	const auto king_sq = GetKingSquare();
-	makeMoveAction(king_sq, king_sq, king_side ? KING : QUEEN, *sm);
+	resolveMove(king_sq, king_sq, king_side ? KING : QUEEN, *sm);
 	if (!under_attack(king_sq) && canCastle(king_side))
 		return OK;
 
@@ -2223,7 +2227,7 @@ errorT Position::parseMoveAction(MoveAction* sm, const char* str,
 		    (length == 2 && std::equal(str, str + 2, "Z0")) ||
 		    (length == 4 && std::equal(str, str + 4, "null"))) {
 			const auto king_sq = GetKingSquare(ToMove);
-			makeMoveAction(king_sq, king_sq, PAWN, *sm);
+			resolveMove(king_sq, king_sq, PAWN, *sm);
 			return under_attack(king_sq) ? ERROR_InvalidMove : OK;
 		}
 		return ERROR_InvalidMove;

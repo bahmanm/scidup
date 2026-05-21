@@ -15,7 +15,10 @@ namespace {
 
 template <typename PosT, typename MoveT>
 auto parse_move(PosT& pos, MoveT dest, std::string_view move) {
-	return pos.parseMoveAction(dest, move.data(), move.data() + move.size());
+	scid::core::MoveSpec spec;
+	if (auto err = pos.parseMoveSpec(spec, move); err != scid::core::OK)
+		return err;
+	return pos.resolveMove(spec, *dest);
 }
 
 } // namespace
@@ -44,9 +47,11 @@ TEST(Test_PositionSAN, WritesMoveActionSanFromUCI) {
 			continue;
 		}
 
+		scid::core::MoveSpec spec;
+		ASSERT_EQ(scid::core::OK, pos.readCoordinateMoveSpec(spec, *it++, false));
 		scid::core::MoveAction sm;
-		ASSERT_EQ(scid::core::OK, pos.readCoordinateMoveAction(&sm, *it++, int(slen), false));
-		pos.writeMoveActionSan(&sm, buf, scid::core::SAN_MATETEST);
+		ASSERT_EQ(scid::core::OK, pos.resolveMove(spec, sm));
+		pos.writeSan(&sm, buf, scid::core::SAN_MATETEST);
 		EXPECT_STREQ(*it, buf);
 	}
 }
@@ -147,18 +152,18 @@ TEST(Test_PositionApplyMoveAction, RestoresCastlingFlags) {
 	          pos.ReadFromFEN("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1"));
 
 	parse_move(pos, &moves.emplace_back(), "e1g1");
-	pos.applyMoveAction(moves.back());
+	pos.apply(moves.back());
 	parse_move(pos, &moves.emplace_back(), "h8g8");
-	pos.applyMoveAction(moves.back());
+	pos.apply(moves.back());
 	parse_move(pos, &moves.emplace_back(), "g1h2");
-	pos.applyMoveAction(moves.back());
+	pos.apply(moves.back());
 	parse_move(pos, &moves.emplace_back(), "e8c8");
-	pos.applyMoveAction(moves.back());
+	pos.apply(moves.back());
 	pos.PrintFEN(buf, sizeof(buf));
 	EXPECT_STREQ(buf, "2kr2r1/8/8/8/8/8/7K/R4R2 w - - 4 3");
 
 	for (auto it = moves.crbegin(); it != moves.crend(); ++it) {
-		pos.undoMoveAction(*it);
+		pos.undo(*it);
 	}
 	pos.PrintFEN(buf, sizeof(buf));
 	EXPECT_STREQ(buf, "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");

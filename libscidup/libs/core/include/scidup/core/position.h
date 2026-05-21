@@ -112,6 +112,10 @@ private:
                               fyleT from);
     errorT readKingMoveAction(MoveAction* sm, const char* str,
                               size_t slen) const;
+    errorT readCoordinateMoveAction(MoveAction* m, const char* s,
+                                    size_t slen, bool reverse);
+    errorT parseMoveAction(MoveAction* sm, const char* begin, const char* end);
+    void   fillMoveAction(MoveAction& sm) const;
 
     template <typename TFunc>
     bool under_attack(squareT target_sq, squareT captured_sq,
@@ -252,20 +256,17 @@ public:
     std::string makeSan(MoveSpec const& spec, sanFlagT flag);
     errorT      applyMove(MoveSpec const& spec);
 
-    void        makeMoveAction(squareT from, squareT to, pieceT promo,
-                               MoveAction& res) const;
-    void        fillMoveAction(MoveAction& sm) const;
-    void        applyMoveAction(MoveAction const& sm);
-    void        applyMoveAction (MoveAction * sm);
-    void        undoMoveAction(MoveAction const& sm);
+    errorT      resolveMove(MoveSpec const& spec, MoveAction& action) const;
+    void        resolveMove(squareT from, squareT to, pieceT promo,
+                            MoveAction& action) const;
+    void        apply(MoveAction const& action);
+    void        apply(MoveAction* action);
+    void        undo(MoveAction const& action);
 
-    void        writeMoveActionSan(MoveAction* sm, char* s, sanFlagT flag);
+    void        writeSan(MoveAction* action, char* s, sanFlagT flag);
 
     errorT      applyCoordinateMoves(const char* moves, size_t movesLen,
                                      std::string* toSAN = nullptr);
-    errorT      readCoordinateMoveAction(MoveAction* m, const char* s,
-                                         size_t slen, bool reverse);
-    errorT      parseMoveAction(MoveAction* sm, const char* begin, const char* end);
 
     // Board I/O
     void        MakeLongStr (char* str) const;

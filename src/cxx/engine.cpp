@@ -925,7 +925,7 @@ Engine::IsGettingMatedScore (int score)
 inline void
 Engine::DoMove (scid::core::ScoredMove * sm) {
     PushRepeat(&Pos);
-    Pos.applyMoveAction(sm);
+    Pos.apply(sm);
     Ply++;
 }
 
@@ -935,7 +935,7 @@ Engine::DoMove (scid::core::ScoredMove * sm) {
 inline void
 Engine::UndoMove (scid::core::ScoredMove * sm) {
     PopRepeat();
-    Pos.undoMoveAction(*sm);
+    Pos.undo(*sm);
     Ply--;
 }
 
@@ -2216,14 +2216,14 @@ Engine::PrintPV (scid::core::uint depth, int score, const char * note)
             Output  ("%u.", Pos.GetFullMoveCount());
         }
         scid::core::sanStringT s;
-        Pos.writeMoveActionSan (sm, s, scid::core::SAN_MATETEST);
+        Pos.writeSan (sm, s, scid::core::SAN_MATETEST);
         Output ("%s", s);
-        Pos.applyMoveAction (sm);
+        Pos.apply (sm);
     }
     Output ("\n");
     // Undo each PV move that was made:
     for (; i > 0; i--) {
-        Pos.undoMoveAction (pv->move[i-1]);
+        Pos.undo (pv->move[i-1]);
     }
 }
 
@@ -2268,9 +2268,9 @@ Engine::PerfTest (scid::core::uint depth)
     scid::core::uint nmoves = 0;
     for (scid::core::uint i = 0; i < mlist.Size(); i++) {
         auto sm = mlist.Get(i);
-        Pos.applyMoveAction (*sm);
+        Pos.apply (*sm);
         nmoves += PerfTest (depth-1);
-        Pos.undoMoveAction (*sm);
+        Pos.undo (*sm);
     }
     return nmoves;
 }
