@@ -21,23 +21,24 @@
 #ifndef SCID_INDEXENTRY_V4_6_H
 #define SCID_INDEXENTRY_V4_6_H
 
+#include "scidup/core/date.h"
+#include "scidup/core/game_result.h"
 #include "scidup/database/common.h"
-#include "scidup/database/date.h"
 #include "scidup/database/matsig.h"
 #include "scidup/database/namebase.h"
 
 // HPSIG_SIZE = size of HomePawnData array in an scid::database::IndexEntry.
-// It is nine bytes: the first scid::database::byte contains the number of valid entries
-// in the array, and the next 8 bytes contain up to 16 half-scid::database::byte entries.
-const scid::database::uint HPSIG_SIZE = 9;
+// It is nine bytes: the first scid::core::byte contains the number of valid entries
+// in the array, and the next 8 bytes contain up to 16 half-scid::core::byte entries.
+const scid::core::uint HPSIG_SIZE = 9;
 
-const scid::database::uint MAX_ELO = 4000; // Since we store Elo Ratings in 12 bits
+const scid::core::uint MAX_ELO = 4000; // Since we store Elo Ratings in 12 bits
 
-const scid::database::byte CUSTOM_FLAG_MASK[] = { 1, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5 };
+const scid::core::byte CUSTOM_FLAG_MASK[] = { 1, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5 };
 
 // Total on-disk size per index entry: currently 47 bytes.
-const scid::database::uint  INDEX_ENTRY_SIZE = 47;
-const scid::database::uint  OLD_INDEX_ENTRY_SIZE = 46;
+const scid::core::uint  INDEX_ENTRY_SIZE = 47;
+const scid::core::uint  OLD_INDEX_ENTRY_SIZE = 46;
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -47,17 +48,17 @@ const scid::database::uint  OLD_INDEX_ENTRY_SIZE = 46;
 //    data file.  For fast searching, it also store some other important
 //    values: players, event, site, date, result, eco, gamelength.
 //
-//    It takes 48 bytes, assuming sizeof(scid::database::uint) == 4 and sizeof(scid::database::ushort) == 2.
+//    It takes 48 bytes, assuming sizeof(scid::core::uint) == 4 and sizeof(scid::core::ushort) == 2.
 
 class IndexEntry
 {
     uint32_t  Offset;            // Start of gamefile record for this game.
     uint16_t  Length_Low;        // Length of gamefile record for this game. 17 bits are used so the max
                                  // length is 128 ko (131071). So 7 bits are usable for custom flags or other.
-    scid::database::byte      Length_High;       // LxFFFFFF ( L = length for long games, x = spare, F = custom flags)
+    scid::core::byte      Length_High;       // LxFFFFFF ( L = length for long games, x = spare, F = custom flags)
     // Name ID values are packed into 12 bytes, saving 8 bytes over the
-    // simpler method of just storing each as a 4-scid::database::byte scid::database::idNumberT.
-    scid::database::byte      WhiteBlack_High;   // High bits of White, Black.
+    // simpler method of just storing each as a 4-scid::core::byte scid::database::idNumberT.
+    scid::core::byte      WhiteBlack_High;   // High bits of White, Black.
     uint16_t  WhiteID_Low;       // Lower 16 bits of White ID.
     uint16_t  BlackID_Low;       // Lower 16 bits of Black ID.
     uint16_t  EventID_Low;       // Lower 16 bits of Site.
@@ -66,20 +67,20 @@ class IndexEntry
     uint16_t  Flags;
     uint16_t  VarCounts;         // Counters for comments, variations, etc.
                                  // VarCounts also stores the result.
-    scid::database::ecoT      EcoCode;           // ECO code
-    scid::database::dateT     Dates;             // Date and EventDate fields.
-    scid::database::eloT      WhiteElo;
-    scid::database::eloT      BlackElo;
+    scid::database::EcoCode EcoCode;           // ECO code
+    scid::core::dateT     Dates;             // Date and EventDate fields.
+    scid::core::ratingT      WhiteElo;
+    scid::core::ratingT      BlackElo;
     scid::database::matSigT   FinalMatSig;       // material of the final position in the game,
                                  // and the StoredLineCode in the top 8 bits.
     uint16_t  NumHalfMoves;
-    scid::database::byte      HomePawnData [HPSIG_SIZE];  // homePawnSig data.
-    scid::database::byte      EventSiteRnd_High; // High bits of Event, Site, Round.
+    scid::core::byte      HomePawnData [HPSIG_SIZE];  // homePawnSig data.
+    scid::core::byte      EventSiteRnd_High; // High bits of Event, Site, Round.
     
 public:
     void Init();
-    template <class T> scid::database::errorT Read (T* file, scid::database::versionT version);
-    template <class T> scid::database::errorT Write (T* file, scid::database::versionT version) const;
+    template <class T> scid::core::errorT Read (T* file, scid::database::versionT version);
+    template <class T> scid::core::errorT Write (T* file, scid::database::versionT version) const;
 
 
     uint32_t GetOffset () const { return Offset; }
@@ -90,7 +91,7 @@ public:
     void SetLength (size_t length) {
         Length_Low = static_cast<uint16_t>(length & 0xFFFF);
         // preserve the last 7 bits
-        Length_High = ( Length_High & 0x7F ) | static_cast<scid::database::byte>( (length >> 16) << 7 );
+        Length_High = ( Length_High & 0x7F ) | static_cast<scid::core::byte>( (length >> 16) << 7 );
     }
 
 
@@ -117,26 +118,26 @@ public:
         id |= (scid::database::idNumberT) BlackID_Low;
         return id;
     }
-    scid::database::idNumberT GetPlayer(scid::database::colorT col) const {
-        if (col == scid::database::BLACK) return GetBlack();
+    scid::database::idNumberT GetPlayer(scid::core::colorT col) const {
+        if (col == scid::core::BLACK) return GetBlack();
         return GetWhite();
     }
     scid::database::idNumberT GetEvent () const {
-        scid::database::uint id = (scid::database::idNumberT) EventSiteRnd_High;
+        scid::core::uint id = (scid::database::idNumberT) EventSiteRnd_High;
         id >>= 5;  // High 3 bits = bits 5-7 of EventSiteRnd_High.
         id <<= 16;
         id |= (scid::database::idNumberT) EventID_Low;
         return id;
     }
     scid::database::idNumberT GetSite () const {
-        scid::database::uint id = (scid::database::idNumberT) EventSiteRnd_High;
+        scid::core::uint id = (scid::database::idNumberT) EventSiteRnd_High;
         id = (id >> 2) & 7;  // High 3 bits = bits 2-5 of EventSiteRnd_High.
         id <<= 16;
         id |= (scid::database::idNumberT) SiteID_Low;
         return id;
     }
     scid::database::idNumberT GetRound () const {
-        scid::database::uint id = (scid::database::idNumberT) EventSiteRnd_High;
+        scid::core::uint id = (scid::database::idNumberT) EventSiteRnd_High;
         id &= 3;   // High 2 bits = bits 0-1 of EventSiteRnd_High.
         id <<= 16;
         id |= (scid::database::idNumberT) RoundID_Low;
@@ -153,8 +154,8 @@ public:
         WhiteBlack_High = WhiteBlack_High & 0xF0;   // Clear bits 0-3.
         WhiteBlack_High |= (id >> 16);              // Set bits 0-3.
     }
-    void SetPlayer (scid::database::colorT col, scid::database::idNumberT id) {
-        if (col == scid::database::BLACK) return SetBlack(id);
+    void SetPlayer (scid::core::colorT col, scid::database::idNumberT id) {
+        if (col == scid::core::BLACK) return SetBlack(id);
         return SetWhite(id);
     }
     void SetEvent (scid::database::idNumberT id) {
@@ -193,42 +194,42 @@ public:
         return nb->GetName (scid::database::NAME_ROUND, GetRound());
     }
 
-    scid::database::dateT GetDate () const { return u32_low_20(Dates); }
-    scid::database::uint  GetYear () const { return scid::database::date_GetYear (GetDate()); }
-    scid::database::uint  GetMonth() const { return scid::database::date_GetMonth (GetDate()); }
-    scid::database::uint  GetDay ()  const { return scid::database::date_GetDay (GetDate()); }
-    scid::database::dateT GetEventDate () const {
-        scid::database::uint dyear = scid::database::date_GetYear (GetDate());
-        scid::database::dateT edate = u32_high_12 (Dates);
-        scid::database::uint month = scid::database::date_GetMonth (edate);
-        scid::database::uint day = scid::database::date_GetDay (edate);
-        scid::database::uint year = scid::database::date_GetYear(edate) & 7;
-        if (year == 0) { return scid::database::ZERO_DATE; }
+    scid::core::dateT GetDate () const { return u32_low_20(Dates); }
+    scid::core::uint  GetYear () const { return scid::core::date_GetYear (GetDate()); }
+    scid::core::uint  GetMonth() const { return scid::core::date_GetMonth (GetDate()); }
+    scid::core::uint  GetDay ()  const { return scid::core::date_GetDay (GetDate()); }
+    scid::core::dateT GetEventDate () const {
+        scid::core::uint dyear = scid::core::date_GetYear (GetDate());
+        scid::core::dateT edate = u32_high_12 (Dates);
+        scid::core::uint month = scid::core::date_GetMonth (edate);
+        scid::core::uint day = scid::core::date_GetDay (edate);
+        scid::core::uint year = scid::core::date_GetYear(edate) & 7;
+        if (year == 0) { return scid::core::ZERO_DATE; }
         year = dyear + year - 4;
-        return (year << scid::database::YEAR_SHIFT) |
-               (month << scid::database::MONTH_SHIFT) | day;
+        return (year << scid::core::YEAR_SHIFT) |
+               (month << scid::core::MONTH_SHIFT) | day;
     }
-    scid::database::resultT GetResult () const { return (VarCounts >> 12); }
-    scid::database::eloT GetWhiteElo () const { return u16_low_12(WhiteElo); }
-    scid::database::eloT GetBlackElo () const { return u16_low_12(BlackElo); }
-    scid::database::eloT GetElo(scid::database::colorT col) const {
-        if (col == scid::database::BLACK) return GetBlackElo();
+    scid::core::resultT GetResult () const { return (VarCounts >> 12); }
+    scid::core::ratingT GetWhiteElo () const { return u16_low_12(WhiteElo); }
+    scid::core::ratingT GetBlackElo () const { return u16_low_12(BlackElo); }
+    scid::core::ratingT GetElo(scid::core::colorT col) const {
+        if (col == scid::core::BLACK) return GetBlackElo();
         return GetWhiteElo();
     }
-    scid::database::byte   GetWhiteRatingType () const { return u16_high_4 (WhiteElo); }
-    scid::database::byte   GetBlackRatingType () const { return u16_high_4 (BlackElo); }
-    scid::database::ecoT   GetEcoCode () const { return EcoCode; }
-    scid::database::ushort GetNumHalfMoves () const { return NumHalfMoves; }
-    scid::database::byte   GetRating(const scid::database::NameBase* nb) const;
+    scid::core::ratingTypeT GetWhiteRatingType () const { return u16_high_4 (WhiteElo); }
+    scid::core::ratingTypeT GetBlackRatingType () const { return u16_high_4 (BlackElo); }
+    scid::database::EcoCode GetEcoCode() const { return EcoCode; }
+    scid::core::ushort GetNumHalfMoves () const { return NumHalfMoves; }
+    scid::core::byte   GetRating(const scid::database::NameBase* nb) const;
 
-    void SetDate  (scid::database::dateT date)   {
+    void SetDate  (scid::core::dateT date)   {
         Dates = u32_set_low_20 (Dates, date);
     }
-    void SetEventDate (scid::database::dateT edate) {
-        scid::database::uint codedDate = scid::database::date_GetMonth(edate) << 5;
-        codedDate |= scid::database::date_GetDay (edate);
-        scid::database::uint eyear = scid::database::date_GetYear (edate);
-        scid::database::uint dyear = scid::database::date_GetYear (GetDate());
+    void SetEventDate (scid::core::dateT edate) {
+        scid::core::uint codedDate = scid::core::date_GetMonth(edate) << 5;
+        codedDate |= scid::core::date_GetDay (edate);
+        scid::core::uint eyear = scid::core::date_GetYear (edate);
+        scid::core::uint dyear = scid::core::date_GetYear (GetDate());
         // Due to a compact encoding format, the EventDate
         // must be within a few years of the Date.
         if ((eyear + 3) < dyear  ||  eyear > (dyear + 3)) {
@@ -238,23 +239,23 @@ public:
         }
         Dates = u32_set_high_12 (Dates, codedDate);
     }
-    void SetResult (scid::database::resultT res) {
-        VarCounts = (VarCounts & 0x0FFF) | (((scid::database::ushort)res) << 12);
+    void SetResult (scid::core::resultT res) {
+        VarCounts = (VarCounts & 0x0FFF) | (((scid::core::ushort)res) << 12);
     }
-    void SetWhiteElo (scid::database::eloT elo)  {
+    void SetWhiteElo (scid::core::ratingT elo)  {
         WhiteElo = u16_set_low_12(WhiteElo, elo);
     }
-    void SetBlackElo (scid::database::eloT elo)  {
+    void SetBlackElo (scid::core::ratingT elo)  {
         BlackElo = u16_set_low_12 (BlackElo, elo);
     }
-    void SetWhiteRatingType (scid::database::byte b) {
+    void SetWhiteRatingType (scid::core::ratingTypeT b) {
         WhiteElo = u16_set_high_4 (WhiteElo, b);
     }
-    void SetBlackRatingType (scid::database::byte b) {
+    void SetBlackRatingType (scid::core::ratingTypeT b) {
         BlackElo = u16_set_high_4 (BlackElo, b);
     }
-    void SetEcoCode (scid::database::ecoT eco)   { EcoCode = eco; }
-    void SetNumHalfMoves (scid::database::ushort b)  { NumHalfMoves = b; }
+    void SetEcoCode(scid::database::EcoCode eco) { EcoCode = eco; }
+    void SetNumHalfMoves (scid::core::ushort b)  { NumHalfMoves = b; }
 
 
     bool GetFlag (uint32_t mask) const {
@@ -273,19 +274,19 @@ public:
     bool GetNagsFlag () const       { return (GetNagCount() > 0); }
     bool GetDeleteFlag () const     { return (Flags & (1 << IDX_FLAG_DELETE)) != 0; }
 
-    static scid::database::uint CharToFlag (char ch);
+    static scid::core::uint CharToFlag (char ch);
     static uint32_t CharToFlagMask (char flag);
     static uint32_t StrToFlagMask (const char* flags);
-    scid::database::uint GetFlagStr(char* dest, const char* flags) const;
+    scid::core::uint GetFlagStr(char* dest, const char* flags) const;
 
-    scid::database::uint GetVariationCount () const { return DecodeCount(VarCounts & 15); }
-    scid::database::uint GetCommentCount () const   { return DecodeCount((VarCounts >> 4) & 15); }
-    scid::database::uint GetNagCount () const       { return DecodeCount((VarCounts >> 8) & 15); }
+    scid::core::uint GetVariationCount () const { return DecodeCount(VarCounts & 15); }
+    scid::core::uint GetCommentCount () const   { return DecodeCount((VarCounts >> 4) & 15); }
+    scid::core::uint GetNagCount () const       { return DecodeCount((VarCounts >> 8) & 15); }
 
     scid::database::matSigT GetFinalMatSig () const { return u32_low_24 (FinalMatSig); }
-    scid::database::byte GetStoredLineCode () const { return u32_high_8 (FinalMatSig); }
-    const scid::database::byte* GetHomePawnData () const { return HomePawnData; }
-    scid::database::byte* GetHomePawnData () { return HomePawnData; }
+    scid::core::byte GetStoredLineCode () const { return u32_high_8 (FinalMatSig); }
+    const scid::core::byte* GetHomePawnData () const { return HomePawnData; }
+    scid::core::byte* GetHomePawnData () { return HomePawnData; }
 
     void SetFlag (uint32_t flagMask, bool b) {
         uint16_t flagLow = flagMask & 0xFFFF;
@@ -297,7 +298,7 @@ public:
             }
         }
 
-        scid::database::byte flagHigh = (flagMask >> 16) & 0x3F;
+        scid::core::byte flagHigh = (flagMask >> 16) & 0x3F;
         if (flagHigh != 0) {
             if (b) {
                 Length_High |= flagHigh;
@@ -312,29 +313,29 @@ public:
     void SetDeleteFlag (bool b)     { SetFlag(1 << IDX_FLAG_DELETE, b); }
     void clearFlags() { return SetFlag(IDX_MASK_ALLFLAGS, false); }
 
-    void SetVariationCount (scid::database::uint x) {
+    void SetVariationCount (scid::core::uint x) {
         VarCounts = (VarCounts & 0xFFF0U) | EncodeCount(x);
     }
-    void SetCommentCount (scid::database::uint x) {
+    void SetCommentCount (scid::core::uint x) {
         VarCounts = (VarCounts & 0xFF0FU) | (EncodeCount(x) << 4);
     }
-    void SetNagCount (scid::database::uint x) {
+    void SetNagCount (scid::core::uint x) {
         VarCounts = (VarCounts & 0xF0FFU) | (EncodeCount(x) << 8);
     }
 
     void SetFinalMatSig (scid::database::matSigT ms) {
         FinalMatSig = u32_set_low_24 (FinalMatSig, ms);
     }
-    void SetStoredLineCode (scid::database::byte b)    {
+    void SetStoredLineCode (scid::core::byte b)    {
         FinalMatSig = u32_set_high_8 (FinalMatSig, b);
     }
 
     enum {
         // scid::database::IndexEntry Flag types:
-        IDX_FLAG_START      =  0,   // scid::database::Game has own start position.
-        IDX_FLAG_PROMO      =  1,   // scid::database::Game contains promotion(s).
-        IDX_FLAG_UPROMO     =  2,   // scid::database::Game contains promotion(s).
-        IDX_FLAG_DELETE     =  3,   // scid::database::Game marked for deletion.
+        IDX_FLAG_START      =  0,   // Game has own start position.
+        IDX_FLAG_PROMO      =  1,   // Game contains promotion(s).
+        IDX_FLAG_UPROMO     =  2,   // Game contains promotion(s).
+        IDX_FLAG_DELETE     =  3,   // Game marked for deletion.
         IDX_FLAG_WHITE_OP   =  4,   // White openings flag.
         IDX_FLAG_BLACK_OP   =  5,   // Black openings flag.
         IDX_FLAG_MIDDLEGAME =  6,   // Middlegames flag.
@@ -358,7 +359,7 @@ public:
     static const uint32_t IDX_MASK_ALLFLAGS = 0xFFFFFFFF;
 
 private:
-    static scid::database::uint EncodeCount (scid::database::uint x) {
+    static scid::core::uint EncodeCount (scid::core::uint x) {
         if (x <= 10) { return x; }
         if (x <= 12) { return 10; }
         if (x <= 17) { return 11; }  // 11 indicates 15 (13-17)
@@ -367,68 +368,68 @@ private:
         if (x <= 44) { return 14; }  // 14 indicates 40 (35-44)
         return 15;                   // 15 indicates 50 or more
     }
-    static scid::database::uint DecodeCount (scid::database::uint x) {
-        static scid::database::uint countCodes[16] = {0,1,2,3,4,5,6,7,8,9,10,15,20,30,40,50};
+    static scid::core::uint DecodeCount (scid::core::uint x) {
+        static scid::core::uint countCodes[16] = {0,1,2,3,4,5,6,7,8,9,10,15,20,30,40,50};
         return countCodes[x & 15];
     }
 
 // Bitmask functions for index entry decoding:
-    static scid::database::byte u32_high_8( scid::database::uint x )
+    static scid::core::byte u32_high_8( scid::core::uint x )
     {
-        return (scid::database::byte)(x >> 24);
+        return (scid::core::byte)(x >> 24);
     }
 
-    static scid::database::uint u32_low_24( scid::database::uint x )
+    static scid::core::uint u32_low_24( scid::core::uint x )
     {
         return x & 0x00FFFFFF;
     }
 
-    static scid::database::uint u32_high_12( scid::database::uint x )
+    static scid::core::uint u32_high_12( scid::core::uint x )
     {
         return x >> 20;
     }
 
-    static scid::database::uint u32_low_20( scid::database::uint x )
+    static scid::core::uint u32_low_20( scid::core::uint x )
     {
         return x & 0x000FFFFF;
     }
 
-    static scid::database::byte u16_high_4( scid::database::ushort x )
+    static scid::core::byte u16_high_4( scid::core::ushort x )
     {
-        return (scid::database::byte)(x >> 12);
+        return (scid::core::byte)(x >> 12);
     }
 
-    static scid::database::ushort u16_low_12( scid::database::ushort x )
+    static scid::core::ushort u16_low_12( scid::core::ushort x )
     {
         return x & 0x0FFF;
     }
 
-    static scid::database::uint u32_set_high_8( scid::database::uint u, scid::database::byte x )
+    static scid::core::uint u32_set_high_8( scid::core::uint u, scid::core::byte x )
     {
-        return u32_low_24(u) | ((scid::database::uint)x << 24);
+        return u32_low_24(u) | ((scid::core::uint)x << 24);
     }
 
-    static scid::database::uint u32_set_low_24( scid::database::uint u, scid::database::uint x )
+    static scid::core::uint u32_set_low_24( scid::core::uint u, scid::core::uint x )
     {
         return (u & 0xFF000000) | (x & 0x00FFFFFF);
     }
 
-    static scid::database::uint u32_set_high_12( scid::database::uint u, scid::database::uint x )
+    static scid::core::uint u32_set_high_12( scid::core::uint u, scid::core::uint x )
     {
         return u32_low_20(u) | (x << 20);
     }
 
-    static scid::database::uint u32_set_low_20( scid::database::uint u, scid::database::uint x )
+    static scid::core::uint u32_set_low_20( scid::core::uint u, scid::core::uint x )
     {
         return (u & 0xFFF00000) | (x & 0x000FFFFF);
     }
 
-    static scid::database::ushort u16_set_high_4( scid::database::ushort u, scid::database::byte x )
+    static scid::core::ushort u16_set_high_4( scid::core::ushort u, scid::core::byte x )
     {
-        return u16_low_12(u) | ((scid::database::ushort)x << 12);
+        return u16_low_12(u) | ((scid::core::ushort)x << 12);
     }
 
-    static scid::database::ushort u16_set_low_12( scid::database::ushort u, scid::database::ushort x )
+    static scid::core::ushort u16_set_low_12( scid::core::ushort u, scid::core::ushort x )
     {
         return (u & 0xF000) | (x & 0x0FFF);
     }
@@ -460,12 +461,12 @@ IndexEntry::Init ()
     Offset = 0;
     Length_Low = 0;
     Length_High = 0;
-    SetDate (scid::database::ZERO_DATE);
-    SetEventDate (scid::database::ZERO_DATE);
-    SetResult (scid::database::RESULT_None);
-    SetEcoCode (scid::database::ECO_None);
+    SetDate (scid::core::ZERO_DATE);
+    SetEventDate (scid::core::ZERO_DATE);
+    SetResult (scid::core::RESULT_None);
+    SetEcoCode(scid::database::ECO_CODE_NONE);
     SetFinalMatSig (scid::database::MATSIG_Empty);
-    for (scid::database::uint i=0; i < HPSIG_SIZE; i++) {
+    for (scid::core::uint i=0; i < HPSIG_SIZE; i++) {
         HomePawnData[i] = 0;
     }
 }
@@ -474,7 +475,7 @@ IndexEntry::Init ()
 // scid::database::IndexEntry::Read():
 //      Reads a single entry's values from an open index file.
 //
-template <class T> scid::database::errorT
+template <class T> scid::core::errorT
 IndexEntry::Read (T* file, scid::database::versionT version)
 {
     // Length of each gamefile record and its offset.
@@ -509,38 +510,38 @@ IndexEntry::Read (T* file, scid::database::versionT version)
     FinalMatSig = file->ReadFourBytes ();
     NumHalfMoves = file->ReadOneByte ();
 
-    // Read the 9-scid::database::byte homePawnData array:
-    scid::database::byte * pb = HomePawnData;
-    // The first scid::database::byte of HomePawnData has high bits of the NumHalfMoves
+    // Read the 9-scid::core::byte homePawnData array:
+    scid::core::byte * pb = HomePawnData;
+    // The first scid::core::byte of HomePawnData has high bits of the NumHalfMoves
     // counter in its top two bits:
-    scid::database::uint pb0 = file->ReadOneByte();
+    scid::core::uint pb0 = file->ReadOneByte();
     *pb = (pb0 & 63);
     pb++;
     NumHalfMoves = NumHalfMoves | ((pb0 >> 6) << 8);
-    for (scid::database::uint i2 = 1; i2 < HPSIG_SIZE; i2++) {
+    for (scid::core::uint i2 = 1; i2 < HPSIG_SIZE; i2++) {
         *pb = file->ReadOneByte ();
         pb++;
     }
 
     // Top 2 bits of HomePawnData[0] are for NumHalfMoves:
-    scid::database::uint numMoves_High = HomePawnData[0];
+    scid::core::uint numMoves_High = HomePawnData[0];
     HomePawnData[0] = HomePawnData[0] & 63;
     numMoves_High >>= 6;
     numMoves_High <<= 8;
     NumHalfMoves = NumHalfMoves | numMoves_High;
 
-    return scid::database::OK;
+    return scid::core::OK;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // scid::database::IndexEntry::Write():
 //      Writes a single index entry to an open index file.
 //      INDEX_ENTRY_SIZE must be updated
-template <class T> scid::database::errorT
+template <class T> scid::core::errorT
 IndexEntry::Write (T* file, scid::database::versionT version) const
 {
     // Cannot write old-version index files:
-    if (version < 400) { return scid::database::ERROR_FileVersion; }
+    if (version < 400) { return scid::core::ERROR_FileVersion; }
 
     version = 0;  // We don't have any version-specific code.
     
@@ -570,30 +571,30 @@ IndexEntry::Write (T* file, scid::database::versionT version) const
     file->WriteFourBytes (FinalMatSig);
     file->WriteOneByte (NumHalfMoves & 255); 
 
-    // Write the 9-scid::database::byte homePawnData array:
-    const scid::database::byte* pb = HomePawnData;
-    // The first scid::database::byte of HomePawnData has high bits of the NumHalfMoves
+    // Write the 9-scid::core::byte homePawnData array:
+    const scid::core::byte* pb = HomePawnData;
+    // The first scid::core::byte of HomePawnData has high bits of the NumHalfMoves
     // counter in its top two bits:
-    scid::database::byte pb0 = *pb;
+    scid::core::byte pb0 = *pb;
     pb0 = pb0 | ((NumHalfMoves >> 8) << 6);
     file->WriteOneByte (pb0);
     pb++;
     // write 8 bytes
-    for (scid::database::uint i2 = 1; i2 < HPSIG_SIZE; i2++) {
+    for (scid::core::uint i2 = 1; i2 < HPSIG_SIZE; i2++) {
         file->WriteOneByte (*pb);
         pb++;
     }
 
-    return scid::database::OK;
+    return scid::core::OK;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // scid::database::IndexEntry::CharToFlag():
 //    Returns the flag number corresponding to the given character.
-inline scid::database::uint
+inline scid::core::uint
 IndexEntry::CharToFlag (char ch)
 {
-    scid::database::uint flag = 0;
+    scid::core::uint flag = 0;
     switch (toupper(ch)) {
         case 'D': flag = IDX_FLAG_DELETE;     break;
         case 'W': flag = IDX_FLAG_WHITE_OP;   break;
@@ -671,11 +672,11 @@ inline uint32_t IndexEntry::StrToFlagMask(const char* flags)
 //    Fills in the provided flag string with information on the
 //    user-settable flags set for this game.
 //    Returns the number of specified flags that are turned on.
-inline scid::database::uint
+inline scid::core::uint
 IndexEntry::GetFlagStr(char* dest, const char* flags) const
 {
     if (flags == NULL) { flags = "DWBMENPTKQ!?U123456"; }
-    scid::database::uint count = 0;
+    scid::core::uint count = 0;
     while (*flags != 0) {
         uint32_t mask = CharToFlagMask(*flags);
         ASSERT(mask != 0);

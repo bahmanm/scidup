@@ -2,32 +2,85 @@
 #define SCIDUP_APP_EDITOR_H
 
 // ScidUp application state. This is intentionally not part of the database
-// library boundary: the database loads and saves Game objects, while ScidUp
-// owns the current editing session, dirty state, undo/redo, and push/pop state.
+// library boundary: ScidUp owns the current editing session, dirty state,
+// undo/redo, push/pop state, core Game, and application/database Scid flags.
 
+#include "scidup/core/game.h"
+#include "scidup/core/game_cursor.h"
+#include "scidup/core/movetext_location.h"
+#include "scidup/database/game_id.h"
 #include "scidup/database/scidbase.h"
+#include "scidup_app_undo_redo.h"
+#include <algorithm>
+#include <array>
 #include <memory>
 #include <optional>
+#include <string_view>
 #include <unordered_map>
 
 namespace scidup::app::editor {
 
+class EditableGame {
+	scid::core::Game coreGame_;
+	std::array<char, 22> scidFlags_{};
+
+public:
+	scid::core::Game& coreGame() { return coreGame_; }
+	const scid::core::Game& coreGame() const { return coreGame_; }
+
+	void clear() {
+		coreGame_.clear();
+		scidFlags_[0] = 0;
+	}
+
+	void setScidFlags(const char* flags, std::size_t len) {
+		scidFlags_.fill(0);
+		std::copy_n(flags, std::min(scidFlags_.size() - 1, len),
+		            scidFlags_.data());
+	}
+
+	const char* scidFlags() const { return scidFlags_.data(); }
+	char* scidFlagsData() { return scidFlags_.data(); }
+	std::size_t scidFlagsCapacity() const { return scidFlags_.size(); }
+
+	EditableGame* clone() const { return new EditableGame(*this); }
+};
+
+struct GameSnapshot {
+	std::unique_ptr<EditableGame> game;
+	scid::core::MovetextLocation location;
+
+	GameSnapshot() : game(std::make_unique<EditableGame>()), location() {}
+	GameSnapshot(EditableGame* game, scid::core::MovetextLocation location)
+	    : game(game), location(location) {}
+
+	GameSnapshot* clone() const { return new GameSnapshot(game->clone(), location); }
+};
+
+struct PushPopState {
+	EditableGame* game = nullptr;
+	bool dirty = false;
+	scid::core::MovetextLocation location;
+};
+
 struct State {
-	std::unique_ptr<scid::database::Game> game = std::make_unique<scid::database::Game>();
+	std::unique_ptr<EditableGame> game = std::make_unique<EditableGame>();
+	scid::core::MovetextLocation location;
 	std::optional<scid::database::gamenumT> loadedGameId;
 	bool dirty = false;
-	scid::database::UndoRedo<scid::database::Game, 100> history;
-	std::pair<scid::database::Game*, bool> deprecatedPushPop{nullptr, false};
+	scidup::app::UndoRedo<GameSnapshot, 100> history;
+	PushPopState deprecatedPushPop;
 
-	~State() { delete deprecatedPushPop.first; }
+	~State() { delete deprecatedPushPop.game; }
 
 	void reset() {
-		game = std::make_unique<scid::database::Game>();
+		game = std::make_unique<EditableGame>();
+		location = {};
 		loadedGameId.reset();
 		dirty = false;
 		history.clear();
-		delete deprecatedPushPop.first;
-		deprecatedPushPop = {nullptr, false};
+		delete deprecatedPushPop.game;
+		deprecatedPushPop = {};
 	}
 };
 
@@ -54,14 +107,13 @@ class GameSession {
 public:
 	explicit GameSession(scid::database::scidBaseT& base) : base_(&base) {}
 
-	scid::database::Game& game() const { return *state().game; }
+	EditableGame& game() const { return *state().game; }
+	scid::core::MovetextLocation location() const { return state().location; }
+	void setLocation(scid::core::MovetextLocation location) const {
+		state().location = location;
+	}
 
 	std::optional<scid::database::gamenumT> loadedGameId() const { return state().loadedGameId; }
-
-	const scid::database::IndexEntry* loadedIndexEntry() const {
-		const auto gameId = loadedGameId();
-		return gameId ? base_->getIndexEntry(*gameId) : nullptr;
-	}
 
 	void setLoadedGameId(std::optional<scid::database::gamenumT> gameId) const {
 		state().loadedGameId = gameId;
@@ -78,80 +130,105 @@ public:
 	void clearHistory() const { state().history.clear(); }
 	size_t undoSize() const { return state().history.undoSize(); }
 	size_t redoSize() const { return state().history.redoSize(); }
-	void storeUndoPoint() const { state().history.store(state().game.get()); }
+	void storeUndoPoint() const {
+		auto& s = state();
+		GameSnapshot current{s.game->clone(), s.location};
+		s.history.store(&current);
+	}
 	void undo() const {
 		auto& s = state();
-		s.game.reset(s.history.undo(s.game.release()));
+		auto current = new GameSnapshot{s.game.release(), s.location};
+		auto restored = s.history.undo(current);
+		s.game.reset(restored->game.release());
+		s.location = restored->location;
+		delete restored;
 	}
 	void redo() const {
 		auto& s = state();
-		s.game.reset(s.history.redo(s.game.release()));
+		auto current = new GameSnapshot{s.game.release(), s.location};
+		auto restored = s.history.redo(current);
+		s.game.reset(restored->game.release());
+		s.location = restored->location;
+		delete restored;
 	}
 
 	void resetToNewGame() const { state().reset(); }
 
-	void replace(scid::database::Game* game, std::optional<scid::database::gamenumT> gameId, bool dirty) const {
+	void replace(EditableGame* game, scid::core::MovetextLocation location,
+	             std::optional<scid::database::gamenumT> gameId,
+	             bool dirty) const {
 		auto& s = state();
 		s.game.reset(game);
 		s.loadedGameId = gameId;
 		s.dirty = dirty;
+		s.location = location;
 		s.history.clear();
-		delete s.deprecatedPushPop.first;
-		s.deprecatedPushPop = {nullptr, false};
+		delete s.deprecatedPushPop.game;
+		s.deprecatedPushPop = {};
 	}
 
-	scid::database::errorT load(scid::database::gamenumT gameId) const {
+	scid::core::errorT load(scid::database::gamenumT gameId) const {
 		auto& s = state();
 		s.history.clear();
-		const auto err = base_->loadGame(gameId, *s.game);
-		if (err != scid::database::OK)
+		const auto err = base_->loadGame(gameId, s.game->coreGame(),
+		                                 s.game->scidFlagsData(),
+		                                 s.game->scidFlagsCapacity());
+		if (err != scid::core::OK)
 			return err;
 
 		if (base_->defaultFilterGet(gameId) > 0) {
-			s.game->MoveToPly(base_->defaultFilterGet(gameId) - 1);
+			scid::core::GameCursor cursor(s.game->coreGame());
+			if (!cursor.toPly(base_->defaultFilterGet(gameId) - 1))
+				cursor.toEnd();
+			s.location = cursor.location();
 		} else {
-			s.game->MoveToStart();
+			s.location = {};
 		}
 		s.loadedGameId = gameId;
 		s.dirty = false;
-		return scid::database::OK;
+		return scid::core::OK;
 	}
 
-	scid::database::errorT undoAll() const {
+	scid::core::errorT undoAll() const {
 		auto& s = state();
 		s.dirty = false;
 		s.history.clear();
 		if (!s.loadedGameId) {
-			s.game->Clear();
-			return scid::database::OK;
+			s.game->clear();
+			s.location = {};
+			return scid::core::OK;
 		}
 
-		const auto err = base_->loadGame(*s.loadedGameId, *s.game);
-		if (err != scid::database::OK)
+		const auto err = base_->loadGame(*s.loadedGameId, s.game->coreGame(),
+		                                 s.game->scidFlagsData(),
+		                                 s.game->scidFlagsCapacity());
+		if (err != scid::core::OK)
 			return err;
-		s.game->MoveToStart();
-		return scid::database::OK;
+		s.location = {};
+		return scid::core::OK;
 	}
 
 	void push(bool copy) const {
 		auto& s = state();
-		scid::database::Game* next = copy ? s.game->clone() : new scid::database::Game;
-		if (s.deprecatedPushPop.first) {
-			delete s.deprecatedPushPop.first;
+		EditableGame* next = copy ? s.game->clone() : new EditableGame;
+		if (s.deprecatedPushPop.game) {
+			delete s.deprecatedPushPop.game;
 		}
-		s.deprecatedPushPop = {s.game.release(), s.dirty};
+		s.deprecatedPushPop = {s.game.release(), s.dirty, s.location};
 		s.game.reset(next);
+		s.location = {};
 		s.dirty = false;
 	}
 
 	void pop() const {
 		auto& s = state();
-		if (!s.deprecatedPushPop.first)
+		if (!s.deprecatedPushPop.game)
 			return;
 
-		s.game.reset(s.deprecatedPushPop.first);
-		s.dirty = s.deprecatedPushPop.second;
-		s.deprecatedPushPop = {nullptr, false};
+		s.game.reset(s.deprecatedPushPop.game);
+		s.location = s.deprecatedPushPop.location;
+		s.dirty = s.deprecatedPushPop.dirty;
+		s.deprecatedPushPop = {};
 	}
 
 private:

@@ -1,6 +1,6 @@
 #include "scidup/eco/book.h"
-#include "scidup/database/misc.h"
-#include "scidup/database/position.h"
+#include "scidup/core/move.h"
+#include "scidup/core/position.h"
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
@@ -21,12 +21,10 @@ void writeFile(const std::filesystem::path& path, std::string_view contents) {
 	out << contents;
 }
 
-void play(scid::database::Position& position, std::string_view san) {
-	scid::database::simpleMoveT sm;
-	const char* begin = san.data();
-	const char* end = begin + san.size();
-	ASSERT_EQ(scid::database::OK, position.ParseMove(&sm, begin, end));
-	position.DoSimpleMove(sm);
+void play(scid::core::Position& position, std::string_view san) {
+	scid::core::MoveSpec spec;
+	ASSERT_EQ(scid::core::OK, position.parseMoveSpec(spec, san));
+	ASSERT_EQ(scid::core::OK, position.applyMove(spec));
 }
 
 class EcoBookTest : public ::testing::Test {
@@ -66,15 +64,15 @@ TEST_F(EcoBookTest, LoadIndexesPositionsAndClassifiesKnownLines) {
 	ASSERT_EQ(scidup::eco::OK, err);
 	EXPECT_EQ(3u, book.size());
 
-	scid::database::Position position;
+	scid::core::Position position;
 	position.StdStart();
 	EXPECT_EQ("A00a [Start position]", book.findEcoString(position));
-	EXPECT_EQ(scid::database::eco_FromString("A00a"), book.findEco(position));
+	EXPECT_EQ(scidup::eco::fromString("A00a"), book.findEco(position));
 
 	play(position, "e4");
 	play(position, "c5");
 	EXPECT_EQ("B20 [Sicilian Defence]", book.findEcoString(position));
-	EXPECT_EQ(scid::database::eco_FromString("B20"), book.findEco(position));
+	EXPECT_EQ(scidup::eco::fromString("B20"), book.findEco(position));
 }
 
 TEST_F(EcoBookTest, LinesWithPrefixReturnsStructuredRows) {

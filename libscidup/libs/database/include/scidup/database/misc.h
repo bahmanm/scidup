@@ -18,6 +18,7 @@
 #ifndef SCID_MISC_H
 #define SCID_MISC_H
 
+#include "scidup/core/game_result.h"
 #include "scidup/database/common.h"
 #include <algorithm>
 #include <string>
@@ -105,20 +106,6 @@ inline filterOpT strGetFilterOp (const char * str)
     return FILTEROP_RESET;
 }
 
-// ECO string routines
-//
-void eco_ToString (ecoT ecoCode, char * ecoStr, bool extensions = true);
-inline void eco_ToBasicString (ecoT ecoCode, char * ecoStr) {
-    eco_ToString (ecoCode, ecoStr, false);
-}
-inline void eco_ToExtendedString (ecoT ecoCode, char * ecoStr) {
-    eco_ToString (ecoCode, ecoStr, true);
-}
-ecoT eco_FromString (const char * ecoStr);
-ecoT eco_LastSubCode (ecoT ecoCode);
-ecoT eco_BasicCode (ecoT ecoCode);
-ecoT eco_Reduce(ecoT eco);
-
 // String routines. Some are identical to ANSI standard functions, but
 //      I have included them:
 //      (a) to keep nice consistent naming conventions, e.g. strCopy.
@@ -145,7 +132,7 @@ inline uint32_t strStartHash(const char* str) {
 char * strDuplicate (const char * str);
 
 char * strAppend (char * target, const char * extra);
-uint   strPad (char * target, const char * orig, int length, char pad);
+scid::core::uint   strPad (char * target, const char * orig, int length, char pad);
 const char * strFirstChar (const char * target, char matchChar);
 const char * strLastChar (const char * target, char matchChar);
 void   strStrip (char * str, char ch);
@@ -154,7 +141,7 @@ const char * strTrimLeft (const char * target, const char * trimChars);
 inline const char * strTrimLeft (const char * target) {
     return strTrimLeft (target, " \t\r\n");
 }
-uint   strTrimSuffix (char * target, char suffixChar);
+scid::core::uint   strTrimSuffix (char * target, char suffixChar);
 void   strTrimDate (char * str);
 void   strTrimMarkCodes (char * str);
 void   strTrimMarkup (char * str);
@@ -164,7 +151,7 @@ const char * strNextWord (const char * str);
 // strPlural:
 //    Returns the empty string if its parameter is 1, or "s" otherwise.
 inline const char *
-strPlural (uint x) {
+strPlural (scid::core::uint x) {
     return (x == 1 ? "" : "s");
 }
 
@@ -225,11 +212,11 @@ inline bool strEqual(const char* str1, const char* str2) {
 	return (std::strcmp(str1, str2) == 0);
 }
 
-void   strGetIntegers (const char * str, int * results, uint nResults);
-void   strGetUnsigneds (const char * str, uint * results, uint nResults);
-resultT strGetResult (const char * str);
+void   strGetIntegers (const char * str, int * results, scid::core::uint nResults);
+void   strGetUnsigneds (const char * str, scid::core::uint * results, scid::core::uint nResults);
+scid::core::resultT strGetResult (const char * str);
 
-typedef uint flagT;
+typedef scid::core::uint flagT;
 const flagT FLAG_EMPTY = 0;
 const flagT FLAG_YES = 1;
 const flagT FLAG_NO = 2;
@@ -238,9 +225,9 @@ inline bool flag_Yes (flagT t) { return (t & FLAG_YES); }
 inline bool flag_No (flagT t) { return (t & FLAG_NO); }
 flagT  strGetFlag (const char * str);
 
-squareT strGetSquare (const char * str);
+scid::core::squareT strGetSquare (const char * str);
 
-inline uint
+inline scid::core::uint
 strTrimFileSuffix (char * target) { return strTrimSuffix (target, '.'); }
 
 inline const char *
@@ -309,11 +296,11 @@ strCopy (char * target, const char * original)
 // strPrefix():
 //       Returns the length of the common prefix of two strings.
 //
-inline uint
+inline scid::core::uint
 strPrefix (const char * s1, const char * s2)
 {
     ASSERT (s1 != NULL  &&  s2 != NULL);
-    uint count = 0;
+    scid::core::uint count = 0;
     while (*s1 == *s2) {
         if (*s1 == 0) { // seen end of string, strings are identical
             return count;
@@ -406,11 +393,11 @@ strAlphaContains (const char * longStr, const char * keyStr)
     return false;
 }
 
-inline uint
+inline scid::core::uint
 strLength (const char * str)
 {
     ASSERT(str != NULL);
-    uint len = 0;
+    scid::core::uint len = 0;
     while (*str != 0) { len++; str++; }
     return len;
 }
@@ -443,4 +430,3 @@ inline void strTrimRight(char* target) {
 //////////////////////////////////////////////////////////////////////
 //  EOF: misc.h
 //////////////////////////////////////////////////////////////////////
-

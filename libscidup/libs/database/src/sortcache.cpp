@@ -22,6 +22,7 @@
  */
 
 #include "sortcache.h"
+#include "scidup/database/game_id.h"
 #include "scidup/database/hfilter.h"
 #include "scidup/database/index.h"
 #include "scidup/database/misc.h"
@@ -382,15 +383,15 @@ int SortCache::fullCompare(gamenumT left, gamenumT right) const {
 		}
 
 		case SORTING_resultwin:
-			res = (ie1->GetResult() == RESULT_White ? 1 : 0) - (ie2->GetResult() == RESULT_White ? 1 : 0);
+			res = (ie1->GetResult() == scid::core::RESULT_White ? 1 : 0) - (ie2->GetResult() == scid::core::RESULT_White ? 1 : 0);
 			break;
 
 		case SORTING_resultdraw:
-			res = (ie1->GetResult() == RESULT_Draw ? 1 : 0) - (ie2->GetResult() == RESULT_Draw ? 1 : 0);
+			res = (ie1->GetResult() == scid::core::RESULT_Draw ? 1 : 0) - (ie2->GetResult() == scid::core::RESULT_Draw ? 1 : 0);
 			break;
 
 		case SORTING_resultloss:
-			res = (ie1->GetResult() == RESULT_Black ? 1 : 0) - (ie2->GetResult() == RESULT_Black ? 1 : 0);
+			res = (ie1->GetResult() == scid::core::RESULT_Black ? 1 : 0) - (ie2->GetResult() == scid::core::RESULT_Black ? 1 : 0);
 			break;
 
 		case SORTING_result:
@@ -545,15 +546,15 @@ uint32_t SortCache::calcHash(gamenumT gameId) {
 				bitsUsed = 8;
 				break;
 			case SORTING_resultwin:
-				value = ie->GetResult() == RESULT_White ? 1 : 0;
+				value = ie->GetResult() == scid::core::RESULT_White ? 1 : 0;
 				bitsUsed = 8;
 				break;
 			case SORTING_resultdraw:
-				value = ie->GetResult() == RESULT_Draw ? 1 : 0;
+				value = ie->GetResult() == scid::core::RESULT_Draw ? 1 : 0;
 				bitsUsed = 8;
 				break;
 			case SORTING_resultloss:
-				value = ie->GetResult() == RESULT_Black ? 1 : 0;
+				value = ie->GetResult() == scid::core::RESULT_Black ? 1 : 0;
 				bitsUsed = 8;
 				break;
 			case SORTING_moveCount:

@@ -25,8 +25,9 @@
 #ifndef CODEC_SCID4_H
 #define CODEC_SCID4_H
 
-#include "scidup/database/codec.h"
-#include "scidup/database/filebuf.h"
+#include "codec.h"
+#include "filebuf.h"
+#include "scidup/database/game_id.h"
 #include "scidup/database/index.h"
 #include "scidup/database/namebase.h"
 #include <limits>
@@ -64,7 +65,7 @@ class CodecSCID4 : public ICodecDatabase {
 	};
 
 public: // ICodecDatabase interface
-	Codec getType() const final { return ICodecDatabase::SCID4; }
+	CodecType getType() const final { return CodecType::Scid4; }
 
 	/**
 	 * Returns the full path of the three files (index, namebase and gamefile)
@@ -88,7 +89,7 @@ public: // ICodecDatabase interface
 		return res;
 	}
 
-	errorT setExtraInfo(const char* tagname, const char* new_value) override;
+	scid::core::errorT setExtraInfo(const char* tagname, const char* new_value) override;
 
 	ByteBuffer getGameData(uint64_t offset, uint32_t length) final {
 		if (offset >= gfile_.size())
@@ -101,18 +102,18 @@ public: // ICodecDatabase interface
 		if (gfile_.sgetn(gamecache_, length) != std::streamsize(length))
 			return {nullptr, 0};
 
-		return {reinterpret_cast<const byte*>(gamecache_), length};
+		return {reinterpret_cast<const scid::core::byte*>(gamecache_), length};
 	}
 
 	ByteBuffer getGameMoves(IndexEntry const& ie) final {
 		auto data = getGameData(ie.GetOffset(), ie.GetLength());
-		if (data && OK == data.decodeTags([](auto, auto) {}))
+		if (data && scid::core::OK == data.decodeTags([](auto, auto) {}))
 			return data;
 
 		return {nullptr, 0};
 	}
 
-	errorT addGame(IndexEntry const& ie_src, TagRoster const& tags,
+	scid::core::errorT addGame(IndexEntry const& ie_src, TagRoster const& tags,
 	               ByteBuffer const& data) final {
 		IndexEntry ie = ie_src;
 		if (auto err = addGameNamesAndData(ie, tags, data.data(), data.size()))
@@ -121,7 +122,7 @@ public: // ICodecDatabase interface
 		return dyn_addIndexEntry(ie);
 	}
 
-	errorT saveGame(IndexEntry const& ie_src, TagRoster const& tags,
+	scid::core::errorT saveGame(IndexEntry const& ie_src, TagRoster const& tags,
 	                ByteBuffer const& data, gamenumT replaced) final {
 		IndexEntry ie = ie_src;
 		if (auto err = addGameNamesAndData(ie, tags, data.data(), data.size()))
@@ -130,17 +131,17 @@ public: // ICodecDatabase interface
 		return dyn_saveIndexEntry(ie, replaced);
 	}
 
-	errorT saveIndexEntry(const IndexEntry& ie, gamenumT replaced) final {
+	scid::core::errorT saveIndexEntry(const IndexEntry& ie, gamenumT replaced) final {
 		return dyn_saveIndexEntry(ie, replaced);
 	}
 
-	std::pair<errorT, idNumberT> addName(nameT nt, const char* name) final {
+	std::pair<scid::core::errorT, idNumberT> addName(nameT nt, const char* name) final {
 		return dyn_addName(nt, name);
 	}
 
-	errorT flush() final;
+	scid::core::errorT flush() final;
 
-	errorT dyn_open(fileModeT, const char*, const Progress&, Index*,
+	scid::core::errorT dyn_open(fileModeT, const char*, const Progress&, Index*,
 	                NameBase*) final;
 
 private:
@@ -150,35 +151,35 @@ private:
 	 *                (encoded in native format).
 	 * @param length: the length of the buffer @e src (in bytes).
 	 * @returns
-	 * - on success, a @e std::pair containing OK and the offset of the stored
+	 * - on success, a @e std::pair containing scid::core::OK and the offset of the stored
 	 *   data (needed for retrieving the data with getGameData()).
 	 * - on failure, a @e std::pair containing an error code and 0.
 	 */
-	std::pair<errorT, uint64_t> dyn_addGameData(const byte* src,
+	std::pair<scid::core::errorT, uint64_t> dyn_addGameData(const scid::core::byte* src,
 	                                            size_t length) {
 		ASSERT(src != 0);
 		const char* data = reinterpret_cast<const char*>(src);
 
 		if (length >= LIMIT_GAMELEN)
-			return std::make_pair(ERROR_GameLengthLimit, 0);
+			return std::make_pair(scid::core::ERROR_GameLengthLimit, 0);
 
 		// The SCID4 format uses 32-bits to store games' offset.
 		uint64_t offset = gfile_.size();
 		if (offset >= LIMIT_GAMEOFFSET - length)
-			return std::make_pair(ERROR_OffsetLimit, 0);
+			return std::make_pair(scid::core::ERROR_OffsetLimit, 0);
 
 		// The SCID4 format stores games into blocks of 128KB.
 		// If the current block does not have enough space, we fill it with
 		// random data and use the next one.
 		uint64_t blockSpace = LIMIT_GAMELEN - (offset % LIMIT_GAMELEN);
 		if (blockSpace < length) {
-			errorT err = gfile_.append(data, blockSpace);
-			if (err != OK)
+			scid::core::errorT err = gfile_.append(data, blockSpace);
+			if (err != scid::core::OK)
 				return std::make_pair(err, 0);
 			offset += blockSpace;
 		}
 
-		errorT err = gfile_.append(data, length);
+		scid::core::errorT err = gfile_.append(data, length);
 		return std::make_pair(err, offset);
 	}
 
@@ -188,12 +189,12 @@ private:
 	 * @param nt:   nameT type of the name to retrieve.
 	 * @param name: the name to retrieve.
 	 * @returns
-	 * - on success, a @e std::pair containing OK and the ID.
+	 * - on success, a @e std::pair containing scid::core::OK and the ID.
 	 * - on failure, a @e std::pair containing an error code and 0.
 	 */
-	std::pair<errorT, idNumberT> dyn_addName(nameT nt, const char* name) {
+	std::pair<scid::core::errorT, idNumberT> dyn_addName(nameT nt, const char* name) {
 		if (std::string_view(name).size() > LIMIT_NAMELEN)
-			return {ERROR_NameTooLong, 0};
+			return {scid::core::ERROR_NameTooLong, 0};
 
 		static constexpr auto limit_unique_names = [] {
 			std::array<unsigned long long, NUM_NAME_TYPES> res;
@@ -204,24 +205,24 @@ private:
 			return res;
 		}();
 		if (nb_->namebase_size(nt) < limit_unique_names[nt])
-			return {OK, nb_->namebase_find_or_add(nt, name)};
+			return {scid::core::OK, nb_->namebase_find_or_add(nt, name)};
 
 		idNumberT id;
-		if (nb_->FindExactName(nt, name, &id) == OK)
-			return {OK, id};
+		if (nb_->FindExactName(nt, name, &id) == scid::core::OK)
+			return {scid::core::OK, id};
 
-		return {ERROR_NameLimit, 0};
+		return {scid::core::ERROR_NameLimit, 0};
 	}
 
 	/**
 	 * Add an IndexEntry to @e idx_.
 	 * @param ie: the IndexEntry object to add.
-	 * @returns OK if successful or an error code.
+	 * @returns scid::core::OK if successful or an error code.
 	 */
-	errorT dyn_addIndexEntry(const IndexEntry& ie) {
+	scid::core::errorT dyn_addIndexEntry(const IndexEntry& ie) {
 		const auto nGames = idx_->GetNumGames();
 		if (nGames >= LIMIT_NUMGAMES)
-			return ERROR_NumGamesLimit;
+			return scid::core::ERROR_NumGamesLimit;
 
 		idx_->addEntry(ie);
 		header_.dirty = true;
@@ -232,19 +233,19 @@ private:
 	 * Replace an IndexEntry.
 	 * @param ie:       the IndexEntry with the new data.
 	 * @param replaced: valid gamenumT of the game to be replaced.
-	 * @returns OK if successful or an error code.
+	 * @returns scid::core::OK if successful or an error code.
 	 */
-	errorT dyn_saveIndexEntry(const IndexEntry& ie, gamenumT replaced) {
+	scid::core::errorT dyn_saveIndexEntry(const IndexEntry& ie, gamenumT replaced) {
 		idx_->replaceEntry(ie, replaced);
 		return writeEntry(ie, replaced);
 	}
 
 	/// Add the game's roster tags and gamedata to the database.
 	/// Set the references to the new data in @e ie.
-	errorT addGameNamesAndData(IndexEntry& ie, TagRoster const& tags,
-	                           const byte* srcData, size_t dataLen) {
+	scid::core::errorT addGameNamesAndData(IndexEntry& ie, TagRoster const& tags,
+	                           const scid::core::byte* srcData, size_t dataLen) {
 		if (!ie.isChessStd())
-			return ERROR_CodecChess960;
+			return scid::core::ERROR_CodecChess960;
 
 		auto errNames = tags.map(
 		    ie, [&](auto nt, auto name) { return dyn_addName(nt, name); });
@@ -259,9 +260,9 @@ private:
 		return err;
 	}
 
-	errorT readIndex(gamenumT nGames, Progress const& progress);
+	scid::core::errorT readIndex(gamenumT nGames, Progress const& progress);
 
-	errorT writeEntry(const IndexEntry& ie, gamenumT gnum);
+	scid::core::errorT writeEntry(const IndexEntry& ie, gamenumT gnum);
 };
 
 

@@ -1,169 +1,90 @@
-/*
- * Copyright (C) 2020 Fulvio Benini
- *
- * Scid is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation.
- *
- * Scid is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Scid. If not, see <http://www.gnu.org/licenses/>.
- */
+#include "bytebuf.h"
+#include "scidup/core/game.h"
+#include "scidup/core/game_cursor.h"
+#include "scidup/core/notation.h"
+#include "scidup/core/pgn/decode.h"
+#include "game_storage.h"
 
-#include "scidup/database/bytebuf.h"
 #include <gtest/gtest.h>
+#include <string>
+#include <string_view>
+#include <vector>
 
-TEST(Test_decodeMove, pawn_white) {
-	const scid::database::squareT from = scid::database::C2;
-	std::tuple<unsigned char, int, scid::database::pieceT> data[] = {
-	    {0, from + 7, scid::database::INVALID_PIECE}, {1, from + 8, scid::database::INVALID_PIECE},
-	    {2, from + 9, scid::database::INVALID_PIECE}, {3, from + 7, scid::database::QUEEN},
-	    {4, from + 8, scid::database::QUEEN},         {5, from + 9, scid::database::QUEEN},
-	    {6, from + 7, scid::database::ROOK},          {7, from + 8, scid::database::ROOK},
-	    {8, from + 9, scid::database::ROOK},          {9, from + 7, scid::database::BISHOP},
-	    {10, from + 8, scid::database::BISHOP},       {11, from + 9, scid::database::BISHOP},
-	    {12, from + 7, scid::database::KNIGHT},       {13, from + 8, scid::database::KNIGHT},
-	    {14, from + 9, scid::database::KNIGHT},       {15, from + 16, scid::database::INVALID_PIECE},
-	};
-	scid::database::ByteBuffer bbuf(nullptr, 0);
-	for (auto [moveCode, expTo, expPromo] : data) {
-		auto [to, promo] = bbuf.decodeMove(scid::database::WHITE, scid::database::PAWN, from, moveCode);
-		EXPECT_EQ(to, expTo);
-		EXPECT_EQ(promo, expPromo);
+namespace {
+
+std::string currentFen(const scid::core::Game& game,
+                       scid::core::MovetextLocation location) {
+	scid::core::GameCursor cursor(game);
+	EXPECT_TRUE(cursor.restore(location));
+	auto position = cursor.currentPosition();
+	EXPECT_TRUE(position.has_value());
+	if (!position)
+		return {};
+
+	char buf[256];
+	position->PrintFEN(buf, sizeof(buf));
+	return buf;
+}
+
+void expect_roundtrip(std::string_view pgn) {
+	SCOPED_TRACE(std::string(pgn));
+	scid::core::Game original;
+	scid::core::MovetextLocation originalLocation;
+	scid::core::pgn::ParseLog parseLog;
+	ASSERT_TRUE(scid::core::pgn::parseGame(pgn.data(), pgn.size(), original,
+	                                         originalLocation,
+	                                         parseLog));
+
+	std::vector<scid::core::byte> encoded;
+	scid::database::game_storage::encode(original,
+	                                     "", encoded);
+
+	scid::database::ByteBuffer bbuf(encoded.data(), encoded.size());
+	scid::core::Game decoded;
+	decoded.clear();
+	ASSERT_EQ(scid::core::OK,
+	          scid::database::game_storage::decodeMovesOnly(decoded,
+	                                                        bbuf));
+
+	originalLocation = {};
+	scid::core::MovetextLocation decodedLocation;
+
+	for (;;) {
+		EXPECT_EQ(currentFen(original, originalLocation),
+		          currentFen(decoded, decodedLocation));
+		EXPECT_EQ(scid::core::notation::nextSan(original,
+		                                        originalLocation),
+		          scid::core::notation::nextSan(decoded,
+		                                        decodedLocation));
+
+		scid::core::GameCursor originalCursor(original);
+		EXPECT_TRUE(originalCursor.restore(originalLocation));
+		scid::core::GameCursor decodedCursor(decoded);
+		EXPECT_TRUE(decodedCursor.restore(decodedLocation));
+		const auto originalErr = originalCursor.next()
+		                             ? scid::core::OK
+		                             : scid::core::ERROR_EndOfMoveList;
+		const auto decodedErr = decodedCursor.next()
+		                            ? scid::core::OK
+		                            : scid::core::ERROR_EndOfMoveList;
+		EXPECT_EQ(originalErr, decodedErr);
+		if (originalErr != scid::core::OK)
+			break;
+		originalLocation = originalCursor.location();
+		decodedLocation = decodedCursor.location();
 	}
 }
 
-TEST(Test_decodeMove, pawn_black) {
-	const scid::database::squareT from = scid::database::D7;
-	std::tuple<unsigned char, int, scid::database::pieceT> data[] = {
-	    {0, from - 7, scid::database::INVALID_PIECE}, {1, from - 8, scid::database::INVALID_PIECE},
-	    {2, from - 9, scid::database::INVALID_PIECE}, {3, from - 7, scid::database::QUEEN},
-	    {4, from - 8, scid::database::QUEEN},         {5, from - 9, scid::database::QUEEN},
-	    {6, from - 7, scid::database::ROOK},          {7, from - 8, scid::database::ROOK},
-	    {8, from - 9, scid::database::ROOK},          {9, from - 7, scid::database::BISHOP},
-	    {10, from - 8, scid::database::BISHOP},       {11, from - 9, scid::database::BISHOP},
-	    {12, from - 7, scid::database::KNIGHT},       {13, from - 8, scid::database::KNIGHT},
-	    {14, from - 9, scid::database::KNIGHT},       {15, from - 16, scid::database::INVALID_PIECE},
-	};
-	scid::database::ByteBuffer bbuf(nullptr, 0);
-	for (auto [moveCode, expTo, expPromo] : data) {
-		auto [to, promo] = bbuf.decodeMove(scid::database::BLACK, scid::database::PAWN, from, moveCode);
-		EXPECT_EQ(to, expTo);
-		EXPECT_EQ(promo, expPromo);
-	}
-}
+} // namespace
 
-TEST(Test_decodeMove, bishop) {
-	const scid::database::squareT from = scid::database::G7;
-	scid::database::ByteBuffer bbuf(nullptr, 0);
-	for (unsigned char moveCode = 0; moveCode < 16; ++moveCode) {
-		auto [to, promo] = bbuf.decodeMove(scid::database::WHITE, scid::database::BISHOP, from, moveCode);
-		EXPECT_EQ(promo, scid::database::INVALID_PIECE);
-		EXPECT_EQ(scid::database::square_Fyle(to), scid::database::square_Fyle(moveCode));
-		int distRank = (to + 64) / 8 - (from + 64) / 8;
-		int distFyle = (to + 64) % 8 - (from + 64) % 8;
-		if (moveCode < 8)
-			EXPECT_EQ(distRank, distFyle);
-		else
-			EXPECT_EQ(distRank, -distFyle);
-	}
-}
-
-TEST(Test_decodeMove, knight) {
-	const scid::database::squareT from = scid::database::B3;
-	std::tuple<unsigned char, int> data[] = {
-	    {1, from - 17}, {2, from - 15}, {3, from - 10}, {4, from - 6},
-	    {5, from + 6},  {6, from + 10}, {7, from + 15}, {8, from + 17},
-	};
-	scid::database::ByteBuffer bbuf(nullptr, 0);
-	for (auto [moveCode, expTo] : data) {
-		auto [to, promo] = bbuf.decodeMove(scid::database::WHITE, scid::database::KNIGHT, from, moveCode);
-		EXPECT_EQ(to, expTo);
-		EXPECT_EQ(promo, scid::database::INVALID_PIECE);
-	}
-	for (auto moveCode : {0, 9, 10, 11, 12, 13, 14, 15}) {
-		auto [to, promo] = bbuf.decodeMove(scid::database::WHITE, scid::database::KNIGHT, from, moveCode);
-		EXPECT_EQ(to, from);
-		EXPECT_EQ(promo, scid::database::INVALID_PIECE);
-	}
-}
-
-TEST(Test_decodeMove, rook) {
-	const scid::database::squareT from = scid::database::B3;
-	scid::database::ByteBuffer bbuf(nullptr, 0);
-	for (unsigned char moveCode = 0; moveCode < 8; ++moveCode) {
-		auto [to, promo] = bbuf.decodeMove(scid::database::WHITE, scid::database::ROOK, from, moveCode);
-		EXPECT_EQ(scid::database::square_Rank(to), scid::database::square_Rank(from));
-		EXPECT_EQ(scid::database::square_Fyle(to), moveCode);
-		EXPECT_EQ(promo, scid::database::INVALID_PIECE);
-	}
-	for (unsigned char moveCode = 8; moveCode < 16; ++moveCode) {
-		auto [to, promo] = bbuf.decodeMove(scid::database::WHITE, scid::database::ROOK, from, moveCode);
-		EXPECT_EQ(scid::database::square_Fyle(to), scid::database::square_Fyle(from));
-		EXPECT_EQ(scid::database::square_Rank(to), moveCode - 8);
-		EXPECT_EQ(promo, scid::database::INVALID_PIECE);
-	}
-}
-
-TEST(Test_decodeMove, queen) {
-	const scid::database::squareT from = scid::database::A1;
-	unsigned char data[] = {scid::database::C3 + 64};
-	scid::database::ByteBuffer bbuf(data, sizeof data);
-	{
-		ASSERT_TRUE(bbuf);
-		auto [to, promo] = bbuf.decodeMove(scid::database::WHITE, scid::database::QUEEN, from, 0);
-		EXPECT_EQ(to, scid::database::C3);
-		EXPECT_EQ(promo, scid::database::INVALID_PIECE);
-		EXPECT_FALSE(bbuf);
-	}
-	for (unsigned char moveCode = 1; moveCode < 8; ++moveCode) {
-		auto [to, promo] = bbuf.decodeMove(scid::database::WHITE, scid::database::QUEEN, from, moveCode);
-		EXPECT_EQ(scid::database::square_Rank(to), scid::database::square_Rank(from));
-		EXPECT_EQ(scid::database::square_Fyle(to), moveCode);
-		EXPECT_EQ(promo, scid::database::INVALID_PIECE);
-	}
-	for (unsigned char moveCode = 8; moveCode < 16; ++moveCode) {
-		auto [to, promo] = bbuf.decodeMove(scid::database::WHITE, scid::database::QUEEN, from, moveCode);
-		EXPECT_EQ(scid::database::square_Fyle(to), scid::database::square_Fyle(from));
-		EXPECT_EQ(scid::database::square_Rank(to), moveCode - 8);
-		EXPECT_EQ(promo, scid::database::INVALID_PIECE);
-	}
-}
-
-TEST(Test_decodeMove, king) {
-	const scid::database::squareT from = scid::database::B3;
-	scid::database::ByteBuffer bbuf(nullptr, 0);
-	{
-		auto [to, promo] = bbuf.decodeMove(scid::database::WHITE, scid::database::KING, from, 0);
-		EXPECT_EQ(to, from);
-		EXPECT_EQ(promo, scid::database::PAWN);
-	}
-	std::tuple<unsigned char, int> data[] = {
-	    {1, from - 9}, {2, from - 8}, {3, from - 7}, {4, from - 1},
-	    {5, from + 1}, {6, from + 7}, {7, from + 8}, {8, from + 9},
-	};
-	for (auto [moveCode, expTo] : data) {
-		auto [to, promo] = bbuf.decodeMove(scid::database::WHITE, scid::database::KING, from, moveCode);
-		EXPECT_EQ(to, expTo);
-		EXPECT_EQ(promo, scid::database::INVALID_PIECE);
-	}
-	{
-		auto [to, promo] = bbuf.decodeMove(scid::database::WHITE, scid::database::KING, from, 9);
-		EXPECT_EQ(to, from);
-		EXPECT_EQ(promo, scid::database::QUEEN);
-	}
-	{
-		auto [to, promo] = bbuf.decodeMove(scid::database::WHITE, scid::database::KING, from, 10);
-		EXPECT_EQ(to, from);
-		EXPECT_EQ(promo, scid::database::KING);
-	}
-	for (unsigned char moveCode = 11; moveCode < 16; ++moveCode) {
-		auto [to, promo] = bbuf.decodeMove(scid::database::WHITE, scid::database::KING, from, moveCode);
-		EXPECT_EQ(to, from);
-		EXPECT_EQ(promo, scid::database::INVALID_PIECE);
-	}
+TEST(Test_DecodeMove, representative_encoded_moves_roundtrip) {
+	expect_roundtrip(
+	    "1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Be7 6.Re1 b5 "
+	    "7.Bb3 d6 8.c3 O-O 9.h3");
+	expect_roundtrip(
+	    "1.d4 d5 2.Qd3 Nf6 3.Qb5+ c6 4.Qa4");
+	expect_roundtrip(
+	    "[FEN \"6k1/P7/8/8/8/8/6K1/8 w - - 0 1\"] "
+	    "1.a8=Q+ Kh7 2.Qf8");
+	expect_roundtrip("1.e4 -- 2.e5 Nc6");
 }

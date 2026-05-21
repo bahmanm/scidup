@@ -19,6 +19,7 @@
 #ifndef SCID_NAMEBASE_H
 #define SCID_NAMEBASE_H
 
+#include "scidup/database/game_id.h"
 #include "scidup/database/index.h"
 #include "scidup/database/indexentry.h"
 #include "scidup/database/misc.h"
@@ -196,17 +197,17 @@ public:
 	 * @param nt:         @e nameT type of the name to be searched.
 	 * @param str:        name to be be searched.
 	 * @param[out] idPtr: pointer which will receive the ID of the name.
-	 * @returns OK or ERROR_NameNotFound if the name does not exists.
+	 * @returns scid::core::OK or scid::core::ERROR_NameNotFound if the name does not exists.
 	 */
-	errorT FindExactName(nameT nt, const char* str, idNumberT* idPtr) const {
+	scid::core::errorT FindExactName(nameT nt, const char* str, idNumberT* idPtr) const {
 		ASSERT(IsValidNameType(nt) && str != NULL && idPtr != NULL);
 
 		auto it = idx_[nt].find(str);
 		if (it != idx_[nt].end()) {
 			*idPtr = (*it).second;
-			return OK;
+			return scid::core::OK;
 		}
-		return ERROR_NameNotFound;
+		return scid::core::ERROR_NameNotFound;
 	}
 
 	/**

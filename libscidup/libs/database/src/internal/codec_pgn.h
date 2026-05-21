@@ -26,9 +26,9 @@
 #define CODEC_PGN_H
 
 #include "codec_proxy.h"
-#include "scidup/database/filebuf.h"
-#include "scidup/database/pgn_encode.h"
-#include "scidup/database/pgnparse.h"
+#include "filebuf.h"
+#include "scidup/core/pgn/decode.h"
+#include "scidup/core/pgn/encode.h"
 #include <algorithm>
 #include <cstring>
 #include <vector>
@@ -41,19 +41,19 @@ class CodecPgn final : public CodecProxy<CodecPgn> {
 	std::vector<char> buf_;
 	size_t nParsed_ = 0;
 	size_t nRead_ = 0;
-	PgnParseLog parseLog_;
+	scid::core::pgn::ParseLog parseLog_;
 
 public:
-	Codec getType() const final { return ICodecDatabase::PGN; }
+	CodecType getType() const final { return CodecType::Pgn; }
 
 	std::vector<std::string> getFilenames() const final {
 		return std::vector<std::string>(1, filename_);
 	};
 
-	errorT flush() final {
-		errorT errFile = (file_.pubsync() == 0) ? OK : ERROR_FileWrite;
-		errorT errProxy = CodecProxy<CodecPgn>::flush();
-		return (errFile != OK) ? errFile : errProxy;
+	scid::core::errorT flush() final {
+		scid::core::errorT errFile = (file_.pubsync() == 0) ? scid::core::OK : scid::core::ERROR_FileWrite;
+		scid::core::errorT errProxy = CodecProxy<CodecPgn>::flush();
+		return (errFile != scid::core::OK) ? errFile : errProxy;
 	}
 
 	/**
@@ -62,31 +62,32 @@ public:
 	 * parseNext() calls.
 	 * @param filename: full path of the pgn file to be opened.
 	 * @param fmode:    valid file access mode.
-	 * @returns OK in case of success, an @e errorT code otherwise.
+	 * @returns scid::core::OK in case of success, an @e scid::core::errorT code otherwise.
 	 */
-	errorT open(const char* filename, fileModeT fmode) {
+	scid::core::errorT open(const char* filename, fileModeT fmode) {
 		ASSERT(filename);
 
 		buf_.resize(128 * 1024);
 		nRead_ = nParsed_ = buf_.size();
 		filename_ = filename;
 		if (filename_.empty())
-			return ERROR_FileOpen;
+			return scid::core::ERROR_FileOpen;
 
 		if (auto err = file_.open(filename, fmode))
 			return err;
 
-		return file_.pubseekpos(0) == 0 ? OK : ERROR_FileSeek;
+		return file_.pubseekpos(0) == 0 ? scid::core::OK : scid::core::ERROR_FileSeek;
 	}
 
 	/**
 	 * Reads the next game.
 	 * @param game: the Game object where the data will be stored.
 	 * @returns
-	 * - ERROR_NotFound if there are no more games to be read.
-	 * - OK otherwise.
+	 * - scid::core::ERROR_NotFound if there are no more games to be read.
+	 * - scid::core::OK otherwise.
 	 */
-	errorT parseNext(Game& game) {
+	scid::core::errorT parseNext(scid::core::Game& game, char* scidFlagsOut,
+	                 std::size_t scidFlagsOutLen) {
 		const auto verge = 3 * (nRead_ / 4);
 		if (nParsed_ > verge && nRead_ == buf_.size()) {
 			nParsed_ -= verge;
@@ -95,32 +96,41 @@ public:
 			nRead_ += file_.sgetn(buf_.data() + nRead_, verge);
 		}
 
-		game.Clear();
-		PgnVisitor visitor(game);
-		auto parse = pgn::parse_game(
-		    {buf_.data() + nParsed_, buf_.data() + nRead_}, visitor);
+		game.clear();
+		const auto startBytes = parseLog_.n_bytes;
+		const auto startLogSize = parseLog_.log.size();
+		const auto parsed = scid::core::pgn::parseGame(
+		    buf_.data() + nParsed_, nRead_ - nParsed_, game, parseLog_);
+		const auto parsedBytes = parseLog_.n_bytes - startBytes;
 
-		bool eof = (nRead_ - nParsed_ == parse.first);
+		bool eof = (nRead_ - nParsed_ == parsedBytes);
 		if (eof && nRead_ == buf_.size()) {
 			// Reached the end of input, but the file contains more bytes.
 			if (nRead_ <= 128 * 1024 * 1024) {
 				// Double the buffer size and retry.
 				buf_.resize(nRead_ * 2);
 				nRead_ += file_.sgetn(buf_.data() + nRead_, nRead_);
-				return parseNext(game);
+				return parseNext(game, scidFlagsOut, scidFlagsOutLen);
 			}
 			// Abort
 			nRead_ = nParsed_ = 0;
 			parseLog_.log.append("PGN parsing aborted.\n");
-			return ERROR_NotFound;
+			return scid::core::ERROR_NotFound;
 		}
 
-		nParsed_ += parse.first;
-		parseLog_.logGame(parse.first, visitor);
-		if (eof && !parse.second && *game.GetMoveComment() == '\0')
-			return ERROR_NotFound;
+		nParsed_ += parsedBytes;
+		if (auto scidFlags = game.findExtraTag("ScidFlags");
+		    scidFlags && scidFlagsOut && scidFlagsOutLen > 0) {
+			std::fill_n(scidFlagsOut, scidFlagsOutLen, 0);
+			std::copy_n(scidFlags->data(),
+			            std::min(scidFlagsOutLen - 1, scidFlags->size()),
+			            scidFlagsOut);
+			game.removeExtraTag("ScidFlags");
+		}
+		if (!parsed && parseLog_.log.size() == startLogSize)
+			return scid::core::ERROR_NotFound;
 
-		return OK;
+		return scid::core::OK;
 	}
 
 	/**
@@ -140,19 +150,12 @@ public:
 	/**
 	 * Add a game into the database.
 	 * The @e game is encoded in pgn format and appended at the end of @e file_.
-	 * @param game: valid pointer to a Game object with the new data.
-	 * @returns OK in case of success, an @e errorT code otherwise.
+	 * @param game: core game data to append.
+	 * @returns scid::core::OK in case of success, an @e scid::core::errorT code otherwise.
 	 */
-	errorT gameAdd(Game* game) {
-		// TODO: we need this to fill in all the moveT->san
-		// It would be better to do this when the game is decoded.
-		game->MoveToStart();
-		do {
-			game->GetNextSAN();
-		} while (game->MoveForwardInPGN() == OK);
-
+	scid::core::errorT gameAdd(scid::core::Game const& game, const char*) {
 		buf_.clear();
-		pgn::encode(*game, buf_);
+		scid::core::pgn::encode(game, buf_);
 		buf_.push_back('\n');
 		return file_.append(buf_.data(), buf_.size());
 	}

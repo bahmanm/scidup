@@ -26,8 +26,9 @@
 
 #pragma once
 
-#include "scidup/database/codec.h"
-#include "scidup/database/filebuf.h"
+#include "codec.h"
+#include "filebuf.h"
+#include "scidup/database/game_id.h"
 #include "scidup/database/index.h"
 #include "scidup/database/namebase.h"
 #include <algorithm>
@@ -58,7 +59,7 @@
 // - Maximum number of unique values for the tag "Round": 2 billion (2^31).
 //
 // Index
-// The index file (extension .si5) contains a record of 56 byte for each game.
+// The index file (extension .si5) contains a record of 56 scid::core::byte for each game.
 // A record consists of 12 uint32_t (12 * 4 = 48 bytes) encoded as little-endian
 // and 8 bytes at the end for the "home pawn" data.
 // The fields are:
@@ -128,7 +129,7 @@
 // - the optional FEN of the initial position
 // - the moves of the game
 // - the comments
-// The moves are encoded in one byte and the most significant 4-bits are the
+// The moves are encoded in one scid::core::byte and the most significant 4-bits are the
 // index of the moving piece. The king always has index 0. This implies that all
 // the moves of the other pieces always have a value >15. A king have only 8
 // possible moves, leaving room for encoding special values:
@@ -144,7 +145,7 @@
 //   d4 {first comment] d5 c4 {2nd} c6 {3rd} Nc3 {4th} Nf6 Nf3
 // is encoded as
 //   d4 {} d5 c4 {} c6 Nc3 Nf6 Nf3
-// The extra tag pairs are encoded as a fixed 1 byte length followed by the
+// The extra tag pairs are encoded as a fixed 1 scid::core::byte length followed by the
 // data. An empty tag name is not allowed.
 // The tag name can have at most 240 characters (range [1:240] ).
 // The tag value can have at most 255 characters (range [0:255] ).
@@ -180,7 +181,7 @@ class CodecSCID5 final : public ICodecDatabase {
 	static constexpr unsigned NAME_INFO = 4;
 
 public: // ICodecDatabase interface
-	Codec getType() const final { return ICodecDatabase::SCID5; }
+	CodecType getType() const final { return CodecType::Scid5; }
 
 	// Returns the full path of the three files (index, namebase and gamefile)
 	// used by the database.
@@ -191,7 +192,7 @@ public: // ICodecDatabase interface
 		return db_info_;
 	}
 
-	errorT setExtraInfo(const char* name, const char* new_value) final {
+	scid::core::errorT setExtraInfo(const char* name, const char* new_value) final {
 		return set_db_info(std::string(name).append(new_value));
 	};
 
@@ -206,22 +207,22 @@ public: // ICodecDatabase interface
 		if (gfile_.sgetn(gcache_, length) != length)
 			return {nullptr, 0};
 
-		return {reinterpret_cast<const byte*>(gcache_), length};
+		return {reinterpret_cast<const scid::core::byte*>(gcache_), length};
 	}
 
 	ByteBuffer getGameMoves(IndexEntry const& ie) final {
 		auto data = getGameData(ie.GetOffset(), ie.GetLength());
-		if (data && OK == data.decodeTags([](auto, auto) {}))
+		if (data && scid::core::OK == data.decodeTags([](auto, auto) {}))
 			return data;
 
 		return {nullptr, 0};
 	}
 
-	errorT addGame(IndexEntry const& ie_src, TagRoster const& tags,
+	scid::core::errorT addGame(IndexEntry const& ie_src, TagRoster const& tags,
 	               ByteBuffer const& data) final {
 		const auto nGames = idx_->GetNumGames();
 		if (nGames >= LIMIT_NUMGAMES)
-			return ERROR_NumGamesLimit;
+			return scid::core::ERROR_NumGamesLimit;
 
 		IndexEntry ie = ie_src;
 		if (auto err = add_names_and_data(ie, tags, data))
@@ -231,10 +232,10 @@ public: // ICodecDatabase interface
 			return err;
 
 		idx_->addEntry(ie);
-		return OK;
+		return scid::core::OK;
 	}
 
-	errorT saveGame(IndexEntry const& ie_src, TagRoster const& tags,
+	scid::core::errorT saveGame(IndexEntry const& ie_src, TagRoster const& tags,
 	                ByteBuffer const& data, gamenumT replaced) final {
 		IndexEntry ie = ie_src;
 		if (auto err = add_names_and_data(ie, tags, data))
@@ -243,18 +244,18 @@ public: // ICodecDatabase interface
 		return saveIndexEntry(ie, replaced);
 	}
 
-	errorT saveIndexEntry(const IndexEntry& ie, gamenumT replaced) final {
+	scid::core::errorT saveIndexEntry(const IndexEntry& ie, gamenumT replaced) final {
 		if (auto err = write_IndexEntry(ie, replaced))
 			return err;
 
 		idx_->replaceEntry(ie, replaced);
-		return OK;
+		return scid::core::OK;
 	}
 
-	std::pair<errorT, idNumberT> addName(nameT nt, const char* name) final {
+	std::pair<scid::core::errorT, idNumberT> addName(nameT nt, const char* name) final {
 		idNumberT id;
-		if (OK == nb_->FindExactName(nt, name, &id))
-			return {OK, id};
+		if (scid::core::OK == nb_->FindExactName(nt, name, &id))
+			return {scid::core::OK, id};
 
 		static constexpr auto limit_unique_names = [] {
 			std::array<unsigned long long, NUM_NAME_TYPES> res;
@@ -265,33 +266,33 @@ public: // ICodecDatabase interface
 			return res;
 		}();
 		if (nb_->namebase_size(nt) >= limit_unique_names[nt])
-			return {ERROR_NameLimit, 0};
+			return {scid::core::ERROR_NameLimit, 0};
 
 		if (auto err = append_nbfile(nt, name))
 			return {err, 0};
 
-		return {OK, nb_->namebase_add(nt, name)};
+		return {scid::core::OK, nb_->namebase_add(nt, name)};
 	}
 
-	errorT flush() final {
+	scid::core::errorT flush() final {
 		idx_seqwrite_ = 0;
-		errorT errGfile = (gfile_.pubsync() == 0) ? OK : ERROR_FileWrite;
-		errorT errNBfile = (nbfile_.pubsync() == 0) ? OK : ERROR_FileWrite;
-		errorT errIndex = (idxfile_.pubsync() == 0) ? OK : ERROR_FileWrite;
+		scid::core::errorT errGfile = (gfile_.pubsync() == 0) ? scid::core::OK : scid::core::ERROR_FileWrite;
+		scid::core::errorT errNBfile = (nbfile_.pubsync() == 0) ? scid::core::OK : scid::core::ERROR_FileWrite;
+		scid::core::errorT errIndex = (idxfile_.pubsync() == 0) ? scid::core::OK : scid::core::ERROR_FileWrite;
 		return errIndex ? errIndex : errGfile ? errGfile : errNBfile;
 	}
 
-	errorT dyn_open(fileModeT fmode, const char* dbname,
+	scid::core::errorT dyn_open(fileModeT fmode, const char* dbname,
 	                const Progress& progress, Index* idx, NameBase* nb) final {
 		if (fmode == FMODE_WriteOnly || !dbname || !idx || !nb)
-			return ERROR;
+			return scid::core::ERROR;
 
 		idx_ = idx;
 		nb_ = nb;
 
 		auto dbpath = std::filesystem::path(dbname);
 		if (dbpath.stem().empty())
-			return ERROR_FileOpen;
+			return scid::core::ERROR_FileOpen;
 
 		filenames_.resize(3);
 		filenames_[0] = dbpath.extension().empty()
@@ -304,7 +305,7 @@ public: // ICodecDatabase interface
 			for (auto const& fname : filenames_) {
 				std::error_code ec;
 				if (std::filesystem::exists(fname, ec) || ec)
-					return ERROR_Exists;
+					return scid::core::ERROR_Exists;
 			}
 
 			if (auto err = idxfile_.Open(filenames_[0].c_str(), fmode))
@@ -326,8 +327,8 @@ public: // ICodecDatabase interface
 		progress.report(1, 1);
 
 		if (!err_names && nb_->count_invalid_ids(*idx_) > 0) {
-			err_names = ERROR_CorruptData;
-			// TODO: err_names = ERROR_NameDataLoss;
+			err_names = scid::core::ERROR_CorruptData;
+			// TODO: err_names = scid::core::ERROR_NameDataLoss;
 		}
 		return err_idx ? err_idx : err_games ? err_games : err_names;
 	}
@@ -335,11 +336,11 @@ public: // ICodecDatabase interface
 private:
 	/// Add the game's roster tags and gamedata to the database.
 	/// Set the references to the new data in @e ie.
-	errorT add_names_and_data(IndexEntry& ie, TagRoster const& tags,
+	scid::core::errorT add_names_and_data(IndexEntry& ie, TagRoster const& tags,
 	                          ByteBuffer const& data) {
 		const auto data_sz = data.size();
 		if (data_sz >= LIMIT_GAMELEN)
-			return ERROR_GameLengthLimit;
+			return scid::core::ERROR_GameLengthLimit;
 
 		if (auto err = tags.map(
 		        ie, [&](auto nt, auto name) { return addName(nt, name); }))
@@ -357,7 +358,7 @@ private:
 
 		uint64_t offset = gfile_.size();
 		if (offset >= LIMIT_GAMEOFFSET)
-			return ERROR_OffsetLimit;
+			return scid::core::ERROR_OffsetLimit;
 
 		ie.SetOffset(offset);
 		ie.SetLength(data_sz);
@@ -365,7 +366,7 @@ private:
 	}
 
 	// Read all the IndexEntry contained in the Index file.
-	errorT read_index(fileModeT fmode, const char* fname,
+	scid::core::errorT read_index(fileModeT fmode, const char* fname,
 	                  Progress const& progress) {
 		if (auto err = idxfile_.Open(fname, fmode))
 			return err;
@@ -373,46 +374,45 @@ private:
 		const auto file_size = idxfile_.pubseekoff(0, std::ios::end);
 		if (file_size < 0 || (file_size % INDEX_ENTRY_SIZE) != 0 ||
 		    idxfile_.pubseekoff(0, std::ios::beg) != 0) {
-			return ERROR_Corrupt;
+			return scid::core::ERROR_Corrupt;
 		}
 
 		const size_t n_games = file_size / INDEX_ENTRY_SIZE;
-		idx_->entries_.resize(n_games);
 		constexpr auto eof = Filebuf::traits_type::eof();
 		for (size_t gnum = 0; idxfile_.sgetc() != eof; ++gnum) {
 			if ((gnum % 8192) == 0) {
 				if (!progress.report(gnum, n_games))
-					return ERROR_UserCancel;
+					return scid::core::ERROR_UserCancel;
 			}
 
 			char buf[INDEX_ENTRY_SIZE];
 			if (idxfile_.sgetn(buf, INDEX_ENTRY_SIZE) != INDEX_ENTRY_SIZE)
-				return ERROR_FileRead;
+				return scid::core::ERROR_FileRead;
 
-			idx_->entries_[gnum] = decode_IndexEntry(buf);
+			idx_->addEntry(decode_IndexEntry(buf));
 		}
-		return OK;
+		return scid::core::OK;
 	}
 
 	// Write an IndexEntry into the Index file.
 	// Stores gnum (gamenumT of the last written IndexEntry) into idx_seqwrite_
 	// and avoid invoking pubseekpos() if it is not necessary.
-	errorT write_IndexEntry(IndexEntry const& ie, gamenumT gnum) {
+	scid::core::errorT write_IndexEntry(IndexEntry const& ie, gamenumT gnum) {
 		if (idx_seqwrite_ == 0 || (gnum != idx_seqwrite_ + 1)) {
 			std::streampos pos = gnum;
 			pos = pos * INDEX_ENTRY_SIZE;
 			if (idxfile_.pubseekpos(pos) != pos) {
 				idx_seqwrite_ = 0;
-				return ERROR_FileWrite;
+				return scid::core::ERROR_FileWrite;
 			}
 		}
 		char buf[INDEX_ENTRY_SIZE];
 		encode_IndexEntry(ie, buf);
 		auto res = idxfile_.sputn(buf, INDEX_ENTRY_SIZE) == INDEX_ENTRY_SIZE
-		               ? OK
-		               : ERROR_FileWrite;
+		               ? scid::core::OK
+		               : scid::core::ERROR_FileWrite;
 
-		idx_seqwrite_ = (res == OK) ? gnum : 0;
+		idx_seqwrite_ = (res == scid::core::OK) ? gnum : 0;
 		return res;
 	}
 
@@ -507,32 +507,32 @@ private:
 		res.SetEcoCode(val.second);
 
 		res.SetHomePawnData(home_pawn_count,
-		                    reinterpret_cast<const byte*>(data + 48));
+		                    reinterpret_cast<const scid::core::byte*>(data + 48));
 		return res;
 	}
 
 	// Read all the strings contained in the NameBase file.
 	// The string are encoded as a varint (length+type) followed by the data.
 	// The last 3 bits of the varint store the name type.
-	errorT read_nbfile(fileModeT fMode, std::string const& filename) {
+	scid::core::errorT read_nbfile(fileModeT fMode, std::string const& filename) {
 		if (auto err = nbfile_.open(filename, fMode))
 			return err;
 
 		if (nbfile_.pubseekpos(0))
-			return ERROR_FileRead;
+			return scid::core::ERROR_FileRead;
 
 		auto buf = std::vector<char>(1024);
 		auto ch = Filebuf::traits_type::eof();
 		while ((ch = nbfile_.sbumpc()) != Filebuf::traits_type::eof()) {
 			auto [nt, len] = read_nbvarint(ch);
 			if (nt > NAME_INFO || len > nbfile_.size())
-				return ERROR_Corrupt;
+				return scid::core::ERROR_Corrupt;
 
 			if (len > buf.size()) {
 				buf.resize(len);
 			}
 			if (uint64_t nread = nbfile_.sgetn(buf.data(), len); nread != len)
-				return ERROR_Corrupt;
+				return scid::core::ERROR_Corrupt;
 
 			if (nt < NUM_NAME_TYPES) {
 				nb_->namebase_add(nt, {buf.data(), len});
@@ -542,7 +542,7 @@ private:
 				set_db_info({buf.data(), len}, false);
 			}
 		}
-		return OK;
+		return scid::core::OK;
 	}
 
 	// Read a varint from the NameBase file and split the type from the length.
@@ -567,7 +567,7 @@ private:
 
 	// Add a new name to the NameBase file. The string is encoded as a varint
 	// (length + type in the least significant 3 bits) followed by the data.
-	errorT append_nbfile(unsigned nt, std::string_view name) {
+	scid::core::errorT append_nbfile(unsigned nt, std::string_view name) {
 		ASSERT(nt <= NAME_INFO);
 
 		uint64_t val = name.size();
@@ -581,23 +581,23 @@ private:
 		if (auto err = nbfile_.append(name.data(), name.size()))
 			return err;
 
-		return OK;
+		return scid::core::OK;
 	}
 
-	errorT set_db_info(std::string_view new_value, bool write = true) {
+	scid::core::errorT set_db_info(std::string_view new_value, bool write = true) {
 		auto it = std::find_if(db_info_.begin(), db_info_.end(),
 		                       [&](auto const& elem) {
 			                       return new_value.starts_with(elem.first);
 		                       });
 		if (it == db_info_.end())
-			return ERROR_CodecUnsupFeat;
+			return scid::core::ERROR_CodecUnsupFeat;
 
 		if (write) {
 			if (auto err = append_nbfile(NAME_INFO, new_value))
 				return err;
 		}
 		it->second = new_value.substr(std::string_view(it->first).size());
-		return OK;
+		return scid::core::OK;
 	};
 
 	static inline void encode_uint32(char* dst, uint32_t value) {

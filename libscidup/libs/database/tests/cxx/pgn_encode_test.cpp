@@ -20,12 +20,54 @@
  * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "scidup/database/game.h"
-#include "scidup/database/pgn_encode.h"
-#include "scidup/database/pgnparse.h"
+#include "scidup/core/game.h"
+#include "scidup/core/game_cursor.h"
+#include "scidup/core/movetext_cursor.h"
+#include "scidup/core/pgn/encode.h"
+#include "scidup/core/pgn/decode.h"
 #include <gtest/gtest.h>
+#include <optional>
 #include <string>
 #include <string_view>
+
+namespace {
+
+std::optional<scid::core::Position>
+currentPosition(const scid::core::Game& game,
+                scid::core::MovetextLocation location) {
+	scid::core::GameCursor cursor(game);
+	EXPECT_TRUE(cursor.restore(location));
+	auto position = cursor.currentPosition();
+	EXPECT_TRUE(position.has_value());
+	return position;
+}
+
+scid::core::MoveSpec makeCurrentMove(scid::core::Game& game,
+                                       scid::core::MovetextLocation location,
+                                       scid::core::squareT from,
+                                       scid::core::squareT to) {
+	(void)game;
+	(void)location;
+	return {from, to, scid::core::EMPTY, false};
+}
+
+void setCurrentComment(scid::core::Game& game,
+                       scid::core::MovetextLocation location,
+                       std::string_view comment) {
+	scid::core::MovetextCursor cursor(game);
+	ASSERT_TRUE(cursor.restore(location));
+	ASSERT_TRUE(cursor.setComment(comment));
+}
+
+void addMove(scid::core::Game& game, scid::core::MovetextLocation& location,
+             scid::core::MoveSpec const& move) {
+	scid::core::MovetextCursor cursor(game);
+	ASSERT_TRUE(cursor.restore(location));
+	cursor.addMove(move);
+	location = cursor.location();
+}
+
+} // namespace
 
 TEST(Test_PgnEncode, break_lines) {
 	using namespace std::literals;
@@ -38,14 +80,14 @@ TEST(Test_PgnEncode, break_lines) {
 		    "1. e4 e5\n{ very long comment, with space at the beginning should remain unaltered, even if it is longer than 80 chars}\n"sv
 		    "2. Nf3 Nf6"sv;
 		auto text = std::string(pgn);
-		scid::database::pgn::break_lines(text.begin(), text.end());
+		scid::core::pgn::break_lines(text.begin(), text.end());
 		EXPECT_EQ(text, expected);
 
 		auto expected_hard_len =
 		    "1. e4 e5\n{ very long comment, with space at the beginning should remain unaltered, even\n"sv
 		    "if it is longer than 80 chars} 2. Nf3 Nf6"sv;
 		auto hard = std::string(pgn);
-		scid::database::pgn::break_lines<80, '\0', 80>(hard.begin(), hard.end());
+		scid::core::pgn::break_lines<80, '\0', 80>(hard.begin(), hard.end());
 		EXPECT_EQ(hard, expected_hard_len);
 	}
 	{
@@ -57,19 +99,19 @@ TEST(Test_PgnEncode, break_lines) {
 		auto expected =
 		    "1. e4 e5 {normal comment, not very long, should be inline} 2. Nf3 Nf6 (2... Nc6)\n3. Bb5 Nxe4"sv;
 		auto text = std::string(pgn);
-		scid::database::pgn::break_lines(text.begin(), text.end());
+		scid::core::pgn::break_lines(text.begin(), text.end());
 		EXPECT_EQ(text, expected);
 
 		auto expected79 =
 		    "1. e4 e5 {normal comment, not very long, should be inline} 2. Nf3 Nf6\n(2... Nc6) 3. Bb5 Nxe4"sv;
 		text = std::string(pgn);
-		scid::database::pgn::break_lines<79>(text.begin(), text.end());
+		scid::core::pgn::break_lines<79>(text.begin(), text.end());
 		EXPECT_EQ(text, expected79);
 
 		auto expected58 =
 		    "1. e4 e5 {normal comment, not very long, should be inline}\n2. Nf3 Nf6 (2... Nc6) 3. Bb5 Nxe4"sv;
 		text = std::string(pgn);
-		scid::database::pgn::break_lines<58>(text.begin(), text.end());
+		scid::core::pgn::break_lines<58>(text.begin(), text.end());
 		EXPECT_EQ(text, expected58);
 	}
 }
@@ -79,13 +121,13 @@ TEST(Test_PgnEncode, escape_string) {
 	{
 		auto text = std::string(R"(escape \ test \\ "White "Sen\pai"")");
 		auto expected = R"(escape \\ test \\\\ \"White \"Sen\\pai\"\")"sv;
-		scid::database::pgn::escape_string(text, 0);
+		scid::core::pgn::escape_string(text, 0);
 		EXPECT_EQ(text, expected);
 	}
 	{
 		auto text = std::string(R"(escape \ test \\ "White "Sen\pai"")");
 		auto expected = R"(escape \ test \\\\ \"White \"Sen\\pai\"\")"sv;
-		scid::database::pgn::escape_string(text, 8);
+		scid::core::pgn::escape_string(text, 8);
 		EXPECT_EQ(text, expected);
 	}
 }
@@ -94,30 +136,30 @@ TEST(Test_PgnEncode, encode_tag_pair) {
 	using namespace std::literals;
 	{
 		std::string text;
-		scid::database::pgn::encode_tag_pair("White", "Senpai e kohai", text);
+		scid::core::pgn::encode_tag_pair("White", "Senpai e kohai", text);
 		EXPECT_EQ("[White\0\"Senpai e kohai\"]\n"sv, text);
-		scid::database::pgn::break_lines(text.begin(), text.end());
+		scid::core::pgn::break_lines(text.begin(), text.end());
 		EXPECT_STREQ("[White \"Senpai e kohai\"]\n", text.c_str());
 	}
 	{
 		std::string text;
-		scid::database::pgn::encode_tag_pair<true>("Event", "", text);
+		scid::core::pgn::encode_tag_pair<true>("Event", "", text);
 		EXPECT_EQ("[Event\0\"?\"]\n"sv, text);
-		scid::database::pgn::break_lines(text.begin(), text.end());
+		scid::core::pgn::break_lines(text.begin(), text.end());
 		EXPECT_STREQ("[Event \"?\"]\n", text.c_str());
 	}
 	{
 		std::string text;
-		scid::database::pgn::encode_tag_pair("Event", "", text);
+		scid::core::pgn::encode_tag_pair("Event", "", text);
 		EXPECT_EQ("[Event\0\"\"]\n"sv, text);
-		scid::database::pgn::break_lines(text.begin(), text.end());
+		scid::core::pgn::break_lines(text.begin(), text.end());
 		EXPECT_STREQ("[Event \"\"]\n", text.c_str());
 	}
 	{
 		std::string text;
-		scid::database::pgn::encode_tag_pair("empty", "", text);
+		scid::core::pgn::encode_tag_pair("empty", "", text);
 		EXPECT_EQ("[empty\0\"\"]\n"sv, text);
-		scid::database::pgn::break_lines(text.begin(), text.end());
+		scid::core::pgn::break_lines(text.begin(), text.end());
 		EXPECT_STREQ("[empty \"\"]\n", text.c_str());
 	}
 }
@@ -126,24 +168,24 @@ TEST(Test_PgnEncode, encode_comment_rest_of_line) {
 	{
 		std::string text;
 		EXPECT_TRUE(
-		    scid::database::pgn::encode_comment_rest_of_line("rest of line comment", text));
+		    scid::core::pgn::encode_comment_rest_of_line("rest of line comment", text));
 		EXPECT_STREQ(text.c_str(), ";rest of line comment\n");
 	}
 	{
 		std::string text = "1.e4";
 		EXPECT_TRUE(
-		    scid::database::pgn::encode_comment_rest_of_line("rest of line comment", text));
+		    scid::core::pgn::encode_comment_rest_of_line("rest of line comment", text));
 		EXPECT_STREQ(text.c_str(), "1.e4\0;rest of line comment\n");
 	}
 	{
 		std::string text = "1.e4\0";
 		EXPECT_TRUE(
-		    scid::database::pgn::encode_comment_rest_of_line("rest of line comment", text));
+		    scid::core::pgn::encode_comment_rest_of_line("rest of line comment", text));
 		EXPECT_STREQ(text.c_str(), "1.e4\0;rest of line comment\n");
 	}
 	{
 		std::string text;
-		EXPECT_FALSE(scid::database::pgn::encode_comment_rest_of_line("no\nnewline", text));
+		EXPECT_FALSE(scid::core::pgn::encode_comment_rest_of_line("no\nnewline", text));
 		EXPECT_EQ(0, text.size());
 	}
 }
@@ -152,39 +194,30 @@ TEST(Test_PgnEncode, encode_comment) {
 	using namespace std::literals;
 	{
 		std::string text;
-		scid::database::pgn::encode_comment("normal comment", text);
+		scid::core::pgn::encode_comment("normal comment", text);
 		EXPECT_EQ(text, "{normal comment}\0"sv);
 	}
 	{
 		std::string text;
-		scid::database::pgn::encode_comment("comment with curly } brace", text);
+		scid::core::pgn::encode_comment("comment with curly } brace", text);
 		EXPECT_STREQ(text.c_str(), ";comment with curly } brace\n");
 	}
 	{
 		std::string text;
-		scid::database::pgn::encode_comment("comment with\nnewline", text);
+		scid::core::pgn::encode_comment("comment with\nnewline", text);
 		EXPECT_EQ(text, "{comment with\nnewline}\0"sv);
 	}
 	{
 		std::string text;
-		scid::database::pgn::encode_comment("both curly { and newline\n", text);
+		scid::core::pgn::encode_comment("both curly { and newline\n", text);
 		EXPECT_EQ(text, "{both curly \xEF\xBD\x9B and newline\n}\0"sv);
 	}
 }
 
-static void SAN_hack(scid::database::Game& game) {
-	// TODO: we need this to fill in all the moveT->san
-	// It would be better to do this when the game is decoded.
-	game.MoveToStart();
-	do {
-		game.GetNextSAN();
-	} while (game.MoveForwardInPGN() == scid::database::OK);
-};
-
 TEST(Test_PgnEncode, encode_game) {
 	using namespace std::literals;
 	{
-		scid::database::Game empty;
+		scid::core::Game empty;
 		auto expected = "[Event\0\"\"]\n"sv
 		                "[Site\0\"\"]\n"sv
 		                "[Date\0\"????.??.??\"]\n"sv
@@ -194,17 +227,17 @@ TEST(Test_PgnEncode, encode_game) {
 		                "[Result\0\"*\"]\n"sv
 		                "\n*\n"sv;
 		std::string pgn;
-		scid::database::pgn::encode_game(empty, pgn);
+		scid::core::pgn::encode_game(empty, pgn);
 		EXPECT_EQ(pgn, expected);
 	}
 	{
-		scid::database::Game game;
-		game.SetMoveComment("before the move");
-		scid::database::simpleMoveT sm;
-		game.currentPos()->makeMove(scid::database::E2, scid::database::E4, scid::database::EMPTY, sm);
-		game.AddMove(sm);
-		game.SetMoveComment("after the move");
-		SAN_hack(game);
+		scid::core::Game game;
+		scid::core::MovetextLocation location;
+		game.setEco("A01");
+		setCurrentComment(game, location, "before the move");
+		auto sm = makeCurrentMove(game, location, scid::core::E2, scid::core::E4);
+		addMove(game, location, sm);
+		setCurrentComment(game, location, "after the move");
 		auto expected = "[Event\0\"\"]\n"sv
 		                "[Site\0\"\"]\n"sv
 		                "[Date\0\"????.??.??\"]\n"sv
@@ -212,19 +245,20 @@ TEST(Test_PgnEncode, encode_game) {
 		                "[White\0\"\"]\n"sv
 		                "[Black\0\"\"]\n"sv
 		                "[Result\0\"*\"]\n"sv
+		                "[ECO\0\"A01\"]\n"sv
 		                "\n"sv
 		                "{before the move}\0"sv
 		                "1.e4\0{after the move}\n"sv
 		                "*\n"sv;
 		std::string pgn;
-		scid::database::pgn::encode_game(game, pgn);
+		scid::core::pgn::encode_game(game, pgn);
 		EXPECT_EQ(pgn, expected);
 	}
 }
 
 TEST(Test_PgnEncode, encode) {
 	{
-		scid::database::Game empty;
+		scid::core::Game empty;
 		auto expected = "[Event \"\"]\n"
 		                "[Site \"\"]\n"
 		                "[Date \"????.??.??\"]\n"
@@ -234,17 +268,16 @@ TEST(Test_PgnEncode, encode) {
 		                "[Result \"*\"]\n"
 		                "\n*\n";
 		std::string pgn;
-		scid::database::pgn::encode(empty, pgn);
+		scid::core::pgn::encode(empty, pgn);
 		EXPECT_STREQ(pgn.c_str(), expected);
 	}
 	{
-		scid::database::Game game;
-		game.SetMoveComment("before the move");
-		scid::database::simpleMoveT sm;
-		game.currentPos()->makeMove(scid::database::E2, scid::database::E4, scid::database::EMPTY, sm);
-		game.AddMove(sm);
-		game.SetMoveComment("after the move");
-		SAN_hack(game);
+		scid::core::Game game;
+		scid::core::MovetextLocation location;
+		setCurrentComment(game, location, "before the move");
+		auto sm = makeCurrentMove(game, location, scid::core::E2, scid::core::E4);
+		addMove(game, location, sm);
+		setCurrentComment(game, location, "after the move");
 		auto expected = "[Event \"\"]\n"
 		                "[Site \"\"]\n"
 		                "[Date \"????.??.??\"]\n"
@@ -256,17 +289,18 @@ TEST(Test_PgnEncode, encode) {
 		                "{before the move} 1.e4 {after the move}\n"
 		                "*\n";
 		std::string pgn;
-		scid::database::pgn::encode(game, pgn);
+		scid::core::pgn::encode(game, pgn);
 		EXPECT_STREQ(pgn.c_str(), expected);
 	}
 	{
 		std::string_view src =
+		    "[ECO \"B01\"]\n"
 		    "{pre} 1. e4 {comm} ({pre var} 1. d4 d5 {end var with comm}) 1... "
 		    "e5 $1 {nag} (1... c5 $2) 2. Nf3 {last}";
-		scid::database::Game game;
-		scid::database::pgn::parse_game({src.data(), src.data() + src.size()},
-		                scid::database::PgnVisitor{game});
-		SAN_hack(game);
+		scid::core::Game game;
+		scid::core::pgn::ParseLog log;
+		ASSERT_TRUE(scid::core::pgn::parseGame(
+		    src.data(), src.size(), game, log));
 		auto expected =
 		    "[Event \"\"]\n"
 		    "[Site \"\"]\n"
@@ -275,12 +309,13 @@ TEST(Test_PgnEncode, encode) {
 		    "[White \"\"]\n"
 		    "[Black \"\"]\n"
 		    "[Result \"*\"]\n"
+		    "[ECO \"B01\"]\n"
 		    "\n"
 		    "{pre} 1.e4 {comm} ({pre var} 1.d4 d5 {end var with comm}) 1...e5 "
 		    "$1 {nag}\n(1...c5 $2) 2.Nf3 {last}\n"
 		    "*\n";
 		std::string pgn;
-		scid::database::pgn::encode(game, pgn);
+		scid::core::pgn::encode(game, pgn);
 		EXPECT_STREQ(pgn.c_str(), expected);
 	}
 }

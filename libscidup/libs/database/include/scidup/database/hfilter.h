@@ -20,6 +20,7 @@
 #define SCID_HFILTER_H
 
 #include "scidup/database/common.h"
+#include "scidup/database/game_id.h"
 #include <algorithm>
 #include <iterator>
 #include <memory>
@@ -35,7 +36,7 @@
 namespace scid::database {
 
 class Filter {
-	std::unique_ptr<byte[]> data_; // The actual filter data.
+	std::unique_ptr<scid::core::byte[]> data_; // The actual filter data.
 	gamenumT size_;                // Number of values in filter.
 	gamenumT nonzero_;             // Number of nonzero values in filter.
 	size_t capacity_;              // Number of values allocated for data_.
@@ -50,7 +51,7 @@ public:
 	}
 
 	/// Return a pointer to the allocated data.
-	byte* data() { return data_.get(); }
+	scid::core::byte* data() { return data_.get(); }
 
 	/// Return the number of nonzero values in filter.
 	gamenumT Count() const { return nonzero_; }
@@ -71,7 +72,7 @@ public:
 				allocate(size);
 				std::copy_n(tmp.get(), size_, data_.get());
 			}
-			byte val = 0;
+			scid::core::byte val = 0;
 			if (Count() == Size()) {
 				val = 1;
 				nonzero_ = size;
@@ -82,13 +83,13 @@ public:
 	}
 
 	/// Gets the value at index.
-	byte Get(gamenumT index) const {
+	scid::core::byte Get(gamenumT index) const {
 		ASSERT(index < Size());
 		return data_ ? data_[index] : 1;
 	}
 
 	/// Sets the value at index.
-	void Set(gamenumT index, byte value) {
+	void Set(gamenumT index, scid::core::byte value) {
 		ASSERT(index < Size());
 		if (data_) {
 			if (value == 0) {
@@ -108,7 +109,7 @@ public:
 	}
 
 	/// Sets all values.
-	void Fill(byte value) {
+	void Fill(scid::core::byte value) {
 		if (value == 1) {
 			data_ = nullptr;
 			nonzero_ = size_;
@@ -124,7 +125,7 @@ public:
 private:
 	void allocate(size_t size) {
 		auto capacity = (size | 63) + 1;
-		data_ = std::make_unique<byte[]>(capacity);
+		data_ = std::make_unique<scid::core::byte[]>(capacity);
 		capacity_ = capacity;
 	}
 };
@@ -264,8 +265,8 @@ public:
 	 * if (it == std::map::end()) return 0;
 	 * return 1 + it->second;
 	 */
-	byte get(gamenumT gnum) const {
-		byte res = main_->Get(gnum);
+	scid::core::byte get(gamenumT gnum) const {
+		scid::core::byte res = main_->Get(gnum);
 		if (res != 0 && mask_ != 0)
 			res = mask_->Get(gnum);
 
@@ -278,7 +279,7 @@ public:
 	 * else
 	 *     insert_or_assign(gnum, value - 1);
 	 */
-	void set(gamenumT gnum, byte value) { return main_->Set(gnum, value); }
+	void set(gamenumT gnum, scid::core::byte value) { return main_->Set(gnum, value); }
 };
 
 /**

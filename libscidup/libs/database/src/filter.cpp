@@ -12,7 +12,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "scidup/database/tree.h"
+#include "tree_cache.h"
 #include <cstring>
 
 
@@ -23,50 +23,50 @@
 
 namespace scid::database {
 
-static uint
-packBytemap (const byte * inBuffer, byte * outBuffer, uint inLength);
+static scid::core::uint
+packBytemap (const scid::core::byte * inBuffer, scid::core::byte * outBuffer, scid::core::uint inLength);
 
-static errorT
-unpackBytemap (const byte * inBuffer, byte * outBuffer,
-               uint inLength, uint outLength);
+static scid::core::errorT
+unpackBytemap (const scid::core::byte * inBuffer, scid::core::byte * outBuffer,
+               scid::core::uint inLength, scid::core::uint outLength);
 
 // OVERFLOW_BYTES:
 //      The maximum length that the output buffer could exceed the input
 //      buffer by when compressing. Since a long run length can take six
-//      bytes and the control byte could be encoded in the same step,
+//      bytes and the control scid::core::byte could be encoded in the same step,
 //      seven bytes is sufficient -- so use 8 for nice alignment.
 //
-const uint OVERFLOW_BYTES = 8;
+const scid::core::uint OVERFLOW_BYTES = 8;
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // CompressedFilter::Verify():
-//      Return OK only if the compressed filter is identical to
+//      Return scid::core::OK only if the compressed filter is identical to
 //      the regular filter passed as the parameter.
 //
-errorT
+scid::core::errorT
 CompressedFilter::Verify (Filter * filter)
 {
-    if (CFilterSize != filter->Size()) { return ERROR_Corrupt; }
+    if (CFilterSize != filter->Size()) { return scid::core::ERROR_Corrupt; }
 
     // Decompress the compressed block and compare with the original:
-    byte * tempBuffer = new byte [CFilterSize];
-    const byte * filterData = filter->data();
+    scid::core::byte * tempBuffer = new scid::core::byte [CFilterSize];
+    const scid::core::byte * filterData = filter->data();
 
     if (unpackBytemap (CompressedData, tempBuffer,
-                       CompressedLength, CFilterSize) != OK) {
+                       CompressedLength, CFilterSize) != scid::core::OK) {
         delete[] tempBuffer;
-        return ERROR_Corrupt;
+        return scid::core::ERROR_Corrupt;
     }
-    for (uint i=0; i < CFilterSize; i++) {
+    for (scid::core::uint i=0; i < CFilterSize; i++) {
         if (tempBuffer[i] != filterData[i]) {
             delete[] tempBuffer;
-            return ERROR_Corrupt;
+            return scid::core::ERROR_Corrupt;
         }
     }
     delete[] tempBuffer;
 
-    return OK;
+    return scid::core::OK;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -85,15 +85,15 @@ CompressedFilter::CompressFrom (Filter * filter)
         CompressedData = NULL;
         return;
     }
-    byte * tempBuf = new byte [CFilterSize + OVERFLOW_BYTES];
+    scid::core::byte * tempBuf = new scid::core::byte [CFilterSize + OVERFLOW_BYTES];
     CompressedLength = packBytemap (filter->data(), tempBuf, CFilterSize);
-    CompressedData = new byte [CompressedLength];
+    CompressedData = new scid::core::byte [CompressedLength];
     std::memcpy (CompressedData, tempBuf, CompressedLength);
     delete[] tempBuf;
 
     // Assert that the compressed filter decompresses identical to the
     // original, is assertions are being tested:
-    ASSERT (Verify (filter) == OK);
+    ASSERT (Verify (filter) == scid::core::OK);
 
     return;
 }
@@ -104,57 +104,57 @@ CompressedFilter::CompressFrom (Filter * filter)
 //      Sets the supplied filter to contain the uncompressed data
 //      stored in this compressed filter.
 //
-errorT
+scid::core::errorT
 CompressedFilter::UncompressTo (Filter * filter) const
 {
     // The filter and compressed filter MUST be of the same size:
-    if (CFilterSize != filter->Size()) { return ERROR_Corrupt; }
+    if (CFilterSize != filter->Size()) { return scid::core::ERROR_Corrupt; }
     if (CompressedLength == 0) {
         filter->Init(CFilterSize);
-        return OK;
+        return scid::core::OK;
     }
 
-    byte * tempBuffer = new byte [CFilterSize];
+    scid::core::byte * tempBuffer = new scid::core::byte [CFilterSize];
     if (unpackBytemap (CompressedData, tempBuffer,
-                       CompressedLength, CFilterSize) != OK) {
+                       CompressedLength, CFilterSize) != scid::core::OK) {
         delete[] tempBuffer;
-        return ERROR_Corrupt;
+        return scid::core::ERROR_Corrupt;
     }
-    for (uint index=0; index < CFilterSize; index++) {
+    for (scid::core::uint index=0; index < CFilterSize; index++) {
         filter->Set (index, tempBuffer[index]);
     }
     delete[] tempBuffer;
-    return OK;
+    return scid::core::OK;
 }
 
 
-const byte FLAG_Packed = 1;     // Indicates buffer is stored packed.
-const byte FLAG_Copied = 0;     // Indicates buffer is stored uncompressed.
+const scid::core::byte FLAG_Packed = 1;     // Indicates buffer is stored packed.
+const scid::core::byte FLAG_Copied = 0;     // Indicates buffer is stored uncompressed.
 
-const uint CODE_ZeroLiteral = 0;
-const uint CODE_PrevLiteral = 1;
-const uint CODE_RunLength = 2;
-const uint CODE_NewLiteral = 3;
+const scid::core::uint CODE_ZeroLiteral = 0;
+const scid::core::uint CODE_PrevLiteral = 1;
+const scid::core::uint CODE_RunLength = 2;
+const scid::core::uint CODE_NewLiteral = 3;
 
-const uint MIN_RLE_LENGTH = 9;
+const scid::core::uint MIN_RLE_LENGTH = 9;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // packBytemap():
 //      Compresses the contents of inBuffer to outBuffer using a tailored
-//      run-length encoding and byte packing algorithm.
+//      run-length encoding and scid::core::byte packing algorithm.
 //
 //      The compression algorithm assumes:
-//        -  that the byte value 0 is very common;
+//        -  that the scid::core::byte value 0 is very common;
 //        -  that the input buffer usually contains just two values,
 //      which is typically the case for tree filters.
 //
 //      At each step through the algorithm, one of the following is coded:
 //        - a run length of 9 or more of the same value is coded in 18
 //            bits (or 50 bits if the length is >= 255); or
-//        - a byte with value zero is coded in two bits; or
-//        - a byte with nonzero value the same as the last nonzero byte
+//        - a scid::core::byte with value zero is coded in two bits; or
+//        - a scid::core::byte with nonzero value the same as the last nonzero scid::core::byte
 //            (excluding run lengths) is coded in two bits; or
-//        - a byte with nonzero value different to the last nonzero byte
+//        - a scid::core::byte with nonzero value different to the last nonzero scid::core::byte
 //            is coded in 10 bits.
 //
 //      The length of the output buffer is returned. It will never be
@@ -163,22 +163,22 @@ const uint MIN_RLE_LENGTH = 9;
 //      is checked, so outBuffer must be at least (inLength + OVERFLOW_BYTES)
 //      bytes long for safety.
 //
-static uint
-packBytemap (const byte * inBuffer, byte * outBuffer, uint inLength)
+static scid::core::uint
+packBytemap (const scid::core::byte * inBuffer, scid::core::byte * outBuffer, scid::core::uint inLength)
 {
     ASSERT (inBuffer != NULL  &&  outBuffer != NULL);
 
-    byte prevLiteral = 0;
-    const byte * inPtr = inBuffer;
-    byte * outPtr = outBuffer + 2;
-    byte * controlPtr = outBuffer + 1;
-    const byte * endPtr = inBuffer + inLength;
+    scid::core::byte prevLiteral = 0;
+    const scid::core::byte * inPtr = inBuffer;
+    scid::core::byte * outPtr = outBuffer + 2;
+    scid::core::byte * controlPtr = outBuffer + 1;
+    const scid::core::byte * endPtr = inBuffer + inLength;
 
-    uint outBytes = 2;
-    uint controlData = 0;
-    uint controlBits = 8;
+    scid::core::uint outBytes = 2;
+    scid::core::uint controlData = 0;
+    scid::core::uint controlBits = 8;
 
-    uint stats[4] = {0, 0, 0, 0};
+    scid::core::uint stats[4] = {0, 0, 0, 0};
 
 #define ENCODE_CONTROL_BITS(bits)       \
     ASSERT (bits >= 0  &&  bits <= 3);  \
@@ -199,9 +199,9 @@ packBytemap (const byte * inBuffer, byte * outBuffer, uint inLength)
 
     while (inPtr < endPtr  &&  outBytes <= inLength) {
         // Find the run length value:
-        uint rle = 1;
-        byte value = *inPtr;
-        const byte * pb = inPtr + 1;
+        scid::core::uint rle = 1;
+        scid::core::byte value = *inPtr;
+        const scid::core::byte * pb = inPtr + 1;
         while (pb < endPtr  &&  *pb == value) {
             rle++;
             pb++;
@@ -272,45 +272,45 @@ packBytemap (const byte * inBuffer, byte * outBuffer, uint inLength)
 //      must know the lengths from a earlier call to packBytemap().
 //      The lengths are used to check for corruption.
 //
-//      Returns OK on success, or ERROR_Corrupt if any sort of
+//      Returns scid::core::OK on success, or scid::core::ERROR_Corrupt if any sort of
 //      corruption in the compressed data is detected.
 //
-static errorT
-unpackBytemap (const byte * inBuffer, byte * outBuffer, uint inLength,
-               uint outLength)
+static scid::core::errorT
+unpackBytemap (const scid::core::byte * inBuffer, scid::core::byte * outBuffer, scid::core::uint inLength,
+               scid::core::uint outLength)
 {
     ASSERT (inBuffer != NULL  &&  outBuffer != NULL);
-    if (inLength == 0) { return ERROR_Corrupt; }
+    if (inLength == 0) { return scid::core::ERROR_Corrupt; }
 
     // Check if the buffer was copied without compression:
 
     if (inBuffer[0] == FLAG_Copied) {
         // outLength MUST be one shorter than inLength:
-        if (outLength + 1 != inLength) { return ERROR_Corrupt; }
+        if (outLength + 1 != inLength) { return scid::core::ERROR_Corrupt; }
         std::memcpy (outBuffer, inBuffer + 1, outLength);
-        return OK;
+        return scid::core::OK;
     }
-    if (inBuffer[0] != FLAG_Packed) { return ERROR_Corrupt; }
+    if (inBuffer[0] != FLAG_Packed) { return scid::core::ERROR_Corrupt; }
 
-    const byte * inPtr = inBuffer + 1;
+    const scid::core::byte * inPtr = inBuffer + 1;
     int inBytesLeft = inLength - 1;
-    byte * outPtr = outBuffer;
+    scid::core::byte * outPtr = outBuffer;
     int outBytesLeft = outLength;
-    uint controlData = *inPtr++;
-    uint controlBits = 8;
+    scid::core::uint controlData = *inPtr++;
+    scid::core::uint controlBits = 8;
     inBytesLeft--;
-    byte prevLiteral = 0;
+    scid::core::byte prevLiteral = 0;
 
     while (outBytesLeft > 0) {
-        byte value;
-        uint length;
+        scid::core::byte value;
+        scid::core::uint length;
         // Read the two control bits for this literal or run length:
-        uint code = controlData & 3;
+        scid::core::uint code = controlData & 3;
         controlData >>= 2;
         controlBits -= 2;
         if (controlBits == 0) {
             inBytesLeft--;
-            if (inBytesLeft < 0) { return ERROR_Corrupt; }
+            if (inBytesLeft < 0) { return scid::core::ERROR_Corrupt; }
             controlData = *inPtr++;
             controlBits = 8;
         }
@@ -328,20 +328,20 @@ unpackBytemap (const byte * inBuffer, byte * outBuffer, uint inLength,
 
         case CODE_RunLength:        // Run length encoding:
             inBytesLeft -= 2;
-            if (inBytesLeft < 0) { return ERROR_Corrupt; }
+            if (inBytesLeft < 0) { return scid::core::ERROR_Corrupt; }
             value = *inPtr++;
             length = *inPtr++;
             if (length == 0) {
                 // Longer run length, coded in next 4 bytes:
                 inBytesLeft -= 4;
-                if (inBytesLeft < 0) { return ERROR_Corrupt; }
+                if (inBytesLeft < 0) { return scid::core::ERROR_Corrupt; }
                 length = *inPtr++;
                 length <<= 8; length |= *inPtr++;
                 length <<= 8; length |= *inPtr++;
                 length <<= 8; length |= *inPtr++;
             }
             outBytesLeft -= length;
-            if (outBytesLeft < 0) { return ERROR_Corrupt; }
+            if (outBytesLeft < 0) { return scid::core::ERROR_Corrupt; }
             while (length--) {
                 *outPtr++ = value;
             }
@@ -356,15 +356,15 @@ unpackBytemap (const byte * inBuffer, byte * outBuffer, uint inLength,
 
         default:    // UNREACHABLE!
             ASSERT(0);
-            return ERROR_Corrupt;
+            return scid::core::ERROR_Corrupt;
         }
     }
 
     // Check the buffer lengths for corruption:
     if (inBytesLeft != 0  ||  outBytesLeft != 0) {
-        return ERROR_Corrupt;
+        return scid::core::ERROR_Corrupt;
     }
-    return OK;
+    return scid::core::OK;
 }
 
 //////////////////////////////////////////////////////////////////////

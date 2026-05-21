@@ -25,6 +25,7 @@
 #define SORTCACHE_H
 
 #include "scidup/database/common.h"
+#include "scidup/database/game_id.h"
 
 #include <atomic>
 namespace scid::database {

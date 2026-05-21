@@ -9,12 +9,17 @@ find_package( Threads REQUIRED )
 set(
     SCIDUP_DATABASE_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/codec_scid4.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/eco_code.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/filter.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/game.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/game_info.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/game_search.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/game_storage.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/index.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/matsig.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/misc.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/position.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/piece_translation.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/scidbase.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/searchpos.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/searchindex.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/sortcache.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/stored.cpp"
@@ -22,50 +27,40 @@ set(
 
 set(
     SCIDUP_DATABASE_PUBLIC_HEADERS
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/board_def.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/attacks.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/bytebuf.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/codec.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/common.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/containers.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/date.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/dstring.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/error.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/filebuf.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/fullmove.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/gameview.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/hash.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_id.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_info.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/hfilter.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/index.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/indexentry.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/matsig.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/misc.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/movegen.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/movelist.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/movetree.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/namebase.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/pgn_encode.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/pgn_lexer.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/pgnparse.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/position.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/scidbase.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/searchpos.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/searchtournaments.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/sqmove.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/stored.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/tree.h" )
 
 set(
     SCIDUP_DATABASE_PRIVATE_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/bytebuf.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_memory.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_pgn.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_proxy.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_scid4.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_scid5.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/containers.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/eco_code.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/filebuf.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_positions.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_search.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_storage.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/gameview.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/naglatex.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/nagtext.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/piece_translation.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/searchpos.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/sortcache.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/stored.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/tree_cache.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/textbuf.h" )
 
 add_library(
@@ -92,7 +87,7 @@ target_include_directories(
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/internal" )
 target_link_libraries(
     scidup_database
-    PUBLIC Threads::Threads )
+    PUBLIC ScidUp::Core Threads::Threads )
 
 if( PROJECT_IS_TOP_LEVEL )
     include( CTest )

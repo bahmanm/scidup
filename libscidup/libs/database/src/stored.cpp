@@ -16,7 +16,7 @@
 * along with Scid.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "scidup/database/stored.h"
+#include "stored.h"
 #include <algorithm>
 #include <cassert>
 
@@ -40,29 +40,29 @@ namespace scid::database {
 namespace {
 	
 class Board {
-	pieceT b_[64];
+	scid::core::pieceT b_[64];
 
 public:
-	explicit Board(const pieceT* b) {
+	explicit Board(const scid::core::pieceT* b) {
 		std::copy_n(b, 64, b_);
 	}
-	void doMove(FullMove m) {
+	void doMove(scid::core::FullMove m) {
 		//No promo, no null moves, no queenside castle
 		if (! m.isCastle()) {
 			assert(m && !m.isNull() && !m.isPromo() && !m.isEnpassant());
 			b_[m.getTo()] = b_[m.getFrom()];
-			b_[m.getFrom()] = EMPTY;
+			b_[m.getFrom()] = scid::core::EMPTY;
 		} else {
 			const auto king = b_[m.getFrom()];
 			const auto rook = b_[m.getTo()];
-			b_[m.getFrom()] = EMPTY;
-			b_[m.getTo()] = EMPTY;
-			assert(king == piece_Make(m.getColor(), KING));
-			assert(rook == piece_Make(m.getColor(), ROOK));
+			b_[m.getFrom()] = scid::core::EMPTY;
+			b_[m.getTo()] = scid::core::EMPTY;
+			assert(king == scid::core::piece_Make(m.getColor(), scid::core::KING));
+			assert(rook == scid::core::piece_Make(m.getColor(), scid::core::ROOK));
 			assert(m.getFrom() < m.getTo());
-			int black = (m.getColor() == BLACK) ? 56 : 0;
-			b_[black + G1] = king;
-			b_[black + F1] = rook;
+			int black = (m.getColor() == scid::core::BLACK) ? 56 : 0;
+			b_[black + scid::core::G1] = king;
+			b_[black + scid::core::F1] = rook;
 		}
 	}
 	bool operator==(const Board& b) const {
@@ -72,26 +72,26 @@ public:
 		// Pawns allows to exclude some games:
 		int p[3][8] = {{0}};
 		for (int i=0; i < 64; i++) {
-			pieceT a = b_[i];
-			pieceT b = m.b_[i];
+			scid::core::pieceT a = b_[i];
+			scid::core::pieceT b = m.b_[i];
 			// 1) because a pawn will never go back to home position
-			if (b == WP && a != WP && (i/8) == 1) return true;
-			if (b == BP && a != BP && (i/8) == 6) return true;
-			p[piece_Color(a)][piece_Type(a)] += 1;
-			p[piece_Color(b)][piece_Type(b)] -= 1;
+			if (b == scid::core::WP && a != scid::core::WP && (i/8) == 1) return true;
+			if (b == scid::core::BP && a != scid::core::BP && (i/8) == 6) return true;
+			p[scid::core::piece_Color(a)][scid::core::piece_Type(a)] += 1;
+			p[scid::core::piece_Color(b)][scid::core::piece_Type(b)] -= 1;
 		}
 		int df[2] = {0};
-		for (pieceT i=QUEEN; i < PAWN; i++) {
-			if (p[WHITE][i] < 0) df[WHITE] -= p[WHITE][i];
-			if (p[BLACK][i] < 0) df[BLACK] -= p[BLACK][i];
+		for (scid::core::pieceT i=scid::core::QUEEN; i < scid::core::PAWN; i++) {
+			if (p[scid::core::WHITE][i] < 0) df[scid::core::WHITE] -= p[scid::core::WHITE][i];
+			if (p[scid::core::BLACK][i] < 0) df[scid::core::BLACK] -= p[scid::core::BLACK][i];
 		}
 		// 2) because only extra pawns can be promoted to create other pieces.
-		if (p[WHITE][PAWN] < df[WHITE] || p[BLACK][PAWN] < df[BLACK]) return true;
+		if (p[scid::core::WHITE][scid::core::PAWN] < df[scid::core::WHITE] || p[scid::core::BLACK][scid::core::PAWN] < df[scid::core::BLACK]) return true;
 		return false;
 	}
 };
 
-constexpr FullMove fm[] = {
+constexpr scid::core::FullMove fm[] = {
  // "1.b3"
  0x6000251,
  // "1.c4"
@@ -603,7 +603,7 @@ constexpr FullMove fm[] = {
 };
 } // End of anonymous namespace
 
-const FullMove* StoredLine::Moves_ [STORED_LINES +1] = {
+const scid::core::FullMove* StoredLine::Moves_ [STORED_LINES +1] = {
 // index zero is unused
 // last index ( Moves_[STORED_LINES] ) is used to detect the end of the array
 fm +   0, fm +   0, fm +   1, fm +   2, fm +   4, fm +   7, fm +   9, fm +  12,
@@ -640,20 +640,20 @@ fm +1512, fm +1514, fm +1517, fm +1519, fm +1522, fm +1525, fm +1528, fm +1530,
 fm +1532, fm +1535, fm +1539, fm +1543, fm +1547, fm +1552, fm +1555, fm +1559
 };
 
-StoredLine::StoredLine(const pieceT* board, colorT toMove)
+StoredLine::StoredLine(const scid::core::pieceT* board, scid::core::colorT toMove)
 {
 	Board search(board);
 	matches_[0] = -1;
 	matches_[STORED_LINES] = -1;
 	for (int line = 1; line < STORED_LINES; line++) {
-		Board b(START_BOARD);
-		const FullMove* end = Moves_[line +1];
+		Board b(scid::core::START_BOARD);
+		const scid::core::FullMove* end = Moves_[line +1];
 		for (int ply=0; ply < 99; ply++) {
 			if (((ply %2) == toMove) && b == search) {
 				matches_[line] = ply;
 				break;
 			}
-			const FullMove* m = Moves_[line] + ply;
+			const scid::core::FullMove* m = Moves_[line] + ply;
 			if (m == end) {
 				matches_[line] = b.neverMatch(search) ? -2 : -1;
 				break;

@@ -14,6 +14,7 @@
  * along with Scid. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "scidup/database/game_id.h"
 #include "scidup/database/scidbase.h"
 #include "sortcache.h"
 #include <array>
@@ -28,7 +29,7 @@ TEST_F(Test_SortCache, select_sortedPosition) {
 	// Open the test database
 	scid::database::scidBaseT dbase;
 	static const char* database = SCIDUP_TEST_RESOURCES_DIR "res_database";
-	ASSERT_EQ(scid::database::OK, dbase.open("SCID4", scid::database::FMODE_ReadOnly, database));
+	ASSERT_EQ(scid::core::OK, dbase.open("SCID4", scid::database::FMODE_ReadOnly, database));
 	ASSERT_NE(0U, dbase.numGames());
 	const scid::database::NameBase* nb = dbase.getNameBase();
 	std::uniform_int_distribution<> rndID(0, dbase.numGames() - 1);
@@ -43,7 +44,7 @@ TEST_F(Test_SortCache, select_sortedPosition) {
 	std::uniform_int_distribution<> rndBool(0, 1);
 	std::uniform_int_distribution<> filterVal(0, 255);
 	for (scid::database::gamenumT i = 0, n = dbase.numGames(); i < n; ++i) {
-		filter.set(i, static_cast<scid::database::byte>(rndBool(re) * filterVal(re)));
+		filter.set(i, static_cast<scid::core::byte>(rndBool(re) * filterVal(re)));
 	}
 
 	// Valid fields
@@ -83,9 +84,9 @@ TEST_F(Test_SortCache, select_sortedPosition) {
 		rec[17] = ie->GetCommentCount();
 		rec[18] = ie->GetVariationCount();
 		rec[19] = ie->GetNagCount();
-		rec[20] = ie->GetResult() == scid::database::RESULT_White ? 1 : 0;
-		rec[21] = ie->GetResult() == scid::database::RESULT_Draw ? 1 : 0;
-		rec[22] = ie->GetResult() == scid::database::RESULT_Black ? 1 : 0;
+		rec[20] = ie->GetResult() == scid::core::RESULT_White ? 1 : 0;
+		rec[21] = ie->GetResult() == scid::core::RESULT_Draw ? 1 : 0;
+		rec[22] = ie->GetResult() == scid::core::RESULT_Black ? 1 : 0;
 		rec[23] = ie->GetRating();
 	}
 

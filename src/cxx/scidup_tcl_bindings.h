@@ -88,7 +88,7 @@ int sc_var_first      (TCL_ARGS);
 int sc_var_list       (TCL_ARGS);
 
 namespace scid::database {
-errorT search_index(const scidBaseT* base, HFilter& filter, int argc,
+scid::core::errorT search_index(const scidBaseT* base, HFilter& filter, int argc,
                     const char** argv, const Progress& progress);
 }
 int sc_search_board   (Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid::database::HFilter filter, int argc, const char** argv);

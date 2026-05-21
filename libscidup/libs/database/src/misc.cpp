@@ -16,144 +16,8 @@
 #include "scidup/database/misc.h"
 #include <stdio.h>
 #include <ctype.h>     // For isspace() function.
-#include <cmath>
 
-//////////////////////////////////////////////////////////////////////
-//   ECO Code Routines
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// eco_FromString():
-//    Extract an ECO code from a string.
-//
-//    Eco code numbering: no eco = 0, A00 = 1, A01 = 132, etc.
-//    That is, each basic ECO code = previous + 131.
-//    The extra 130 subcodes are the extended code:
-//    a, a1, a2, a3, a4, b, b1, .... z, z1, z2, z3, z4.  (130 in total).
-//
-//    Improvement, March 2000: now case-insensitive for first letter,
-//    for example, a41 == A41.
 namespace scid::database {
-
-ecoT
-eco_FromString (const char * ecoStr)
-{
-    ecoT eco = ECO_None;
-    // Get the basic Eco code from the first 3 characters: they MUST be in
-    // the range "A00" to "E99" or the eco code will be considered empty.
-    // Changed, June 1999: now accepts partial ECO codes, e.g. "C1" -> C10
-
-    if (*ecoStr >= 'A'  &&  *ecoStr <= 'E') {
-        eco = (*ecoStr - 'A') * 13100;
-    } else if (*ecoStr >= 'a'  &&  *ecoStr <= 'e') {
-        eco = (*ecoStr - 'a') * 13100;
-    } else {
-        return 0;
-    }
-    ecoStr++;
-    if (! *ecoStr) { return eco + 1; }
-
-    if (*ecoStr < '0'  ||  *ecoStr > '9') { return 0; }
-    eco += (*ecoStr - '0') * 1310;
-    ecoStr++;
-    if (! *ecoStr) { return eco + 1; }
-
-    if (*ecoStr < '0'  ||  *ecoStr > '9') { return 0; }
-    eco += (*ecoStr - '0') * 131;
-    ecoStr++;
-
-    // Now check for the optional extended code: a, a1, ... z2, z3, z4.
-    if (*ecoStr >= 'a'  &&  *ecoStr <= 'z') {
-        eco++;
-        eco += (*ecoStr - 'a') * 5;
-        ecoStr++;
-        if (*ecoStr >= '1'  &&  *ecoStr <= '4') {
-            eco += *ecoStr - '0';
-        }
-    }
-    return eco + 1;
-}
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// eco_ToString():
-//      Convert an ECO code to its string representation.
-void
-eco_ToString (ecoT ecoCode, char * ecoStr, bool extensions)
-{
-    char * s = ecoStr;
-    if (ecoCode == ECO_None) { *s = 0; return; }
-    ecoCode--;
-    
-    // First the base code value:
-    
-    ecoT basicCode = ecoCode / 131;    // 131 = 26 * 5 + 1 subcodes.
-    *s++ = basicCode / 100 + 'A';
-    *s++ = (basicCode % 100) / 10 + '0';
-    *s++ = (basicCode % 10) + '0';
-    
-    // Now the optional extensions:
-    if (extensions) {
-        ecoCode = ecoCode % 131;
-        if (ecoCode > 0) {
-            ecoCode--;
-            *s++ = (ecoCode / 5) + 'a';
-            ecoCode = ecoCode % 5;
-            if (ecoCode > 0) { *s++ = (ecoCode + '0'); }
-        }
-        *s = 0;
-    }
-    return;
-}
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// eco_BasicCode():
-//    Converts an ECO code to its basic form, without any
-//    Scid-specific extensions.
-ecoT
-eco_BasicCode (ecoT eco)
-{
-    if (eco == ECO_None) { return ECO_None; }
-
-    eco--;
-    eco /= 131;
-    eco *= 131;
-    return eco + 1;
-}
-
-/**
- * ecoReduce() - maps eco to a smaller set
- * @param eco: the eco value to convert (must be != 0)
- *
- * Scid ECO subcodes use 131 values for each canonical ECO.
- * For example A00 is divided in A00,A00a,A00a1,A00a2,A00a3,A00a4,A00b...A00z4
- * corresponding to eco values 1,2,3,4,5,6,7...131 (value 0 means no ECO).
- * This functions will map subECOs like A00a1...A00a4 into A00a, reducing
- * the 131 values to 27. The previous sequence will became 0,1,1,1,1,1,2...26
- */
-ecoT eco_Reduce(ecoT eco) {
-	ASSERT(eco != 0);
-
-	eco--;
-	ecoT res = (eco / 131) * 27;
-	return res + static_cast<ecoT>(std::ceil((eco % 131) / 5.0));
-}
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// eco_LastSubCode():
-//      Converts an ECO code to the deepest subcode it could contain.
-//      Examples: B91a -> B91a4  and  B91 -> B91z4.
-ecoT
-eco_LastSubCode (ecoT eco)
-{
-    if (eco == ECO_None) { return ECO_None; }
-
-    // if just a basic ECO code (1 letter, 2 digits), add the "z":
-    eco--;
-    if ((eco % 131) == 0) { eco += 126; }  // 126 = 5 * 25 + 1.
-
-    // Now if no final digit, add the "4":
-    if (((eco % 131) % 5) == 1) { eco += 4; }
-    return eco + 1;
-}
 
 //////////////////////////////////////////////////////////////////////
 //   String Routines
@@ -209,7 +73,7 @@ strDuplicate (const char * original)
 //      The return value is the length copied: always 'width' if
 //      width is >= 0, or the length of original if 'width' is negative.
 //
-uint
+scid::core::uint
 strPad (char * target, const char * original, int width, char padding)
 {
     ASSERT (target != NULL  &&  original != NULL);
@@ -306,10 +170,10 @@ strTrimLeft (const char * target, const char * trimChars)
 //      Returns the number of characters trimmed.
 //      E.g., strTrimSuffix ("file.txt", '.') would leave the
 //      string as "file" and return 4.
-uint
+scid::core::uint
 strTrimSuffix (char * target, char suffixChar)
 {
-    uint trimCount = 0;
+    scid::core::uint trimCount = 0;
     char * lastSuffixPtr = NULL;
     char * s = target;
     while (*s) {
@@ -458,7 +322,7 @@ strIsUnknownName (const char * str)
 bool
 strIsSurnameOnly (const char * name)
 {
-    uint capcount = 0;
+    scid::core::uint capcount = 0;
     const char * s = name;
     while (*s != 0) {
         unsigned char c = *s;
@@ -518,9 +382,9 @@ strGetBoolean (const char * str)
 //    Extracts the specified number of signed integers in a
 //    whitespace-separated string to an array.
 void
-strGetIntegers (const char * str, int * results, uint nResults)
+strGetIntegers (const char * str, int * results, scid::core::uint nResults)
 {
-    for (uint i=0; i < nResults; i++) {
+    for (scid::core::uint i=0; i < nResults; i++) {
         while (*str != 0  &&  isspace(static_cast<unsigned char>(*str))) { str++; }
         results[i] = strGetInteger (str);
         while (*str != 0  &&  !isspace(static_cast<unsigned char>(*str))) { str++; }
@@ -532,9 +396,9 @@ strGetIntegers (const char * str, int * results, uint nResults)
 //    Extracts the specified number of unsigned integers in a
 //    whitespace-separated string to an array.
 void
-strGetUnsigneds (const char * str, uint * results, uint nResults)
+strGetUnsigneds (const char * str, scid::core::uint * results, scid::core::uint nResults)
 {
-    for (uint i=0; i < nResults; i++) {
+    for (scid::core::uint i=0; i < nResults; i++) {
         while (*str != 0  &&  isspace(static_cast<unsigned char>(*str))) { str++; }
         results[i] = strGetUnsigned (str);
         while (*str != 0  &&  !isspace(static_cast<unsigned char>(*str))) { str++; }
@@ -544,21 +408,21 @@ strGetUnsigneds (const char * str, uint * results, uint nResults)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // strGetResult:
 //    Extracts a game result value from a string.
-resultT
+scid::core::resultT
 strGetResult (const char * str)
 {
     switch (*str) {
     case '1':
         // Check for "1/2"-style draw result:
         if (str[1] == '/'  &&  str[2] == '2') {
-            return RESULT_Draw;
+            return scid::core::RESULT_Draw;
         }
-        return RESULT_White;
-    case '=': return RESULT_Draw;
-    case '0': return RESULT_Black;
-    case '*': return RESULT_None;
+        return scid::core::RESULT_White;
+    case '=': return scid::core::RESULT_Draw;
+    case '0': return scid::core::RESULT_Black;
+    case '*': return scid::core::RESULT_None;
     }
-    return RESULT_None;
+    return scid::core::RESULT_None;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -592,14 +456,14 @@ strGetFlag (const char * str)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // strGetSquare():
 //   Extracts a square value from a string, such as "a2".
-squareT
+scid::core::squareT
 strGetSquare (const char * str)
 {
     char chFyle = str[0];
-    if (chFyle < 'a'  ||  chFyle > 'h') { return NULL_SQUARE; }
+    if (chFyle < 'a'  ||  chFyle > 'h') { return scid::core::NULL_SQUARE; }
     char chRank = str[1];
-    if (chRank < '1'  ||  chRank > '8') { return NULL_SQUARE; }
-    return square_Make (fyle_FromChar(chFyle), rank_FromChar(chRank));
+    if (chRank < '1'  ||  chRank > '8') { return scid::core::NULL_SQUARE; }
+    return scid::core::square_Make (scid::core::fyle_FromChar(chFyle), scid::core::rank_FromChar(chRank));
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

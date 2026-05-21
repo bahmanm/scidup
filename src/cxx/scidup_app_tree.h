@@ -6,6 +6,7 @@
 // existing Tcl-facing filter contract.
 
 #include "scidup/database/scidbase.h"
+#include "tree_cache.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -67,19 +68,13 @@ public:
 		return scid::database::HFilter(s.filter.get());
 	}
 
-	scid::database::TreeCache& cache() const {
-		auto& s = state();
-		s.sync(*base_);
-		return s.cache;
-	}
-
-	bool cacheRestore(scid::database::Position const& pos) const {
+	bool cacheRestore(scid::core::Position const& pos) const {
 		auto& s = state();
 		s.sync(*base_);
 		return s.cache.cacheRestore(pos, *s.filter);
 	}
 
-	void cacheAdd(scid::database::Position const& pos) const {
+	void cacheAdd(scid::core::Position const& pos) const {
 		auto& s = state();
 		s.sync(*base_);
 		s.cache.cacheAdd(pos, *s.filter);

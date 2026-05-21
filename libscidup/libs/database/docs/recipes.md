@@ -85,7 +85,7 @@ for (gamenumT gnum = 0; gnum < database.numGames(); ++gnum) {
 
 Game game;
 if (database.loadGame(0, game) == OK) {
-    game.MoveToEnd();
+    game.toEnd();
 }
 ```
 
@@ -153,7 +153,7 @@ Creating a matching sort cache first can make repeated list operations faster.
 
 std::string errors;
 errorT err = database.importGames(
-    ICodecDatabase::PGN,
+    "PGN",
     "/path/to/input.pgn",
     Progress(),
     errors);

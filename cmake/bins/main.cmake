@@ -63,7 +63,9 @@ set_property(
     PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE True )
 target_include_directories(
     scidup_main
-    PRIVATE "${SCIDUP_GENERATED_INCLUDE_DIR}" )
+    PRIVATE
+        "${SCIDUP_GENERATED_INCLUDE_DIR}"
+        "${CMAKE_SOURCE_DIR}/libscidup/libs/database/src/internal" )
 target_link_libraries(
     scidup_main
     PRIVATE ScidUp::Database ScidUp::Eco ScidUp::Spelling ScidUp::Libs::Polyglot Threads::Threads ScidUp::Libs::Tcl )

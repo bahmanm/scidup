@@ -4,16 +4,20 @@ include( cmake/tests/gtest.cmake )
 set(
     SCIDUP_TESTS_LIBS_CPPSUPPORT_SOURCES
     "${CMAKE_SOURCE_DIR}/src/cxx/dbasepool.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cxx/scidup_app_legacy_pgn.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cxx/scidup_app_nag_format.cpp"
 )
 add_library(
     scidup_tests_libs_cppsupport
     ${SCIDUP_TESTS_LIBS_CPPSUPPORT_SOURCES} )
 target_include_directories(
     scidup_tests_libs_cppsupport
-    PUBLIC "${CMAKE_SOURCE_DIR}/src/cxx" )
+    PUBLIC
+        "${CMAKE_SOURCE_DIR}/src/cxx"
+        "${CMAKE_SOURCE_DIR}/libscidup/libs/database/src/internal" )
 target_link_libraries(
     scidup_tests_libs_cppsupport
-    PUBLIC ScidUp::Database Threads::Threads )
+    PUBLIC ScidUp::Database ScidUp::Eco Threads::Threads )
 add_library(
     ScidUp::Tests::Libs::CppBase
     ALIAS scidup_tests_libs_cppsupport )
@@ -27,7 +31,9 @@ add_executable(
     ${SCIDUP_TESTS_BINS_CPPTEST_SOURCES} )
 target_compile_definitions(
     scidup_tests_bins_cpptest
-    PRIVATE SCIDUP_TEST_RESOURCES_DIR=\"${CMAKE_SOURCE_DIR}/tests/cxx/\" )
+    PRIVATE
+        SCIDUP_TEST_RESOURCES_DIR=\"${CMAKE_SOURCE_DIR}/tests/cxx/\"
+        SCIDUP_DATABASE_TEST_RESOURCES_DIR=\"${CMAKE_SOURCE_DIR}/libscidup/libs/database/tests/cxx/\" )
 target_link_libraries(
     scidup_tests_bins_cpptest
     PRIVATE ScidUp::Tests::Libs::CppBase gtest_main )

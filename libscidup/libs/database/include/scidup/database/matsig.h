@@ -16,22 +16,26 @@
 #ifndef SCID_MATSIG_H
 #define SCID_MATSIG_H
 
-#include "scidup/database/common.h"
+#include "scidup/core/board.h"
+
 #include <algorithm>
+#include <cassert>
+#include <cstdint>
 #include <string>
+#include <utility>
 
 // Matsigs are 32-bit unsigned ints.  We only use 24 bits of this.
 
 namespace scid::database {
 
-typedef uint32_t matSigT;
+typedef std::uint32_t matSigT;
 
 // From most significant bits down to least, the matsig layout is:
-// Bits 22-33:  WQ    Bits 10-11:  BQ
-// Bits 20-21:  WN    Bits 08-09:  BR
-// Bits 18-19:  WB    Bits 06-07:  BB
-// Bits 16-17:  WN    Bits 04-05:  BN
-// Bits 12-15:  WP    Bits 00-03:  BP
+// Bits 22-33:  scid::core::WQ    Bits 10-11:  scid::core::BQ
+// Bits 20-21:  scid::core::WN    Bits 08-09:  scid::core::BR
+// Bits 18-19:  scid::core::WB    Bits 06-07:  scid::core::BB
+// Bits 16-17:  scid::core::WN    Bits 04-05:  scid::core::BN
+// Bits 12-15:  scid::core::WP    Bits 00-03:  scid::core::BP
 
 // This means that pawn counts from 0 to 8 are possible, but for other
 // pieces only counts up to 3 are possible.
@@ -71,36 +75,36 @@ typedef uint32_t matSigT;
 const matSigT
 MASK_BY_PIECE [16] = {
     0,        //  0: Empty
-    0,        //  1: WK
-    MASK_WQ,  //  2: WQ
-    MASK_WR,  //  3: WR
-    MASK_WB,  //  4: WB
-    MASK_WN,  //  5: WN
-    MASK_WP,  //  6: WP
+    0,        //  1: scid::core::WK
+    MASK_WQ,  //  2: scid::core::WQ
+    MASK_WR,  //  3: scid::core::WR
+    MASK_WB,  //  4: scid::core::WB
+    MASK_WN,  //  5: scid::core::WN
+    MASK_WP,  //  6: scid::core::WP
     0, 0,     //  7, 8: Invalid pieces
-    0,        //  9: BK
-    MASK_BQ,  // 10: BQ
-    MASK_BR,  // 11: BR
-    MASK_BB,  // 12: BB
-    MASK_BN,  // 13: BN
-    MASK_BP,  // 14: BP
+    0,        //  9: scid::core::BK
+    MASK_BQ,  // 10: scid::core::BQ
+    MASK_BR,  // 11: scid::core::BR
+    MASK_BB,  // 12: scid::core::BB
+    MASK_BN,  // 13: scid::core::BN
+    MASK_BP,  // 14: scid::core::BP
     0         // 15: Invalid piece
 };
 
-const uint
+const scid::core::uint
 SHIFT_BY_PIECE[16] = {
-    0, 0,      //  0: Empty,  1: WK
-    SHIFT_WQ,  //  2: WQ
-    SHIFT_WR,  //  3: WR
-    SHIFT_WB,  //  4: WB
-    SHIFT_WN,  //  5: WN
-    SHIFT_WP,  //  6: WP
-    0, 0, 0,   //  7, 8: Invalid pieces,  9: BK
-    SHIFT_BQ,  // 10: BQ
-    SHIFT_BR,  // 11: BR
-    SHIFT_BB,  // 12: BB
-    SHIFT_BN,  // 13: BN
-    SHIFT_BP,  // 14: BP
+    0, 0,      //  0: Empty,  1: scid::core::WK
+    SHIFT_WQ,  //  2: scid::core::WQ
+    SHIFT_WR,  //  3: scid::core::WR
+    SHIFT_WB,  //  4: scid::core::WB
+    SHIFT_WN,  //  5: scid::core::WN
+    SHIFT_WP,  //  6: scid::core::WP
+    0, 0, 0,   //  7, 8: Invalid pieces,  9: scid::core::BK
+    SHIFT_BQ,  // 10: scid::core::BQ
+    SHIFT_BR,  // 11: scid::core::BR
+    SHIFT_BB,  // 12: scid::core::BB
+    SHIFT_BN,  // 13: scid::core::BN
+    SHIFT_BP,  // 14: scid::core::BP
     0          // 15: Invalid piece
 };
 
@@ -147,8 +151,8 @@ SHIFT_BY_PIECE[16] = {
 // matsig_getCount():
 //      Inline routine to extract a count of a certain piece type.
 //
-inline uint
-matsig_getCount (matSigT m, pieceT p)
+inline scid::core::uint
+matsig_getCount (matSigT m, scid::core::pieceT p)
 {
     return (m & MASK_BY_PIECE[p]) >> SHIFT_BY_PIECE[p];
 }
@@ -158,17 +162,17 @@ matsig_getCount (matSigT m, pieceT p)
 //      Inline routine to set a particular count.
 //
 inline matSigT
-matsig_setCount (matSigT m, pieceT p, uint count)
+matsig_setCount (matSigT m, scid::core::pieceT p, scid::core::uint count)
 {
     // First we clear the old mask for this piece:
     m &= ~(MASK_BY_PIECE[p]);
 
 	 // Avoid overflow.
-	 if (p != PAWN && count > 3)
+	 if (p != scid::core::PAWN && count > 3)
 		 count = 3;
 
     // Now we OR to add the new value in:
-    m |= ((uint) count) << SHIFT_BY_PIECE[p];
+    m |= ((scid::core::uint) count) << SHIFT_BY_PIECE[p];
     return m;
 }
 
@@ -200,7 +204,7 @@ matsig_makeString (matSigT matsig);
 //     we can speedup a material search by ONLY searching the games that
 //     have matsig_isReachable(searchsig, finalsig) = 1, or have promotions.
 //     Example: if searchsig requires neither side to have queens, but
-//     finalsig for a game shows a WQ (and no promotions), the game could
+//     finalsig for a game shows a scid::core::WQ (and no promotions), the game could
 //     not possibly match.
 //     If promos is true, only the pawn counts are checked, since other
 //     material could reappear on the board due to a promotion.
@@ -222,20 +226,20 @@ matsig_isReachablePawns (matSigT mStart, matSigT mTarget)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // matsig_Make():
 //      Make a material sig, given an array of material counts as
-//      stored in a Position.
+//      stored in a scid::core::Position.
 //
-inline matSigT matsig_Make(const byte* materialCounts) {
+inline matSigT matsig_Make(const scid::core::byte* materialCounts) {
     matSigT m = 0;
-    m |= std::min<matSigT>(3, materialCounts[WQ]) << SHIFT_WQ;
-    m |= std::min<matSigT>(3, materialCounts[WR]) << SHIFT_WR;
-    m |= std::min<matSigT>(3, materialCounts[WB]) << SHIFT_WB;
-    m |= std::min<matSigT>(3, materialCounts[WN]) << SHIFT_WN;
-    m |= matSigT(materialCounts[WP]) << SHIFT_WP;
-    m |= std::min<matSigT>(3, materialCounts[BQ]) << SHIFT_BQ;
-    m |= std::min<matSigT>(3, materialCounts[BR]) << SHIFT_BR;
-    m |= std::min<matSigT>(3, materialCounts[BB]) << SHIFT_BB;
-    m |= std::min<matSigT>(3, materialCounts[BN]) << SHIFT_BN;
-    m |= matSigT(materialCounts[BP]) << SHIFT_BP;
+    m |= std::min<matSigT>(3, materialCounts[scid::core::WQ]) << SHIFT_WQ;
+    m |= std::min<matSigT>(3, materialCounts[scid::core::WR]) << SHIFT_WR;
+    m |= std::min<matSigT>(3, materialCounts[scid::core::WB]) << SHIFT_WB;
+    m |= std::min<matSigT>(3, materialCounts[scid::core::WN]) << SHIFT_WN;
+    m |= matSigT(materialCounts[scid::core::WP]) << SHIFT_WP;
+    m |= std::min<matSigT>(3, materialCounts[scid::core::BQ]) << SHIFT_BQ;
+    m |= std::min<matSigT>(3, materialCounts[scid::core::BR]) << SHIFT_BR;
+    m |= std::min<matSigT>(3, materialCounts[scid::core::BB]) << SHIFT_BB;
+    m |= std::min<matSigT>(3, materialCounts[scid::core::BN]) << SHIFT_BN;
+    m |= matSigT(materialCounts[scid::core::BP]) << SHIFT_BP;
     return m;
 }
 
@@ -244,50 +248,50 @@ inline matSigT matsig_Make(const byte* materialCounts) {
 // 0 => no pawns still on their original 2nd/7th rank squares.
 // 0xFFFF => all 16 pawns still on their original 2nd/7th rank squares.
 
-const uint
+const scid::core::uint
 HPSIG_Empty = 0x0;
 
-const uint
+const scid::core::uint
 HPSIG_StdStart = 0xFFFF;
 
 
 bool
-hpSig_PossibleMatch (uint hpSig, const byte * changeList);
+hpSig_PossibleMatch (scid::core::uint hpSig, const scid::core::byte * changeList);
 
 bool
-hpSig_Prefix (const byte * changeListA, const byte * changeListB);
+hpSig_Prefix (const scid::core::byte * changeListA, const scid::core::byte * changeListB);
 
-uint
-hpSig_Final (const byte * changeList);
+scid::core::uint
+hpSig_Final (const scid::core::byte * changeList);
 
 // hpSig_bitMask[]: used to add or clear bits in an hpSig.
 //
-static const uint hpSig_bitMask [16] = {
+static const scid::core::uint hpSig_bitMask [16] = {
     // a2 to h2:
     0x8000, 0x4000, 0x2000, 0x1000, 0x0800, 0x0400, 0x0200, 0x0100,
     // a7 to h7:
     0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
 };
 
-inline uint
-hpSig_AddPawn (uint hpSig, colorT color, fyleT fyle)
+inline scid::core::uint
+hpSig_AddPawn (scid::core::uint hpSig, scid::core::colorT color, scid::core::fyleT fyle)
 {
-    ASSERT (color == WHITE  ||  color == BLACK);
-    ASSERT (fyle <= H_FYLE);
+    assert(color == scid::core::WHITE || color == scid::core::BLACK);
+    assert(fyle <= scid::core::H_FYLE);
 
-    uint val = (uint) fyle;
-    if (color == BLACK) val += 8;
+    scid::core::uint val = (scid::core::uint) fyle;
+    if (color == scid::core::BLACK) val += 8;
     return hpSig | hpSig_bitMask [val];
 }
 
-inline uint
-hpSig_ClearPawn (uint hpSig, colorT color, fyleT fyle)
+inline scid::core::uint
+hpSig_ClearPawn (scid::core::uint hpSig, scid::core::colorT color, scid::core::fyleT fyle)
 {
-    ASSERT (color == WHITE  ||  color == BLACK);
-    ASSERT (fyle <= H_FYLE);
+    assert(color == scid::core::WHITE || color == scid::core::BLACK);
+    assert(fyle <= scid::core::H_FYLE);
 
-    uint val = (uint) fyle;
-    if (color == BLACK) val += 8;
+    scid::core::uint val = (scid::core::uint) fyle;
+    if (color == scid::core::BLACK) val += 8;
     return hpSig & ~(hpSig_bitMask [val]);
 }
 
@@ -297,35 +301,35 @@ hpSig_ClearPawn (uint hpSig, colorT color, fyleT fyle)
  * Used to speed up the searches of positions with the same pawn structure.
  * @returns a std::pair containing the bitmap and the number of moved pawns.
  */
-inline std::pair<uint16_t, uint16_t> hpSig_make(const pieceT* board) {
+inline std::pair<std::uint16_t, std::uint16_t> hpSig_make(const scid::core::pieceT* board) {
 	int hpSig = 0;
 	int nMoved = 0;
-	const pieceT* b = board + A2;
+	const scid::core::pieceT* b = board + scid::core::A2;
 	// clang-format off
-	if (*b != WP) { hpSig |= 0x8000; ++nMoved; }  b++;  /* a2 */
-	if (*b != WP) { hpSig |= 0x4000; ++nMoved; }  b++;  /* b2 */
-	if (*b != WP) { hpSig |= 0x2000; ++nMoved; }  b++;  /* c2 */
-	if (*b != WP) { hpSig |= 0x1000; ++nMoved; }  b++;  /* d2 */
-	if (*b != WP) { hpSig |= 0x0800; ++nMoved; }  b++;  /* e2 */
-	if (*b != WP) { hpSig |= 0x0400; ++nMoved; }  b++;  /* f2 */
-	if (*b != WP) { hpSig |= 0x0200; ++nMoved; }  b++;  /* g2 */
-	if (*b != WP) { hpSig |= 0x0100; ++nMoved; }        /* h2 */
-	b = board + A7;
-	if (*b != BP) { hpSig |= 0x0080; ++nMoved; }  b++;  /* a7 */
-	if (*b != BP) { hpSig |= 0x0040; ++nMoved; }  b++;  /* b7 */
-	if (*b != BP) { hpSig |= 0x0020; ++nMoved; }  b++;  /* c7 */
-	if (*b != BP) { hpSig |= 0x0010; ++nMoved; }  b++;  /* d7 */
-	if (*b != BP) { hpSig |= 0x0008; ++nMoved; }  b++;  /* e7 */
-	if (*b != BP) { hpSig |= 0x0004; ++nMoved; }  b++;  /* f7 */
-	if (*b != BP) { hpSig |= 0x0002; ++nMoved; }  b++;  /* g7 */
-	if (*b != BP) { hpSig |= 0x0001; ++nMoved; }        /* h7 */
+	if (*b != scid::core::WP) { hpSig |= 0x8000; ++nMoved; }  b++;  /* a2 */
+	if (*b != scid::core::WP) { hpSig |= 0x4000; ++nMoved; }  b++;  /* b2 */
+	if (*b != scid::core::WP) { hpSig |= 0x2000; ++nMoved; }  b++;  /* c2 */
+	if (*b != scid::core::WP) { hpSig |= 0x1000; ++nMoved; }  b++;  /* d2 */
+	if (*b != scid::core::WP) { hpSig |= 0x0800; ++nMoved; }  b++;  /* e2 */
+	if (*b != scid::core::WP) { hpSig |= 0x0400; ++nMoved; }  b++;  /* f2 */
+	if (*b != scid::core::WP) { hpSig |= 0x0200; ++nMoved; }  b++;  /* g2 */
+	if (*b != scid::core::WP) { hpSig |= 0x0100; ++nMoved; }        /* h2 */
+	b = board + scid::core::A7;
+	if (*b != scid::core::BP) { hpSig |= 0x0080; ++nMoved; }  b++;  /* a7 */
+	if (*b != scid::core::BP) { hpSig |= 0x0040; ++nMoved; }  b++;  /* b7 */
+	if (*b != scid::core::BP) { hpSig |= 0x0020; ++nMoved; }  b++;  /* c7 */
+	if (*b != scid::core::BP) { hpSig |= 0x0010; ++nMoved; }  b++;  /* d7 */
+	if (*b != scid::core::BP) { hpSig |= 0x0008; ++nMoved; }  b++;  /* e7 */
+	if (*b != scid::core::BP) { hpSig |= 0x0004; ++nMoved; }  b++;  /* f7 */
+	if (*b != scid::core::BP) { hpSig |= 0x0002; ++nMoved; }  b++;  /* g7 */
+	if (*b != scid::core::BP) { hpSig |= 0x0001; ++nMoved; }        /* h7 */
 	// clang-format on
 
-	return {static_cast<uint16_t>(hpSig), static_cast<uint16_t>(nMoved)};
+	return {static_cast<std::uint16_t>(hpSig), static_cast<std::uint16_t>(nMoved)};
 }
 
-inline bool hpSig_match(int hpSig, int nMoved, const byte* changeList) {
-	// The first byte of a changeList is the length (in halfbytes) of the
+inline bool hpSig_match(int hpSig, int nMoved, const scid::core::byte* changeList) {
+	// The first scid::core::byte of a changeList is the length (in halfbytes) of the
 	// list, which can be any value from 0 to 16 inclusive.
 	if (*changeList == 16 && nMoved == 16)
 		return true;
@@ -350,4 +354,3 @@ inline bool hpSig_match(int hpSig, int nMoved, const byte* changeList) {
 //////////////////////////////////////////////////////////////////////
 //  EOF: matsig.h
 //////////////////////////////////////////////////////////////////////
-

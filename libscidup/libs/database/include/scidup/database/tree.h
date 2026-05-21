@@ -19,11 +19,10 @@
 
 #pragma once
 
-#include "scidup/database/fullmove.h"
-#include "scidup/database/hfilter.h"
-#include "scidup/database/position.h"
-#include <algorithm>
-#include <vector>
+#include "scidup/core/fullmove.h"
+#include "scidup/core/game_result.h"
+#include "scidup/database/common.h"
+#include "scidup/database/game_id.h"
 
 namespace scid::database {
 
@@ -31,18 +30,18 @@ struct TreeNode {
 	unsigned long long eloWhiteSum = 0;   // Sum of white Elos.
 	unsigned long long eloBlackSum = 0;   // Sum of bLack Elos.
 	unsigned long long yearSum = 0;       // Sum of years.
-	gamenumT freq[NUM_RESULT_TYPES] = {}; // freq[0] is the total count.
+	gamenumT freq[scid::core::NUM_RESULT_TYPES] = {}; // freq[0] is the total count.
 	gamenumT eloCount = 0;                // Count of games with an Elo.
 	gamenumT yearCount = 0;               // Count of games with year != 0.
-	FullMove move;
+	scid::core::FullMove move;
 
 public:
-	explicit TreeNode(FullMove m) : move(m) {}
+	explicit TreeNode(scid::core::FullMove m) : move(m) {}
 
-	void add(resultT result, int eloW, int eloB, unsigned year) {
-		static_assert(RESULT_None == 0);
+	void add(scid::core::resultT result, int eloW, int eloB, unsigned year) {
+		static_assert(scid::core::RESULT_None == 0);
 		freq[0]++; // total count of games
-		if (result != RESULT_None) {
+		if (result != scid::core::RESULT_None) {
 			freq[result]++;
 		}
 		if (eloW > 0 && eloB > 0) {
@@ -59,8 +58,8 @@ public:
 	/// @return a value in the range [0, 1000] representing the score percentage
 	/// from the white prospective (999 = white won 99.9% of the games).
 	int score() const {
-		auto n = freq[RESULT_White] + freq[RESULT_Draw] + freq[RESULT_Black];
-		auto res = 1000ull * freq[RESULT_White] + 500ull * freq[RESULT_Draw];
+		auto n = freq[scid::core::RESULT_White] + freq[scid::core::RESULT_Draw] + freq[scid::core::RESULT_Black];
+		auto res = 1000ull * freq[scid::core::RESULT_White] + 500ull * freq[scid::core::RESULT_Draw];
 		return n ? static_cast<int>(res / n) : 500;
 	}
 
@@ -70,7 +69,7 @@ public:
 
 		int score = (this->score() + 5) / 10;
 		auto eloOpp = eloBlackSum;
-		if (move.getColor() != WHITE) {
+		if (move.getColor() != scid::core::WHITE) {
 			score = 100 - score;
 			eloOpp = eloWhiteSum;
 		}
@@ -81,14 +80,14 @@ public:
 		if (eloCount == 0)
 			return 0;
 
-		auto elo = (move.getColor() == WHITE) ? eloWhiteSum : eloBlackSum;
+		auto elo = (move.getColor() == scid::core::WHITE) ? eloWhiteSum : eloBlackSum;
 		return 1.0 * elo / eloCount;
 	}
 
 	double avgYear() const { return yearCount ? 1.0 * yearSum / yearCount : 0; }
 
 	double percDraws() const {
-		return freq[0] ? 100.0 * freq[RESULT_Draw] / freq[0] : 0;
+		return freq[0] ? 100.0 * freq[scid::core::RESULT_Draw] / freq[0] : 0;
 	}
 
 	static auto cmp_ngames_desc() {
@@ -109,91 +108,6 @@ private:
 	    166,  175,  184,  193,  202,  211,  220,  230,  240,  251,  262,  273,
 	    284,  296,  309,  322,  336,  351,  366,  383,  401,  422,  444,  470,
 	    501,  538,  589,  677,  800};
-};
-
-//////////////////////////////////////////////////////////////////////
-// CompressedFilter class:
-//    Holds the same data as a filter, in compressed format.
-//    Random access to individual values is not possible.
-//    A CompressedFilter is created from, or restored to, a regular
-//    filter with the methods CompressFrom() and UncompressTo().
-class CompressedFilter {
-	byte* CompressedData = nullptr;
-	gamenumT CFilterSize = 0;
-	gamenumT CompressedLength = 0;
-
-public:
-	CompressedFilter() = default;
-	CompressedFilter(CompressedFilter&&) = default;
-	~CompressedFilter() { delete[] CompressedData; }
-
-	void CompressFrom(Filter* filter);
-	errorT UncompressTo(Filter* filter) const;
-
-private:
-	errorT Verify(Filter* filter);
-};
-
-struct CachedFilter {
-	CompressedFilter cfilter_;
-	pieceT board_[64];
-	colorT toMove_;
-};
-
-class TreeCache {
-	std::vector<CachedFilter> cache_;
-	std::vector<uint32_t> cacheTime_;
-	uint32_t cacheTimeCounter_ = 0;
-
-public:
-	void Clear() {
-		cache_.clear();
-		cacheTime_.clear();
-	}
-
-	size_t Size() const { return cache_.capacity(); }
-
-	void CacheResize(size_t max_size) {
-		Clear();
-		cache_.reserve(max_size);
-		cacheTime_.reserve(max_size);
-	}
-
-	template <typename PosT> void cacheAdd(PosT const& pos, Filter& filter) {
-		size_t idx;
-		if (cache_.size() < Size() || cache_.empty()) {
-			idx = cache_.size();
-			cache_.emplace_back();
-			cacheTime_.emplace_back();
-		} else {
-			auto it = std::min_element(cacheTime_.begin(), cacheTime_.end());
-			idx = std::distance(cacheTime_.begin(), it);
-		}
-		auto board = pos.GetBoard();
-		std::copy(board, board + 64, cache_[idx].board_);
-		cache_[idx].toMove_ = pos.GetToMove();
-		cache_[idx].cfilter_.CompressFrom(&filter);
-		cacheTime_[idx] = cacheTimeCounter_++;
-	}
-
-	template <typename PosT>
-	bool cacheRestore(PosT const& pos, Filter& filter) {
-		auto it = std::find_if(
-		    cache_.begin(), cache_.end(), [&pos](auto const& e) {
-			    return e.toMove_ == pos.GetToMove() &&
-			           std::equal(e.board_, e.board_ + 64, pos.GetBoard());
-		    });
-		if (it == cache_.end())
-			return false;
-
-		auto idx = std::distance(cache_.begin(), it);
-		if (it->cfilter_.UncompressTo(&filter) != OK) {
-			ASSERT(false); // corrupted data: should not happen
-			return false;
-		}
-		cacheTime_[idx] = cacheTimeCounter_++;
-		return true;
-	}
 };
 
 } // namespace scid::database

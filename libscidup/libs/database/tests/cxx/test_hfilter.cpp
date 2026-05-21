@@ -14,6 +14,7 @@
 * along with Scid. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "scidup/database/game_id.h"
 #include "scidup/database/hfilter.h"
 #include <algorithm>
 #include <functional>
@@ -26,13 +27,13 @@
 
 namespace {
 
-const std::vector<scid::database::byte> data1 = {1, 4, 255, 0, 0, 13};
-const std::vector<scid::database::byte> data2 = {43, 87, 0, 1, 0, 0};
-const std::vector<scid::database::byte> dataEmpty = {0, 0, 0, 0, 0, 0};
-const std::vector<scid::database::byte> dataFull = {1, 1, 1, 1, 1, 1};
-const std::vector<scid::database::byte> noGames;
+const std::vector<scid::core::byte> data1 = {1, 4, 255, 0, 0, 13};
+const std::vector<scid::core::byte> data2 = {43, 87, 0, 1, 0, 0};
+const std::vector<scid::core::byte> dataEmpty = {0, 0, 0, 0, 0, 0};
+const std::vector<scid::core::byte> dataFull = {1, 1, 1, 1, 1, 1};
+const std::vector<scid::core::byte> noGames;
 
-using testParam = std::pair<const std::vector<scid::database::byte>*, const std::vector<scid::database::byte>*>;
+using testParam = std::pair<const std::vector<scid::core::byte>*, const std::vector<scid::core::byte>*>;
 testParam test_cases[] = { // clang-format off
     {&data1, nullptr},     {&data1, &data2},     {&data1, &dataEmpty}, {&data1, &dataFull},
     {&data2, nullptr},     {&data2, &data1},     {&data2, &dataEmpty}, {&data2, &dataFull},
@@ -83,18 +84,18 @@ TEST(Test_Filter, Resize) {
 TEST(Test_Filter, Filter) {
 	scid::database::Filter filter(10);
 
-	for (scid::database::byte val : {1, 0, 10, 1, 10}) {
+	for (scid::core::byte val : {1, 0, 10, 1, 10}) {
 		filter.Fill(val);
 		ASSERT_EQ(10, filter.Size());
-		scid::database::byte expect = (val == 0) ? 0 : 10;
+		scid::core::byte expect = (val == 0) ? 0 : 10;
 		ASSERT_EQ(expect, filter.Count());
 	}
 }
 
 class Test_HFilter : public ::testing::TestWithParam<testParam> {
 protected:
-	const std::vector<scid::database::byte>* main_;
-	const std::vector<scid::database::byte>* mask_;
+	const std::vector<scid::core::byte>* main_;
+	const std::vector<scid::core::byte>* mask_;
 	size_t mainSz_;
 	size_t maskSz_;
 	size_t numGames_;

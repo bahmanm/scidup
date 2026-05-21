@@ -30,19 +30,19 @@ matsig_makeString (matSigT m)
 {
     std::string s;
     s.reserve(32);
-    uint i;
+    scid::core::uint i;
     for (i=0; i < MATSIG_Count_WQ(m); i++) { s+= 'Q'; }
     for (i=0; i < MATSIG_Count_WR(m); i++) { s+= 'R'; }
     for (i=0; i < MATSIG_Count_WB(m); i++) { s+= 'B'; }
     for (i=0; i < MATSIG_Count_WN(m); i++) { s+= 'N'; }
-    uint wp = MATSIG_Count_WP(m);
+    scid::core::uint wp = MATSIG_Count_WP(m);
     if (wp > 0) s+= (wp + '0');
     s+= ':';
     for (i=0; i < MATSIG_Count_BQ(m); i++) { s+= 'Q'; }
     for (i=0; i < MATSIG_Count_BR(m); i++) { s+= 'R'; }
     for (i=0; i < MATSIG_Count_BB(m); i++) { s+= 'B'; }
     for (i=0; i < MATSIG_Count_BN(m); i++) { s+= 'N'; }
-    uint bp = MATSIG_Count_BP(m);
+    scid::core::uint bp = MATSIG_Count_BP(m);
     if (bp > 0) s+= (bp + '0');
     return s;
 }
@@ -92,22 +92,22 @@ matsig_isReachable (matSigT mStart, matSigT mTarget, bool promos, bool upromo)
 //      target hpSig looks like "1100111111101111" (the c2, d2 and d7
 //      pawns are gone from the home ranks).
 //
-//      The first byte of a changeList is the length (in halfbytes) of the
+//      The first scid::core::byte of a changeList is the length (in halfbytes) of the
 //      list, which can be any value from 0 to 16 inclusive.
 //
 bool
-hpSig_PossibleMatch (uint hpSig, const byte * changeList)
+hpSig_PossibleMatch (scid::core::uint hpSig, const scid::core::byte * changeList)
 {
     // First, the starting sig (all pawns home) can match any game:
     if (hpSig == HPSIG_StdStart)  { return true; }
 
-    uint hpCurrent = HPSIG_StdStart;
-    uint count = (uint) changeList[0];
+    scid::core::uint hpCurrent = HPSIG_StdStart;
+    scid::core::uint count = (scid::core::uint) changeList[0];
     changeList++;
-    uint halfByte = 0;
-    byte change;
+    scid::core::uint halfByte = 0;
+    scid::core::byte change;
 
-    for (uint i=0; i < count; i++) {
+    for (scid::core::uint i=0; i < count; i++) {
         if (halfByte == 0) {
             change = (*changeList) >> 4;
             halfByte = 1;
@@ -139,21 +139,21 @@ hpSig_PossibleMatch (uint hpSig, const byte * changeList)
 //      of another game.
 //
 bool
-hpSig_Prefix (const byte * changeListA, const byte * changeListB)
+hpSig_Prefix (const scid::core::byte * changeListA, const scid::core::byte * changeListB)
 {
-    uint countA = changeListA[0];
-    uint countB = changeListB[0];
+    scid::core::uint countA = changeListA[0];
+    scid::core::uint countB = changeListB[0];
     changeListA++;
     changeListB++;
     bool halfByte = false;
-    byte changeA;
-    byte changeB;
+    scid::core::byte changeA;
+    scid::core::byte changeB;
 
     // Use the shorter changeList length:
-    uint count = (countA < countB ? countA : countB);
+    scid::core::uint count = (countA < countB ? countA : countB);
 
     // Check each corresponding value in the lists:
-    for (uint i=0; i < count; i++) {
+    for (scid::core::uint i=0; i < count; i++) {
         if (halfByte) {
             changeA = *changeListA & 15;
             changeB = *changeListB & 15;
@@ -175,15 +175,15 @@ hpSig_Prefix (const byte * changeListA, const byte * changeListB)
 // hpSig_Final():
 //      Returns the final home pawn signature value of a changeList.
 //
-uint
-hpSig_Final (const byte * changeList)
+scid::core::uint
+hpSig_Final (const scid::core::byte * changeList)
 {
-    uint hpSig = HPSIG_StdStart;
-    uint count = (uint) changeList[0];
+    scid::core::uint hpSig = HPSIG_StdStart;
+    scid::core::uint count = (scid::core::uint) changeList[0];
     changeList++;
     bool halfByte = false;
-    byte change;
-    for (uint i=0; i < count; i++) {
+    scid::core::byte change;
+    for (scid::core::uint i=0; i < count; i++) {
         if (halfByte == false) {
             change = (*changeList) >> 4;
             halfByte = true;
