@@ -251,9 +251,9 @@ public:
 
     void        makeMove(squareT from, squareT to, pieceT promo, MoveAction& res) const;
     void        fillMove(MoveAction& sm) const;
-    void        DoSimpleMove(MoveAction const& sm);
-    void        DoSimpleMove (MoveAction * sm);    // move execution ...
-    void        UndoSimpleMove(MoveAction const& sm);  // ... and taking back
+    void        applyMoveAction(MoveAction const& sm);
+    void        applyMoveAction (MoveAction * sm);
+    void        undoMoveAction(MoveAction const& sm);
 
     void        MakeSANString (MoveAction * sm, char * s, sanFlagT flag);
 

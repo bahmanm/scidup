@@ -139,7 +139,7 @@ TEST(Test_ReadFromFen, ParsesCountersAndEpTarget) {
 	EXPECT_NE(scid::core::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - i6 1 1"));
 }
 
-TEST(Test_PositionDoSimpleMove, RestoresCastlingFlags) {
+TEST(Test_PositionApplyMoveAction, RestoresCastlingFlags) {
 	std::vector<scid::core::MoveAction> moves;
 	char buf[1024];
 	scid::core::Position pos;
@@ -147,18 +147,18 @@ TEST(Test_PositionDoSimpleMove, RestoresCastlingFlags) {
 	          pos.ReadFromFEN("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1"));
 
 	parse_move(pos, &moves.emplace_back(), "e1g1");
-	pos.DoSimpleMove(moves.back());
+	pos.applyMoveAction(moves.back());
 	parse_move(pos, &moves.emplace_back(), "h8g8");
-	pos.DoSimpleMove(moves.back());
+	pos.applyMoveAction(moves.back());
 	parse_move(pos, &moves.emplace_back(), "g1h2");
-	pos.DoSimpleMove(moves.back());
+	pos.applyMoveAction(moves.back());
 	parse_move(pos, &moves.emplace_back(), "e8c8");
-	pos.DoSimpleMove(moves.back());
+	pos.applyMoveAction(moves.back());
 	pos.PrintFEN(buf, sizeof(buf));
 	EXPECT_STREQ(buf, "2kr2r1/8/8/8/8/8/7K/R4R2 w - - 4 3");
 
 	for (auto it = moves.crbegin(); it != moves.crend(); ++it) {
-		pos.UndoSimpleMove(*it);
+		pos.undoMoveAction(*it);
 	}
 	pos.PrintFEN(buf, sizeof(buf));
 	EXPECT_STREQ(buf, "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");

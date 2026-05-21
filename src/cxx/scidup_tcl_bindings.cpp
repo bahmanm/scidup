@@ -5649,9 +5649,9 @@ sc_pos_bestSquare (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         scidup::eco::Code secondBestEco = scidup::eco::ECO_None;
         if (ecoBook != NULL) {
             for (scid::core::uint i=0; i < mlist.Size(); i++) {
-                pos->DoSimpleMove(*mlist.Get(i));
+                pos->applyMoveAction(*mlist.Get(i));
                 scidup::eco::Code eco = ecoBook->findEco(*pos);
-                pos->UndoSimpleMove (*mlist.Get(i));
+                pos->undoMoveAction (*mlist.Get(i));
                 if (eco >= bestEco) {
                     secondBestEco = bestEco;
                     bestEco = eco;
@@ -7838,9 +7838,9 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 auto promo = move.isPromo() ? move.getPromo() : scid::core::INVALID_PIECE;
                 searchPos.makeMove(move.getFrom(), move.getTo(), promo, sm);
             }
-            searchPos.DoSimpleMove(sm);
+            searchPos.applyMoveAction(sm);
             eco = ecoBook->findEco(searchPos);
-            searchPos.UndoSimpleMove(sm);
+            searchPos.undoMoveAction(sm);
         }
         return eco;
     };

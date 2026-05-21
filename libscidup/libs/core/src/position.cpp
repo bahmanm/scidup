@@ -1149,9 +1149,9 @@ int Position::TreeCalcAttacks(squareT target) {
 	int maxScore = -2;
 	int zeroCount = 0;
 	for (auto const& sm : moves) {
-		DoSimpleMove(sm);
+		applyMoveAction(sm);
 		int score = TreeCalcAttacks(target);
-		UndoSimpleMove(sm);
+		undoMoveAction(sm);
 		if (score == 0 && ++zeroCount > 1)
 			return -2;
 		if (score > maxScore)
@@ -1485,7 +1485,7 @@ errorT Position::applyMove(MoveSpec const& action) {
 	if (auto err = moveActionFromSpec(*this, action, move); err != OK)
 		return err;
 
-	DoSimpleMove(move);
+	applyMoveAction(move);
 	return OK;
 }
 
@@ -1526,7 +1526,7 @@ void Position::makeMove(squareT from, squareT to, pieceT promo,
 }
 
 /// Use the current position to retrieve all the information needed to create a
-/// MoveAction which can also be used in UndoSimpleMove.
+/// MoveAction which can also be used in undoMoveAction.
 void Position::fillMove(MoveAction& sm) const {
 	const auto from = sm.from;
 	const auto to = sm.to;
@@ -1558,20 +1558,20 @@ void Position::fillMove(MoveAction& sm) const {
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Position::DoSimpleMove():
+// Position::applyMoveAction():
 //      Make the move on the board and update all the necessary
-//      fields in the simpleMove structure so it can be undone.
+//      fields in the MoveAction structure so it can be undone.
 //
 void
-Position::DoSimpleMove (MoveAction * sm)
+Position::applyMoveAction (MoveAction * sm)
 {
     assert(sm != NULL);
     // update move fields that (maybe) have not yet been set:
 	fillMove(*sm);
-	DoSimpleMove(*sm);
+	applyMoveAction(*sm);
 }
 
-void Position::DoSimpleMove(MoveAction const& sm) {
+void Position::applyMoveAction(MoveAction const& sm) {
     const auto from = sm.from;
     const auto to = sm.to;
     const auto promo = sm.promote;
@@ -1682,10 +1682,10 @@ void Position::DoSimpleMove(MoveAction const& sm) {
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Position::UndoSimpleMove():
-//      Take back a simple move that has been made with DoSimpleMove().
+// Position::undoMoveAction():
+//      Take back a move action that has been made with applyMoveAction().
 //
-void Position::UndoSimpleMove(MoveAction const& sm) {
+void Position::undoMoveAction(MoveAction const& sm) {
     const squareT from = sm.from;
     const squareT to = sm.to;
     const auto pieceNum = ListPos[to];
@@ -1892,7 +1892,7 @@ Position::MakeSANString (MoveAction * m, char * s, sanFlagT flag)
     // Now do the check or mate symbol:
     if (flag != SAN_NO_CHECKTEST) {
         // Now we make the move to test for check:
-        DoSimpleMove (m);
+        applyMoveAction (m);
         if (IsKingInCheck(*m)) {
             char ch = '+';
             if (flag == SAN_MATETEST) {
@@ -1902,7 +1902,7 @@ Position::MakeSANString (MoveAction * m, char * s, sanFlagT flag)
             }
             *c++ = ch;
         }
-        UndoSimpleMove (*m);
+        undoMoveAction (*m);
     }
     *c = 0;
 }
@@ -1944,7 +1944,7 @@ errorT Position::MakeCoordMoves(const char* moves, size_t moveslen,
                 toSAN->push_back(' ');
         }
 
-        DoSimpleMove(sm);
+        applyMoveAction(sm);
     }
     return OK;
 }
