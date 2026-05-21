@@ -358,12 +358,9 @@ TEST(Test_Game, locationInPGN) {
 		ASSERT_NE(nullptr, dbase.getIndexEntry_bounds(0));
 
 		scid::core::Game game;
-		 auto bufGame = dbase.gameData(*dbase.getIndexEntry(0));
-		 ASSERT_TRUE(bufGame);
-		 game.clear();
-		 ASSERT_EQ(scid::core::OK,
-		          scid::database::game_storage::decodeMovesOnly(
-		              game, bufGame));
+		game.clear();
+		ASSERT_EQ(scid::core::OK,
+		          dbase.loadGameMovesOnly(*dbase.getIndexEntry(0), game));
 		scid::core::MovetextLocation currentLocation;
 
 		unsigned location = 1;

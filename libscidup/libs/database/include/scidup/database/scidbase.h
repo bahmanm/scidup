@@ -21,26 +21,37 @@
 
 #include "scidup/core/game.h"
 #include "scidup/core/game_result.h"
+#include "scidup/core/fullmove.h"
 #include "scidup/database/game_id.h"
 #include "scidup/database/hfilter.h"
 #include "scidup/database/index.h"
 #include "scidup/database/namebase.h"
 #include "scidup/database/tree.h"
+#include "scidup/eco/code.h"
 #include <array>
 #include <cassert>
 #include <memory>
+#include <optional>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
+
+namespace scidup::eco {
+class Book;
+}
 
 namespace scid::database {
 
 class ByteBuffer;
 class GameView;
 class Progress;
+class SearchPos;
 class SortCache;
 
 struct scidBaseT {
+	friend class SearchPos;
+
 	struct Stats {
 		scid::core::uint flagCount[IndexEntry::IDX_NUM_FLAGS]; // Num of games with each
 		                                           // flag set.
@@ -126,12 +137,22 @@ struct scidBaseT {
 		return peakEloCache_[playerID];
 	}
 
-	GameView gameView(const IndexEntry* ie) const;
 	ByteBuffer gameData(const IndexEntry& ie) const;
 	scid::core::errorT loadGame(const IndexEntry& ie, scid::core::Game& dest,
 	                char* scidFlags, std::size_t scidFlagsLen) const;
 	scid::core::errorT loadGame(gamenumT gNum, scid::core::Game& dest,
 	               char* scidFlags, std::size_t scidFlagsLen) const;
+	scid::core::errorT loadGameMovesOnly(const IndexEntry& ie,
+	                                     scid::core::Game& dest) const;
+	scid::core::errorT gameTags(
+	    const IndexEntry& ie,
+	    std::vector<std::pair<std::string, std::string>>& dest) const;
+	std::vector<scid::core::FullMove> mainlineMoves(
+	    const IndexEntry* ie, std::size_t maxPly) const;
+	std::string moveSAN(const IndexEntry* ie, int plyToSkip, int count) const;
+	std::optional<scidup::eco::Code> inferEcoCode(
+	    const IndexEntry& ie, const scidup::eco::Book& book,
+	    bool extendedCodes) const;
 
 	scid::core::errorT importGames(const scidBaseT* srcBase, const HFilter& filter,
 	                   const Progress& progress);
@@ -346,6 +367,7 @@ private:
 	uint64_t cacheInvalidationToken_ = 0;
 
 private:
+	GameView gameView(const IndexEntry* ie) const;
 		scid::core::errorT openHelper(std::string_view dbType, fileModeT mode,
 		                  const char* filename, const Progress& progress = {});
 

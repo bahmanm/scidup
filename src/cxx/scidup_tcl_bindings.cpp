@@ -40,7 +40,6 @@
 #include "scidup/eco/book.h"
 #include "game_search.h"
 #include "game_storage.h"
-#include "gameview.h"
 #include "legacy_pgn.h"
 #include "piece_translation.h"
 #include "polyglot.h"
@@ -960,10 +959,9 @@ sc_base_piecetrack (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         // Process each game move until the maximum ply or end of
         // the game is reached:
         scid::core::uint plyCount = 0;
-        db->gameView(ie).mainLine([&](auto move) {
-            if (plyCount++ >= maxPly)
-                return false;
-
+        bool stopGame = false;
+        for (auto move : db->mainlineMoves(ie, maxPly)) {
+            ++plyCount;
             scid::core::squareT toSquare = move.getTo();
             scid::core::squareT fromSquare = move.getFrom();
 
@@ -1006,8 +1004,10 @@ sc_base_piecetrack (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 // A tracked piece has been captured:
                 track[toSquare] = false;
                 ntrack--;
-                if (ntrack <= 0)
-                    return false;
+                if (ntrack <= 0) {
+                    stopGame = true;
+                    break;
+                }
 
             } else if (track[fromSquare]) {
                 // A tracked piece is moving:
@@ -1036,14 +1036,16 @@ sc_base_piecetrack (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                         nleft--;
                         // We can stop early when all tracked
                         // squares have been found:
-                        if (nleft <= 0)
-                            return false;
+                        if (nleft <= 0) {
+                            stopGame = true;
+                            break;
+                        }
                     }
                 }
             }
-
-            return true;
-        }); // while (plyCount < maxPly)
+            if (stopGame)
+                break;
+        } // while (plyCount < maxPly)
     } // foreach game
 
     progress.report(1, 1);
@@ -1147,8 +1149,8 @@ checkDuplicate (scid::database::scidBaseT * base,
         if (! scid::database::hpSig_Prefix (hpData1, hpData2)) { return false; }
         // Now we have to check the actual moves of the games:
         scid::core::uint length = std::min(ie1->GetNumHalfMoves(), ie2->GetNumHalfMoves());
-        std::string a = base->gameView(ie1).getMoveSAN(0, length);
-        std::string b = base->gameView(ie2).getMoveSAN(0, length);
+        std::string a = base->moveSAN(ie1, 0, length);
+        std::string b = base->moveSAN(ie2, 0, length);
         return (a == b);
     }
     return true;
@@ -1496,45 +1498,12 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         if (option == ECO_DATE && ie.GetDate() < startDate)
             return false;
 
-        auto bbuf = dbase.gameData(ie);
-        scid::core::Position currentPosition;
-        if (bbuf.decodeTags([](auto, auto) {}) != scid::core::OK)
+        auto ecoCode = dbase.inferEcoCode(ie, *ecoBook, extendedCodes);
+        if (!ecoCode)
             return false;
 
-        const auto [errStartPos, fen] = bbuf.decodeStartBoard();
-        if (errStartPos)
-            return false;
-        if (fen) {
-            if (currentPosition.ReadFromFEN(fen) != scid::core::OK)
-                return false;
-        } else {
-            currentPosition.StdStart();
-        }
-
-        scidup::eco::Code ecoCode = scidup::eco::ECO_None;
-        for (;;) {
-            if (currentPosition.TotalMaterial() < ecoBook->fewestPieces())
-                break;
-
-            const auto eco = ecoBook->findEco(currentPosition);
-            if (eco != scidup::eco::ECO_None) {
-                ecoCode = eco;
-            }
-
-            scid::core::simpleMoveT sm;
-            if (scid::database::game_storage::decodeMainlineMove(
-                    bbuf, currentPosition, sm) != scid::core::OK)
-                break;
-
-            currentPosition.DoSimpleMove(sm);
-        }
-
-        if (!extendedCodes) {
-            ecoCode = scidup::eco::basicCode(ecoCode);
-        }
-
-        if (ie.GetEcoCode() != ecoCode) {
-            ie.SetEcoCode(ecoCode);
+        if (ie.GetEcoCode() != *ecoCode) {
+            ie.SetEcoCode(*ecoCode);
             return true;
         }
         return false;
@@ -3576,11 +3545,9 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // Load the merge game:
 
     const scid::database::IndexEntry* ie = base->getIndexEntry(gnum);
-    auto bbuf = base->gameData(*ie);
-    auto* merge = scratchGame;
-    merge->clear();
-    if (scid::database::game_storage::decodeMovesOnly(merge->coreGame(), bbuf) !=
-        scid::core::OK) {
+	auto* merge = scratchGame;
+	merge->clear();
+    if (base->loadGameMovesOnly(*ie, merge->coreGame()) != scid::core::OK) {
         return errorResult (ti, "Error decoding game.");
     }
     scid::core::MovetextLocation mergeLocation;

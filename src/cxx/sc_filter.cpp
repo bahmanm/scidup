@@ -17,7 +17,6 @@
 */
 
 #include "dbasepool.h"
-#include "bytebuf.h"
 #include "scidup/database/game_id.h"
 #include "scidup/database/scidbase.h"
 #include "scidup_app_tree.h"
@@ -213,10 +212,12 @@ UI_res_t sc_filter_search_tags(UI_handle_t ti, const scid::database::scidBaseT& 
 
 		bool remove = true;
 		auto ie = dbase.getIndexEntry(gnum);
-		dbase.gameData(*ie).decodeTags([&](auto const& tag, auto const& value) {
+		std::vector<std::pair<std::string, std::string>> tags;
+		dbase.gameTags(*ie, tags);
+		for (auto const& [tag, value] : tags) {
 			if (strMatch(tag, tagName) && strMatch(value, tagValue))
 				remove = false;
-		});
+		}
 		if (remove)
 			filter.erase(gnum);
 	}

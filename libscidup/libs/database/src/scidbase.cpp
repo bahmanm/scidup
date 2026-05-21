@@ -26,6 +26,7 @@
 #include "gameview.h"
 #include "scidup/database/common.h"
 #include "scidup/database/game_id.h"
+#include "scidup/eco/book.h"
 #include "sortcache.h"
 #include "stored.h"
 #include <algorithm>
@@ -280,6 +281,83 @@ scid::core::errorT scidBaseT::loadGame(const IndexEntry& ie, scid::core::Game& d
 	                                tagRoster(ie),
 	                                gameData(ie));
 	return err;
+}
+
+scid::core::errorT scidBaseT::loadGameMovesOnly(const IndexEntry& ie,
+                                                scid::core::Game& dest) const {
+	auto data = gameData(ie);
+	if (!data)
+		return scid::core::ERROR_FileRead;
+	return game_storage::decodeMovesOnly(dest, data);
+}
+
+scid::core::errorT scidBaseT::gameTags(
+    const IndexEntry& ie,
+    std::vector<std::pair<std::string, std::string>>& dest) const {
+	auto data = gameData(ie);
+	return data.decodeTags([&](auto const& tag, auto const& value) {
+		dest.emplace_back(tag, value);
+	});
+}
+
+std::vector<scid::core::FullMove>
+scidBaseT::mainlineMoves(const IndexEntry* ie, std::size_t maxPly) const {
+	std::vector<scid::core::FullMove> moves;
+	moves.reserve(std::min<std::size_t>(maxPly, ie->GetNumHalfMoves()));
+	gameView(ie).mainLine([&](auto move) {
+		if (moves.size() >= maxPly)
+			return false;
+		moves.push_back(move);
+		return true;
+	});
+	return moves;
+}
+
+std::string scidBaseT::moveSAN(const IndexEntry* ie, int plyToSkip,
+                               int count) const {
+	return gameView(ie).getMoveSAN(plyToSkip, count);
+}
+
+std::optional<scidup::eco::Code>
+scidBaseT::inferEcoCode(const IndexEntry& ie, const scidup::eco::Book& book,
+                        bool extendedCodes) const {
+	auto data = gameData(ie);
+	scid::core::Position currentPosition;
+	if (data.decodeTags([](auto, auto) {}) != scid::core::OK)
+		return std::nullopt;
+
+	const auto [errStartPos, fen] = data.decodeStartBoard();
+	if (errStartPos)
+		return std::nullopt;
+	if (fen) {
+		if (currentPosition.ReadFromFEN(fen) != scid::core::OK)
+			return std::nullopt;
+	} else {
+		currentPosition.StdStart();
+	}
+
+	scidup::eco::Code ecoCode = scidup::eco::ECO_None;
+	for (;;) {
+		if (currentPosition.TotalMaterial() < book.fewestPieces())
+			break;
+
+		const auto eco = book.findEco(currentPosition);
+		if (eco != scidup::eco::ECO_None) {
+			ecoCode = eco;
+		}
+
+		scid::core::simpleMoveT sm;
+		if (game_storage::decodeMainlineMove(data, currentPosition, sm) !=
+		    scid::core::OK)
+			break;
+
+		currentPosition.DoSimpleMove(sm);
+	}
+
+	if (!extendedCodes) {
+		ecoCode = scidup::eco::basicCode(ecoCode);
+	}
+	return ecoCode;
 }
 
 scid::core::errorT scidBaseT::saveGame(scid::core::Game const& game,
