@@ -105,10 +105,13 @@ private:
     void GenCheckEvasions(MoveList* mlist, pieceT mask, genMovesT genType,
                           SquareList* checkSquares);
 
-    errorT ReadMove(MoveAction* sm, const char* str, size_t slen, pieceT p) const;
-    errorT ReadMoveCastle(MoveAction* sm, std::string_view str) const;
-    errorT ReadMovePawn(MoveAction* sm, const char* str, size_t slen, fyleT from);
-    errorT ReadMoveKing(MoveAction* sm, const char* str, size_t slen) const;
+    errorT readPieceMoveAction(MoveAction* sm, const char* str, size_t slen,
+                               pieceT p) const;
+    errorT readCastleMoveAction(MoveAction* sm, std::string_view str) const;
+    errorT readPawnMoveAction(MoveAction* sm, const char* str, size_t slen,
+                              fyleT from);
+    errorT readKingMoveAction(MoveAction* sm, const char* str,
+                              size_t slen) const;
 
     template <typename TFunc>
     bool under_attack(squareT target_sq, squareT captured_sq,

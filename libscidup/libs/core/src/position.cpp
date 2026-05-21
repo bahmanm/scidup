@@ -2001,8 +2001,8 @@ static size_t trimCheck(const char* str, size_t slen) {
 	return slen;
 }
 
-errorT Position::ReadMovePawn(MoveAction* sm, const char* str, size_t slen,
-                              fyleT frFyle) {
+errorT Position::readPawnMoveAction(MoveAction* sm, const char* str, size_t slen,
+                                    fyleT frFyle) {
 	assert(sm != NULL && str != NULL && frFyle <= H_FYLE);
 
 	if (slen < 2)
@@ -2079,8 +2079,8 @@ errorT Position::ReadMovePawn(MoveAction* sm, const char* str, size_t slen,
 	return ERROR_InvalidMove;
 }
 
-errorT Position::ReadMoveKing(MoveAction* sm, const char* str,
-                              size_t slen) const {
+errorT Position::readKingMoveAction(MoveAction* sm, const char* str,
+                                    size_t slen) const {
 	assert(sm != NULL && str != NULL);
 
 	if (slen < 3 || slen > 6)
@@ -2110,13 +2110,13 @@ errorT Position::ReadMoveKing(MoveAction* sm, const char* str,
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Position::ReadMove():
+// Position::readPieceMoveAction():
 //      Given a move in (possibly sloppy) PGN notation,
 //      generates the legal move it corresponds to.
 //      Returns: OK or ERROR_InvalidMove.
 //
-errorT Position::ReadMove(MoveAction* sm, const char* str, size_t slen,
-                          pieceT piece) const {
+errorT Position::readPieceMoveAction(MoveAction* sm, const char* str,
+                                     size_t slen, pieceT piece) const {
 	assert(sm != NULL && str != NULL);
 	assert(piece == QUEEN || piece == ROOK || piece == BISHOP ||
 	       piece == KNIGHT);
@@ -2166,7 +2166,8 @@ errorT Position::ReadMove(MoveAction* sm, const char* str, size_t slen,
 	                                              // (ambiguous) moves match.
 }
 
-errorT Position::ReadMoveCastle(MoveAction* sm, std::string_view str) const {
+errorT Position::readCastleMoveAction(MoveAction* sm,
+                                      std::string_view str) const {
 	bool king_side = true;
 	if (str == "O-O" || str == "OO") {
 		// side = KSIDE;
@@ -2187,7 +2188,7 @@ errorT Position::ReadMoveCastle(MoveAction* sm, std::string_view str) const {
 // Parse a single move from SAN-style (Nf3) or UCI (g1f3) notation.
 // If the move is legal, it stores the result in @e sm.
 errorT Position::parseMoveAction(MoveAction* sm, const char* str,
-                           const char* strEnd) {
+                                 const char* strEnd) {
 	assert(str != NULL);
 
 	const auto length = trimCheck(str, std::distance(str, strEnd));
@@ -2227,15 +2228,15 @@ errorT Position::parseMoveAction(MoveAction* sm, const char* str,
 		}
 		return ERROR_InvalidMove;
 	case PAWN:
-		return ReadMovePawn(sm, str, length, ptype >> 4);
+		return readPawnMoveAction(sm, str, length, ptype >> 4);
 	case KING:
-		return ReadMoveKing(sm, str, length);
+		return readKingMoveAction(sm, str, length);
 	case 7:
-		return ReadMoveCastle(sm, {str, length});
+		return readCastleMoveAction(sm, {str, length});
 	case 8:
 		return parseMoveAction(sm, str + 1, strEnd);
 	default:
-		return ReadMove(sm, str, length, ptype);
+		return readPieceMoveAction(sm, str, length, ptype);
 	};
 }
 
