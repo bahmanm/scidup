@@ -19,7 +19,7 @@
  */
 
 #include "scidup/eco/book.h"
-#include "scidup/core/game.h"
+#include "scidup/core/move.h"
 #include "scidup/core/position.h"
 #include <algorithm>
 #include <cctype>

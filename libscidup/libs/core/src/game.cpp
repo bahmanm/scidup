@@ -37,28 +37,6 @@ void stripMoveSequence(MoveSequence& sequence,
 }
 } // namespace
 
-bool MoveSpec::isNull() const {
-	return from == to && !castling;
-}
-
-std::string MoveSpec::longNotation() const {
-	if (isNull())
-		return "0000";
-
-	std::string notation;
-	notation.reserve(5);
-	notation.push_back(scid::core::square_FyleChar(from));
-	notation.push_back(scid::core::square_RankChar(from));
-	notation.push_back(scid::core::square_FyleChar(to));
-	notation.push_back(scid::core::square_RankChar(to));
-	if (promotion != scid::core::EMPTY) {
-		constexpr const char promotionChars[] = "  qrbn ";
-		notation.push_back(
-		    promotionChars[scid::core::piece_Type(promotion)]);
-	}
-	return notation;
-}
-
 Game::Game() {
 	clear();
 }

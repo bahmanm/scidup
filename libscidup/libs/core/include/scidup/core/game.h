@@ -3,6 +3,7 @@
 #include "scidup/core/date.h"
 #include "scidup/core/error.h"
 #include "scidup/core/game_result.h"
+#include "scidup/core/move.h"
 #include "scidup/core/nags.h"
 #include "scidup/core/notation.h"
 #include "scidup/core/position.h"
@@ -47,16 +48,6 @@ struct GameHeader {
 	scid::core::resultT result = scid::core::RESULT_None;
 	std::string eco;
 	std::vector<TagPair> tags;
-};
-
-struct MoveSpec {
-	scid::core::squareT from = scid::core::NULL_SQUARE;
-	scid::core::squareT to = scid::core::NULL_SQUARE;
-	scid::core::pieceT promotion = scid::core::EMPTY;
-	bool castling = false;
-
-	bool isNull() const;
-	std::string longNotation() const;
 };
 
 struct MoveMetadata {

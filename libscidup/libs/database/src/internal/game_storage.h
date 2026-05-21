@@ -12,7 +12,6 @@
 
 namespace scid::core {
 class Game;
-struct MoveSpec;
 } // namespace scid::core
 
 namespace scid::database::game_storage {

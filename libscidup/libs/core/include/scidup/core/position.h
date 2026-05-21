@@ -5,6 +5,7 @@
 #pragma once
 
 #include "scidup/core/error.h"
+#include "scidup/core/move.h"
 #include "scidup/core/movelist.h"
 #include "scidup/core/notation.h"
 
@@ -17,7 +18,6 @@
 namespace scid::core {
 
 class DString;
-struct MoveSpec;
 class SquareSet;
 class SquareList;
 

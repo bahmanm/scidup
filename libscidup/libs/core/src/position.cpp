@@ -1,7 +1,6 @@
 #include "scidup/core/position.h"
 #include "scidup/core/attacks.h"
 #include "scidup/core/dstring.h"
-#include "scidup/core/game.h"
 #include "scidup/core/hash.h"
 #include "scidup/core/move_predicates.h"
 #include "scidup/core/square_collections.h"

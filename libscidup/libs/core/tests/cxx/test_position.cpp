@@ -3,7 +3,6 @@
  */
 
 #include "scidup/core/position.h"
-#include "scidup/core/game.h"
 
 #include <cstring>
 #include <gtest/gtest.h>

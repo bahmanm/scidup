@@ -7,6 +7,7 @@ project(
 set(
     SCIDUP_CORE_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_cursor.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/move.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/movetext_cursor.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/movetext_location.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/nags.cpp"
@@ -30,6 +31,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/movetext_location.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/game_result.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/hash.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/move.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/movelist.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/move_predicates.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/nags.h"

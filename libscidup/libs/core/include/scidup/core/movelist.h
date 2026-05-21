@@ -20,9 +20,9 @@ const uint  MAX_LEGAL_MOVES = 256;  // max. length of the moves list
 ///////////////////////////////////////////////////////////////////////////
 //  MoveList:  Data Structures
 
-// *** MoveAction: a position-resolved move record which is less expensive to
-//      store than a full game move, but still fully undoable.
-//
+// TODO [MoveAction]: This is a position-resolved reversible action record.
+// It semantically belongs with Position, but currently lives here because
+// MoveList stores generated actions and Position includes MoveList.
 struct MoveAction
 {
     squareT  from;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "scidup/core/move.h"
 #include "scidup/core/primitives.h"
 #include <cstddef>
 #include <optional>
@@ -12,7 +13,6 @@ class Position;
 namespace scid::core {
 class Game;
 class MovetextLocation;
-struct MoveSpec;
 
 namespace notation {
 
