@@ -111,3 +111,29 @@ TEST(Test_PgnEncodeCore, EncodeCoreGameWithLineBreaking) {
 	                "*\n"sv;
 	EXPECT_EQ(expected, pgn);
 }
+
+TEST(Test_PgnEncodeCore, EncodeCoreGameWithSymbolicNags) {
+	using namespace std::literals;
+
+	scid::core::Game game;
+	auto& first = game.appendMainlineMove(
+	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
+	first.metadata.nags.push_back(scid::core::NAG_GoodMove);
+	first.metadata.nags.push_back(scid::core::NAG_Diagram);
+
+	std::string pgn;
+	scid::core::pgn::encode_game(
+	    game, pgn, scid::core::pgn::EncodeOptions{.symbolicNags = true});
+
+	auto expected = "[Event\0\"\"]\n"sv
+	                "[Site\0\"\"]\n"sv
+	                "[Date\0\"????.??.??\"]\n"sv
+	                "[Round\0\"\"]\n"sv
+	                "[White\0\"\"]\n"sv
+	                "[Black\0\"\"]\n"sv
+	                "[Result\0\"*\"]\n"sv
+	                "\n"sv
+	                "1.e4\0!\0D\n"sv
+	                "*\n"sv;
+	EXPECT_EQ(expected, pgn);
+}

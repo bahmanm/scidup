@@ -27,6 +27,7 @@
 #pragma once
 
 #include "scidup/core/game.h"
+#include "scidup/core/nags.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -36,6 +37,10 @@
 #include <vector>
 
 namespace scid::core::pgn {
+
+struct EncodeOptions {
+	bool symbolicNags = false;
+};
 
 // We want to split the PGN text in lines to make it more readable, but we do
 // not want to insert extra newline chars inside comments or tag values.
@@ -224,7 +229,8 @@ template <int hard_len = 0, typename TCont>
 void encode_movetext_entry(MovetextEntry const& entry,
                            std::vector<long long>& ply,
                            typename TCont::size_type& move_end,
-                           TCont& dest) {
+                           TCont& dest,
+                           EncodeOptions options) {
 	switch (entry.kind) {
 	case MovetextEntryKind::InitialComment:
 		if (!entry.comment.empty())
@@ -261,8 +267,7 @@ void encode_movetext_entry(MovetextEntry const& entry,
 		ply.back()++;
 
 		for (auto nag : entry.nags) {
-			dest.push_back('$');
-			auto nag_str = std::to_string(nag);
+			auto nag_str = formatNag(nag, options.symbolicNags);
 			dest.insert(dest.end(), nag_str.begin(), nag_str.end());
 			dest.push_back('\0');
 		}
@@ -279,7 +284,8 @@ template <int hard_len = 0, typename TCont>
 void encode_core_line(MoveSequence const& line,
                       scid::database::Position position,
                       std::vector<long long>& ply,
-                      typename TCont::size_type& move_end, TCont& dest) {
+                      typename TCont::size_type& move_end, TCont& dest,
+                      EncodeOptions options = {}) {
 	for (std::size_t i = 0; i < line.moves.size(); ++i) {
 		auto const& move = line.moves[i];
 		auto position_before_move = position;
@@ -295,7 +301,7 @@ void encode_core_line(MoveSequence const& line,
 		     san,
 		     move.metadata.comment,
 		     {move.metadata.nags.data(), move.metadata.nags.size()}},
-		    ply, move_end, dest);
+		    ply, move_end, dest, options);
 
 		for (auto const& variation : move.childVariations) {
 			detail::encode_movetext_entry<hard_len>(
@@ -303,12 +309,12 @@ void encode_core_line(MoveSequence const& line,
 			     {},
 			     variation.initialComment,
 			     {}},
-			    ply, move_end, dest);
+			    ply, move_end, dest, options);
 			encode_core_line<hard_len>(variation.line, position_before_move,
-			                           ply, move_end, dest);
+			                           ply, move_end, dest, options);
 			detail::encode_movetext_entry<hard_len>(
 			    {detail::MovetextEntryKind::VariationEnd, {}, {}, {}},
-			    ply, move_end, dest);
+			    ply, move_end, dest, options);
 		}
 
 		if (simpleMove)
@@ -317,7 +323,8 @@ void encode_core_line(MoveSequence const& line,
 }
 
 template <int hard_len = 0, typename TCont>
-void encode_movetext(Game const& game, TCont& dest) {
+void encode_movetext(Game const& game, TCont& dest,
+                     EncodeOptions options = {}) {
 	std::vector<long long> ply = {game.initialPlyCounter()};
 	auto move_end = dest.size();
 	dest.push_back('\n');
@@ -328,13 +335,13 @@ void encode_movetext(Game const& game, TCont& dest) {
 		     {},
 		     game.initialComment(),
 		     {}},
-		    ply, move_end, dest);
+		    ply, move_end, dest, options);
 	}
 
 	auto position = game.startPosition() ? *game.startPosition()
 	                                     : scid::database::Position::getStdStart();
 	encode_core_line<hard_len>(game.movetext().mainline, position, ply,
-	                           move_end, dest);
+	                           move_end, dest, options);
 
 	if (dest.back() == '\0')
 		dest.back() = '\n';
@@ -375,9 +382,9 @@ void encode_core_tag_pairs(Game const& game, TCont& dest) {
 }
 
 template <int hard_len = 0, typename TCont>
-void encode_game(Game const& game, TCont& dest) {
+void encode_game(Game const& game, TCont& dest, EncodeOptions options = {}) {
 	encode_core_tag_pairs(game, dest);
-	encode_movetext<hard_len>(game, dest);
+	encode_movetext<hard_len>(game, dest, options);
 
 	auto result = game.resultString();
 	dest.insert(dest.end(), result.begin(), result.end());
@@ -389,9 +396,9 @@ void encode_game(Game const& game, TCont& dest) {
 // @param game: the game to be encoded.
 // @param dest: the container where the PGN Game will be appended.
 template <int desired_len = 80, typename TGame, typename TCont>
-void encode(TGame const& game, TCont& dest) {
+void encode(TGame const& game, TCont& dest, EncodeOptions options = {}) {
 	auto begin = dest.size();
-	encode_game(game, dest);
+	encode_game(game, dest, options);
 	break_lines<desired_len>(dest.begin() + begin, dest.end());
 }
 

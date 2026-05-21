@@ -4035,12 +4035,19 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         thisArg += 2;
     }
 
+    const auto corePgnStyle =
+        PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS;
+    const bool symbolicNags =
+        (encodeOptions.style & PGN_STYLE_SYMBOLS) != 0;
+    const auto coreSupportedStyle =
+        corePgnStyle | (symbolicNags ? PGN_STYLE_SYMBOLS : 0);
     if (encodeOptions.legacyFormat == scid::database::PGN_FORMAT_Plain &&
-        encodeOptions.style ==
-            (PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS) &&
+        encodeOptions.style == coreSupportedStyle &&
         encodeOptions.htmlStyle == 0 && lineWidth == 99999) {
         std::string pgn;
-        scid::core::pgn::encode<99999>(g->coreGame(), pgn);
+        scid::core::pgn::encode<99999>(
+            g->coreGame(), pgn,
+            scid::core::pgn::EncodeOptions{.symbolicNags = symbolicNags});
         AppendResult(ti, pgn.c_str(), NULL);
     } else {
         std::pair<const char*, unsigned> pgnBuf =
@@ -8993,21 +9000,13 @@ sc_search_header (ClientData, Tcl_Interp * ti, scid::database::scidBaseT* base, 
 			    scid::database::OK) {
 				match = false;
 			} else {
-				const auto encodeOptions =
-				    scid::database::LegacyGameEncodeOptions{
-				        PGN_STYLE_TAGS | PGN_STYLE_COMMENTS |
-				            PGN_STYLE_VARS | PGN_STYLE_SYMBOLS,
-				        scid::database::PGN_FORMAT_Plain,
-				        0,
-				    };
-				const char* buf =
-				    scid::database::legacy_pgn::encode(
-				        scratchGame->coreGame(), scratchGame->scidFlags(),
-				        encodeOptions)
-				        .first;
+				std::string pgn;
+				scid::core::pgn::encode<99999>(
+				    scratchGame->coreGame(), pgn,
+				    scid::core::pgn::EncodeOptions{.symbolicNags = true});
 					for (scid_tcl_size m = 0; m < pgnTextCount; m++) {
 						if (match) {
-							match = scid::database::strContains(buf, sPgnText[m]);
+							match = scid::database::strContains(pgn.c_str(), sPgnText[m]);
 						}
 					}
 			}
