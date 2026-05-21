@@ -26,7 +26,6 @@
 #include "scidup/core/game.h"
 #include "scidup/core/movetext_location.h"
 #include <cstddef>
-#include <optional>
 #include <string>
 
 namespace scid::core::pgn {
@@ -49,15 +48,12 @@ struct ParseLog {
  *                  The object is not automatically cleared so that moves can
  *                  be added to an already existing one.
  * @param log:      stores eventual parsing error.
- * @param scidFlags: optional output for the database/application ScidFlags tag.
  * @returns true if a game was parsed successfully (maybe with errors, but
  * without ignoring any part), false otherwise.
  */
 bool parseGame(const char* input, size_t inputLen, scid::core::Game& game,
-               ParseLog& log,
-               std::optional<std::string>* scidFlags = nullptr);
+               ParseLog& log);
 bool parseGame(const char* input, size_t inputLen, scid::core::Game& game,
-               scid::core::MovetextLocation& location, ParseLog& log,
-               std::optional<std::string>* scidFlags = nullptr);
+               scid::core::MovetextLocation& location, ParseLog& log);
 
 } // namespace scid::core::pgn

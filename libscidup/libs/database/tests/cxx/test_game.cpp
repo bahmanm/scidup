@@ -27,7 +27,6 @@
 #include "nag_format.h"
 #include "piece_translation.h"
 #include "scidup/core/pgn/decode.h"
-#include "pgnparse_impl.h"
 #include <algorithm>
 #include <array>
 #include "bytebuf.h"
@@ -83,6 +82,18 @@ std::string currentFen(const scid::core::Game& game,
 	char buf[1024];
 	position->PrintFEN(buf, sizeof(buf));
 	return buf;
+}
+
+std::string_view currentMoveComment(
+    const scid::core::Game& game,
+    scid::core::MovetextLocation location) {
+	scid::core::GameCursor cursor(game);
+	EXPECT_TRUE(cursor.restore(location));
+	if (auto move = cursor.previousMove())
+		return move->metadata.comment;
+	if (auto variation = cursor.currentVariation())
+		return variation->initialComment;
+	return game.initialComment();
 }
 
 scid::core::simpleMoveT makeCurrentMove(scid::core::Game& game,
@@ -528,8 +539,8 @@ TEST(Test_Game, encodeFEN) {
 TEST(Test_Game, currentPositionUci_startpos) {
 	std::string_view pgn = "1.d4 (1.e4 e5 ( 1...c5)) (1.c4) 1...d5 2.c4";
 	scid::core::Game game;
-	scid::core::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()},
-	                                scid::core::pgn_impl::PgnVisitor{game});
+	scid::core::pgn::ParseLog log;
+	ASSERT_TRUE(scid::core::pgn::parseGame(pgn.data(), pgn.size(), game, log));
 	scid::core::MovetextLocation location;
 
 	const std::pair<unsigned, const char*> expected[] = {
@@ -557,8 +568,8 @@ TEST(Test_Game, coreGameMovetextMirrorsLegacyMoveTree) {
 	    "1.d4! {Best by test} ({Queen pawn alternative} 1.e4 e5 ( 1...c5)) "
 	    "(1.c4) 1...d5 2.c4";
 	scid::core::Game game;
-	scid::core::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()},
-	                                scid::core::pgn_impl::PgnVisitor{game});
+	scid::core::pgn::ParseLog log;
+	ASSERT_TRUE(scid::core::pgn::parseGame(pgn.data(), pgn.size(), game, log));
 
 	scid::core::GameCursor cursor(game);
 	expectMoveAction(cursor.nextMove(), scid::core::D2, scid::core::D4);
@@ -777,7 +788,7 @@ TEST(Test_Game, moveCommentReadsCoreCommentAtCurrentLocation) {
 	setCurrentComment(game, location, "Before the first move");
 	game.setInitialComment("Core initial comment");
 	EXPECT_EQ("Core initial comment",
-	          std::string(scid::core::pgn_impl::currentMoveComment(game, &location)));
+	          std::string(currentMoveComment(game, location)));
 
 	addMove(game, location, makeCurrentMove(game, location, scid::core::E2,
 	                              scid::core::E4));
@@ -787,7 +798,7 @@ TEST(Test_Game, moveCommentReadsCoreCommentAtCurrentLocation) {
 	metadata.comment = "Core previous move comment";
 	ASSERT_TRUE(mainlineCursor.setPreviousMoveMetadata(std::move(metadata)));
 	EXPECT_EQ("Core previous move comment",
-	          std::string(scid::core::pgn_impl::currentMoveComment(game, &location)));
+	          std::string(currentMoveComment(game, location)));
 
 	addVariation(game, location);
 	scid::core::MovetextCursor variationCursor(game);
@@ -795,7 +806,7 @@ TEST(Test_Game, moveCommentReadsCoreCommentAtCurrentLocation) {
 	ASSERT_TRUE(variationCursor.setCurrentVariationInitialComment(
 	    "Core variation comment"));
 	EXPECT_EQ("Core variation comment",
-	          std::string(scid::core::pgn_impl::currentMoveComment(game, &location)));
+	          std::string(currentMoveComment(game, location)));
 }
 
 TEST(Test_Game, coreGameMirrorsStrip) {
@@ -853,8 +864,8 @@ TEST(Test_Game, coreGameCanBeEncodedAsPlainPgnWithoutStoredSan) {
 	std::string_view pgn =
 	    "1.d4! {Best by test} (1.e4 e5 ( 1...c5)) (1.c4) 1...d5 2.c4";
 	scid::core::Game game;
-	scid::core::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()},
-	                                scid::core::pgn_impl::PgnVisitor{game});
+	scid::core::pgn::ParseLog log;
+	ASSERT_TRUE(scid::core::pgn::parseGame(pgn.data(), pgn.size(), game, log));
 	scid::core::MovetextLocation location;
 
 	std::string encoded;
@@ -882,8 +893,8 @@ TEST(Test_Game, currentPositionUci_fen) {
 	    "[FEN 8/8/8/8/2p5/1k1p4/p4N2/2K5 w - - 0 198]\n"
 	    "198.Kd2 ( 198.Nxd3 a1=R+ 199.Kd2 cxd3 )198...a1=Q 199.Ke3 Qe1+ 0-1";
 	scid::core::Game game;
-	scid::core::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()},
-	                                scid::core::pgn_impl::PgnVisitor{game});
+	scid::core::pgn::ParseLog log;
+	ASSERT_TRUE(scid::core::pgn::parseGame(pgn.data(), pgn.size(), game, log));
 	scid::core::MovetextLocation location;
 
 	const std::pair<unsigned, const char*> expected[] = {
@@ -959,8 +970,8 @@ namespace {
 auto make_invalid(unsigned char movecode, std::string_view pgn) {
 	std::vector<unsigned char> data;
 	scid::core::Game g;
-	scid::core::pgn::parse_game({pgn.data(), pgn.data() + pgn.size()},
-	                                scid::core::pgn_impl::PgnVisitor{g});
+	scid::core::pgn::ParseLog log;
+	(void)scid::core::pgn::parseGame(pgn.data(), pgn.size(), g, log);
 	scid::database::game_storage::encode(g, "", data);
 	auto comment_tag = std::find(data.begin(), data.end(), 12);
 	if (comment_tag != data.end())

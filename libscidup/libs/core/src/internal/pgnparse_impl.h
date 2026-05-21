@@ -91,7 +91,6 @@ class PgnVisitor {
 	scid::core::Game& game;
 	scid::core::MovetextLocation ownedLocation_;
 	scid::core::MovetextLocation* location_;
-	std::optional<std::string>* scidFlags_;
 	std::vector<std::pair<size_t, std::string>> errors_;
 	size_t linenum_ = 0;
 	int nErrorsAllowed_ = 2;
@@ -100,11 +99,9 @@ class PgnVisitor {
 
 public:
 	explicit PgnVisitor(scid::core::Game& g,
-	                    scid::core::MovetextLocation* location = nullptr,
-	                    std::optional<std::string>* scidFlags = nullptr)
+	                    scid::core::MovetextLocation* location = nullptr)
 	    : game(g),
-	      location_(location ? location : &ownedLocation_),
-	      scidFlags_(scidFlags) {}
+	      location_(location ? location : &ownedLocation_) {}
 
 	auto const& errors() const { return errors_; }
 	size_t lineNumber() const { return linenum_; }
@@ -472,12 +469,6 @@ private:
 				const auto date = scid::core::date_parsePGNTag(value);
 				game.setEventDate(date);
 				return !scid::core::date_isPartial(date);
-			}
-			if (std::equal(tag, tag + 9, "ScidFlags")) {
-				if (scidFlags_) {
-					*scidFlags_ = std::string(value.first, value.second);
-				}
-				return true;
 			}
 			break;
 		}

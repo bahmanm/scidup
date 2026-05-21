@@ -87,9 +87,7 @@ target_compile_features(
 target_include_directories(
     scidup_database
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    PRIVATE
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/internal"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../core/src/internal" )
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/internal" )
 target_link_libraries(
     scidup_database
     PUBLIC ScidUp::Core ScidUp::Eco Threads::Threads )
@@ -125,9 +123,7 @@ if( BUILD_TESTING )
         PRIVATE SCIDUP_TEST_RESOURCES_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/tests/cxx/\" )
     target_include_directories(
         scidup_tests_database_cpp
-        PRIVATE
-            "${CMAKE_CURRENT_SOURCE_DIR}/src/internal"
-            "${CMAKE_CURRENT_SOURCE_DIR}/../core/src/internal" )
+        PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/internal" )
     target_link_libraries(
         scidup_tests_database_cpp
         PRIVATE ScidUp::Database gtest_main )

@@ -26,12 +26,11 @@
 #define CODEC_PGN_H
 
 #include "codec_proxy.h"
-#include "pgnparse_impl.h"
 #include "filebuf.h"
+#include "scidup/core/pgn/decode.h"
 #include "scidup/core/pgn/encode.h"
 #include <algorithm>
 #include <cstring>
-#include <optional>
 #include <vector>
 
 namespace scid::database {
@@ -98,12 +97,13 @@ public:
 		}
 
 		game.clear();
-		std::optional<std::string> scidFlags;
-		scid::core::pgn_impl::PgnVisitor visitor(game, nullptr, &scidFlags);
-		auto parse = scid::core::pgn::parse_game(
-		    {buf_.data() + nParsed_, buf_.data() + nRead_}, visitor);
+		const auto startBytes = parseLog_.n_bytes;
+		const auto startLogSize = parseLog_.log.size();
+		const auto parsed = scid::core::pgn::parseGame(
+		    buf_.data() + nParsed_, nRead_ - nParsed_, game, parseLog_);
+		const auto parsedBytes = parseLog_.n_bytes - startBytes;
 
-		bool eof = (nRead_ - nParsed_ == parse.first);
+		bool eof = (nRead_ - nParsed_ == parsedBytes);
 		if (eof && nRead_ == buf_.size()) {
 			// Reached the end of input, but the file contains more bytes.
 			if (nRead_ <= 128 * 1024 * 1024) {
@@ -118,16 +118,16 @@ public:
 			return scid::core::ERROR_NotFound;
 		}
 
-		nParsed_ += parse.first;
-		scid::core::pgn_impl::logGame(parseLog_, parse.first, visitor);
-		if (scidFlags && scidFlagsOut && scidFlagsOutLen > 0) {
+		nParsed_ += parsedBytes;
+		if (auto scidFlags = game.findExtraTag("ScidFlags");
+		    scidFlags && scidFlagsOut && scidFlagsOutLen > 0) {
 			std::fill_n(scidFlagsOut, scidFlagsOutLen, 0);
 			std::copy_n(scidFlags->data(),
 			            std::min(scidFlagsOutLen - 1, scidFlags->size()),
 			            scidFlagsOut);
+			game.removeExtraTag("ScidFlags");
 		}
-		if (eof && !parse.second &&
-		    scid::core::pgn_impl::currentMoveComment(game).empty())
+		if (!parsed && parseLog_.log.size() == startLogSize)
 			return scid::core::ERROR_NotFound;
 
 		return scid::core::OK;

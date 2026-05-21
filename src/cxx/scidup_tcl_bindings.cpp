@@ -368,6 +368,14 @@ static scid::core::errorT resetStartFen(scid::core::Game& game,
 	return scid::core::OK;
 }
 
+static void extractScidFlags(scidup::app::editor::EditableGame& editableGame) {
+	auto& game = editableGame.coreGame();
+	if (auto flags = game.findExtraTag("ScidFlags")) {
+		editableGame.setScidFlags(flags->data(), flags->size());
+		game.removeExtraTag("ScidFlags");
+	}
+}
+
 //////////////////////////////////////////////////////////////////////
 //
 // Inline routines for setting Tcl result strings:
@@ -2945,14 +2953,11 @@ int sc_game_import(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 	}
 
 	scid::core::pgn::ParseLog pgn;
-	std::optional<std::string> scidFlags;
 	auto location = editor.location();
 	auto ok = scid::core::pgn::parseGame(argv[2], std::strlen(argv[2]),
 	                                       editor.game().coreGame(), location,
-	                                       pgn, &scidFlags);
-	if (scidFlags) {
-		editor.game().setScidFlags(scidFlags->data(), scidFlags->size());
-	}
+	                                       pgn);
+	extractScidFlags(editor.game());
 	editor.setLocation(location);
 
 	if (new_variation &&
@@ -5141,15 +5146,11 @@ int sc_move_addSan(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 	for (int i = 2; i < argc; ++i) {
 		editor.setDirty();
 		auto location = editor.location();
-		std::optional<std::string> scidFlags;
 		if (!scid::core::pgn::parseGame(argv[i], std::strlen(argv[i]),
 		                                  editor.game().coreGame(), location,
-		                                  parser, &scidFlags))
+		                                  parser))
 			return UI_Result(ti, scid::core::ERROR_InvalidMove, argv[i]);
-		if (scidFlags) {
-			editor.game().setScidFlags(scidFlags->data(),
-			                           scidFlags->size());
-		}
+		extractScidFlags(editor.game());
 		editor.setLocation(location);
 	}
 	return UI_Result(ti, scid::core::OK);

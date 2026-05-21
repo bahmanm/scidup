@@ -90,6 +90,9 @@ if( BUILD_TESTING )
     add_executable(
         scidup_tests_core_cpp
         ${SCIDUP_CORE_TEST_SOURCES} )
+    target_include_directories(
+        scidup_tests_core_cpp
+        PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/internal" )
     target_link_libraries(
         scidup_tests_core_cpp
         PRIVATE ScidUp::Core gtest_main )

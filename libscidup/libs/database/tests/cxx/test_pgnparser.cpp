@@ -16,7 +16,6 @@
 
 #include "scidup/core/game.h"
 #include "legacy_pgn.h"
-#include "pgnparse_impl.h"
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/pgn/decode.h"
 #include <algorithm>
@@ -26,6 +25,7 @@
 #include <gtest/gtest.h>
 #include <random>
 #include <string>
+#include <string_view>
 
 namespace {
 
@@ -83,6 +83,18 @@ std::string currentFen(const scid::core::Game& game,
 	char buf[128];
 	position->PrintFEN(buf, sizeof(buf));
 	return buf;
+}
+
+std::string_view currentMoveComment(
+    const scid::core::Game& game,
+    scid::core::MovetextLocation location) {
+	scid::core::GameCursor cursor(game);
+	EXPECT_TRUE(cursor.restore(location));
+	if (auto move = cursor.previousMove())
+		return move->metadata.comment;
+	if (auto variation = cursor.currentVariation())
+		return variation->initialComment;
+	return game.initialComment();
 }
 
 } // end of anonymous namespace
@@ -182,8 +194,7 @@ TEST(Test_PgnParser, EPD) {
 	EXPECT_STREQ(
 	    "rnbqkb1r/1ppppppp/5n2/p7/2P5/4P3/PP1P1PPP/RNBQKBNR b KQkq - 0 1",
 	    currentFen(game, location).c_str());
-	EXPECT_EQ("0 1;",
-	          std::string(scid::core::pgn_impl::currentMoveComment(game, &location)));
+	EXPECT_EQ("0 1;", std::string(currentMoveComment(game, location)));
 
 	game.clear();
 	location = {};
@@ -193,7 +204,7 @@ TEST(Test_PgnParser, EPD) {
 	EXPECT_STREQ(
 	    "rq2r1k1/1bbn1pp1/1pp2n1p/p2p4/N2P3B/P2BP2P/1PQ1NPP1/2R2R1K b - - 0 1",
 	    currentFen(game, location).c_str());
-	EXPECT_EQ("", std::string(scid::core::pgn_impl::currentMoveComment(game, &location)));
+	EXPECT_EQ("", std::string(currentMoveComment(game, location)));
 
 	game.clear();
 	location = {};
@@ -203,7 +214,7 @@ TEST(Test_PgnParser, EPD) {
 	EXPECT_STREQ("1B2K3/4b3/3pk3/5R2/8/7B/8/8 w - - 0 1",
 	             currentFen(game, location).c_str());
 	EXPECT_EQ("bm Bb8-c7; ce +M3; pv Bb8-c7 Be7-f8 Ke8xf8 d6-d5 Rf5-f7+;",
-	          std::string(scid::core::pgn_impl::currentMoveComment(game, &location)));
+	          std::string(currentMoveComment(game, location)));
 
 	game.clear();
 	location = {};
@@ -212,15 +223,14 @@ TEST(Test_PgnParser, EPD) {
 	EXPECT_TRUE(parseLog.log.empty());
 	EXPECT_STREQ("1B2K3/4b3/3pk3/5R2/8/7B/8/8 w - - 0 1",
 	             currentFen(game, location).c_str());
-	EXPECT_EQ("bm Bc7 Rf3+",
-	          std::string(scid::core::pgn_impl::currentMoveComment(game, &location)));
+	EXPECT_EQ("bm Bc7 Rf3+", std::string(currentMoveComment(game, location)));
 
 	game.clear();
 	location = {};
 	ASSERT_FALSE(scid::core::pgn::parseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                          game, location, parseLog));
 	EXPECT_FALSE(parseLog.log.empty());
-	EXPECT_NE(scid::core::pgn_impl::currentMoveComment(game, &location).data(), nullptr);
+	EXPECT_NE(currentMoveComment(game, location).data(), nullptr);
 
 	game.clear();
 	std::string last_log = parseLog.log;
@@ -245,56 +255,6 @@ TEST(Test_PgnParser, EPD) {
 	ASSERT_FALSE(scid::core::pgn::parseGame(pgn + parseLog.n_bytes, len - parseLog.n_bytes,
 	                          game, parseLog));
 	ASSERT_EQ(parseLog.n_bytes, len);
-}
-
-TEST(Test_PgnParser, is_PGNsymbol) {
-	bool chars[256] = {false};
-	for (unsigned ch = 'A'; ch <= 'Z'; ++ch) {
-		chars[ch] = true;
-	}
-	for (unsigned ch = 'a'; ch <= 'z'; ++ch) {
-		chars[ch] = true;
-	}
-	for (unsigned ch = '0'; ch <= '9'; ++ch) {
-		chars[ch] = true;
-	}
-	const unsigned extra[] = {'_', '+', '#', '=', ':', '-'};
-	for (unsigned ch : extra) {
-		chars[ch] = true;
-	}
-	const unsigned drawresult_unclear[] = {'/', '~'};
-	for (unsigned ch : drawresult_unclear) {
-		chars[ch] = true;
-	}
-	const unsigned chess_variants[] = {',', '@'};
-	for (unsigned ch : chess_variants) {
-		chars[ch] = true;
-	}
-
-	for (int i = 0; i < 256; i++) {
-		EXPECT_EQ(chars[i],
-		          scid::core::pgn_impl::is_PGNsymbol(static_cast<signed char>(i)));
-		EXPECT_EQ(chars[i],
-		          scid::core::pgn_impl::is_PGNsymbol(static_cast<unsigned char>(i)));
-	}
-}
-
-TEST(Test_PgnParser, pgn_trim) {
-	const char* tests[] = {
-	    "Surname, Name  (2800)",                //
-	    "Surname, Name  (2800)       ",         //
-	    "    Surname, Name  (2800)",            //
-	    "    Surname, Name  (2800)       ",     //
-	    "\vSurname, Name  (2800)\r\n",          //
-	    " \t\n   Surname, Name  (2800)  \r\v  " //
-	};
-
-	for (auto str : tests) {
-		auto str_view = std::make_pair(str, str + std::strlen(str));
-		size_t n_newlines = std::count(str_view.first, str_view.second, '\n');
-		EXPECT_EQ(n_newlines, scid::core::pgn::trim(str_view));
-		EXPECT_TRUE(std::equal(str_view.first, str_view.second, tests[0]));
-	}
 }
 
 TEST(Test_PgnParser, date_parsePGNTag) {

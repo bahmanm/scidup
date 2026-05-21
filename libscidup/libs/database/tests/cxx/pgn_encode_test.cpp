@@ -25,7 +25,6 @@
 #include "scidup/core/movetext_cursor.h"
 #include "scidup/core/pgn/encode.h"
 #include "scidup/core/pgn/decode.h"
-#include "pgnparse_impl.h"
 #include <gtest/gtest.h>
 #include <optional>
 #include <string>
@@ -300,8 +299,9 @@ TEST(Test_PgnEncode, encode) {
 		    "{pre} 1. e4 {comm} ({pre var} 1. d4 d5 {end var with comm}) 1... "
 		    "e5 $1 {nag} (1... c5 $2) 2. Nf3 {last}";
 		scid::core::Game game;
-		scid::core::pgn::parse_game({src.data(), src.data() + src.size()},
-		                scid::core::pgn_impl::PgnVisitor{game});
+		scid::core::pgn::ParseLog log;
+		ASSERT_TRUE(scid::core::pgn::parseGame(
+		    src.data(), src.size(), game, log));
 		auto expected =
 		    "[Event \"\"]\n"
 		    "[Site \"\"]\n"
