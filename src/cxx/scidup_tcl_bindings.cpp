@@ -2374,14 +2374,12 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             auto pos = currentPosition(editor.game().coreGame(), editor.location());
             if (!pos)
                 return UI_Result(ti, scid::core::ERROR, "Error reading position.");
-            scid::core::MoveAction sm;
-            auto end = argv[2] + std::strlen(argv[2]);
-            if (auto err = pos->parseMoveAction(&sm, argv[2], end))
+            scid::core::MoveSpec spec;
+            if (auto err = pos->parseMoveSpec(spec, argv[2]))
                 return UI_Result(ti, err);
 
-            char buf[scid::core::UCI_MOVE_STRING_SIZE] = {};
-            sm.toLongNotation(buf);
-            return UI_Result(ti, scid::core::OK, buf);
+            auto notation = spec.longNotation();
+            return UI_Result(ti, scid::core::OK, notation.c_str());
         }
         return errorResult(ti, "usage sc_game SANtoUCI move");
 
@@ -5119,13 +5117,14 @@ sc_move_add (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (!pos)
         return errorResult(ti, "Error adding move.");
 
-    scid::core::MoveAction sm;
-    scid::core::errorT err = pos->readCoordinateMoveAction(&sm, s, s[4] == 0 ? 4 : 5, true);
+    scid::core::MoveSpec spec;
+    scid::core::errorT err = pos->readCoordinateMoveSpec(
+        spec, std::string_view(s, s[4] == 0 ? 4 : 5), true);
     if (err == scid::core::OK) {
         scid::core::MovetextCursor cursor(editor.game().coreGame());
         if (!cursor.restore(editor.location()))
             return errorResult(ti, "Error adding move.");
-        cursor.addMove({sm.from, sm.to, sm.promote, sm.isCastle() != 0});
+        cursor.addMove(spec);
         editor.setLocation(cursor.location());
         editor.setDirty();
         return TCL_OK;
@@ -7831,17 +7830,14 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     auto calc_eco = [&](auto const& move) {
         scidup::eco::Code eco = scidup::eco::ECO_None;
         if (ecoBook && move) {
-            scid::core::MoveAction sm;
-            if (move.isCastle()) {
-                auto side = move.getTo() > move.getFrom() ? scid::core::KING : scid::core::QUEEN;
-                searchPos.makeMoveAction(move.getFrom(), move.getFrom(), side, sm);
-            } else {
-                auto promo = move.isPromo() ? move.getPromo() : scid::core::INVALID_PIECE;
-                searchPos.makeMoveAction(move.getFrom(), move.getTo(), promo, sm);
-            }
-            searchPos.applyMoveAction(sm);
-            eco = ecoBook->findEco(searchPos);
-            searchPos.undoMoveAction(sm);
+            scid::core::MoveSpec spec{
+                move.getFrom(),
+                move.getTo(),
+                move.isPromo() ? move.getPromo() : scid::core::EMPTY,
+                move.isCastle()};
+            auto nextPos = searchPos;
+            if (nextPos.applyMove(spec) == scid::core::OK)
+                eco = ecoBook->findEco(nextPos);
         }
         return eco;
     };
