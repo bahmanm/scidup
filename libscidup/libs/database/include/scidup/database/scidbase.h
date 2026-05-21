@@ -51,7 +51,6 @@ namespace scid::database {
 class ByteBuffer;
 class GameView;
 class Progress;
-class SearchPos;
 class SortCache;
 
 // Pattern filter for material searches.
@@ -72,8 +71,6 @@ enum gameExactMatchT : int {
 };
 
 struct scidBaseT {
-	friend class SearchPos;
-
 	struct Stats {
 		scid::core::uint flagCount[IndexEntry::IDX_NUM_FLAGS]; // Num of games with each
 		                                           // flag set.
@@ -194,6 +191,9 @@ struct scidBaseT {
 	                         int maxPly, int matchLength, bool oppBishops,
 	                         bool sameBishops, int minDiff,
 	                         int maxDiff) const;
+	bool setPositionSearchFilter(const scid::core::Position& pos,
+	                             HFilter& filter,
+	                             const Progress& progress) const;
 
 	scid::core::errorT importGames(const scidBaseT* srcBase, const HFilter& filter,
 	                   const Progress& progress);
@@ -408,6 +408,8 @@ private:
 	uint64_t cacheInvalidationToken_ = 0;
 
 private:
+	friend class SearchPos;
+
 	ByteBuffer gameData(const IndexEntry& ie) const;
 	GameView gameView(const IndexEntry* ie) const;
 		scid::core::errorT openHelper(std::string_view dbType, fileModeT mode,

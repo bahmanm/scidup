@@ -2,7 +2,7 @@
 #include "scidup/core/game.h"
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/notation.h"
-#include "scidup/database/pgnparse.h"
+#include "scidup/core/pgn/decode.h"
 #include "game_storage.h"
 
 #include <gtest/gtest.h>
@@ -30,8 +30,8 @@ void expect_roundtrip(std::string_view pgn) {
 	SCOPED_TRACE(std::string(pgn));
 	scid::core::Game original;
 	scid::core::MovetextLocation originalLocation;
-	scid::database::PgnParseLog parseLog;
-	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), original,
+	scid::core::pgn::ParseLog parseLog;
+	ASSERT_TRUE(scid::core::pgn::parseGame(pgn.data(), pgn.size(), original,
 	                                         originalLocation,
 	                                         parseLog));
 

@@ -25,6 +25,7 @@
 #include "game_search.h"
 #include "game_storage.h"
 #include "gameview.h"
+#include "searchpos.h"
 #include "scidup/database/common.h"
 #include "scidup/database/game_id.h"
 #include "scidup/eco/book.h"
@@ -435,6 +436,12 @@ bool scidBaseT::materialSearchMatch(
 		    sameBishops, minDiff, maxDiff);
 	}
 	return result;
+}
+
+bool scidBaseT::setPositionSearchFilter(
+    const scid::core::Position& pos, HFilter& filter,
+    const Progress& progress) const {
+	return SearchPos(pos).setFilter(*this, filter, progress);
 }
 
 scid::core::errorT scidBaseT::saveGame(scid::core::Game const& game,

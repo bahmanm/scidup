@@ -21,8 +21,7 @@
  * Implements a parser that converts PGN text into SCID's Game objects.
  */
 
-#ifndef SCID_PGNPARSE_H
-#define SCID_PGNPARSE_H
+#pragma once
 
 #include "scidup/core/game.h"
 #include "scidup/core/movetext_location.h"
@@ -30,12 +29,12 @@
 #include <optional>
 #include <string>
 
-namespace scid::database {
+namespace scid::core::pgn {
 
 /**
  * Format and store errors.
  */
-struct PgnParseLog {
+struct ParseLog {
 	std::string log;
 	unsigned long long n_bytes = 0;
 	unsigned long long n_lines = 0;
@@ -54,12 +53,11 @@ struct PgnParseLog {
  * @returns true if a game was parsed successfully (maybe with errors, but
  * without ignoring any part), false otherwise.
  */
-bool pgnParseGame(const char* input, size_t inputLen, scid::core::Game& game,
-                  PgnParseLog& log,
-                  std::optional<std::string>* scidFlags = nullptr);
-bool pgnParseGame(const char* input, size_t inputLen, scid::core::Game& game,
-                  scid::core::MovetextLocation& location, PgnParseLog& log,
-                  std::optional<std::string>* scidFlags = nullptr);
+bool parseGame(const char* input, size_t inputLen, scid::core::Game& game,
+               ParseLog& log,
+               std::optional<std::string>* scidFlags = nullptr);
+bool parseGame(const char* input, size_t inputLen, scid::core::Game& game,
+               scid::core::MovetextLocation& location, ParseLog& log,
+               std::optional<std::string>* scidFlags = nullptr);
 
-} // namespace scid::database
-#endif // idndef SCID_PGNPARSE_H
+} // namespace scid::core::pgn

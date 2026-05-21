@@ -18,7 +18,6 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/misc.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/nag_format.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/piece_translation.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/pgnparse.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/scidbase.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/searchpos.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/searchindex.cpp"
@@ -36,9 +35,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/matsig.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/misc.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/namebase.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/pgnparse.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/scidbase.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/searchpos.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/tree.h" )
 
 set(
@@ -61,8 +58,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/nag_format.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/naglatex.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/piece_translation.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/pgn_lexer.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/pgnparse_impl.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/searchpos.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/sortcache.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/stored.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/tree_cache.h"
@@ -89,7 +85,9 @@ target_compile_features(
 target_include_directories(
     scidup_database
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/internal" )
+    PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/internal"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../core/src/internal" )
 target_link_libraries(
     scidup_database
     PUBLIC ScidUp::Core ScidUp::Eco Threads::Threads )
@@ -125,7 +123,9 @@ if( BUILD_TESTING )
         PRIVATE SCIDUP_TEST_RESOURCES_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/tests/cxx/\" )
     target_include_directories(
         scidup_tests_database_cpp
-        PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/internal" )
+        PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/internal"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../core/src/internal" )
     target_link_libraries(
         scidup_tests_database_cpp
         PRIVATE ScidUp::Database gtest_main )

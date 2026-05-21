@@ -1,4 +1,4 @@
-#include "scidup/database/searchpos.h"
+#include "searchpos.h"
 #include "scidup/database/game_id.h"
 
 #include "gameview.h"

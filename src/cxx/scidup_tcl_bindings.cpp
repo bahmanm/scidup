@@ -42,11 +42,10 @@
 #include "piece_translation.h"
 #include "polyglot.h"
 #include "scidup/core/position.h"
-#include "scidup/database/pgnparse.h"
+#include "scidup/core/pgn/decode.h"
 #include "scidup/database/scidbase.h"
 #include "scidup_app_editor.h"
 #include "scidup_app_tree.h"
-#include "scidup/database/searchpos.h"
 #include <scidup/spelling/spelling.h>
 #include "timer.h"
 #include "dbasepool.h"
@@ -2172,8 +2171,8 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                         scidup::app::tree::session(*dbase).cacheRestore(*pos))
                         return UI_Result(ti, scid::core::OK);
 
-                    if (!scid::database::SearchPos(*pos).setFilter(
-                            *dbase, filter, UI_CreateProgress(ti)))
+                    if (!dbase->setPositionSearchFilter(
+                            *pos, filter, UI_CreateProgress(ti)))
                         return UI_Result(ti, scid::core::ERROR_UserCancel);
 
                     if (useCache)
@@ -2963,10 +2962,10 @@ int sc_game_import(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 		}
 	}
 
-	scid::database::PgnParseLog pgn;
+	scid::core::pgn::ParseLog pgn;
 	std::optional<std::string> scidFlags;
 	auto location = editor.location();
-	auto ok = scid::database::pgnParseGame(argv[2], std::strlen(argv[2]),
+	auto ok = scid::core::pgn::parseGame(argv[2], std::strlen(argv[2]),
 	                                       editor.game().coreGame(), location,
 	                                       pgn, &scidFlags);
 	if (scidFlags) {
@@ -3876,7 +3875,7 @@ sc_game_novelty (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         auto pos = currentPosition(g->coreGame(), location);
         if (!pos)
             return UI_Result(ti, scid::core::ERROR, "Error reading position.");
-        scid::database::SearchPos(*pos).setFilter(*base, filter, scid::database::Progress());
+        base->setPositionSearchFilter(*pos, filter, scid::database::Progress());
         int count = 0;
         for (scid::core::uint i=0, n = base->numGames(); i < n; i++) {
             if (filter.get(i) == 0) continue;
@@ -5185,12 +5184,12 @@ sc_move_add (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 //    but variations/comments/annotations are parsed and added.
 int sc_move_addSan(ClientData, Tcl_Interp* ti, int argc, const char** argv) {
 	auto editor = scidup::app::editor::gameSession(*db);
-	scid::database::PgnParseLog parser;
+	scid::core::pgn::ParseLog parser;
 	for (int i = 2; i < argc; ++i) {
 		editor.setDirty();
 		auto location = editor.location();
 		std::optional<std::string> scidFlags;
-		if (!scid::database::pgnParseGame(argv[i], std::strlen(argv[i]),
+		if (!scid::core::pgn::parseGame(argv[i], std::strlen(argv[i]),
 		                                  editor.game().coreGame(), location,
 		                                  parser, &scidFlags))
 			return UI_Result(ti, scid::core::ERROR_InvalidMove, argv[i]);
@@ -5341,8 +5340,8 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             scid::core::MovetextLocation location;
             resetStartPosition(game, location, pos);
             if (const auto len = std::strlen(argv[3])) {
-                scid::database::PgnParseLog pgn;
-                if (!scid::database::pgnParseGame(argv[3], len,
+                scid::core::pgn::ParseLog pgn;
+                if (!scid::core::pgn::parseGame(argv[3], len,
                                                   game, location, pgn))
                     return UI_Result(ti, scid::core::ERROR_InvalidMove);
             }
@@ -5497,13 +5496,13 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 
         std::string sanMoves;
         auto res = pos.MakeCoordMoves(argv[3], std::strlen(argv[3]), &sanMoves);
-        if (res != scid::core::OK) { // If MakeCoordMoves failed, try if scid::database::pgnParseGame works
-            scid::database::PgnParseLog log;
+        if (res != scid::core::OK) { // If MakeCoordMoves failed, try if scid::core::pgn::parseGame works
+            scid::core::pgn::ParseLog log;
             scid::core::Game game;
             scid::core::MovetextLocation location;
             if (pos.ReadFromFENorUCI(argv[2]) == scid::core::OK &&
                 (resetStartPosition(game, location, pos), true) &&
-                scid::database::pgnParseGame(argv[3], std::strlen(argv[3]),
+                scid::core::pgn::parseGame(argv[3], std::strlen(argv[3]),
                                              game, location, log) &&
                 log.log.empty()) {
                 std::string moves;

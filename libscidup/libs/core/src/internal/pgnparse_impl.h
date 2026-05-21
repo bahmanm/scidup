@@ -1,22 +1,26 @@
-#ifndef SCIDUP_DATABASE_INTERNAL_PGNPARSE_IMPL_H
-#define SCIDUP_DATABASE_INTERNAL_PGNPARSE_IMPL_H
+#ifndef SCIDUP_CORE_INTERNAL_PGN_PARSE_IMPL_H
+#define SCIDUP_CORE_INTERNAL_PGN_PARSE_IMPL_H
 
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/movetext_cursor.h"
 #include "scidup/core/nags.h"
-#include "scidup/eco/code.h"
 #include "pgn_lexer.h"
-#include "scidup/database/pgnparse.h"
-#include "scidup/database/indexentry.h"
-#include "scidup/database/misc.h"
+#include "scidup/core/pgn/decode.h"
 #include <algorithm>
+#include <cassert>
+#include <cstdlib>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 
-namespace scid::database {
+namespace scid::core::pgn_impl {
+
+inline unsigned parseUnsigned(const char* first, const char* second) {
+	std::string tmp(first, second);
+	return static_cast<unsigned>(std::strtoul(tmp.c_str(), nullptr, 10));
+}
 
 inline scid::core::MovetextLocation currentLocation(
     const scid::core::Game& game,
@@ -40,7 +44,7 @@ inline std::string_view currentMoveComment(
 	scid::core::GameCursor cursor(game);
 	[[maybe_unused]] const bool restored = cursor.restore(
 	    currentLocation(game, location));
-	ASSERT(restored);
+	assert(restored);
 
 	if (auto move = cursor.previousMove())
 		return move->metadata.comment;
@@ -55,7 +59,7 @@ inline bool setCurrentMoveComment(
 	scid::core::MovetextCursor cursor(game);
 	[[maybe_unused]] const bool restored =
 	    cursor.restore(currentLocation(game, location));
-	ASSERT(restored);
+	assert(restored);
 	return cursor.setComment(comment);
 }
 
@@ -65,7 +69,7 @@ inline bool addCurrentMoveNag(
 	scid::core::MovetextCursor cursor(game);
 	[[maybe_unused]] const bool restored =
 	    cursor.restore(currentLocation(game, location));
-	ASSERT(restored);
+	assert(restored);
 	return cursor.addPreviousMoveNag(nag);
 }
 
@@ -130,7 +134,7 @@ public:
 		linenum_ += pgn::normalize(str, prevSz);
 		[[maybe_unused]] const bool updated =
 		    setCurrentMoveComment(game, str, location_);
-		ASSERT(updated);
+		assert(updated);
 		return true;
 	}
 
@@ -140,7 +144,7 @@ public:
 	}
 
 	void visitPGN_EPD(TView line) {
-		ASSERT(nErrorsAllowed_ >= 0);
+		assert(nErrorsAllowed_ >= 0);
 		std::string tmp(line.first, line.second);
 		if (resetStartFen(game, location_, tmp.c_str()) == scid::core::OK) {
 			auto opcode = std::find_if(
@@ -182,7 +186,7 @@ public:
 			result = scid::core::RESULT_Draw;
 			break;
 		default:
-			ASSERT(resultCh == '*');
+			assert(resultCh == '*');
 		}
 
 		auto prev_result = game.result();
@@ -200,7 +204,7 @@ public:
 		scid::core::GameCursor cursor(game);
 		[[maybe_unused]] const bool restored = cursor.restore(
 		    currentLocation(game, location_));
-		ASSERT(restored);
+		assert(restored);
 		auto position = cursor.currentPosition();
 		if (!position)
 			return logFatalErr("Failed to parse the move: ", tok);
@@ -217,7 +221,7 @@ public:
 		scid::core::MovetextCursor moveCursor(game);
 		[[maybe_unused]] const bool moveRestored =
 		    moveCursor.restore(currentLocation(game, location_));
-		ASSERT(moveRestored);
+		assert(moveRestored);
 		moveCursor.addMove(
 		    {sm.from, sm.to, sm.promote, sm.isCastle() != 0});
 		setCurrentLocation(game, location_, moveCursor.location());
@@ -284,7 +288,7 @@ public:
 		scid::core::MovetextCursor cursor(game);
 		[[maybe_unused]] const bool restored =
 		    cursor.restore(currentLocation(game, location_));
-		ASSERT(restored);
+		assert(restored);
 		if (!cursor.previous() || !cursor.addVariation())
 			return logFatalErr("Failed to add a new variation.");
 		setCurrentLocation(game, location_, cursor.location());
@@ -299,7 +303,7 @@ public:
 		scid::core::GameCursor cursor(game);
 		[[maybe_unused]] const bool restored =
 		    cursor.restore(currentLocation(game, location_));
-		ASSERT(restored);
+		assert(restored);
 		if (!cursor.exitVariation() || !cursor.next())
 			return logFatalErr("Failed to exit from variation.");
 		setCurrentLocation(game, location_, cursor.location());
@@ -366,8 +370,8 @@ private:
 			return -1;
 
 		int res = 1;
-		auto elo = strGetUnsigned(std::string{rating.first, rating.second}.c_str());
-		if (elo > MAX_ELO) {
+		auto elo = parseUnsigned(rating.first, rating.second);
+		if (elo > 4000) {
 			elo = 0;
 			res = 0;
 		}
@@ -435,11 +439,8 @@ private:
 		switch (tagLen) {
 		case 3:
 			if (std::equal(tag, tag + 3, "ECO")) {
-				std::string tmp{value.first, value.second};
-				scidup::eco::String ecoStr;
-				scidup::eco::toExtendedString(
-				    scidup::eco::fromString(tmp.c_str()), ecoStr);
-				game.setEco(ecoStr);
+				game.setEco({value.first, static_cast<std::size_t>(
+				                              value.second - value.first)});
 				return true;
 			}
 			if (std::equal(tag, tag + 3, "FEN")) {
@@ -501,9 +502,8 @@ private:
 	}
 };
 
-namespace pgn_impl {
-
-inline bool logGame(PgnParseLog& log, size_t nBytes, const PgnVisitor& visitor) {
+inline bool logGame(scid::core::pgn::ParseLog& log, size_t nBytes,
+                    const PgnVisitor& visitor) {
 	++log.n_games;
 	for (auto& e : visitor.errors()) {
 		log.log += "(game " + std::to_string(log.n_games);
@@ -522,8 +522,6 @@ inline bool logGame(PgnParseLog& log, size_t nBytes, const PgnVisitor& visitor) 
 	return true;
 }
 
-} // namespace pgn_impl
-
-} // namespace scid::database
+} // namespace scid::core::pgn_impl
 
 #endif

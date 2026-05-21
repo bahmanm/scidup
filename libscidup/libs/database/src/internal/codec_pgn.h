@@ -42,7 +42,7 @@ class CodecPgn final : public CodecProxy<CodecPgn> {
 	std::vector<char> buf_;
 	size_t nParsed_ = 0;
 	size_t nRead_ = 0;
-	PgnParseLog parseLog_;
+	scid::core::pgn::ParseLog parseLog_;
 
 public:
 	CodecType getType() const final { return CodecType::Pgn; }
@@ -99,8 +99,8 @@ public:
 
 		game.clear();
 		std::optional<std::string> scidFlags;
-		PgnVisitor visitor(game, nullptr, &scidFlags);
-		auto parse = pgn::parse_game(
+		scid::core::pgn_impl::PgnVisitor visitor(game, nullptr, &scidFlags);
+		auto parse = scid::core::pgn::parse_game(
 		    {buf_.data() + nParsed_, buf_.data() + nRead_}, visitor);
 
 		bool eof = (nRead_ - nParsed_ == parse.first);
@@ -119,14 +119,15 @@ public:
 		}
 
 		nParsed_ += parse.first;
-		pgn_impl::logGame(parseLog_, parse.first, visitor);
+		scid::core::pgn_impl::logGame(parseLog_, parse.first, visitor);
 		if (scidFlags && scidFlagsOut && scidFlagsOutLen > 0) {
 			std::fill_n(scidFlagsOut, scidFlagsOutLen, 0);
 			std::copy_n(scidFlags->data(),
 			            std::min(scidFlagsOutLen - 1, scidFlags->size()),
 			            scidFlagsOut);
 		}
-		if (eof && !parse.second && currentMoveComment(game).empty())
+		if (eof && !parse.second &&
+		    scid::core::pgn_impl::currentMoveComment(game).empty())
 			return scid::core::ERROR_NotFound;
 
 		return scid::core::OK;

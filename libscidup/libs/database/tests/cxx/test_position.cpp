@@ -1,7 +1,7 @@
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/pgn/traversal.h"
 #include "scidup/core/game.h"
-#include "scidup/database/pgnparse.h"
+#include "scidup/core/pgn/decode.h"
 
 #include <gtest/gtest.h>
 #include <string>
@@ -42,8 +42,8 @@ TEST(Test_PrintFen, castling_flag_kside_from_pgn) {
 	    "1. Rxa1 Rxa8 2. Ra3 Ra6 3. Rh3 Rh6 4. Rhh1 Rhh8 5. O-O O-O";
 	scid::core::Game game;
 	scid::core::MovetextLocation location;
-	scid::database::PgnParseLog parseLog;
-	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game,
+	scid::core::pgn::ParseLog parseLog;
+	ASSERT_TRUE(scid::core::pgn::parseGame(pgn.data(), pgn.size(), game,
 	                                         location, parseLog));
 	location = {};
 
@@ -72,8 +72,8 @@ TEST(Test_PrintFen, castling_flag_qside_from_pgn) {
 	    "1... Rg6 2. Rg3 Ra6 3. Ra3 Raxa8 4. Raxa1 O-O-O 5. O-O-O";
 	scid::core::Game game;
 	scid::core::MovetextLocation location;
-	scid::database::PgnParseLog parseLog;
-	ASSERT_TRUE(scid::database::pgnParseGame(pgn.data(), pgn.size(), game,
+	scid::core::pgn::ParseLog parseLog;
+	ASSERT_TRUE(scid::core::pgn::parseGame(pgn.data(), pgn.size(), game,
 	                                         location, parseLog));
 	location = {};
 

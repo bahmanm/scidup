@@ -18,7 +18,7 @@
 #include "game_positions.h"
 #include "scidup/core/game.h"
 #include "scidup/database/scidbase.h"
-#include "scidup/database/pgnparse.h"
+#include "scidup/core/pgn/decode.h"
 #include <array>
 #include <string>
 #include <vector>
@@ -301,8 +301,8 @@ auto collectPositions(const scid::database::scidBaseT& dbase, scid::database::ga
 
 TEST_F(Test_Scidbase, getGamePos1) {
 	scid::core::Game game;
-	scid::database::PgnParseLog parseLog;
-	ASSERT_TRUE(scid::database::pgnParseGame(test_pgnShort.c_str(), test_pgnShort.size(), game,
+	scid::core::pgn::ParseLog parseLog;
+	ASSERT_TRUE(scid::core::pgn::parseGame(test_pgnShort.c_str(), test_pgnShort.size(), game,
 	                         parseLog));
 	ASSERT_STREQ(parseLog.log.c_str(), "");
 
@@ -328,8 +328,8 @@ TEST_F(Test_Scidbase, getGamePos1) {
 
 TEST_F(Test_Scidbase, getGamePos2) {
 	scid::core::Game game;
-	scid::database::PgnParseLog parseLog;
-	ASSERT_TRUE(scid::database::pgnParseGame(test_pgnShort.c_str(), test_pgnShort.size(), game,
+	scid::core::pgn::ParseLog parseLog;
+	ASSERT_TRUE(scid::core::pgn::parseGame(test_pgnShort.c_str(), test_pgnShort.size(), game,
 	                         parseLog));
 	ASSERT_STREQ(parseLog.log.c_str(), "");
 

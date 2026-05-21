@@ -32,7 +32,7 @@
 #include <cstddef>
 #include <utility>
 
-namespace scid::database {
+namespace scid::core {
 
 namespace pgn_impl {
 // "PGN character data is organized as tokens. A token is a contiguous
@@ -462,5 +462,5 @@ template <typename TView> std::size_t trim(TView& str) {
 } // namespace pgn
 
 
-} // namespace scid::database
+} // namespace scid::core
 #endif // PGN_LEXER_H
