@@ -5448,8 +5448,9 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             return UI_Result(ti, err);
 
         std::string sanMoves;
-        auto res = pos.MakeCoordMoves(argv[3], std::strlen(argv[3]), &sanMoves);
-        if (res != scid::core::OK) { // If MakeCoordMoves failed, try if scid::core::pgn::parseGame works
+        auto res = pos.applyCoordinateMoves(argv[3], std::strlen(argv[3]), &sanMoves);
+        if (res != scid::core::OK) {
+            // If coordinate parsing failed, try if PGN parsing works.
             scid::core::pgn::ParseLog log;
             scid::core::Game game;
             scid::core::MovetextLocation location;
@@ -5465,7 +5466,7 @@ sc_pos (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                     moves.append(move.spec.longNotation());
                 }
                 std::string str;
-                if (scid::core::OK == pos.MakeCoordMoves(moves.data(), moves.size(), &str))
+                if (scid::core::OK == pos.applyCoordinateMoves(moves.data(), moves.size(), &str))
                     return UI_Result(ti, scid::core::OK, str);
             }
         }

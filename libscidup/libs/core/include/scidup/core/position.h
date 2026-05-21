@@ -261,7 +261,8 @@ public:
 
     void        writeMoveActionSan(MoveAction* sm, char* s, sanFlagT flag);
 
-    errorT      MakeCoordMoves(const char* moves, size_t movesLen, std::string* toSAN = nullptr);
+    errorT      applyCoordinateMoves(const char* moves, size_t movesLen,
+                                     std::string* toSAN = nullptr);
     errorT      readCoordinateMoveAction(MoveAction* m, const char* s,
                                          size_t slen, bool reverse);
     errorT      parseMoveAction(MoveAction* sm, const char* begin, const char* end);

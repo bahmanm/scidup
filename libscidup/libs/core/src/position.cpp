@@ -1906,10 +1906,10 @@ void Position::writeMoveActionSan(MoveAction* m, char* s, sanFlagT flag)
     *c = 0;
 }
 
-// Make on the board a sequence of moves in coordinate notation.
+// Apply a sequence of moves in coordinate notation.
 // Convert and store the moves in SAN notation if @e toSAN is not nullptr.
-errorT Position::MakeCoordMoves(const char* moves, size_t moveslen,
-                                std::string* toSAN) {
+errorT Position::applyCoordinateMoves(const char* moves, size_t moveslen,
+                                      std::string* toSAN) {
     auto is_space = [](char ch) {
         return isspace(static_cast<unsigned char>(ch));
     };
@@ -1930,7 +1930,7 @@ errorT Position::MakeCoordMoves(const char* moves, size_t moveslen,
         if (toSAN) {
             sanStringT san;
             writeMoveActionSan(&sm, san,
-                          moves != end ? SAN_CHECKTEST : SAN_MATETEST);
+                               moves != end ? SAN_CHECKTEST : SAN_MATETEST);
             if (WhiteToMove()) {
                 toSAN->append(std::to_string(GetFullMoveCount()));
                 toSAN->push_back('.');
@@ -2561,7 +2561,7 @@ errorT Position::ReadFromFENorUCI(std::string_view str) {
             return err;
     }
 
-    return MakeCoordMoves(str.data(), str.size());
+    return applyCoordinateMoves(str.data(), str.size());
 }
 
 void Position::PrintFEN(char* str, size_t len) const {
