@@ -22,6 +22,7 @@
 #include "scidup/core/game.h"
 #include "scidup/core/game_result.h"
 #include "scidup/core/fullmove.h"
+#include "scidup/core/board.h"
 #include "scidup/database/game_id.h"
 #include "scidup/database/hfilter.h"
 #include "scidup/database/index.h"
@@ -41,6 +42,10 @@ namespace scidup::eco {
 class Book;
 }
 
+namespace scid::core {
+class Position;
+}
+
 namespace scid::database {
 
 class ByteBuffer;
@@ -48,6 +53,23 @@ class GameView;
 class Progress;
 class SearchPos;
 class SortCache;
+
+// Pattern filter for material searches.
+// It can specify, for example, a white pawn on the f-file, or a black bishop
+// on f2 and white king on e1.
+struct patternT {
+	scid::core::pieceT pieceMatch;
+	scid::core::rankT rankMatch;
+	scid::core::fyleT fyleMatch;
+	scid::core::byte flag; // 0 means this pattern must not occur.
+};
+
+enum gameExactMatchT : int {
+	GAME_EXACT_MATCH_Exact = 0,
+	GAME_EXACT_MATCH_Pawns,
+	GAME_EXACT_MATCH_Fyles,
+	GAME_EXACT_MATCH_Material
+};
 
 struct scidBaseT {
 	friend class SearchPos;
@@ -137,7 +159,6 @@ struct scidBaseT {
 		return peakEloCache_[playerID];
 	}
 
-	ByteBuffer gameData(const IndexEntry& ie) const;
 	scid::core::errorT loadGame(const IndexEntry& ie, scid::core::Game& dest,
 	                char* scidFlags, std::size_t scidFlagsLen) const;
 	scid::core::errorT loadGame(gamenumT gNum, scid::core::Game& dest,
@@ -153,6 +174,26 @@ struct scidBaseT {
 	std::optional<scidup::eco::Code> inferEcoCode(
 	    const IndexEntry& ie, const scidup::eco::Book& book,
 	    bool extendedCodes) const;
+	scid::core::errorT searchBoard(const IndexEntry& ie,
+	                               scid::core::Game& game,
+	                               scid::core::Position* pos,
+	                               scid::core::Position* posFlip,
+	                               bool useVariations,
+	                               bool possibleMatch,
+	                               bool possibleFlippedMatch,
+	                               gameExactMatchT searchType,
+	                               scid::core::uint& ply) const;
+	bool materialSearchMatch(const IndexEntry& ie, bool possibleMatch,
+	                         bool possibleFlippedMatch,
+	                         scid::core::byte* min, scid::core::byte* max,
+	                         scid::core::byte* minFlipped,
+	                         scid::core::byte* maxFlipped,
+	                         patternT* patterns, std::size_t patternCount,
+	                         patternT* flippedPatterns,
+	                         std::size_t flippedPatternCount, int minPly,
+	                         int maxPly, int matchLength, bool oppBishops,
+	                         bool sameBishops, int minDiff,
+	                         int maxDiff) const;
 
 	scid::core::errorT importGames(const scidBaseT* srcBase, const HFilter& filter,
 	                   const Progress& progress);
@@ -367,6 +408,7 @@ private:
 	uint64_t cacheInvalidationToken_ = 0;
 
 private:
+	ByteBuffer gameData(const IndexEntry& ie) const;
 	GameView gameView(const IndexEntry* ie) const;
 		scid::core::errorT openHelper(std::string_view dbType, fileModeT mode,
 		                  const char* filename, const Progress& progress = {});

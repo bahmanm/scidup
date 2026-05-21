@@ -26,7 +26,6 @@
 
 
 #include "crosstab.h"
-#include "bytebuf.h"
 #include "scidup/core/dstring.h"
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/movetext_cursor.h"
@@ -38,7 +37,6 @@
 #include "scidup/database/game_id.h"
 #include "optable.h"
 #include "scidup/eco/book.h"
-#include "game_search.h"
 #include "game_storage.h"
 #include "legacy_pgn.h"
 #include "piece_translation.h"
@@ -8292,59 +8290,12 @@ int sc_search_board(Tcl_Interp* ti, const scid::database::scidBaseT* dbase, scid
         }
 
         // At this point, the game needs to be loaded:
-        auto bbuf = dbase->gameData(*ie);
-        if (!bbuf) {
-            return errorResult (ti, "Error reading game file.");
-        }
         scid::core::uint ply = 0;
-        if (useVars) {
-            game.clear();
-            scid::database::game_storage::decodeMovesOnly(game, bbuf);
-            scid::core::MovetextLocation location;
-            // Try matching the game without variations first:
-            if (ply == 0  &&  possibleMatch) {
-                if (scid::database::game_search::exactMatch(
-                        game, pos, nullptr, searchType)) {
-                    ply = currentPly(game, location) + 1;
-                }
-            }
-            if (ply == 0  &&  possibleFlippedMatch) {
-                if (scid::database::game_search::exactMatch(
-                        game, posFlip, nullptr, searchType)) {
-                    ply = currentPly(game, location) + 1;
-                }
-            }
-            if (ply == 0  &&  possibleMatch) {
-                location = {};
-                if (scid::database::game_search::varExactMatch(
-                        game, pos, searchType)) {
-                    ply = currentPly(game, location) + 1;
-                }
-            }
-            if (ply == 0  &&  possibleFlippedMatch) {
-                location = {};
-                if (scid::database::game_search::varExactMatch(
-                        game, posFlip, searchType)) {
-                    ply = currentPly(game, location) + 1;
-                }
-            }
-        } else {
-            scid::core::MovetextLocation location;
-            // No searching in variations:
-            if (possibleMatch) {
-                auto bbuf_clone = bbuf;
-                if (scid::database::game_search::exactMatch(
-                        game, pos, &bbuf_clone, searchType)) {
-                    // Set its auto-load move number to the matching move:
-                    ply = currentPly(game, location) + 1;
-                }
-            }
-            if (ply == 0  &&  possibleFlippedMatch) {
-                if (scid::database::game_search::exactMatch(
-                        game, posFlip, &bbuf, searchType)) {
-                    ply = currentPly(game, location) + 1;
-                }
-            }
+        auto searchErr = dbase->searchBoard(
+            *ie, game, pos, posFlip, useVars, possibleMatch,
+            possibleFlippedMatch, searchType, ply);
+        if (searchErr != scid::core::OK) {
+            return errorResult (ti, "Error reading game file.");
         }
         if (ply > 255) { ply = 255; }
         filter.set (gameNum, ply);
@@ -8728,27 +8679,11 @@ sc_search_material (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         }
 
         // Now, the game must be loaded and searched:
-        auto bbuf = db->gameData(*ie);
-        if (!bbuf) {
-            continue;
-        }
-
-        bool result = false;
-        if (possibleMatch) {
-            auto bbuf_clone = bbuf;
-            bool hasPromo = ie->GetPromotionsFlag() || ie->GetUnderPromoFlag();
-            result = scid::database::game_search::materialMatch(
-                hasPromo, bbuf_clone, min, max, patt.data(), patt.size(), minPly,
-                maxPly, matchLength, oppBishops, sameBishops, matDiff[0],
-                matDiff[1]);
-        }
-        if (result == 0  &&  possibleFlippedMatch) {
-            bool hasPromo = ie->GetPromotionsFlag() || ie->GetUnderPromoFlag();
-            result = scid::database::game_search::materialMatch(
-                hasPromo, bbuf, minFlipped, maxFlipped, flippedPatt.data(),
-                flippedPatt.size(), minPly, maxPly, matchLength, oppBishops,
-                sameBishops, matDiff[0], matDiff[1]);
-        }
+        bool result = db->materialSearchMatch(
+            *ie, possibleMatch, possibleFlippedMatch, min, max, minFlipped,
+            maxFlipped, patt.data(), patt.size(), flippedPatt.data(),
+            flippedPatt.size(), minPly, maxPly, matchLength, oppBishops,
+            sameBishops, matDiff[0], matDiff[1]);
 
         if (result) {
             // update the filter value to the current ply:

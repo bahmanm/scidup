@@ -22,6 +22,7 @@
 #include "codec_pgn.h"
 #include "codec_scid4.h"
 #include "codec_scid5.h"
+#include "game_search.h"
 #include "game_storage.h"
 #include "gameview.h"
 #include "scidup/database/common.h"
@@ -358,6 +359,82 @@ scidBaseT::inferEcoCode(const IndexEntry& ie, const scidup::eco::Book& book,
 		ecoCode = scidup::eco::basicCode(ecoCode);
 	}
 	return ecoCode;
+}
+
+scid::core::errorT scidBaseT::searchBoard(
+    const IndexEntry& ie, scid::core::Game& game, scid::core::Position* pos,
+    scid::core::Position* posFlip, bool useVariations, bool possibleMatch,
+    bool possibleFlippedMatch, gameExactMatchT searchType,
+    scid::core::uint& ply) const {
+	auto data = gameData(ie);
+	if (!data)
+		return scid::core::ERROR_FileRead;
+
+	ply = 0;
+	constexpr scid::core::uint matchedPly = 1;
+	if (useVariations) {
+		game.clear();
+		game_storage::decodeMovesOnly(game, data);
+		if (ply == 0 && possibleMatch &&
+		    game_search::exactMatch(game, pos, nullptr, searchType)) {
+			ply = matchedPly;
+		}
+		if (ply == 0 && possibleFlippedMatch &&
+		    game_search::exactMatch(game, posFlip, nullptr, searchType)) {
+			ply = matchedPly;
+		}
+		if (ply == 0 && possibleMatch &&
+		    game_search::varExactMatch(game, pos, searchType)) {
+			ply = matchedPly;
+		}
+		if (ply == 0 && possibleFlippedMatch &&
+		    game_search::varExactMatch(game, posFlip, searchType)) {
+			ply = matchedPly;
+		}
+		return scid::core::OK;
+	}
+
+	if (possibleMatch) {
+		auto dataClone = data;
+		if (game_search::exactMatch(game, pos, &dataClone, searchType)) {
+			ply = matchedPly;
+		}
+	}
+	if (ply == 0 && possibleFlippedMatch &&
+	    game_search::exactMatch(game, posFlip, &data, searchType)) {
+		ply = matchedPly;
+	}
+	return scid::core::OK;
+}
+
+bool scidBaseT::materialSearchMatch(
+    const IndexEntry& ie, bool possibleMatch, bool possibleFlippedMatch,
+    scid::core::byte* min, scid::core::byte* max,
+    scid::core::byte* minFlipped, scid::core::byte* maxFlipped,
+    patternT* patterns, std::size_t patternCount, patternT* flippedPatterns,
+    std::size_t flippedPatternCount, int minPly, int maxPly, int matchLength,
+    bool oppBishops, bool sameBishops, int minDiff, int maxDiff) const {
+	auto data = gameData(ie);
+	if (!data)
+		return false;
+
+	const bool hasPromotion =
+	    ie.GetPromotionsFlag() || ie.GetUnderPromoFlag();
+	bool result = false;
+	if (possibleMatch) {
+		auto dataClone = data;
+		result = game_search::materialMatch(
+		    hasPromotion, dataClone, min, max, patterns, patternCount,
+		    minPly, maxPly, matchLength, oppBishops, sameBishops, minDiff,
+		    maxDiff);
+	}
+	if (!result && possibleFlippedMatch) {
+		result = game_search::materialMatch(
+		    hasPromotion, data, minFlipped, maxFlipped, flippedPatterns,
+		    flippedPatternCount, minPly, maxPly, matchLength, oppBishops,
+		    sameBishops, minDiff, maxDiff);
+	}
+	return result;
 }
 
 scid::core::errorT scidBaseT::saveGame(scid::core::Game const& game,
