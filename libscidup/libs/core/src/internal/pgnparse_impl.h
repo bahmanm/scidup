@@ -206,9 +206,9 @@ public:
 		if (!position)
 			return logFatalErr("Failed to parse the move: ", tok);
 
-		scid::core::MoveSpec action;
-		auto err = position->parseMoveAction(
-		    action, std::string_view(tok.first, tok.second - tok.first));
+		scid::core::MoveSpec spec;
+		auto err = position->parseMoveSpec(
+		    spec, std::string_view(tok.first, tok.second - tok.first));
 		if (err != scid::core::OK) {
 			if (scid::core::parseNag(
 			        std::string_view(tok.first, tok.second - tok.first)))
@@ -220,7 +220,7 @@ public:
 		[[maybe_unused]] const bool moveRestored =
 		    moveCursor.restore(currentLocation(game, location_));
 		assert(moveRestored);
-		moveCursor.addMove(action);
+		moveCursor.addMove(spec);
 		setCurrentLocation(game, location_, moveCursor.location());
 		return true;
 	}

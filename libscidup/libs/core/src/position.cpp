@@ -43,24 +43,24 @@ MoveSpec moveSpecFrom(MoveAction const& sm) {
 }
 
 errorT moveActionFromSpec(Position const& position,
-                          MoveSpec const& action,
+                          MoveSpec const& spec,
                           MoveAction& move) {
-	if (action.isNull()) {
-		position.makeMove(action.from, action.to, PAWN, move);
+	if (spec.isNull()) {
+		position.makeMove(spec.from, spec.to, PAWN, move);
 		return OK;
 	}
 
-	if (action.castling) {
-		const bool kingSide = action.to > action.from;
-		position.makeMove(action.from, action.from,
+	if (spec.castling) {
+		const bool kingSide = spec.to > spec.from;
+		position.makeMove(spec.from, spec.from,
 		                  kingSide ? KING : QUEEN, move);
 		return OK;
 	}
 
-	if (position.IsLegalMove(action.from, action.to, action.promotion) != 1)
+	if (position.IsLegalMove(spec.from, spec.to, spec.promotion) != 1)
 		return ERROR_InvalidMove;
 
-	position.makeMove(action.from, action.to, action.promotion, move);
+	position.makeMove(spec.from, spec.to, spec.promotion, move);
 	return OK;
 }
 } // namespace
@@ -1448,17 +1448,17 @@ Position::IsPromoMove (squareT from, squareT to)
     return 0;
 }
 
-errorT Position::parseMoveAction(MoveSpec& action, std::string_view notation) {
+errorT Position::parseMoveSpec(MoveSpec& spec, std::string_view notation) {
 	MoveAction move;
 	auto err = ParseMove(&move, notation.data(), notation.data() + notation.size());
 	if (err != OK)
 		return err;
 
-	action = moveSpecFrom(move);
+	spec = moveSpecFrom(move);
 	return OK;
 }
 
-errorT Position::readCoordinateMoveAction(MoveSpec& action,
+errorT Position::readCoordinateMoveSpec(MoveSpec& spec,
                                           std::string_view notation,
                                           bool reverse) {
 	MoveAction move;
@@ -1466,13 +1466,13 @@ errorT Position::readCoordinateMoveAction(MoveSpec& action,
 	if (err != OK)
 		return err;
 
-	action = moveSpecFrom(move);
+	spec = moveSpecFrom(move);
 	return OK;
 }
 
-std::string Position::makeSan(MoveSpec const& action, sanFlagT flag) {
+std::string Position::makeSan(MoveSpec const& spec, sanFlagT flag) {
 	MoveAction move;
-	if (auto err = moveActionFromSpec(*this, action, move); err != OK)
+	if (auto err = moveActionFromSpec(*this, spec, move); err != OK)
 		return {};
 
 	sanStringT san = {};
@@ -1480,9 +1480,9 @@ std::string Position::makeSan(MoveSpec const& action, sanFlagT flag) {
 	return san;
 }
 
-errorT Position::applyMove(MoveSpec const& action) {
+errorT Position::applyMove(MoveSpec const& spec) {
 	MoveAction move;
-	if (auto err = moveActionFromSpec(*this, action, move); err != OK)
+	if (auto err = moveActionFromSpec(*this, spec, move); err != OK)
 		return err;
 
 	applyMoveAction(move);

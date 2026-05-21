@@ -78,13 +78,13 @@ scidup::eco::Error ReadLine(scidup::eco::Position& pos, const char* s) {
 			s++;
 		}
 
-		scid::core::MoveSpec action;
+		scid::core::MoveSpec spec;
 		scidup::eco::Error err =
-		    pos.parseMoveAction(action, {begin, static_cast<std::size_t>(s - begin)});
+		    pos.parseMoveSpec(spec, {begin, static_cast<std::size_t>(s - begin)});
 		if (err != scidup::eco::OK)
 			return err;
 
-		if (auto applyErr = pos.applyMove(action))
+		if (auto applyErr = pos.applyMove(spec))
 			return applyErr;
 	}
 }

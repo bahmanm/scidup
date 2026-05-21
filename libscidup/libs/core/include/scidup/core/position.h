@@ -242,12 +242,12 @@ public:
 
     bool        IsPromoMove (squareT from, squareT to);
 
-    errorT      parseMoveAction(MoveSpec& action, std::string_view notation);
-    errorT      readCoordinateMoveAction(MoveSpec& action,
+    errorT      parseMoveSpec(MoveSpec& spec, std::string_view notation);
+    errorT      readCoordinateMoveSpec(MoveSpec& spec,
                                          std::string_view notation,
                                          bool reverse);
-    std::string makeSan(MoveSpec const& action, sanFlagT flag);
-    errorT      applyMove(MoveSpec const& action);
+    std::string makeSan(MoveSpec const& spec, sanFlagT flag);
+    errorT      applyMove(MoveSpec const& spec);
 
     void        makeMove(squareT from, squareT to, pieceT promo, MoveAction& res) const;
     void        fillMove(MoveAction& sm) const;

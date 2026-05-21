@@ -51,23 +51,23 @@ TEST(Test_PositionSAN, MakeSANStringFromUCI) {
 	}
 }
 
-TEST(Test_PositionMoveAction, ParsesAppliesAndFormatsSan) {
+TEST(Test_PositionMoveSpec, ParsesAppliesAndFormatsSan) {
 	scid::core::Position pos = scid::core::Position::getStdStart();
-	scid::core::MoveSpec action;
+	scid::core::MoveSpec spec;
 
-	ASSERT_EQ(scid::core::OK, pos.parseMoveAction(action, "e4"));
-	EXPECT_EQ(scid::core::E2, action.from);
-	EXPECT_EQ(scid::core::E4, action.to);
-	EXPECT_EQ(scid::core::EMPTY, action.promotion);
-	EXPECT_FALSE(action.castling);
-	EXPECT_EQ("e4", pos.makeSan(action, scid::core::SAN_MATETEST));
-	ASSERT_EQ(scid::core::OK, pos.applyMove(action));
+	ASSERT_EQ(scid::core::OK, pos.parseMoveSpec(spec, "e4"));
+	EXPECT_EQ(scid::core::E2, spec.from);
+	EXPECT_EQ(scid::core::E4, spec.to);
+	EXPECT_EQ(scid::core::EMPTY, spec.promotion);
+	EXPECT_FALSE(spec.castling);
+	EXPECT_EQ("e4", pos.makeSan(spec, scid::core::SAN_MATETEST));
+	ASSERT_EQ(scid::core::OK, pos.applyMove(spec));
 
-	ASSERT_EQ(scid::core::OK, pos.parseMoveAction(action, "c5"));
-	EXPECT_EQ(scid::core::C7, action.from);
-	EXPECT_EQ(scid::core::C5, action.to);
-	EXPECT_EQ("c5", pos.makeSan(action, scid::core::SAN_MATETEST));
-	ASSERT_EQ(scid::core::OK, pos.applyMove(action));
+	ASSERT_EQ(scid::core::OK, pos.parseMoveSpec(spec, "c5"));
+	EXPECT_EQ(scid::core::C7, spec.from);
+	EXPECT_EQ(scid::core::C5, spec.to);
+	EXPECT_EQ("c5", pos.makeSan(spec, scid::core::SAN_MATETEST));
+	ASSERT_EQ(scid::core::OK, pos.applyMove(spec));
 
 	char fen[128];
 	pos.PrintFEN(fen, sizeof(fen));
@@ -75,19 +75,19 @@ TEST(Test_PositionMoveAction, ParsesAppliesAndFormatsSan) {
 	             "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2");
 }
 
-TEST(Test_PositionMoveAction, ParsesCoordinateCastlingAndPromotion) {
+TEST(Test_PositionMoveSpec, ParsesCoordinateCastlingAndPromotion) {
 	{
 		scid::core::Position pos;
 		ASSERT_EQ(scid::core::OK,
 		          pos.ReadFromFEN("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1"));
-		scid::core::MoveSpec action;
+		scid::core::MoveSpec spec;
 		ASSERT_EQ(scid::core::OK,
-		          pos.readCoordinateMoveAction(action, "e1g1", false));
-		EXPECT_EQ(scid::core::E1, action.from);
-		EXPECT_EQ(scid::core::G1, action.to);
-		EXPECT_TRUE(action.castling);
-		EXPECT_EQ("O-O", pos.makeSan(action, scid::core::SAN_MATETEST));
-		ASSERT_EQ(scid::core::OK, pos.applyMove(action));
+		          pos.readCoordinateMoveSpec(spec, "e1g1", false));
+		EXPECT_EQ(scid::core::E1, spec.from);
+		EXPECT_EQ(scid::core::G1, spec.to);
+		EXPECT_TRUE(spec.castling);
+		EXPECT_EQ("O-O", pos.makeSan(spec, scid::core::SAN_MATETEST));
+		ASSERT_EQ(scid::core::OK, pos.applyMove(spec));
 
 		char fen[128];
 		pos.PrintFEN(fen, sizeof(fen));
@@ -97,13 +97,13 @@ TEST(Test_PositionMoveAction, ParsesCoordinateCastlingAndPromotion) {
 		scid::core::Position pos;
 		ASSERT_EQ(scid::core::OK,
 		          pos.ReadFromFEN("k7/6P1/8/8/8/8/8/7K w - - 0 1"));
-		scid::core::MoveSpec action;
+		scid::core::MoveSpec spec;
 		ASSERT_EQ(scid::core::OK,
-		          pos.readCoordinateMoveAction(action, "g7g8q", false));
-		EXPECT_EQ(scid::core::G7, action.from);
-		EXPECT_EQ(scid::core::G8, action.to);
-		EXPECT_EQ(scid::core::QUEEN, action.promotion);
-		EXPECT_EQ("g8=Q+", pos.makeSan(action, scid::core::SAN_MATETEST));
+		          pos.readCoordinateMoveSpec(spec, "g7g8q", false));
+		EXPECT_EQ(scid::core::G7, spec.from);
+		EXPECT_EQ(scid::core::G8, spec.to);
+		EXPECT_EQ(scid::core::QUEEN, spec.promotion);
+		EXPECT_EQ("g8=Q+", pos.makeSan(spec, scid::core::SAN_MATETEST));
 	}
 }
 
