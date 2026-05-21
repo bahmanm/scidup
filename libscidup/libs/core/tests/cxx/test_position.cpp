@@ -33,60 +33,60 @@ TEST(Test_PositionSAN, MakeSANStringFromUCI) {
 	    "g2g1q", "g1=Q+", "g2g1b", "g1=B+", "g2g1r", "g1=R",
 	    "c1g1", "Qg1+"};
 
-	scid::database::Position pos;
+	scid::core::Position pos;
 	char buf[64];
 	auto it = std::begin(positions);
 	for (; it != std::end(positions); ++it) {
 		auto slen = std::strlen(*it);
 		if (slen > 5) {
-			ASSERT_EQ(scid::database::OK, pos.ReadFromFEN(*it));
+			ASSERT_EQ(scid::core::OK, pos.ReadFromFEN(*it));
 			continue;
 		}
 
-		scid::database::simpleMoveT sm;
-		ASSERT_EQ(scid::database::OK, pos.ReadCoordMove(&sm, *it++, int(slen), false));
-		pos.MakeSANString(&sm, buf, scid::database::SAN_MATETEST);
+		scid::core::simpleMoveT sm;
+		ASSERT_EQ(scid::core::OK, pos.ReadCoordMove(&sm, *it++, int(slen), false));
+		pos.MakeSANString(&sm, buf, scid::core::SAN_MATETEST);
 		EXPECT_STREQ(*it, buf);
 	}
 }
 
 TEST(Test_ReadFromFen, RejectsInvalidFEN) {
-	scid::database::Position pos;
-	EXPECT_EQ(scid::database::OK,
+	scid::core::Position pos;
+	EXPECT_EQ(scid::core::OK,
 	          pos.ReadFromFEN("rnb1k2Q/1p5p/p7/4p3/4q3/8/PPP2R1P/2K5 b"));
-	EXPECT_NE(scid::database::OK,
+	EXPECT_NE(scid::core::OK,
 	          pos.ReadFromFEN("rnb1k2/Q1p5p/p7/4p3/4q3/8/PPP2R1P/2K5 b"));
-	EXPECT_NE(scid::database::OK,
+	EXPECT_NE(scid::core::OK,
 	          pos.ReadFromFEN("rnb1k2Q/1p5p/p7/4a3/4q3/8/PPP2R1P/2K5 b"));
-	EXPECT_NE(scid::database::OK,
+	EXPECT_NE(scid::core::OK,
 	          pos.ReadFromFEN("rnb1k2Q/1p5p/p7/4p3/4q3/8/PKP2R1P/2K5 b"));
-	EXPECT_NE(scid::database::OK,
+	EXPECT_NE(scid::core::OK,
 	          pos.ReadFromFEN("rnb1k2Q/1p5p/p7/4p3/4q3/8/PPP2R1P/2K5 a"));
-	EXPECT_NE(scid::database::OK,
+	EXPECT_NE(scid::core::OK,
 	          pos.ReadFromFEN(
 	              "rnbqkbn1/ppppppppr/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
 }
 
 TEST(Test_ReadFromFen, ParsesCountersAndEpTarget) {
-	scid::database::Position pos;
+	scid::core::Position pos;
 	char buf[1024];
 
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - - 45 25"));
-	EXPECT_EQ(scid::database::NULL_SQUARE, pos.GetEPTarget());
+	EXPECT_EQ(scid::core::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - - 45 25"));
+	EXPECT_EQ(scid::core::NULL_SQUARE, pos.GetEPTarget());
 	EXPECT_EQ(pos.GetPlyCounter() / 2 + 1, 25);
 	pos.PrintFEN(buf, sizeof(buf));
 	EXPECT_STREQ(buf, "8/K7/8/8/7k/8/8/8 w - - 45 25");
 
-	EXPECT_EQ(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - f3 1 1"));
-	EXPECT_EQ(scid::database::F3, pos.GetEPTarget());
-	EXPECT_NE(scid::database::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - i6 1 1"));
+	EXPECT_EQ(scid::core::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - f3 1 1"));
+	EXPECT_EQ(scid::core::F3, pos.GetEPTarget());
+	EXPECT_NE(scid::core::OK, pos.ReadFromFEN("8/K7/8/8/7k/8/8/8 w - i6 1 1"));
 }
 
 TEST(Test_PositionDoSimpleMove, RestoresCastlingFlags) {
-	std::vector<scid::database::simpleMoveT> moves;
+	std::vector<scid::core::simpleMoveT> moves;
 	char buf[1024];
-	scid::database::Position pos;
-	ASSERT_EQ(scid::database::OK,
+	scid::core::Position pos;
+	ASSERT_EQ(scid::core::OK,
 	          pos.ReadFromFEN("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1"));
 
 	parse_move(pos, &moves.emplace_back(), "e1g1");
@@ -109,25 +109,25 @@ TEST(Test_PositionDoSimpleMove, RestoresCastlingFlags) {
 
 TEST(Test_PositionIsLegalMove, CoversCastlingCheckAndEnPassant) {
 	{
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK,
+		scid::core::Position pos;
+		ASSERT_EQ(scid::core::OK,
 		          pos.ReadFromFEN("8/8/8/8/8/8/6k1/4K2R w K -"));
-		EXPECT_FALSE(pos.IsLegalMove(scid::database::E1, scid::database::G1,
-		                             scid::database::EMPTY));
+		EXPECT_FALSE(pos.IsLegalMove(scid::core::E1, scid::core::G1,
+		                             scid::core::EMPTY));
 	}
 	{
-		scid::database::Position pos;
-		ASSERT_EQ(scid::database::OK,
+		scid::core::Position pos;
+		ASSERT_EQ(scid::core::OK,
 		          pos.ReadFromFEN("8/2B5/8/8/4pP2/8/7k/3K4 b - f3 0 1"));
-		EXPECT_FALSE(pos.IsLegalMove(scid::database::E4, scid::database::F3,
-		                             scid::database::EMPTY));
+		EXPECT_FALSE(pos.IsLegalMove(scid::core::E4, scid::core::F3,
+		                             scid::core::EMPTY));
 	}
 	{
-		scid::database::Position pos = scid::database::Position::getStdStart();
-		EXPECT_TRUE(pos.IsLegalMove(scid::database::B1, scid::database::C3,
-		                            scid::database::EMPTY));
-		EXPECT_FALSE(pos.IsLegalMove(scid::database::E3, scid::database::E4,
-		                             scid::database::EMPTY));
+		scid::core::Position pos = scid::core::Position::getStdStart();
+		EXPECT_TRUE(pos.IsLegalMove(scid::core::B1, scid::core::C3,
+		                            scid::core::EMPTY));
+		EXPECT_FALSE(pos.IsLegalMove(scid::core::E3, scid::core::E4,
+		                             scid::core::EMPTY));
 	}
 }
 
@@ -150,7 +150,7 @@ TEST(Test_PrintFen, NormalizesIllegalCastlingFlags) {
 			expected.append(" - 0 1");
 			fen.append(flag).append(" - 0 1");
 
-			scid::database::Position pos;
+			scid::core::Position pos;
 			pos.ReadFromFEN(fen.c_str());
 			char buf[1024];
 			pos.PrintFEN(buf, sizeof(buf));

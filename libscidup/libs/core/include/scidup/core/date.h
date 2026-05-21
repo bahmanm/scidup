@@ -34,7 +34,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //  CONSTANTS and MACROS:
 
-namespace scid::database {
+namespace scid::core {
 
 typedef uint32_t    dateT;
 
@@ -48,7 +48,7 @@ const uint32_t  DAY_SHIFT   = 0;
 
 const uint32_t YEAR_MAX = 2047;  // 2^11 - 1
 
-#define DATE_MAKE(y,m,d) (((y) << YEAR_SHIFT) | ((m) << MONTH_SHIFT) | (d))
+#define DATE_MAKE(y,m,d) (((y) << scid::core::YEAR_SHIFT) | ((m) << scid::core::MONTH_SHIFT) | (d))
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -209,7 +209,7 @@ inline dateT date_parsePGNTag(std::pair<const char*, const char*> str) {
 }
 
 
-} // namespace scid::database
+} // namespace scid::core
 #endif   // #ifndef SCID_DATE_H
 
 //////////////////////////////////////////////////////////////////////

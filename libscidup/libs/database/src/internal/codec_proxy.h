@@ -57,9 +57,9 @@ public:
 	 * Opens/creates a database encoded in a non-native format.
 	 * @param filename: full path of the database to be opened.
 	 * @param fMode:    valid file access mode.
-	 * @returns OK in case of success, an @p errorT code otherwise.
+	 * @returns scid::core::OK in case of success, an @p scid::core::errorT code otherwise.
 	 */
-	errorT open(const char* filename, fileModeT fMode);
+	scid::core::errorT open(const char* filename, fileModeT fMode);
 
 	/**
 	 * Reads the next game.
@@ -68,11 +68,11 @@ public:
 	 * @param game: the core Game object where the data will be stored.
 	 * @param scidFlags: output buffer for database/application Scid flags.
 	 * @returns
-	 * - ERROR_NotFound if there are no more games to be read.
-	 * - OK otherwise.
+	 * - scid::core::ERROR_NotFound if there are no more games to be read.
+	 * - scid::core::OK otherwise.
 	 */
-	errorT parseNext(scid::core::Game&, char*, std::size_t) {
-		return ERROR_NotFound;
+	scid::core::errorT parseNext(scid::core::Game&, char*, std::size_t) {
+		return scid::core::ERROR_NotFound;
 	}
 
 	/**
@@ -93,10 +93,10 @@ public:
 	 * Adds a game into the database.
 	 * @param game: core game data to add.
 	 * @param scidFlags: database/application Scid flags for the game.
-	 * @returns OK in case of success, an @p errorT code otherwise.
+	 * @returns scid::core::OK in case of success, an @p scid::core::errorT code otherwise.
 	 */
-	errorT gameAdd(scid::core::Game const&, const char*) {
-		return ERROR_CodecUnsupFeat;
+	scid::core::errorT gameAdd(scid::core::Game const&, const char*) {
+		return scid::core::ERROR_CodecUnsupFeat;
 	}
 
 	/**
@@ -104,10 +104,10 @@ public:
 	 * @param game:     core game data to replace.
 	 * @param scidFlags: database/application Scid flags for the game.
 	 * @param gamenumT: valid gamenumT of the game to be replaced.
-	 * @returns OK in case of success, an @p errorT code otherwise.
+	 * @returns scid::core::OK in case of success, an @p scid::core::errorT code otherwise.
 	 * If not overridden, adds a special tag and invoke gameAdd().
 	 */
-	errorT gameSave(scid::core::Game game, const char* scidFlags,
+	scid::core::errorT gameSave(scid::core::Game game, const char* scidFlags,
 	                gamenumT replaced) {
 		game.removeExtraTag(special_replace_tag);
 		game.addTag(special_replace_tag, std::to_string(replaced));
@@ -115,64 +115,64 @@ public:
 	}
 
 private:
-	errorT saveGame(IndexEntry const& ie, TagRoster const& tags,
+	scid::core::errorT saveGame(IndexEntry const& ie, TagRoster const& tags,
 	                ByteBuffer const& data, gamenumT replaced) final {
 		char scidFlags[22]{};
 		scid::core::Game game;
-		if (errorT err = game_storage::decode(
+		if (scid::core::errorT err = game_storage::decode(
 		        game, scidFlags, sizeof(scidFlags), ie, tags, data))
 			return err;
 
-		if (errorT err = getDerived()->gameSave(game, scidFlags, replaced))
+		if (scid::core::errorT err = getDerived()->gameSave(game, scidFlags, replaced))
 			return err;
 
 		return CodecMemory::saveGame(ie, tags, data, replaced);
 	}
 
-	errorT addGame(IndexEntry const& ie, TagRoster const& tags,
+	scid::core::errorT addGame(IndexEntry const& ie, TagRoster const& tags,
 	               ByteBuffer const& data) final {
 		char scidFlags[22]{};
 		scid::core::Game game;
-		if (errorT err = game_storage::decode(
+		if (scid::core::errorT err = game_storage::decode(
 		        game, scidFlags, sizeof(scidFlags), ie, tags, data))
 			return err;
 
-		if (errorT err = getDerived()->gameAdd(game, scidFlags))
+		if (scid::core::errorT err = getDerived()->gameAdd(game, scidFlags))
 			return err;
 
 		return CodecMemory::addGame(ie, tags, data);
 	}
 
-	errorT saveIndexEntry(const IndexEntry& ie, gamenumT replaced) final {
+	scid::core::errorT saveIndexEntry(const IndexEntry& ie, gamenumT replaced) final {
 		if (CodecMemory::equalExceptFlags(ie, replaced))
 			return CodecMemory::saveIndexEntry(ie, replaced);
 
-		return ERROR_CodecUnsupFeat;
+		return scid::core::ERROR_CodecUnsupFeat;
 	}
 
-	std::pair<errorT, idNumberT> addName(nameT, const char*) final {
-		return std::pair<errorT, idNumberT>(ERROR_CodecUnsupFeat, 0);
+	std::pair<scid::core::errorT, idNumberT> addName(nameT, const char*) final {
+		return std::pair<scid::core::errorT, idNumberT>(scid::core::ERROR_CodecUnsupFeat, 0);
 	}
 
 	/*
 	 * Create a memory database, open the non-native database @p filename and
 	 * copy all the games into the memory database.
 	 */
-	errorT dyn_open(fileModeT fMode, const char* filename,
+	scid::core::errorT dyn_open(fileModeT fMode, const char* filename,
 	                const Progress& progress, Index* idx, NameBase* nb) final {
 		if (filename == 0)
-			return ERROR;
+			return scid::core::ERROR;
 
-		errorT err = CodecMemory::dyn_open(FMODE_Create, filename, progress,
+		scid::core::errorT err = CodecMemory::dyn_open(FMODE_Create, filename, progress,
 		                                   idx, nb);
-		if (err != OK)
+		if (err != scid::core::OK)
 			return err;
 
 		err = getDerived()->open(filename, fMode);
-		if (err != OK)
+		if (err != scid::core::OK)
 			return err;
 
-		std::vector<byte> buf;
+		std::vector<scid::core::byte> buf;
 		return parseGames(progress, *getDerived(), [&](scid::core::Game& game,
 		                                               const char* scidFlags) {
 			buf.clear();
@@ -199,7 +199,7 @@ public:
 	 * corresponding core Game object and Scid flags are dispatched to @e destFn.
 	 */
 	template <typename TProgress, typename TSource, typename TDestFn>
-	static errorT parseGames(const TProgress& progress, TSource& src,
+	static scid::core::errorT parseGames(const TProgress& progress, TSource& src,
 	                         TDestFn destFn) {
 		auto workTotal = src.parseProgress().second;
 
@@ -227,7 +227,7 @@ public:
 
 				scidFlags[slot].fill(0);
 				if (src.parseNext(game[slot], scidFlags[slot].data(),
-				                  scidFlags[slot].size()) == ERROR_NotFound)
+				                  scidFlags[slot].size()) == scid::core::ERROR_NotFound)
 					break;
 
 				if (++nProduced % 1024 == 0) {
@@ -241,7 +241,7 @@ public:
 		});
 
 		// Consumer
-		errorT err = OK;
+		scid::core::errorT err = scid::core::OK;
 		uint64_t slot;
 		uint64_t nImported = 0;
 		while (true) {
@@ -260,13 +260,13 @@ public:
 			if (++nImported % 1024 == 0) {
 				if (!progress.report(workDone.load(std::memory_order_acquire),
 				                     workTotal)) {
-					err = ERROR_UserCancel;
+					err = scid::core::ERROR_UserCancel;
 					break;
 				}
 			}
 
 			err = destFn(game[slot], scidFlags[slot].data());
-			if (err != OK)
+			if (err != scid::core::OK)
 				break;
 
 			sync[slot].store(sy_free, std::memory_order_release);

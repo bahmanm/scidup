@@ -34,7 +34,7 @@
 
 namespace {
 
-std::optional<scid::database::Position>
+std::optional<scid::core::Position>
 currentPosition(const scid::core::Game& game,
                 scid::core::MovetextLocation location) {
 	scid::core::GameCursor cursor(game);
@@ -54,7 +54,7 @@ void setCurrentComment(scid::core::Game& game,
 
 void addMove(scid::core::Game& game,
              scid::core::MovetextLocation& location,
-             scid::database::simpleMoveT const& move) {
+             scid::core::simpleMoveT const& move) {
 	scid::core::MovetextCursor cursor(game);
 	ASSERT_TRUE(cursor.restore(location));
 	cursor.addMove({move.from, move.to, move.promote, move.isCastle() != 0});
@@ -111,7 +111,7 @@ public:
 template <int nGames, int maxMoves, int maxCommentLen> class GameGenerator {
 	typedef std::vector<std::unique_ptr<scid::core::Game>> Vec;
 	Vec v_;
-	std::vector<std::vector<scid::database::byte>> encoded_;
+	std::vector<std::vector<scid::core::byte>> encoded_;
 	std::mt19937 mt_;
 
 public:
@@ -125,7 +125,7 @@ public:
 		return v_;
 	}
 
-	const std::vector<std::vector<scid::database::byte>>& getNative() {
+	const std::vector<std::vector<scid::core::byte>>& getNative() {
 		if (encoded_.empty())
 			get();
 
@@ -158,13 +158,13 @@ private:
 	std::unique_ptr<scid::core::Game> genGame() {
 		auto res = std::unique_ptr<scid::core::Game>(new scid::core::Game);
 		scid::core::MovetextLocation location;
-		scid::database::MoveList mlist;
+		scid::core::MoveList mlist;
 		for (auto i = rand(0, maxMoves); i > 0; --i) {
 			auto position = currentPosition(*res, location);
 			if (!position)
 				break;
-			position->GenerateMoves(&mlist, scid::database::EMPTY,
-			                        scid::database::GEN_ALL_MOVES, true);
+			position->GenerateMoves(&mlist, scid::core::EMPTY,
+			                        scid::core::GEN_ALL_MOVES, true);
 			if (mlist.Size() == 0)
 				break;
 
@@ -237,12 +237,12 @@ void makeDatabase(scid::database::CodecType dbtype, const char* test, Oper op) {
 		auto codec = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
 		ASSERT_NE(nullptr, codec);
 		cleanup.filenames = codec->getFilenames();
-		ASSERT_EQ(scid::database::OK, err.second);
+		ASSERT_EQ(scid::core::OK, err.second);
 
 		op(codec.get(), idx, nb);
 
 		ASSERT_EQ(gameGenerator.get().size(), size_t(idx.GetNumGames()));
-		ASSERT_EQ(scid::database::OK, codec->flush());
+		ASSERT_EQ(scid::core::OK, codec->flush());
 		gameGenerator.cmp(codec.get(), idx);
 	}
 
@@ -253,7 +253,7 @@ void makeDatabase(scid::database::CodecType dbtype, const char* test, Oper op) {
 		                                scid::database::Progress(), &idx, &nb);
 		auto codec = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
 		ASSERT_NE(nullptr, codec);
-		ASSERT_EQ(scid::database::OK, err.second);
+		ASSERT_EQ(scid::core::OK, err.second);
 		ASSERT_EQ(gameGenerator.get().size(), size_t(idx.GetNumGames()));
 
 		gameGenerator.cmp(codec.get(), idx);
@@ -354,17 +354,17 @@ TEST_P(Test_Codec, rename) {
 		auto err = scid::database::openCodec(dbtype, scid::database::FMODE_Create, filename,
 		                                scid::database::Progress(), &idx1, &nb1);
 		auto codec1 = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
-		EXPECT_EQ(scid::database::OK, codec1->flush());
+		EXPECT_EQ(scid::core::OK, codec1->flush());
 		ASSERT_NE(nullptr, codec1);
-		ASSERT_EQ(scid::database::OK, err.second);
+		ASSERT_EQ(scid::core::OK, err.second);
 
 		std::string renamed_name = std::string(filename) + "__renamed__";
 		err = scid::database::openCodec(dbtype, scid::database::FMODE_Create, renamed_name.c_str(),
 		                           scid::database::Progress(), &idx2, &nb2);
 		auto codec2 = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
-		EXPECT_EQ(scid::database::OK, codec2->flush());
+		EXPECT_EQ(scid::core::OK, codec2->flush());
 		ASSERT_NE(nullptr, codec2);
-		ASSERT_EQ(scid::database::OK, err.second);
+		ASSERT_EQ(scid::core::OK, err.second);
 
 		cleanup.filenames1 = codec1->getFilenames();
 		cleanup.filenames2 = codec2->getFilenames();
@@ -387,7 +387,7 @@ TEST_P(Test_Codec, rename) {
 		                                scid::database::Progress(), &idx_reopen, &nb_reopen);
 		auto codec3 = std::unique_ptr<scid::database::ICodecDatabase>(err.first);
 		ASSERT_NE(nullptr, codec3);
-		ASSERT_EQ(scid::database::OK, err.second);
+		ASSERT_EQ(scid::core::OK, err.second);
 
 		auto filenames3 = codec3->getFilenames();
 		EXPECT_TRUE(cleanup.filenames1 == filenames3);

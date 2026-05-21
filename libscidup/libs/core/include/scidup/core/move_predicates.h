@@ -26,7 +26,7 @@
 //   To validate this type of moves it is necessary to know the type and
 //   position of every piece.
 
-namespace scid::database {
+namespace scid::core {
 
 namespace move_predicates {
 
@@ -252,4 +252,4 @@ inline bool blocks_ray(squareT sqFrom, squareT sqTo, squareT sqBlock) {
 
 } // namespace move_predicates
 
-} // namespace scid::database
+} // namespace scid::core

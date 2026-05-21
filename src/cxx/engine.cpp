@@ -24,7 +24,7 @@
 
 // sqDir[][]: Array listing the direction between any two squares.
 //    For example, sqDir[A1][B2] == UP_RIGHT, and sqDir[A1][C2] == NULL_DIR.
-namespace scid::database {
+namespace scid::core {
 extern directionT sqDir[66][66];
 }
 
@@ -116,14 +116,14 @@ static const int AspirationWindow = 35;
 //   Gives bonuses to advanced pawns, especially in the centre.
 static const int
 PawnSquare [64] = {
-      0,   0,   0,   0,   0,   0,   0,   0, // scid::database::A8 - scid::database::H8
+      0,   0,   0,   0,   0,   0,   0,   0, // A8 - H8
       4,   8,  12,  16,  16,  12,   8,   4,
       4,   8,  12,  16,  16,  12,   8,   4,
       3,   6,   9,  12,  12,   9,   6,   3,
       2,   4,   6,   8,   8,   6,   4,   2,
       1,   2,   3,   4,   4,   3,   2,   1,
       0,   0,   0,  -4,  -4,   0,   0,   0,
-      0,   0,   0,   0,   0,   0,   0,   0  // scid::database::A1 - scid::database::H1
+      0,   0,   0,   0,   0,   0,   0,   0  // A1 - H1
 };
 
 // PawnStorm:
@@ -133,14 +133,14 @@ PawnSquare [64] = {
 //    disposable and encourage them to move forwards.
 static const int
 PawnStorm [64] = {
-      0,   0,   0,   0,   0,   0,   0,   0, // scid::database::A8 - scid::database::H8
+      0,   0,   0,   0,   0,   0,   0,   0, // A8 - H8
       0,   0,   0,   0,   2,   2,   2,   2,
       0,   0,   0,   0,   4,   2,   2,   2,
       0,   0,   0,   4,   6,   0,   0,   0,
       4,   4,   4,   4,   4,  -4,  -4,  -4,
       8,   8,   8,   0,   0,  -8,  -8,  -8,
      12,  12,  12,   0,   0, -12, -12, -12,
-      0,   0,   0,   0,   0,   0,   0,   0  // scid::database::A1 - scid::database::H1
+      0,   0,   0,   0,   0,   0,   0,   0  // A1 - H1
 };
 
 // KnightSquare:
@@ -180,14 +180,14 @@ RookFile [8]    = { 0, 0, 4, 8, 8, 4, 0, 0 };
 //    Bonus array for Queens.
 static const int
 QueenSquare [64] = {
-     -5,   0,   0,   0,   0,   0,   0,  -5, // scid::database::A8 - scid::database::H8
+     -5,   0,   0,   0,   0,   0,   0,  -5, // A8 - H8
      -5,   0,   3,   3,   3,   3,   0,  -5,
       0,   3,   6,   9,   9,   6,   3,   0,
       0,   3,   9,  12,  12,   9,   3,   0,
      -5,   3,   9,  12,  12,   9,   3,  -5,
      -5,   3,   6,   9,   9,   6,   3,  -5,
      -5,   0,   3,   3,   3,   3,   0,  -5,
-    -10,  -5,   0,   0,   0,   0,  -5, -10  // scid::database::A1 - scid::database::H1
+    -10,  -5,   0,   0,   0,   0,  -5, -10  // A1 - H1
 };
 
 // KingSquare:
@@ -233,9 +233,9 @@ pieceValues [8] = {
 };
 
 inline int
-Engine::PieceValue (scid::database::pieceT piece)
+Engine::PieceValue (scid::core::pieceT piece)
 {
-    return pieceValues[scid::database::piece_Type(piece)];
+    return pieceValues[scid::core::piece_Type(piece)];
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -243,38 +243,38 @@ Engine::PieceValue (scid::database::pieceT piece)
 //   Returns true if the square is on the 4th/5th/6th rank (3rd/4th/5th
 //   for Black) and cannot be attacked by an enemy pawn.
 static bool
-isOutpost (const scid::database::pieceT * board, scid::database::squareT sq, scid::database::colorT color)
+isOutpost (const scid::core::pieceT * board, scid::core::squareT sq, scid::core::colorT color)
 {
-    scid::database::pieceT enemyPawn = scid::database::piece_Make (scid::database::color_Flip(color), scid::database::PAWN);
-    scid::database::rankT rank = scid::database::square_Rank(sq);
-    scid::database::fyleT fyle = scid::database::square_Fyle(sq);
+    scid::core::pieceT enemyPawn = scid::core::piece_Make (scid::core::color_Flip(color), scid::core::PAWN);
+    scid::core::rankT rank = scid::core::square_Rank(sq);
+    scid::core::fyleT fyle = scid::core::square_Fyle(sq);
 
     // Build the list of squares to check for enemy pawns:
-    scid::database::SquareList squares;
-    if (color == scid::database::WHITE) {
-        if (rank < scid::database::RANK_4  ||  rank > scid::database::RANK_6) { return false; }
-        if (fyle > scid::database::A_FYLE) {
-            squares.Add(scid::database::square_Make(fyle-1,scid::database::RANK_7));
-            if (rank == scid::database::RANK_5) { squares.Add(scid::database::square_Make(fyle-1,scid::database::RANK_6)); }
+    scid::core::SquareList squares;
+    if (color == scid::core::WHITE) {
+        if (rank < scid::core::RANK_4  ||  rank > scid::core::RANK_6) { return false; }
+        if (fyle > scid::core::A_FYLE) {
+            squares.Add(scid::core::square_Make(fyle-1,scid::core::RANK_7));
+            if (rank == scid::core::RANK_5) { squares.Add(scid::core::square_Make(fyle-1,scid::core::RANK_6)); }
         }
-        if (fyle < scid::database::H_FYLE) {
-            squares.Add(scid::database::square_Make(fyle+1,scid::database::RANK_7));
-            if (rank == scid::database::RANK_5) { squares.Add(scid::database::square_Make(fyle+1,scid::database::RANK_6)); }
+        if (fyle < scid::core::H_FYLE) {
+            squares.Add(scid::core::square_Make(fyle+1,scid::core::RANK_7));
+            if (rank == scid::core::RANK_5) { squares.Add(scid::core::square_Make(fyle+1,scid::core::RANK_6)); }
         }
     } else {
-        if (rank < scid::database::RANK_3  ||  rank > scid::database::RANK_5) { return false; }
-        if (fyle > scid::database::A_FYLE) {
-            squares.Add(scid::database::square_Make(fyle-1,scid::database::RANK_2));
-            if (rank == scid::database::RANK_4) { squares.Add(scid::database::square_Make(fyle-1,scid::database::RANK_3)); }
+        if (rank < scid::core::RANK_3  ||  rank > scid::core::RANK_5) { return false; }
+        if (fyle > scid::core::A_FYLE) {
+            squares.Add(scid::core::square_Make(fyle-1,scid::core::RANK_2));
+            if (rank == scid::core::RANK_4) { squares.Add(scid::core::square_Make(fyle-1,scid::core::RANK_3)); }
         }
-        if (fyle < scid::database::H_FYLE) {
-            squares.Add(scid::database::square_Make(fyle+1,scid::database::RANK_2));
-            if (rank == scid::database::RANK_4) { squares.Add(scid::database::square_Make(fyle+1,scid::database::RANK_3)); }
+        if (fyle < scid::core::H_FYLE) {
+            squares.Add(scid::core::square_Make(fyle+1,scid::core::RANK_2));
+            if (rank == scid::core::RANK_4) { squares.Add(scid::core::square_Make(fyle+1,scid::core::RANK_3)); }
         }
     }
 
     // Now check each square for an enemy pawn:
-    for (scid::database::uint i=0; i < squares.Size(); i++) {
+    for (scid::core::uint i=0; i < squares.Size(); i++) {
         if (board[squares.Get(i)] == enemyPawn) { return false; }
     }
     return true;
@@ -290,32 +290,32 @@ Engine::Score (void)
     return Score (-Infinity, Infinity);
 }
 
-static scid::database::uint nScoreCalls = 0;
-static scid::database::uint nScoreFull  = 0;
+static scid::core::uint nScoreCalls = 0;
+static scid::core::uint nScoreFull  = 0;
 
 inline int
 Engine::ScoreWhiteMaterial (void)
 {
-    const scid::database::byte* pieceCount = Pos.GetMaterial();
-    return  pieceCount[scid::database::WQ] * QueenValue   +  pieceCount[scid::database::WR] * RookValue
-         +  pieceCount[scid::database::WB] * BishopValue  +  pieceCount[scid::database::WN] * KnightValue
-         +  pieceCount[scid::database::WP] * PawnValue;
+    const scid::core::byte* pieceCount = Pos.GetMaterial();
+    return  pieceCount[scid::core::WQ] * QueenValue   +  pieceCount[scid::core::WR] * RookValue
+         +  pieceCount[scid::core::WB] * BishopValue  +  pieceCount[scid::core::WN] * KnightValue
+         +  pieceCount[scid::core::WP] * PawnValue;
 }
 
 inline int
 Engine::ScoreBlackMaterial (void)
 {
-    const scid::database::byte* pieceCount = Pos.GetMaterial();
-    return  pieceCount[scid::database::BQ] * QueenValue   +  pieceCount[scid::database::BR] * RookValue
-         +  pieceCount[scid::database::BB] * BishopValue  +  pieceCount[scid::database::BN] * KnightValue
-         +  pieceCount[scid::database::BP] * PawnValue;
+    const scid::core::byte* pieceCount = Pos.GetMaterial();
+    return  pieceCount[scid::core::BQ] * QueenValue   +  pieceCount[scid::core::BR] * RookValue
+         +  pieceCount[scid::core::BB] * BishopValue  +  pieceCount[scid::core::BN] * KnightValue
+         +  pieceCount[scid::core::BP] * PawnValue;
 }
 
 int
 Engine::ScoreMaterial (void)
 {
     int score = ScoreWhiteMaterial() - ScoreBlackMaterial();
-    return (Pos.GetToMove() == scid::database::WHITE) ? score : -score;
+    return (Pos.GetToMove() == scid::core::WHITE) ? score : -score;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -329,9 +329,9 @@ Engine::ScoreMaterial (void)
 int
 Engine::Score (int alpha, int beta)
 {
-    scid::database::colorT toMove = Pos.GetToMove();
-    const scid::database::byte * pieceCount = Pos.GetMaterial();
-    const scid::database::pieceT * board = Pos.GetBoard();
+    scid::core::colorT toMove = Pos.GetToMove();
+    const scid::core::byte * pieceCount = Pos.GetMaterial();
+    const scid::core::pieceT * board = Pos.GetBoard();
     int materialScore[2] = {0, 0};
     int allscore[2] = {0, 0};   // Scoring in all positions
     int endscore[2] = {0, 0};   // Scoring in endgames
@@ -340,15 +340,15 @@ Engine::Score (int alpha, int beta)
 
     nScoreCalls++;
 
-    nNonPawns[scid::database::WHITE] = Pos.NumNonPawns(scid::database::WHITE);
-    nNonPawns[scid::database::BLACK] = Pos.NumNonPawns(scid::database::BLACK);
+    nNonPawns[scid::core::WHITE] = Pos.NumNonPawns(scid::core::WHITE);
+    nNonPawns[scid::core::BLACK] = Pos.NumNonPawns(scid::core::BLACK);
 
     // First compute material scores:
-    allscore[scid::database::WHITE] = materialScore[scid::database::WHITE] = ScoreWhiteMaterial();
-    allscore[scid::database::BLACK] = materialScore[scid::database::BLACK] = ScoreBlackMaterial();
+    allscore[scid::core::WHITE] = materialScore[scid::core::WHITE] = ScoreWhiteMaterial();
+    allscore[scid::core::BLACK] = materialScore[scid::core::BLACK] = ScoreBlackMaterial();
 
-    int pieceMaterial = (materialScore[scid::database::WHITE] - pieceCount[scid::database::WP] * PawnValue)
-                      + (materialScore[scid::database::BLACK] - pieceCount[scid::database::BP] * PawnValue);
+    int pieceMaterial = (materialScore[scid::core::WHITE] - pieceCount[scid::core::WP] * PawnValue)
+                      + (materialScore[scid::core::BLACK] - pieceCount[scid::core::BP] * PawnValue);
     bool inEndgame = false;
     bool inMiddlegame = false;
     if (pieceMaterial <= EndgameValue) { inEndgame = true; }
@@ -357,43 +357,43 @@ Engine::Score (int alpha, int beta)
 
     // Look for a bad trade: minor piece for pawns; Q for R+Pawns; etc.
     // But only do this if both sides have pawns.
-    if (pieceCount[scid::database::WP] > 0  &&  pieceCount[scid::database::BP] > 0) {
-        scid::database::uint wminors = pieceCount[scid::database::WB] + pieceCount[scid::database::WN];
-        scid::database::uint bminors = pieceCount[scid::database::BB] + pieceCount[scid::database::BN];
-        scid::database::uint wmajors = pieceCount[scid::database::WR] + (2 * pieceCount[scid::database::WQ]);
-        scid::database::uint bmajors = pieceCount[scid::database::BR] + (2 * pieceCount[scid::database::BQ]);
+    if (pieceCount[scid::core::WP] > 0  &&  pieceCount[scid::core::BP] > 0) {
+        scid::core::uint wminors = pieceCount[scid::core::WB] + pieceCount[scid::core::WN];
+        scid::core::uint bminors = pieceCount[scid::core::BB] + pieceCount[scid::core::BN];
+        scid::core::uint wmajors = pieceCount[scid::core::WR] + (2 * pieceCount[scid::core::WQ]);
+        scid::core::uint bmajors = pieceCount[scid::core::BR] + (2 * pieceCount[scid::core::BQ]);
        if (wmajors == bmajors) {
-            if (wminors < bminors) { allscore[scid::database::WHITE] -= BadPieceTrade; }
-            if (wminors > bminors) { allscore[scid::database::BLACK] -= BadPieceTrade; }
+            if (wminors < bminors) { allscore[scid::core::WHITE] -= BadPieceTrade; }
+            if (wminors > bminors) { allscore[scid::core::BLACK] -= BadPieceTrade; }
         } else if (wminors == bminors) {
-            if (wmajors < bmajors) { allscore[scid::database::WHITE] -= BadPieceTrade; }
-            if (wmajors > bmajors) { allscore[scid::database::BLACK] -= BadPieceTrade; }
+            if (wmajors < bmajors) { allscore[scid::core::WHITE] -= BadPieceTrade; }
+            if (wmajors > bmajors) { allscore[scid::core::BLACK] -= BadPieceTrade; }
         }
     }
 
     // Add the Bishop-pair bonus now, because it is fast and easy:
-    if (pieceCount[scid::database::WB] >= 2) { allscore[scid::database::WHITE] += BishopPair; }
-    if (pieceCount[scid::database::BB] >= 2) { allscore[scid::database::BLACK] += BishopPair; }
+    if (pieceCount[scid::core::WB] >= 2) { allscore[scid::core::WHITE] += BishopPair; }
+    if (pieceCount[scid::core::BB] >= 2) { allscore[scid::core::BLACK] += BishopPair; }
 
     // If there are no pawns, a material advantage of only one minor
     // piece is worth very little so reduce the material score.
-    if (pieceCount[scid::database::WP] + pieceCount[scid::database::BP] == 0) {
-        int materialDiff = materialScore[scid::database::WHITE] - materialScore[scid::database::BLACK];
+    if (pieceCount[scid::core::WP] + pieceCount[scid::core::BP] == 0) {
+        int materialDiff = materialScore[scid::core::WHITE] - materialScore[scid::core::BLACK];
         if (materialDiff < 0) { materialDiff = -materialDiff; }
         if (materialDiff == BishopValue  ||  materialDiff == KnightValue) {
-            allscore[scid::database::WHITE] /= 4;
-            allscore[scid::database::BLACK] /= 4;
+            allscore[scid::core::WHITE] /= 4;
+            allscore[scid::core::BLACK] /= 4;
         }
     }
 
     // Look for a trapped bishop on a7/h7/a2/h2:
-    if (Pos.RankCount (scid::database::WB, scid::database::RANK_7) > 0) {
-        if (board[scid::database::A7] == scid::database::WB  &&  board[scid::database::B6] == scid::database::BP) { allscore[scid::database::WHITE] -= BishopTrapped; }
-        if (board[scid::database::H7] == scid::database::WB  &&  board[scid::database::G6] == scid::database::BP) { allscore[scid::database::WHITE] -= BishopTrapped; }
+    if (Pos.RankCount (scid::core::WB, scid::core::RANK_7) > 0) {
+        if (board[scid::core::A7] == scid::core::WB  &&  board[scid::core::B6] == scid::core::BP) { allscore[scid::core::WHITE] -= BishopTrapped; }
+        if (board[scid::core::H7] == scid::core::WB  &&  board[scid::core::G6] == scid::core::BP) { allscore[scid::core::WHITE] -= BishopTrapped; }
     }
-    if (Pos.RankCount (scid::database::BB, scid::database::RANK_2) > 0) {
-        if (board[scid::database::A2] == scid::database::BB  &&  board[scid::database::B3] == scid::database::WP) { allscore[scid::database::BLACK] -= BishopTrapped; }
-        if (board[scid::database::H2] == scid::database::BB  &&  board[scid::database::G6] == scid::database::WP) { allscore[scid::database::BLACK] -= BishopTrapped; }
+    if (Pos.RankCount (scid::core::BB, scid::core::RANK_2) > 0) {
+        if (board[scid::core::A2] == scid::core::BB  &&  board[scid::core::B3] == scid::core::WP) { allscore[scid::core::BLACK] -= BishopTrapped; }
+        if (board[scid::core::H2] == scid::core::BB  &&  board[scid::core::G6] == scid::core::WP) { allscore[scid::core::BLACK] -= BishopTrapped; }
     }
 
     // Check for a score much worse than alpha or better than beta
@@ -405,8 +405,8 @@ Engine::Score (int alpha, int beta)
     if (inEndgame) { lazyMargin = LazyEvalEndingMargin; }
     if (inPawnEndgame) { lazyMargin = LazyEvalPawnEndingMargin; }
 
-    int fastScore = allscore[scid::database::WHITE] - allscore[scid::database::BLACK];
-    if (toMove == scid::database::BLACK) { fastScore = -fastScore; }
+    int fastScore = allscore[scid::core::WHITE] - allscore[scid::core::BLACK];
+    if (toMove == scid::core::BLACK) { fastScore = -fastScore; }
     if (fastScore - lazyMargin > beta) { return fastScore; }
     if (fastScore + lazyMargin < alpha) { return fastScore; }
 
@@ -415,26 +415,26 @@ Engine::Score (int alpha, int beta)
     ScorePawnStructure (&pawnEntry);
 
     // Penalise d-file and e-file pawns blocked on their home squares:
-    if (board[scid::database::D2] == scid::database::WP  &&  board[scid::database::D3] != scid::database::EMPTY) { allscore[scid::database::WHITE] -= BlockedHomePawn; }
-    if (board[scid::database::E2] == scid::database::WP  &&  board[scid::database::E3] != scid::database::EMPTY) { allscore[scid::database::WHITE] -= BlockedHomePawn; }
-    if (board[scid::database::D7] == scid::database::BP  &&  board[scid::database::D6] != scid::database::EMPTY) { allscore[scid::database::BLACK] -= BlockedHomePawn; }
-    if (board[scid::database::E7] == scid::database::BP  &&  board[scid::database::E6] != scid::database::EMPTY) { allscore[scid::database::BLACK] -= BlockedHomePawn; }
+    if (board[scid::core::D2] == scid::core::WP  &&  board[scid::core::D3] != scid::core::EMPTY) { allscore[scid::core::WHITE] -= BlockedHomePawn; }
+    if (board[scid::core::E2] == scid::core::WP  &&  board[scid::core::E3] != scid::core::EMPTY) { allscore[scid::core::WHITE] -= BlockedHomePawn; }
+    if (board[scid::core::D7] == scid::core::BP  &&  board[scid::core::D6] != scid::core::EMPTY) { allscore[scid::core::BLACK] -= BlockedHomePawn; }
+    if (board[scid::core::E7] == scid::core::BP  &&  board[scid::core::E6] != scid::core::EMPTY) { allscore[scid::core::BLACK] -= BlockedHomePawn; }
 
     // Incentive for side ahead in material to trade nonpawn pieces and
     // for side behind in material to avoid trades:
-    if (materialScore[scid::database::WHITE] > materialScore[scid::database::BLACK]) {
-        int bonus = (5 - nNonPawns[scid::database::BLACK]) * 5;
-        allscore[scid::database::WHITE] += bonus;
-    } else if (materialScore[scid::database::BLACK] > materialScore[scid::database::WHITE]) {
-        int bonus = (5 - nNonPawns[scid::database::WHITE]) * 5;
-        allscore[scid::database::BLACK] += bonus;
+    if (materialScore[scid::core::WHITE] > materialScore[scid::core::BLACK]) {
+        int bonus = (5 - nNonPawns[scid::core::BLACK]) * 5;
+        allscore[scid::core::WHITE] += bonus;
+    } else if (materialScore[scid::core::BLACK] > materialScore[scid::core::WHITE]) {
+        int bonus = (5 - nNonPawns[scid::core::WHITE]) * 5;
+        allscore[scid::core::BLACK] += bonus;
     }
 
     // Check again for a score outside the alpha-beta range, using a
     // smaller fixed margin of error since the pawn structure score
     // has been added:
-    fastScore = (allscore[scid::database::WHITE] - allscore[scid::database::BLACK]) + pawnEntry.score;
-    if (toMove == scid::database::BLACK) { fastScore = -fastScore; }
+    fastScore = (allscore[scid::core::WHITE] - allscore[scid::core::BLACK]) + pawnEntry.score;
+    if (toMove == scid::core::BLACK) { fastScore = -fastScore; }
     if (fastScore > beta + 200) { return fastScore; }
     if (fastScore < alpha - 200) { return fastScore; }
 
@@ -442,68 +442,68 @@ Engine::Score (int alpha, int beta)
 
     // Now refine the score with piece-square bonuses:
 
-    scid::database::squareT wk = Pos.GetKingSquare(scid::database::WHITE);
-    scid::database::squareT bk = Pos.GetKingSquare(scid::database::BLACK);
-    scid::database::fyleT wkFyle = scid::database::square_Fyle(wk);
-    scid::database::fyleT bkFyle = scid::database::square_Fyle(bk);
+    scid::core::squareT wk = Pos.GetKingSquare(scid::core::WHITE);
+    scid::core::squareT bk = Pos.GetKingSquare(scid::core::BLACK);
+    scid::core::fyleT wkFyle = scid::core::square_Fyle(wk);
+    scid::core::fyleT bkFyle = scid::core::square_Fyle(bk);
 
     // Check if each side should be storming the enemy king:
     if (!inEndgame) {
-        if (wkFyle <= scid::database::C_FYLE  &&  bkFyle >= scid::database::F_FYLE) {
-            midscore[scid::database::WHITE] += pawnEntry.wLongbShortScore;
-        } else if (wkFyle >= scid::database::F_FYLE  &&  bkFyle <= scid::database::C_FYLE) {
-            midscore[scid::database::WHITE] += pawnEntry.wShortbLongScore;
+        if (wkFyle <= scid::core::C_FYLE  &&  bkFyle >= scid::core::F_FYLE) {
+            midscore[scid::core::WHITE] += pawnEntry.wLongbShortScore;
+        } else if (wkFyle >= scid::core::F_FYLE  &&  bkFyle <= scid::core::C_FYLE) {
+            midscore[scid::core::WHITE] += pawnEntry.wShortbLongScore;
         }
     }
 
     // Iterate over the piece for each color:
 
-    for (scid::database::colorT c = scid::database::WHITE; c <= scid::database::BLACK; c++) {
-        scid::database::colorT enemy = scid::database::color_Flip(c);
-        // scid::database::squareT ownKing = Pos.GetKingSquare(c);
-        scid::database::squareT enemyKing = Pos.GetKingSquare(enemy);
-        scid::database::uint npieces = Pos.GetCount(c);
+    for (scid::core::colorT c = scid::core::WHITE; c <= scid::core::BLACK; c++) {
+        scid::core::colorT enemy = scid::core::color_Flip(c);
+        // scid::core::squareT ownKing = Pos.GetKingSquare(c);
+        scid::core::squareT enemyKing = Pos.GetKingSquare(enemy);
+        scid::core::uint npieces = Pos.GetCount(c);
         auto sqlist = Pos.GetList(c);
         int mscore = 0;  // Middlegame score adjustments
         int escore = 0;  // Endgame score adjustments
         int ascore = 0;  // All-position adjustments (middle and endgame)
 
-        for (scid::database::uint i = 0; i < npieces; i++) {
-            scid::database::squareT sq = sqlist[i];
-            scid::database::pieceT p = board[sq];
-            scid::database::pieceT ptype = scid::database::piece_Type(p);
-            assert(p != scid::database::EMPTY  &&  scid::database::piece_Color(p) == c);
-            scid::database::squareT bonusSq = (c == scid::database::WHITE) ? scid::database::square_FlipRank(sq) : sq;
-            scid::database::uint rank = scid::database::RANK_1 + scid::database::RANK_8 - scid::database::square_Rank(bonusSq);
+        for (scid::core::uint i = 0; i < npieces; i++) {
+            scid::core::squareT sq = sqlist[i];
+            scid::core::pieceT p = board[sq];
+            scid::core::pieceT ptype = scid::core::piece_Type(p);
+            assert(p != scid::core::EMPTY  &&  scid::core::piece_Color(p) == c);
+            scid::core::squareT bonusSq = (c == scid::core::WHITE) ? scid::core::square_FlipRank(sq) : sq;
+            scid::core::uint rank = scid::core::RANK_1 + scid::core::RANK_8 - scid::core::square_Rank(bonusSq);
 
             // Piece-specific bonuses. The use of if-else instead of
             // a switch statement was observed to be faster since
             // the most common piece types are handled first.
 
-            if (ptype == scid::database::PAWN) {
+            if (ptype == scid::core::PAWN) {
                 // Most pawn-specific bonuses are in ScorePawnStructure().
 
                 // Kings should be close to pawns in endgames:
                 // if (!inMiddlegame) {
-                //     escore += 3 * scid::database::square_Distance (sq, enemyKing)
-                //             - 2 * scid::database::square_Distance (sq, ownKing);
+                //     escore += 3 * scid::core::square_Distance (sq, enemyKing)
+                //             - 2 * scid::core::square_Distance (sq, ownKing);
                 // }
-            } else if (ptype == scid::database::ROOK) {
-                ascore += RookFile[scid::database::square_Fyle(sq)];
-                if (rank == scid::database::RANK_7) {
+            } else if (ptype == scid::core::ROOK) {
+                ascore += RookFile[scid::core::square_Fyle(sq)];
+                if (rank == scid::core::RANK_7) {
                     ascore += RookOnSeventh;
                     // Even bigger bonus if rook traps king on 8th rank:
-                    bool kingOn8th = (p == scid::database::WR) ? (bk >= scid::database::A8) : (wk <= scid::database::H1);
+                    bool kingOn8th = (p == scid::core::WR) ? (bk >= scid::core::A8) : (wk <= scid::core::H1);
                     if (kingOn8th) { ascore += RookOnSeventh; }
                 }
                 if (!inEndgame) {
-                    mscore += RookKingDist[scid::database::square_Distance(sq, enemyKing)];
+                    mscore += RookKingDist[scid::core::square_Distance(sq, enemyKing)];
                 }
                 if (!inMiddlegame) {
-                    scid::database::uint mobility = Pos.Mobility (scid::database::ROOK, c, sq);
+                    scid::core::uint mobility = Pos.Mobility (scid::core::ROOK, c, sq);
                     escore += RookEndgameMobility [mobility];
                 }
-            } else if (ptype == scid::database::KING) {
+            } else if (ptype == scid::core::KING) {
                 if (Pos.GetCount(c) == 1) {
                      // Forcing a lone king to a corner:
                      ascore += 5 * KingEndgameSquare[bonusSq] - 150;
@@ -511,28 +511,28 @@ Engine::Score (int alpha, int beta)
                      mscore += KingSquare[bonusSq];
                      escore += KingEndgameSquare[bonusSq];
                 }
-            } else if (ptype == scid::database::BISHOP) {
+            } else if (ptype == scid::core::BISHOP) {
                 ascore += BishopSquare[bonusSq];
-                ascore += BishopMobility [Pos.Mobility (scid::database::BISHOP, c, sq)];
+                ascore += BishopMobility [Pos.Mobility (scid::core::BISHOP, c, sq)];
                 // Middlegame bonus for diagonal close to enemy king:
                 if (! inEndgame) {
-                    mscore += BishopKingDist[scid::database::square_Distance(sq, enemyKing)];
+                    mscore += BishopKingDist[scid::core::square_Distance(sq, enemyKing)];
                     // Reward a bishop attacking the enemy king vicinity:
-                    int leftdiff = (int)scid::database::square_LeftDiag(sq)
-                                 - (int)scid::database::square_LeftDiag(enemyKing);
-                    int rightdiff = (int)scid::database::square_RightDiag(sq)
-                                  - (int)scid::database::square_RightDiag(enemyKing);
+                    int leftdiff = (int)scid::core::square_LeftDiag(sq)
+                                 - (int)scid::core::square_LeftDiag(enemyKing);
+                    int rightdiff = (int)scid::core::square_RightDiag(sq)
+                                  - (int)scid::core::square_RightDiag(enemyKing);
                     if ((leftdiff >= -2  &&  leftdiff <= 2)
                           ||  (rightdiff >= -2  &&  rightdiff <= 2)) {
                         mscore += BishopEyesKing;
                     }
                 }
-            } else if (ptype == scid::database::KNIGHT) {
+            } else if (ptype == scid::core::KNIGHT) {
                 ascore += KnightSquare[bonusSq];
                 if (!inEndgame) {
-                    mscore += KnightKingDist[scid::database::square_Distance(sq, enemyKing)];
+                    mscore += KnightKingDist[scid::core::square_Distance(sq, enemyKing)];
                     // Bonus for a useful outpost:
-                    if (rank >= scid::database::RANK_4  &&  !scid::database::square_IsEdgeSquare(sq)
+                    if (rank >= scid::core::RANK_4  &&  !scid::core::square_IsEdgeSquare(sq)
                           &&  isOutpost(board, sq, c)) {
                         mscore += KnightOutpost;
                     }
@@ -540,21 +540,21 @@ Engine::Score (int alpha, int beta)
                 if (!inMiddlegame) {
                     // Penalty for knight in an endgame with enemy
                     // pawns on both wings.
-                    scid::database::pieceT enemyPawn = scid::database::piece_Make (enemy, scid::database::PAWN);
-                    scid::database::uint qsidePawns = Pos.FyleCount(enemyPawn, scid::database::A_FYLE)
-                                    + Pos.FyleCount(enemyPawn, scid::database::B_FYLE)
-                                    + Pos.FyleCount(enemyPawn, scid::database::C_FYLE);
-                    scid::database::uint ksidePawns = Pos.FyleCount(enemyPawn, scid::database::F_FYLE)
-                                    + Pos.FyleCount(enemyPawn, scid::database::G_FYLE)
-                                    + Pos.FyleCount(enemyPawn, scid::database::H_FYLE);
+                    scid::core::pieceT enemyPawn = scid::core::piece_Make (enemy, scid::core::PAWN);
+                    scid::core::uint qsidePawns = Pos.FyleCount(enemyPawn, scid::core::A_FYLE)
+                                    + Pos.FyleCount(enemyPawn, scid::core::B_FYLE)
+                                    + Pos.FyleCount(enemyPawn, scid::core::C_FYLE);
+                    scid::core::uint ksidePawns = Pos.FyleCount(enemyPawn, scid::core::F_FYLE)
+                                    + Pos.FyleCount(enemyPawn, scid::core::G_FYLE)
+                                    + Pos.FyleCount(enemyPawn, scid::core::H_FYLE);
                     if (ksidePawns > 0  &&  qsidePawns > 0) {
                         escore -= KnightBadEndgame;
                     }
                 }
-            } else /* (ptype == scid::database::QUEEN) */ {
-                assert(ptype == scid::database::QUEEN);
+            } else /* (ptype == scid::core::QUEEN) */ {
+                assert(ptype == scid::core::QUEEN);
                 ascore += QueenSquare[bonusSq];
-                ascore += QueenKingDist[scid::database::square_Distance(sq, enemyKing)];
+                ascore += QueenKingDist[scid::core::square_Distance(sq, enemyKing)];
             }
         }
         allscore[c] += ascore;
@@ -563,22 +563,22 @@ Engine::Score (int alpha, int beta)
     }
 
     // Now reward rooks on open files or behind passed pawns:
-    scid::database::byte passedPawnFyles =
-        pawnEntry.fyleHasPassers[scid::database::WHITE] | pawnEntry.fyleHasPassers[scid::database::BLACK];
-    for (scid::database::colorT color = scid::database::WHITE; color <= scid::database::BLACK; color++) {
-        scid::database::pieceT rook = scid::database::piece_Make (color, scid::database::ROOK);
+    scid::core::byte passedPawnFyles =
+        pawnEntry.fyleHasPassers[scid::core::WHITE] | pawnEntry.fyleHasPassers[scid::core::BLACK];
+    for (scid::core::colorT color = scid::core::WHITE; color <= scid::core::BLACK; color++) {
+        scid::core::pieceT rook = scid::core::piece_Make (color, scid::core::ROOK);
         if (pieceCount[rook] == 0) { continue; }
-        scid::database::colorT enemy = scid::database::color_Flip (color);
-        scid::database::pieceT ownPawn = scid::database::piece_Make (color, scid::database::PAWN);
-        scid::database::pieceT enemyPawn = scid::database::piece_Make (enemy, scid::database::PAWN);
-        scid::database::fyleT enemyKingFyle = scid::database::square_Fyle (Pos.GetKingSquare(enemy));
+        scid::core::colorT enemy = scid::core::color_Flip (color);
+        scid::core::pieceT ownPawn = scid::core::piece_Make (color, scid::core::PAWN);
+        scid::core::pieceT enemyPawn = scid::core::piece_Make (enemy, scid::core::PAWN);
+        scid::core::fyleT enemyKingFyle = scid::core::square_Fyle (Pos.GetKingSquare(enemy));
         int bonus = 0;
 
-        for (scid::database::fyleT fyle = scid::database::A_FYLE; fyle <= scid::database::H_FYLE; fyle++) {
-            scid::database::uint nRooks = Pos.FyleCount (rook, fyle);
+        for (scid::core::fyleT fyle = scid::core::A_FYLE; fyle <= scid::core::H_FYLE; fyle++) {
+            scid::core::uint nRooks = Pos.FyleCount (rook, fyle);
             if (nRooks == 0) { continue; }
             if (nRooks > 1) { bonus += DoubledRooks; }
-            scid::database::uint passedPawnsOnFyle = passedPawnFyles & (1 << fyle);
+            scid::core::uint passedPawnsOnFyle = passedPawnFyles & (1 << fyle);
             if (passedPawnsOnFyle != 0) {
                 // Rook is on same file as a passed pawn.
                 // TODO: make bonus bigger when rook is *behind* the pawn.
@@ -601,96 +601,96 @@ Engine::Score (int alpha, int beta)
 
     // King safety:
     if (! inEndgame) {
-        if (pieceCount[scid::database::BQ] > 0) {
-            if (Pos.GetCastling(scid::database::WHITE,scid::database::KSIDE)) { midscore[scid::database::WHITE] += CanCastle; }
-            if (Pos.GetCastling(scid::database::WHITE,scid::database::QSIDE)) { midscore[scid::database::WHITE] += CanCastle; }
+        if (pieceCount[scid::core::BQ] > 0) {
+            if (Pos.GetCastling(scid::core::WHITE,scid::core::KSIDE)) { midscore[scid::core::WHITE] += CanCastle; }
+            if (Pos.GetCastling(scid::core::WHITE,scid::core::QSIDE)) { midscore[scid::core::WHITE] += CanCastle; }
         }
-        if (pieceCount[scid::database::WQ] > 0) {
-            if (Pos.GetCastling(scid::database::BLACK,scid::database::KSIDE)) { midscore[scid::database::BLACK] += CanCastle; }
-            if (Pos.GetCastling(scid::database::BLACK,scid::database::QSIDE)) { midscore[scid::database::BLACK] += CanCastle; }
+        if (pieceCount[scid::core::WQ] > 0) {
+            if (Pos.GetCastling(scid::core::BLACK,scid::core::KSIDE)) { midscore[scid::core::BLACK] += CanCastle; }
+            if (Pos.GetCastling(scid::core::BLACK,scid::core::QSIDE)) { midscore[scid::core::BLACK] += CanCastle; }
         }
         // Bonus for pawn cover in front of a castled king. Actually we
         // also include bishops because they are important for defence.
-        if (scid::database::square_Rank(wk) == scid::database::RANK_1  &&  wk != scid::database::D1  &&  wk != scid::database::E1) {
-            scid::database::uint nCoverPawns = 0;
-            scid::database::pieceT p = board[scid::database::square_Move (wk, scid::database::UP_LEFT)];
-            if (p == scid::database::WP  ||  p == scid::database::WB) { nCoverPawns++; }
-            p = board[scid::database::square_Move (wk, scid::database::UP)];
-            if (p == scid::database::WP  ||  p == scid::database::WB) { nCoverPawns++; }
-            p = board[scid::database::square_Move (wk, scid::database::UP_RIGHT)];
-            if (p == scid::database::WP  ||  p == scid::database::WB) { nCoverPawns++; }
-            midscore[scid::database::WHITE] += CoverPawn * nCoverPawns;
-            if ((wk == scid::database::F1  ||  wk == scid::database::G1)
-                 && (board[scid::database::G1] == scid::database::WR || board[scid::database::H1] == scid::database::WR || board[scid::database::H2] == scid::database::WR)) {
-                midscore[scid::database::WHITE] -= KingTrapsRook;
+        if (scid::core::square_Rank(wk) == scid::core::RANK_1  &&  wk != scid::core::D1  &&  wk != scid::core::E1) {
+            scid::core::uint nCoverPawns = 0;
+            scid::core::pieceT p = board[scid::core::square_Move (wk, scid::core::UP_LEFT)];
+            if (p == scid::core::WP  ||  p == scid::core::WB) { nCoverPawns++; }
+            p = board[scid::core::square_Move (wk, scid::core::UP)];
+            if (p == scid::core::WP  ||  p == scid::core::WB) { nCoverPawns++; }
+            p = board[scid::core::square_Move (wk, scid::core::UP_RIGHT)];
+            if (p == scid::core::WP  ||  p == scid::core::WB) { nCoverPawns++; }
+            midscore[scid::core::WHITE] += CoverPawn * nCoverPawns;
+            if ((wk == scid::core::F1  ||  wk == scid::core::G1)
+                 && (board[scid::core::G1] == scid::core::WR || board[scid::core::H1] == scid::core::WR || board[scid::core::H2] == scid::core::WR)) {
+                midscore[scid::core::WHITE] -= KingTrapsRook;
             }
-            if ((wk == scid::database::C1  ||  wk == scid::database::B1)
-                 && (board[scid::database::B1] == scid::database::WR || board[scid::database::A1] == scid::database::WR || board[scid::database::A2] == scid::database::WR)) {
-                midscore[scid::database::WHITE] -= KingTrapsRook;
+            if ((wk == scid::core::C1  ||  wk == scid::core::B1)
+                 && (board[scid::core::B1] == scid::core::WR || board[scid::core::A1] == scid::core::WR || board[scid::core::A2] == scid::core::WR)) {
+                midscore[scid::core::WHITE] -= KingTrapsRook;
             }
         }
-        if (scid::database::square_Rank(bk) == scid::database::RANK_8  &&  bk != scid::database::D8  &&  bk != scid::database::E8) {
-            scid::database::uint nCoverPawns = 0;
-            scid::database::pieceT p = board[scid::database::square_Move (bk, scid::database::DOWN_LEFT)];
-            if (p == scid::database::BP  ||  p == scid::database::BB) { nCoverPawns++; }
-            p = board[scid::database::square_Move (bk, scid::database::DOWN)];
-            if (p == scid::database::BP  ||  p == scid::database::BB) { nCoverPawns++; }
-            p = board[scid::database::square_Move (bk, scid::database::DOWN_RIGHT)];
-            if (p == scid::database::BP  ||  p == scid::database::BB) { nCoverPawns++; }
-            midscore[scid::database::BLACK] += CoverPawn * nCoverPawns;
-            if ((bk == scid::database::F8  ||  bk == scid::database::G8)
-                 && (board[scid::database::G8] == scid::database::BR || board[scid::database::H8] == scid::database::BR || board[scid::database::H7] == scid::database::BR)) {
-                midscore[scid::database::BLACK] -= KingTrapsRook;
+        if (scid::core::square_Rank(bk) == scid::core::RANK_8  &&  bk != scid::core::D8  &&  bk != scid::core::E8) {
+            scid::core::uint nCoverPawns = 0;
+            scid::core::pieceT p = board[scid::core::square_Move (bk, scid::core::DOWN_LEFT)];
+            if (p == scid::core::BP  ||  p == scid::core::BB) { nCoverPawns++; }
+            p = board[scid::core::square_Move (bk, scid::core::DOWN)];
+            if (p == scid::core::BP  ||  p == scid::core::BB) { nCoverPawns++; }
+            p = board[scid::core::square_Move (bk, scid::core::DOWN_RIGHT)];
+            if (p == scid::core::BP  ||  p == scid::core::BB) { nCoverPawns++; }
+            midscore[scid::core::BLACK] += CoverPawn * nCoverPawns;
+            if ((bk == scid::core::F8  ||  bk == scid::core::G8)
+                 && (board[scid::core::G8] == scid::core::BR || board[scid::core::H8] == scid::core::BR || board[scid::core::H7] == scid::core::BR)) {
+                midscore[scid::core::BLACK] -= KingTrapsRook;
             }
-            if ((bk == scid::database::C8  ||  bk == scid::database::B8)
-                 && (board[scid::database::B8] == scid::database::BR || board[scid::database::A8] == scid::database::BR || board[scid::database::A7] == scid::database::BR)) {
-                midscore[scid::database::BLACK] -= KingTrapsRook;
+            if ((bk == scid::core::C8  ||  bk == scid::core::B8)
+                 && (board[scid::core::B8] == scid::core::BR || board[scid::core::A8] == scid::core::BR || board[scid::core::A7] == scid::core::BR)) {
+                midscore[scid::core::BLACK] -= KingTrapsRook;
             }
         }
 
         // Pawn centre:
-        if ((board[scid::database::D4] == scid::database::WP  ||  board[scid::database::D5] == scid::database::WP)
-               && (board[scid::database::E4] == scid::database::WP  ||  board[scid::database::E5] == scid::database::WP)) {
-            midscore[scid::database::WHITE] += CentralPawnPair;
+        if ((board[scid::core::D4] == scid::core::WP  ||  board[scid::core::D5] == scid::core::WP)
+               && (board[scid::core::E4] == scid::core::WP  ||  board[scid::core::E5] == scid::core::WP)) {
+            midscore[scid::core::WHITE] += CentralPawnPair;
         }
-        if ((board[scid::database::D4] == scid::database::BP  ||  board[scid::database::D5] == scid::database::BP)
-                && (board[scid::database::E4] == scid::database::BP  ||  board[scid::database::E5] == scid::database::BP)) {
-            midscore[scid::database::BLACK] += CentralPawnPair;
+        if ((board[scid::core::D4] == scid::core::BP  ||  board[scid::core::D5] == scid::core::BP)
+                && (board[scid::core::E4] == scid::core::BP  ||  board[scid::core::E5] == scid::core::BP)) {
+            midscore[scid::core::BLACK] += CentralPawnPair;
         }
 
         // Minor pieces developed:
-        if (board[scid::database::B1] != scid::database::WN) { midscore[scid::database::WHITE] += Development; }
-        if (board[scid::database::C1] != scid::database::WB) { midscore[scid::database::WHITE] += Development; }
-        if (board[scid::database::F1] != scid::database::WB) { midscore[scid::database::WHITE] += Development; }
-        if (board[scid::database::G1] != scid::database::WN) { midscore[scid::database::WHITE] += Development; }
-        if (board[scid::database::B8] != scid::database::BN) { midscore[scid::database::BLACK] += Development; }
-        if (board[scid::database::C8] != scid::database::BB) { midscore[scid::database::BLACK] += Development; }
-        if (board[scid::database::F8] != scid::database::BB) { midscore[scid::database::BLACK] += Development; }
-        if (board[scid::database::G8] != scid::database::BN) { midscore[scid::database::BLACK] += Development; }
+        if (board[scid::core::B1] != scid::core::WN) { midscore[scid::core::WHITE] += Development; }
+        if (board[scid::core::C1] != scid::core::WB) { midscore[scid::core::WHITE] += Development; }
+        if (board[scid::core::F1] != scid::core::WB) { midscore[scid::core::WHITE] += Development; }
+        if (board[scid::core::G1] != scid::core::WN) { midscore[scid::core::WHITE] += Development; }
+        if (board[scid::core::B8] != scid::core::BN) { midscore[scid::core::BLACK] += Development; }
+        if (board[scid::core::C8] != scid::core::BB) { midscore[scid::core::BLACK] += Development; }
+        if (board[scid::core::F8] != scid::core::BB) { midscore[scid::core::BLACK] += Development; }
+        if (board[scid::core::G8] != scid::core::BN) { midscore[scid::core::BLACK] += Development; }
     }
 
     // Work out the middlegame and endgame scores including pawn structure
     // evaluation, with a larger pawn structure weight in endgames:
-    int baseScore = allscore[scid::database::WHITE] - allscore[scid::database::BLACK];
-    int mgScore = baseScore + midscore[scid::database::WHITE] - midscore[scid::database::BLACK];
-    int egScore = baseScore + endscore[scid::database::WHITE] - endscore[scid::database::BLACK];
+    int baseScore = allscore[scid::core::WHITE] - allscore[scid::core::BLACK];
+    int mgScore = baseScore + midscore[scid::core::WHITE] - midscore[scid::core::BLACK];
+    int egScore = baseScore + endscore[scid::core::WHITE] - endscore[scid::core::BLACK];
     mgScore += pawnEntry.score;
     egScore += (pawnEntry.score * 5) / 4;
 
     // Scale down the endgame score for bishops of opposite colors, if both
     // sides have the same non-pawn material:
-    if (pieceCount[scid::database::WB] == 1  &&  pieceCount[scid::database::BB] == 1) {
-        if (Pos.SquareColorCount(scid::database::WB,scid::database::WHITE) != Pos.SquareColorCount(scid::database::BB,scid::database::WHITE)) {
-            if (pieceCount[scid::database::WQ] == pieceCount[scid::database::BQ]
-                  && pieceCount[scid::database::WR] == pieceCount[scid::database::BR]
-                  && pieceCount[scid::database::WN] == pieceCount[scid::database::BN]) {
+    if (pieceCount[scid::core::WB] == 1  &&  pieceCount[scid::core::BB] == 1) {
+        if (Pos.SquareColorCount(scid::core::WB,scid::core::WHITE) != Pos.SquareColorCount(scid::core::BB,scid::core::WHITE)) {
+            if (pieceCount[scid::core::WQ] == pieceCount[scid::core::BQ]
+                  && pieceCount[scid::core::WR] == pieceCount[scid::core::BR]
+                  && pieceCount[scid::core::WN] == pieceCount[scid::core::BN]) {
                 egScore = egScore * 5 / 8;
             }
         }
     }
 
     // Negate scores for Black to move:
-    if (toMove == scid::database::BLACK) {
+    if (toMove == scid::core::BLACK) {
         mgScore = -mgScore;
         egScore = -egScore;
     }
@@ -710,8 +710,8 @@ Engine::Score (int alpha, int beta)
     return finalScore;
 }
 
-static scid::database::uint nPawnHashProbes = 0;
-static scid::database::uint nPawnHashHits = 0;
+static scid::core::uint nPawnHashProbes = 0;
+static scid::core::uint nPawnHashHits = 0;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Engine::ScorePawnStructure
@@ -721,25 +721,25 @@ void
 Engine::ScorePawnStructure (pawnTableEntryT * pawnEntry)
 {
     nPawnHashProbes++;
-    scid::database::uint pawnhash = Pos.PawnHashValue();
+    scid::core::uint pawnhash = Pos.PawnHashValue();
     // We only use 32-bit hash values, so without further safety checks
     // the rate of false hits in the pawn hash table could be high.
     // To reduce the chance of false hits, we compute an extra signature.
-    scid::database::uint sig = (Pos.SquareColorCount(scid::database::WP,scid::database::WHITE) << 12)
-             | (Pos.SquareColorCount(scid::database::BP,scid::database::BLACK) << 8)
-             | (Pos.PieceCount(scid::database::WP) << 4) | Pos.PieceCount(scid::database::BP);
+    scid::core::uint sig = (Pos.SquareColorCount(scid::core::WP,scid::core::WHITE) << 12)
+             | (Pos.SquareColorCount(scid::core::BP,scid::core::BLACK) << 8)
+             | (Pos.PieceCount(scid::core::WP) << 4) | Pos.PieceCount(scid::core::BP);
     pawnEntry->pawnhash = pawnhash;
     pawnEntry->sig = sig;
-    pawnEntry->fyleHasPassers[scid::database::WHITE] = 0;
-    pawnEntry->fyleHasPassers[scid::database::BLACK] = 0;
+    pawnEntry->fyleHasPassers[scid::core::WHITE] = 0;
+    pawnEntry->fyleHasPassers[scid::core::BLACK] = 0;
 
-    bool inPawnEndgame = (Pos.NumNonPawns(scid::database::WHITE) == 1
-                            &&  Pos.NumNonPawns(scid::database::BLACK) == 1);
+    bool inPawnEndgame = (Pos.NumNonPawns(scid::core::WHITE) == 1
+                            &&  Pos.NumNonPawns(scid::core::BLACK) == 1);
     pawnTableEntryT * hashEntry = NULL;
 
     // Check for a pawn hash table hit, but not in pawn endings:
     if (!inPawnEndgame) {
-        scid::database::uint hashSlot = pawnhash % PawnTableSize;
+        scid::core::uint hashSlot = pawnhash % PawnTableSize;
         hashEntry = &(PawnTable[hashSlot]);
         if (pawnhash == hashEntry->pawnhash  &&  sig == hashEntry->sig) {
             nPawnHashHits++;
@@ -752,36 +752,36 @@ Engine::ScorePawnStructure (pawnTableEntryT * pawnEntry)
     // each file. Indexes 1-8 are used while 0 and 9 are empty dummy files
     // added so that even the a and h files have two adjacent files, making
     // isolated/passed pawn calculation easier.
-    scid::database::uint pawnFiles[2][10] = { {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    scid::core::uint pawnFiles[2][10] = { {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
                               {0, 0, 0, 0, 0, 0, 0, 0, 0, 0} };
     // firstRank stores the rank of the leading pawn on each file.
-    scid::database::uint firstRank[2][10] = { {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    scid::core::uint firstRank[2][10] = { {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
                               {0, 0, 0, 0, 0, 0, 0, 0, 0, 0} };
     // lastRank stores the rank of the rearmost pawn on each file.
-    scid::database::uint lastRank[2][10]  = { {7, 7, 7, 7, 7, 7, 7, 7, 7, 7},
+    scid::core::uint lastRank[2][10]  = { {7, 7, 7, 7, 7, 7, 7, 7, 7, 7},
                               {7, 7, 7, 7, 7, 7, 7, 7, 7, 7} };
 
     int pawnScore[2] = {0, 0};
     int longVsShortScore[2] = {0, 0};  // Pawn storm bonuses, O-O-O vs O-O
     int shortVsLongScore[2] = {0, 0};  // Pawn storm bonuses, O-O vs O-O-O
-    scid::database::rankT bestRacingPawn[2] = {scid::database::RANK_1, scid::database::RANK_1};
+    scid::core::rankT bestRacingPawn[2] = {scid::core::RANK_1, scid::core::RANK_1};
 
-    for (scid::database::fyleT f = scid::database::A_FYLE; f <= scid::database::H_FYLE; f++) {
-        pawnFiles[scid::database::WHITE][f+1] = Pos.FyleCount (scid::database::WP, f);
-        pawnFiles[scid::database::BLACK][f+1] = Pos.FyleCount (scid::database::BP, f);
+    for (scid::core::fyleT f = scid::core::A_FYLE; f <= scid::core::H_FYLE; f++) {
+        pawnFiles[scid::core::WHITE][f+1] = Pos.FyleCount (scid::core::WP, f);
+        pawnFiles[scid::core::BLACK][f+1] = Pos.FyleCount (scid::core::BP, f);
     }
 
-    for (scid::database::squareT sq = scid::database::A1; sq <= scid::database::H8; ++sq) {
-        scid::database::pieceT piece = Pos.GetPiece(sq);
-        if (scid::database::piece_Type(piece) == scid::database::PAWN) {
-            scid::database::colorT c = scid::database::piece_Color_NotEmpty(piece);
-            scid::database::squareT wsq = (c == scid::database::WHITE) ? sq : scid::database::square_FlipRank(sq);
-            scid::database::squareT bonusSq = scid::database::square_FlipRank(wsq);
+    for (scid::core::squareT sq = scid::core::A1; sq <= scid::core::H8; ++sq) {
+        scid::core::pieceT piece = Pos.GetPiece(sq);
+        if (scid::core::piece_Type(piece) == scid::core::PAWN) {
+            scid::core::colorT c = scid::core::piece_Color_NotEmpty(piece);
+            scid::core::squareT wsq = (c == scid::core::WHITE) ? sq : scid::core::square_FlipRank(sq);
+            scid::core::squareT bonusSq = scid::core::square_FlipRank(wsq);
             pawnScore[c] += PawnSquare[bonusSq];
             longVsShortScore[c] += PawnStorm[bonusSq];
-            shortVsLongScore[c] += PawnStorm[scid::database::square_FlipFyle(bonusSq)];
-            scid::database::uint fyle = scid::database::square_Fyle(wsq) + 1;
-            scid::database::uint rank = scid::database::square_Rank(wsq);
+            shortVsLongScore[c] += PawnStorm[scid::core::square_FlipFyle(bonusSq)];
+            scid::core::uint fyle = scid::core::square_Fyle(wsq) + 1;
+            scid::core::uint rank = scid::core::square_Rank(wsq);
             if (rank > firstRank[c][fyle]) {
                 firstRank[c][fyle] = rank;
             }
@@ -791,16 +791,16 @@ Engine::ScorePawnStructure (pawnTableEntryT * pawnEntry)
         }
     }
 
-    scid::database::byte fyleHasPassers[2] = {0, 0};
+    scid::core::byte fyleHasPassers[2] = {0, 0};
 
-    for (scid::database::colorT color = scid::database::WHITE; color <= scid::database::BLACK; color++) {
-        if (Pos.PieceCount(scid::database::piece_Make(color,scid::database::PAWN)) == 0) { continue; }
-        scid::database::colorT enemy = scid::database::color_Flip(color);
+    for (scid::core::colorT color = scid::core::WHITE; color <= scid::core::BLACK; color++) {
+        if (Pos.PieceCount(scid::core::piece_Make(color,scid::core::PAWN)) == 0) { continue; }
+        scid::core::colorT enemy = scid::core::color_Flip(color);
         
-        for (scid::database::uint fyle=1; fyle <= 8; fyle++) {
-            scid::database::uint pawnCount = pawnFiles[color][fyle];
+        for (scid::core::uint fyle=1; fyle <= 8; fyle++) {
+            scid::core::uint pawnCount = pawnFiles[color][fyle];
             if (pawnCount == 0) { continue; }
-            scid::database::uint pawnRank = firstRank[color][fyle];
+            scid::core::uint pawnRank = firstRank[color][fyle];
 
             // Doubled pawn penalty:
             if (pawnCount > 1) {
@@ -849,23 +849,23 @@ Engine::ScorePawnStructure (pawnTableEntryT * pawnEntry)
 
                 // Give a big bonus for a connected passed pawn on
                 // the 6th or 7th rank.
-                if (pawnRank >= scid::database::RANK_6  &&  pawnFiles[color][fyle-1] > 0
-                      &&  firstRank[color][fyle-1] >= scid::database::RANK_6) {
+                if (pawnRank >= scid::core::RANK_6  &&  pawnFiles[color][fyle-1] > 0
+                      &&  firstRank[color][fyle-1] >= scid::core::RANK_6) {
                     // pawnScore[color] += some_bonus...;
                 }
                 
                 // Check for passed pawn races in pawn endgames:
                 if (inPawnEndgame) {
                     // Check if the enemy king is outside the square:
-                    scid::database::squareT kingSq = Pos.GetKingSquare(scid::database::color_Flip(color));
-                    scid::database::squareT pawnSq = scid::database::square_Make(fyle-1, pawnRank);
-                    scid::database::squareT promoSq = scid::database::square_Make(fyle-1, scid::database::RANK_8);
-                    if (color == scid::database::BLACK) {
-                        pawnSq = scid::database::square_FlipRank(pawnSq);
-                        promoSq = scid::database::square_FlipRank(promoSq);
+                    scid::core::squareT kingSq = Pos.GetKingSquare(scid::core::color_Flip(color));
+                    scid::core::squareT pawnSq = scid::core::square_Make(fyle-1, pawnRank);
+                    scid::core::squareT promoSq = scid::core::square_Make(fyle-1, scid::core::RANK_8);
+                    if (color == scid::core::BLACK) {
+                        pawnSq = scid::core::square_FlipRank(pawnSq);
+                        promoSq = scid::core::square_FlipRank(promoSq);
                     }
-                    scid::database::uint kingDist = scid::database::square_Distance(kingSq, promoSq);
-                    scid::database::uint pawnDist = scid::database::square_Distance(pawnSq, promoSq);
+                    scid::core::uint kingDist = scid::core::square_Distance(kingSq, promoSq);
+                    scid::core::uint pawnDist = scid::core::square_Distance(pawnSq, promoSq);
                     if (color != Pos.GetToMove()) { pawnDist++; }
                     if (pawnDist < kingDist) {
                         bestRacingPawn[color] = pawnRank;
@@ -875,12 +875,12 @@ Engine::ScorePawnStructure (pawnTableEntryT * pawnEntry)
         }
     }
 
-    int score = pawnScore[scid::database::WHITE] - pawnScore[scid::database::BLACK];
+    int score = pawnScore[scid::core::WHITE] - pawnScore[scid::core::BLACK];
     pawnEntry->score = score;
-    pawnEntry->fyleHasPassers[scid::database::WHITE] = fyleHasPassers[scid::database::WHITE];
-    pawnEntry->fyleHasPassers[scid::database::BLACK] = fyleHasPassers[scid::database::BLACK];
-    pawnEntry->wLongbShortScore = longVsShortScore[scid::database::WHITE] - shortVsLongScore[scid::database::BLACK];
-    pawnEntry->wShortbLongScore = shortVsLongScore[scid::database::WHITE] - longVsShortScore[scid::database::BLACK];
+    pawnEntry->fyleHasPassers[scid::core::WHITE] = fyleHasPassers[scid::core::WHITE];
+    pawnEntry->fyleHasPassers[scid::core::BLACK] = fyleHasPassers[scid::core::BLACK];
+    pawnEntry->wLongbShortScore = longVsShortScore[scid::core::WHITE] - shortVsLongScore[scid::core::BLACK];
+    pawnEntry->wShortbLongScore = shortVsLongScore[scid::core::WHITE] - longVsShortScore[scid::core::BLACK];
 
     // If not a pawn endgame, store the score in the pawn hash table:
     if (!inPawnEndgame) {
@@ -894,9 +894,9 @@ Engine::ScorePawnStructure (pawnTableEntryT * pawnEntry)
     // enemy pawn in a race (where kings cannot catch the pawns),
     // give a huge bonus since it almost certainly wins:
 
-    if (bestRacingPawn[scid::database::WHITE] > bestRacingPawn[scid::database::BLACK] + 1) {
+    if (bestRacingPawn[scid::core::WHITE] > bestRacingPawn[scid::core::BLACK] + 1) {
         pawnEntry->score += RookValue;
-    } else if (bestRacingPawn[scid::database::BLACK] > bestRacingPawn[scid::database::WHITE] + 1) {
+    } else if (bestRacingPawn[scid::core::BLACK] > bestRacingPawn[scid::core::WHITE] + 1) {
         pawnEntry->score -= RookValue;
     }
 }
@@ -923,7 +923,7 @@ Engine::IsGettingMatedScore (int score)
 // Engine::DoMove
 //   Make the specified move in a search.
 inline void
-Engine::DoMove (scid::database::ScoredMove * sm) {
+Engine::DoMove (scid::core::ScoredMove * sm) {
     PushRepeat(&Pos);
     Pos.DoSimpleMove(sm);
     Ply++;
@@ -933,7 +933,7 @@ Engine::DoMove (scid::database::ScoredMove * sm) {
 // Engine::UndoMove
 //    Take back the specified move in a search.
 inline void
-Engine::UndoMove (scid::database::ScoredMove * sm) {
+Engine::UndoMove (scid::core::ScoredMove * sm) {
     PopRepeat();
     Pos.UndoSimpleMove(*sm);
     Ply--;
@@ -943,7 +943,7 @@ Engine::UndoMove (scid::database::ScoredMove * sm) {
 // Engine::PushRepeat
 //    Remember the current position on the repetition stack.
 inline void
-Engine::PushRepeat (scid::database::Position * pos)
+Engine::PushRepeat (scid::core::Position * pos)
 {
     repeatT * rep = &(RepStack[RepStackSize]);
     rep->hash = pos->HashValue();
@@ -970,14 +970,14 @@ Engine::PopRepeat (void)
 bool
 Engine::NoMatingMaterial (void)
 {
-    scid::database::uint npieces = Pos.TotalMaterial();
+    scid::core::uint npieces = Pos.TotalMaterial();
 
     // Check for K vs K, K+N vs K, and K+B vs K:
     if (npieces <= 2) { return true; }
     if (npieces == 3) {
-        const scid::database::byte* material = Pos.GetMaterial();
-        if (material[scid::database::WB] == 1  ||  material[scid::database::WN] == 1) { return true; }
-        if (material[scid::database::BB] == 1  ||  material[scid::database::BN] == 1) { return true; }
+        const scid::core::byte* material = Pos.GetMaterial();
+        if (material[scid::core::WB] == 1  ||  material[scid::core::WN] == 1) { return true; }
+        if (material[scid::core::BB] == 1  ||  material[scid::core::BN] == 1) { return true; }
     }
     return false;
 }
@@ -991,12 +991,12 @@ Engine::FiftyMoveDraw (void)
 {
     if (RepStackSize < 100) { return false; }
 
-    scid::database::uint pawnhash = Pos.PawnHashValue();
-    scid::database::uint npieces = Pos.TotalMaterial();
+    scid::core::uint pawnhash = Pos.PawnHashValue();
+    scid::core::uint npieces = Pos.TotalMaterial();
 
     // Go back through the stack of hash values:
-    scid::database::uint plycount = 0;
-    for (scid::database::uint i = RepStackSize; i > 0; i--) {
+    scid::core::uint plycount = 0;
+    for (scid::core::uint i = RepStackSize; i > 0; i--) {
         repeatT * rep = &(RepStack[i-1]);
         // Stop at an irreversible move:
         if (npieces != rep->npieces) { break; }
@@ -1012,17 +1012,17 @@ Engine::FiftyMoveDraw (void)
 //   Returns the number if times the current position has been reached,
 //   with the same side to move, castling and en passant settings.
 //   The current occurrence is included in the returned count.
-scid::database::uint
+scid::core::uint
 Engine::RepeatedPosition (void)
 {
-    scid::database::uint hash = Pos.HashValue();
-    scid::database::uint pawnhash = Pos.PawnHashValue();
-    scid::database::uint npieces = Pos.TotalMaterial();
-    scid::database::colorT stm = Pos.GetToMove();
+    scid::core::uint hash = Pos.HashValue();
+    scid::core::uint pawnhash = Pos.PawnHashValue();
+    scid::core::uint npieces = Pos.TotalMaterial();
+    scid::core::colorT stm = Pos.GetToMove();
 
     // Go back through the stack of hash values detecting repetition:
-    scid::database::uint ntimes = 1;
-    for (scid::database::uint i = RepStackSize; i > 0; i--) {
+    scid::core::uint ntimes = 1;
+    for (scid::core::uint i = RepStackSize; i > 0; i--) {
         repeatT * rep = &(RepStack[i-1]);
         // Stop at an irreversible move:
         if (npieces != rep->npieces) { break; }
@@ -1037,10 +1037,10 @@ Engine::RepeatedPosition (void)
 // Engine::SetHashTableKilobytes
 //   Set the transposition table size in kilobytes.
 void
-Engine::SetHashTableKilobytes (scid::database::uint size)
+Engine::SetHashTableKilobytes (scid::core::uint size)
 {
     // Compute the number of entries, which must be even:
-    scid::database::uint bytes = size * 1024;
+    scid::core::uint bytes = size * 1024;
 	if(TranTableSize != bytes / sizeof(transTableEntryT))
 	{
       TranTableSize = bytes / sizeof(transTableEntryT);
@@ -1055,10 +1055,10 @@ Engine::SetHashTableKilobytes (scid::database::uint size)
 // Engine::SetPawnTableKilobytes
 //   Set the pawn structure hash table size in kilobytes.
 void
-Engine::SetPawnTableKilobytes (scid::database::uint size)
+Engine::SetPawnTableKilobytes (scid::core::uint size)
 {
     // Compute the number of entries:
-    scid::database::uint bytes = size * 1024;
+    scid::core::uint bytes = size * 1024;
 	if(PawnTableSize != bytes / sizeof(pawnTableEntryT))
 	{
       PawnTableSize = bytes / sizeof(pawnTableEntryT);
@@ -1074,7 +1074,7 @@ Engine::SetPawnTableKilobytes (scid::database::uint size)
 void
 Engine::ClearHashTable (void)
 {
-    for (scid::database::uint i = 0; i < TranTableSize; i++) {
+    for (scid::core::uint i = 0; i < TranTableSize; i++) {
         TranTable[i].flags = SCORE_NONE;
     }
 }
@@ -1086,7 +1086,7 @@ Engine::ClearHashTable (void)
 void
 Engine::ClearPawnTable (void)
 {
-    for (scid::database::uint i = 0; i < PawnTableSize; i++) {
+    for (scid::core::uint i = 0; i < PawnTableSize; i++) {
         PawnTable[i].pawnhash = 0;
     }
 }
@@ -1096,33 +1096,33 @@ Engine::ClearPawnTable (void)
 //   Helpers for packing/extracting transposition table entry fields.
 
 inline void tte_SetFlags (transTableEntryT * tte, scoreFlagT sflag,
-                          scid::database::colorT stm, scid::database::byte castling, bool isOnlyMove)
+                          scid::core::colorT stm, scid::core::byte castling, bool isOnlyMove)
 { tte->flags = (castling << 4) | (stm << 3) | (isOnlyMove ? 4 : 0) | sflag; }
 
 inline scoreFlagT tte_ScoreFlag (transTableEntryT * tte)
 {  return (tte->flags & 7);  }
 
-inline scid::database::colorT tte_SideToMove (transTableEntryT * tte)
+inline scid::core::colorT tte_SideToMove (transTableEntryT * tte)
 {  return ((tte->flags >> 3) & 1);  }
 
-inline scid::database::byte tte_Castling (transTableEntryT * tte)
+inline scid::core::byte tte_Castling (transTableEntryT * tte)
 {  return (tte->flags >> 4);  }
 
 inline bool tte_IsOnlyMove (transTableEntryT * tte)
 {  return (((tte->flags >> 2) & 1) == 1); }
 
-inline void tte_SetBestMove (transTableEntryT * tte, scid::database::ScoredMove * bestMove)
+inline void tte_SetBestMove (transTableEntryT * tte, scid::core::ScoredMove * bestMove)
 {
-    assert(bestMove->from <= scid::database::H8  &&  bestMove->to <= scid::database::H8);
-    scid::database::ushort bm = bestMove->from;
+    assert(bestMove->from <= scid::core::H8  &&  bestMove->to <= scid::core::H8);
+    scid::core::ushort bm = bestMove->from;
     bm <<= 6; bm |= bestMove->to;
     bm <<= 4; bm |= bestMove->promote;
     tte->bestMove = bm;
 }
 
-inline void tte_GetBestMove (transTableEntryT * tte, scid::database::ScoredMove * bestMove)
+inline void tte_GetBestMove (transTableEntryT * tte, scid::core::ScoredMove * bestMove)
 {
-    scid::database::ushort bm = tte->bestMove;
+    scid::core::ushort bm = tte->bestMove;
     bestMove->promote = bm & 15; bm >>= 4;
     bestMove->to = bm & 63; bm >>= 6;
     bestMove->from = bm & 63;
@@ -1133,7 +1133,7 @@ inline void tte_GetBestMove (transTableEntryT * tte, scid::database::ScoredMove 
 //   Store the score for the current position in the transposition table.
 void
 Engine::StoreHash (int depth, scoreFlagT ttFlag, int score,
-                   scid::database::ScoredMove * bestMove, bool isOnlyMove)
+                   scid::core::ScoredMove * bestMove, bool isOnlyMove)
 {
     if (bestMove && Pos.isChess960() && bestMove->isCastle())
         return;
@@ -1141,16 +1141,16 @@ Engine::StoreHash (int depth, scoreFlagT ttFlag, int score,
     if (TranTableSize == 0) { return; }
     assert(ttFlag <= SCORE_UPPER);
 
-    scid::database::uint hash = Pos.HashValue();
-    scid::database::uint pawnhash = Pos.PawnHashValue();
-    scid::database::colorT stm = Pos.GetToMove();
-    if (stm == scid::database::BLACK) { hash = ~hash; }
+    scid::core::uint hash = Pos.HashValue();
+    scid::core::uint pawnhash = Pos.PawnHashValue();
+    scid::core::colorT stm = Pos.GetToMove();
+    if (stm == scid::core::BLACK) { hash = ~hash; }
 
     // Find the least useful (lowest depth) of two entries to replace
     // but replace the previous entry for this position if it exists
     // and use an empty hash table entry if possible:
 
-    scid::database::uint ttSlot = (hash % TranTableSize) & 0xFFFFFFFEU;
+    scid::core::uint ttSlot = (hash % TranTableSize) & 0xFFFFFFFEU;
     assert(ttSlot < TranTableSize - 1);
     transTableEntryT * ttEntry1 = &(TranTable[ttSlot]);
     transTableEntryT * ttEntry2 = &(TranTable[ttSlot + 1]);
@@ -1216,9 +1216,9 @@ Engine::StoreHash (int depth, scoreFlagT ttFlag, int score,
     ttEntry->sequence = TranTableSequence;
     ttEntry->bestMove = 0;
     if (bestMove != NULL) {
-        assert(bestMove->movingPiece != scid::database::EMPTY);
-        assert(scid::database::piece_Color(bestMove->movingPiece) == stm);
-        assert(bestMove->from <= scid::database::H8);
+        assert(bestMove->movingPiece != scid::core::EMPTY);
+        assert(scid::core::piece_Color(bestMove->movingPiece) == stm);
+        assert(bestMove->from <= scid::core::H8);
         tte_SetBestMove (ttEntry, bestMove);
     }
     ttEntry->enpassant = Pos.GetEPTarget();
@@ -1229,25 +1229,25 @@ Engine::StoreHash (int depth, scoreFlagT ttFlag, int score,
 //    Probe the transposition table for the current position.
 //
 scoreFlagT
-Engine::ProbeHash (int depth, int * score, scid::database::ScoredMove * bestMove, bool * isOnlyMove)
+Engine::ProbeHash (int depth, int * score, scid::core::ScoredMove * bestMove, bool * isOnlyMove)
 {
     // Clear the best move:
-    if (bestMove != NULL) { bestMove->from = bestMove->to = scid::database::NULL_SQUARE; }
+    if (bestMove != NULL) { bestMove->from = bestMove->to = scid::core::NULL_SQUARE; }
 
     if (TranTableSize == 0) { return SCORE_NONE; }
 
-    scid::database::uint hash = Pos.HashValue();
-    scid::database::colorT stm = Pos.GetToMove();
-    if (stm == scid::database::BLACK) { hash = ~hash; }
+    scid::core::uint hash = Pos.HashValue();
+    scid::core::colorT stm = Pos.GetToMove();
+    if (stm == scid::core::BLACK) { hash = ~hash; }
 
     // Examine the corresponding pair of table entries:
-    scid::database::uint ttSlot = (hash % TranTableSize) & 0xFFFFFFFEU;
+    scid::core::uint ttSlot = (hash % TranTableSize) & 0xFFFFFFFEU;
     assert(ttSlot+1 < TranTableSize);
     transTableEntryT * ttEntry = &(TranTable[ttSlot]);
     if (ttEntry->hash != hash) { ttEntry++; }
     if (ttEntry->hash != hash) { return SCORE_NONE; }
     if (tte_ScoreFlag(ttEntry) == SCORE_NONE) { return SCORE_NONE; }
-    scid::database::uint pawnhash = Pos.PawnHashValue();
+    scid::core::uint pawnhash = Pos.PawnHashValue();
     if (ttEntry->pawnhash != pawnhash) { return SCORE_NONE; }
     if (tte_SideToMove(ttEntry) != stm) { return SCORE_NONE; }
     if (tte_Castling(ttEntry) != Pos.GetCastlingFlags()) { return SCORE_NONE; }
@@ -1257,7 +1257,7 @@ Engine::ProbeHash (int depth, int * score, scid::database::ScoredMove * bestMove
     // sufficient, because it will be useful for move ordering anyway.
     if (bestMove != NULL  &&  ttEntry->bestMove != 0) {
         tte_GetBestMove (ttEntry, bestMove);
-        const scid::database::pieceT* board = Pos.GetBoard();
+        const scid::core::pieceT* board = Pos.GetBoard();
         bestMove->movingPiece = board[bestMove->from];
     }
     if (isOnlyMove != NULL) {
@@ -1275,15 +1275,15 @@ Engine::ProbeHash (int depth, int * score, scid::database::ScoredMove * bestMove
     return tte_ScoreFlag(ttEntry);
 }
 
-static scid::database::uint nFailHigh = 0;
-static scid::database::uint nFailHighFirstMove = 0;
+static scid::core::uint nFailHigh = 0;
+static scid::core::uint nFailHighFirstMove = 0;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Engine::SetPosition
 //   Set the current position. If the new position parameter
 //   is NULL, the standard starting position is used.
 void
-Engine::SetPosition (scid::database::Position * newpos)
+Engine::SetPosition (scid::core::Position * newpos)
 {
     // Set the position:
     if (newpos == NULL) {
@@ -1316,7 +1316,7 @@ Engine::SetPosition (scid::database::Position * newpos)
 //   reorders the move list (if supplied) so the best move is at
 //   the start of the list.
 int
-Engine::Think (scid::database::MoveList * mlist)
+Engine::Think (scid::core::MoveList * mlist)
 {
     Elapsed.Reset();
     NodeCount = 0;
@@ -1332,7 +1332,7 @@ Engine::Think (scid::database::MoveList * mlist)
     ClearHistoryValues();
 
     // If no legal move list was specified, generate and search all moves:
-    scid::database::MoveList tmpMoveList;
+    scid::core::MoveList tmpMoveList;
     if (mlist == NULL) {
         mlist = &tmpMoveList;
         Pos.GenerateMoves(mlist);
@@ -1345,7 +1345,7 @@ Engine::Think (scid::database::MoveList * mlist)
 
     // Sort the root move list by quiescent evaluation to get a
     // reasonably good initial move order:
-    for (scid::database::uint i=0; i < mlist->Size(); i++) {
+    for (scid::core::uint i=0; i < mlist->Size(); i++) {
         auto sm = mlist->Get(i);
         DoMove(sm);
         sm->score = -Quiesce (-Infinity, Infinity);
@@ -1367,7 +1367,7 @@ Engine::Think (scid::database::MoveList * mlist)
 
     // Do iterative deepening starting at depth 1, until out of
     // time or the maximum depth is reached:
-    for (scid::database::uint depth = 1; depth <= MaxDepth; depth++) {
+    for (scid::core::uint depth = 1; depth <= MaxDepth; depth++) {
 
         HardMove = false;
 
@@ -1437,12 +1437,12 @@ Engine::Think (scid::database::MoveList * mlist)
 }
 
 int
-Engine::SearchRoot (int depth, int alpha, int beta, scid::database::MoveList * mlist)
+Engine::SearchRoot (int depth, int alpha, int beta, scid::core::MoveList * mlist)
 {
     assert(depth >= 1);
 
     // If no legal move list was specified, generate and search all moves:
-    scid::database::MoveList tmpMoveList;
+    scid::core::MoveList tmpMoveList;
     if (mlist == NULL) {
         mlist = &tmpMoveList;
         Pos.GenerateMoves(mlist);
@@ -1457,9 +1457,9 @@ Engine::SearchRoot (int depth, int alpha, int beta, scid::database::MoveList * m
     bool isOnlyMove = (mlist->Size() == 1);
     int bestScore = -Infinity - 1;
 
-    for (scid::database::uint movenum=0; movenum < mlist->Size(); movenum++) {
+    for (scid::core::uint movenum=0; movenum < mlist->Size(); movenum++) {
         auto sm = mlist->Get(movenum);
-        scid::database::uint oldNodeCount = NodeCount;
+        scid::core::uint oldNodeCount = NodeCount;
         // Make this move and search it:
         DoMove (sm);
         InCheck[Ply] = Pos.IsKingInCheck (*sm);
@@ -1507,7 +1507,7 @@ Engine::SearchRoot (int depth, int alpha, int beta, scid::database::MoveList * m
     return bestScore;
 }
 
-static bool isLegalMove(scid::database::Position const& pos, scid::database::simpleMoveT const& sm) {
+static bool isLegalMove(scid::core::Position const& pos, scid::core::simpleMoveT const& sm) {
     return pos.IsLegalMove(sm.from, sm.to, sm.promote) &&
            sm.movingPiece == pos.GetPiece(sm.from);
 }
@@ -1530,10 +1530,10 @@ Engine::Search (int depth, int alpha, int beta, bool tryNullMove)
     // Check for a drawn position (no mating material, repetition, etc):
     if (NoMatingMaterial()) { return 0; }
     if (FiftyMoveDraw()) { return 0; }
-    scid::database::uint repeats = RepeatedPosition();
+    scid::core::uint repeats = RepeatedPosition();
     if (repeats >= 3  ||  (repeats == 2  &&  Ply > 2)) { return 0; }
 
-    scid::database::colorT toMove = Pos.GetToMove();
+    scid::core::colorT toMove = Pos.GetToMove();
     NodeCount++;
 
     // Stop now if we ran out of time:
@@ -1541,7 +1541,7 @@ Engine::Search (int depth, int alpha, int beta, bool tryNullMove)
 
     // Probe the hash table:
     int hashscore = alpha;
-    auto hashmove = scid::database::ScoredMove();
+    auto hashmove = scid::core::ScoredMove();
     bool isOnlyMove = 0;
     scoreFlagT hashflag = ProbeHash (depth, &hashscore, &hashmove, &isOnlyMove);
 
@@ -1581,9 +1581,9 @@ Engine::Search (int depth, int alpha, int beta, bool tryNullMove)
     }
 
     if (tryNullMove) {
-        Pos.SetToMove (scid::database::color_Flip(toMove));
-        scid::database::squareT oldEPTarget = Pos.GetEPTarget();
-        Pos.SetEPTarget (scid::database::NULL_SQUARE);
+        Pos.SetToMove (scid::core::color_Flip(toMove));
+        scid::core::squareT oldEPTarget = Pos.GetEPTarget();
+        Pos.SetEPTarget (scid::core::NULL_SQUARE);
         // We keep track of whether we are in a null move search or
         // not, to avoid updating the PV.
         InNullMove++;
@@ -1618,7 +1618,7 @@ Engine::Search (int depth, int alpha, int beta, bool tryNullMove)
     // Note that we already know whether the side to move is in check,
     // so we pass this information to GenerateMoves to speed it up.
 
-    scid::database::MoveList mlist;
+    scid::core::MoveList mlist;
     bool gotHashMove;
     if (isLegalMove(Pos, hashmove)) {
         gotHashMove = true;
@@ -1628,7 +1628,7 @@ Engine::Search (int depth, int alpha, int beta, bool tryNullMove)
     } else {
         // No hash table move, so generate and score all the moves now.
         gotHashMove = false;
-        Pos.GenerateMoves (&mlist, scid::database::EMPTY, scid::database::GEN_ALL_MOVES, InCheck[Ply]);
+        Pos.GenerateMoves (&mlist, scid::core::EMPTY, scid::core::GEN_ALL_MOVES, InCheck[Ply]);
         ScoreMoves (&mlist);
         isOnlyMove = (mlist.Size() == 1);
     }
@@ -1641,18 +1641,18 @@ Engine::Search (int depth, int alpha, int beta, bool tryNullMove)
     int bestMoveIndex = -1;
 
     // Search each move:
-    for (scid::database::uint movenum = 0; movenum < mlist.Size(); movenum++) {
+    for (scid::core::uint movenum = 0; movenum < mlist.Size(); movenum++) {
         // Find the highest-scoring remaining move:
-        scid::database::MoveList::iterator sm = std::min_element(mlist.begin() + movenum, mlist.end());
+        scid::core::MoveList::iterator sm = std::min_element(mlist.begin() + movenum, mlist.end());
         std::iter_swap(mlist.begin() + movenum, sm);
 
         // Move-specific extensions:
         int extensions = baseExtensions;
 
         // If moving a pawn to the 7th or 8th rank, extend the search:
-        if (scid::database::piece_Type(sm->movingPiece) == scid::database::PAWN) {
-            scid::database::rankT rank = scid::database::square_Rank(sm->to);
-            if (rank <= scid::database::RANK_2  ||  rank >= scid::database::RANK_7) { extensions++; }
+        if (scid::core::piece_Type(sm->movingPiece) == scid::core::PAWN) {
+            scid::core::rankT rank = scid::core::square_Rank(sm->to);
+            if (rank <= scid::core::RANK_2  ||  rank >= scid::core::RANK_7) { extensions++; }
         }
 
         // Reduce extensions if the search is deep:
@@ -1677,7 +1677,7 @@ Engine::Search (int depth, int alpha, int beta, bool tryNullMove)
 
         if (Pruning  &&  extensions == 0  &&  Ply > 2  &&  depth <= 2
               &&  !InCheck[Ply]  &&  !IsMatingScore (alpha)  &&  !isOnlyMove
-              &&  Pos.NumNonPawns(scid::database::WHITE) > 1  &&  Pos.NumNonPawns(scid::database::BLACK) > 1) {
+              &&  Pos.NumNonPawns(scid::core::WHITE) > 1  &&  Pos.NumNonPawns(scid::core::BLACK) > 1) {
             int mscore = -ScoreMaterial();
             bool futile = false;
             if (depth == 1) {
@@ -1745,9 +1745,9 @@ Engine::Search (int depth, int alpha, int beta, bool tryNullMove)
         // the start of the list so it does not get searched again.
         if (movenum == 0  &&  gotHashMove  &&  !isOnlyMove) {
             mlist.Clear();
-            Pos.GenerateMoves (&mlist, scid::database::EMPTY, scid::database::GEN_ALL_MOVES, InCheck[Ply]);
+            Pos.GenerateMoves (&mlist, scid::core::EMPTY, scid::core::GEN_ALL_MOVES, InCheck[Ply]);
             ScoreMoves (&mlist);
-            scid::database::MoveList::iterator hm = std::find_if(
+            scid::core::MoveList::iterator hm = std::find_if(
                 mlist.begin(), mlist.end(), [&](auto const& move) {
                     return move.from == hashmove.from &&
                            move.to == hashmove.to &&
@@ -1818,9 +1818,9 @@ Engine::Quiesce (int alpha, int beta)
     if (staticScore + QueenValue + margin < alpha) { return alpha; }
 
     // Generate and score the list of captures:
-    scid::database::MoveList mlist;
-    Pos.GenerateMoves (&mlist, scid::database::GEN_CAPTURES);
-    for (scid::database::uint m=0; m < mlist.Size(); m++) {
+    scid::core::MoveList mlist;
+    Pos.GenerateMoves (&mlist, scid::core::GEN_CAPTURES);
+    for (scid::core::uint m=0; m < mlist.Size(); m++) {
         auto sm = mlist.Get(m);
         sm->score = SEE (sm->from, sm->to);
     }
@@ -1828,14 +1828,14 @@ Engine::Quiesce (int alpha, int beta)
     // Iterate through each quiescent move to find a beta cutoff or
     // improve the alpha score:
 
-    for (scid::database::uint i = 0; i < mlist.Size(); i++) {
+    for (scid::core::uint i = 0; i < mlist.Size(); i++) {
         // Find the highest-scoring remaining move, make it and search:
-        scid::database::MoveList::iterator sm = std::min_element(mlist.begin() + i, mlist.end());
+        scid::core::MoveList::iterator sm = std::min_element(mlist.begin() + i, mlist.end());
         std::iter_swap(mlist.begin() + i, sm);
-        scid::database::pieceT promote = scid::database::piece_Type(sm->promote);
+        scid::core::pieceT promote = scid::core::piece_Type(sm->promote);
 
         // Skip underpromotions:
-        if (promote != scid::database::EMPTY  &&  promote != scid::database::QUEEN) { continue; }
+        if (promote != scid::core::EMPTY  &&  promote != scid::core::QUEEN) { continue; }
 
         // Stop if the capture gain is negative or is so small that it
         // will (very likely) not improve alpha:
@@ -1866,13 +1866,13 @@ Engine::Quiesce (int alpha, int beta)
 //   from the from square (which must not be empty) to the target
 //   square (which may be empty or may hold an enemy piece).
 int
-Engine::SEE (scid::database::squareT from, scid::database::squareT target)
+Engine::SEE (scid::core::squareT from, scid::core::squareT target)
 {
-    const scid::database::pieceT * board = Pos.GetBoard();
-    scid::database::SquareList attackers[2];
-    scid::database::pieceT mover = scid::database::piece_Type(board[from]);
-    assert(mover != scid::database::EMPTY);
-    scid::database::colorT stm = scid::database::piece_Color_NotEmpty(board[from]);
+    const scid::core::pieceT * board = Pos.GetBoard();
+    scid::core::SquareList attackers[2];
+    scid::core::pieceT mover = scid::core::piece_Type(board[from]);
+    assert(mover != scid::core::EMPTY);
+    scid::core::colorT stm = scid::core::piece_Color_NotEmpty(board[from]);
 
 #define SEE_ADD(c,sq) attackers[(c)].Add(sq)
 
@@ -1880,7 +1880,7 @@ Engine::SEE (scid::database::squareT from, scid::database::squareT target)
     // the moving piece is a king then it clearly cannot be captured.
     // If potentially illegal king moves are to be passed to this
     // method, the following optimisation should be removed.
-    if (mover == scid::database::KING) { return PieceValue(board[target]); }
+    if (mover == scid::core::KING) { return PieceValue(board[target]); }
 
     // Find the estimated result assuming one recapture:
     int fastResult = PieceValue(board[target]) - PieceValue(mover);
@@ -1888,40 +1888,40 @@ Engine::SEE (scid::database::squareT from, scid::database::squareT target)
     // We can do quick estimation for a big gain, but have to be
     // careful since move ordering is very sensitive to positive SEE
     // scores. Only return a fast estimate for PxQ, NxQ, BxQ and PxR:
-    if (fastResult > KnightValue  &&  mover != scid::database::ROOK) { return fastResult; }
+    if (fastResult > KnightValue  &&  mover != scid::core::ROOK) { return fastResult; }
 
     // Add attacking pawns to the attackers list:
-    scid::database::squareT pawnSq = scid::database::square_Move (target, scid::database::DOWN_LEFT);
-    if (board[pawnSq] == scid::database::WP  &&  pawnSq != from) { SEE_ADD (scid::database::WHITE, pawnSq); }
-    pawnSq = scid::database::square_Move (target, scid::database::DOWN_RIGHT);
-    if (board[pawnSq] == scid::database::WP  &&  pawnSq != from) { SEE_ADD (scid::database::WHITE, pawnSq); }
-    pawnSq = scid::database::square_Move (target, scid::database::UP_LEFT);
-    if (board[pawnSq] == scid::database::BP  &&  pawnSq != from) { SEE_ADD (scid::database::BLACK, pawnSq); }
-    pawnSq = scid::database::square_Move (target, scid::database::UP_RIGHT);
-    if (board[pawnSq] == scid::database::BP  &&  pawnSq != from) { SEE_ADD (scid::database::BLACK, pawnSq); }
+    scid::core::squareT pawnSq = scid::core::square_Move (target, scid::core::DOWN_LEFT);
+    if (board[pawnSq] == scid::core::WP  &&  pawnSq != from) { SEE_ADD (scid::core::WHITE, pawnSq); }
+    pawnSq = scid::core::square_Move (target, scid::core::DOWN_RIGHT);
+    if (board[pawnSq] == scid::core::WP  &&  pawnSq != from) { SEE_ADD (scid::core::WHITE, pawnSq); }
+    pawnSq = scid::core::square_Move (target, scid::core::UP_LEFT);
+    if (board[pawnSq] == scid::core::BP  &&  pawnSq != from) { SEE_ADD (scid::core::BLACK, pawnSq); }
+    pawnSq = scid::core::square_Move (target, scid::core::UP_RIGHT);
+    if (board[pawnSq] == scid::core::BP  &&  pawnSq != from) { SEE_ADD (scid::core::BLACK, pawnSq); }
 
     // Quick estimation for a nonpawn capturing a lesser-valued piece (or
     // moving to an empty square) which is defended by an enemy pawn.
-    if (fastResult < -PawnValue  &&  attackers[scid::database::color_Flip(stm)].Size() > 0) {
+    if (fastResult < -PawnValue  &&  attackers[scid::core::color_Flip(stm)].Size() > 0) {
         return fastResult;
     }
 
     // Add attacking knights. Only bother searching for them if there
     // are any knights on the appropriate square color.
-    scid::database::colorT knightSquareColor = scid::database::color_Flip(scid::database::square_Color(target));
-    scid::database::uint nEligibleKnights = Pos.SquareColorCount(scid::database::WN, knightSquareColor)
-                          + Pos.SquareColorCount(scid::database::BN, knightSquareColor);
+    scid::core::colorT knightSquareColor = scid::core::color_Flip(scid::core::square_Color(target));
+    scid::core::uint nEligibleKnights = Pos.SquareColorCount(scid::core::WN, knightSquareColor)
+                          + Pos.SquareColorCount(scid::core::BN, knightSquareColor);
     if (nEligibleKnights > 0) {
-        const scid::database::squareT * nextKnightSq = scid::database::knightAttacks[target];
+        const scid::core::squareT * nextKnightSq = scid::core::knightAttacks[target];
         while (true) {
-            scid::database::squareT dest = *nextKnightSq;
-            if (dest == scid::database::NULL_SQUARE) { break; }
+            scid::core::squareT dest = *nextKnightSq;
+            if (dest == scid::core::NULL_SQUARE) { break; }
             nextKnightSq++;
-            scid::database::pieceT p = board[dest];
-            if (scid::database::piece_Type(p) != scid::database::KNIGHT) { continue; }
+            scid::core::pieceT p = board[dest];
+            if (scid::core::piece_Type(p) != scid::core::KNIGHT) { continue; }
             if (dest == from) { continue; }
             // Quick estimate when this recapture ensures a negative result:
-            scid::database::colorT knightColor = scid::database::piece_Color_NotEmpty(p);
+            scid::core::colorT knightColor = scid::core::piece_Color_NotEmpty(p);
             if (fastResult < -KnightValue  &&  knightColor != stm) {
                 return fastResult + KnightValue / 2;
             }
@@ -1935,118 +1935,118 @@ Engine::SEE (scid::database::squareT from, scid::database::squareT target)
 
     // First make an array containing all the directions that contain
     // potential sliding attackers, to avoid searching useless directions.
-    scid::database::rankT rank = scid::database::square_Rank(target);
-    scid::database::fyleT fyle = scid::database::square_Fyle(target);
-    scid::database::leftDiagT ul = scid::database::square_LeftDiag(target);
-    scid::database::rightDiagT ur = scid::database::square_RightDiag(target);
-    scid::database::uint rankCount = Pos.RankCount(scid::database::WQ,rank) + Pos.RankCount(scid::database::BQ,rank)
-                   + Pos.RankCount(scid::database::WR,rank) + Pos.RankCount(scid::database::BR,rank);
-    scid::database::uint fyleCount = Pos.FyleCount(scid::database::WQ,fyle) + Pos.FyleCount(scid::database::BQ,fyle)
-                   + Pos.FyleCount(scid::database::WR,fyle) + Pos.FyleCount(scid::database::BR,fyle);
-    scid::database::uint upLeftCount = Pos.LeftDiagCount(scid::database::WQ,ul) + Pos.LeftDiagCount(scid::database::BQ,ul)
-                     + Pos.LeftDiagCount(scid::database::WB,ul) + Pos.LeftDiagCount(scid::database::BB,ul);
-    scid::database::uint upRightCount = Pos.RightDiagCount(scid::database::WQ,ur) + Pos.RightDiagCount(scid::database::BQ,ur)
-                      + Pos.RightDiagCount(scid::database::WB,ur) + Pos.RightDiagCount(scid::database::BB,ur);
+    scid::core::rankT rank = scid::core::square_Rank(target);
+    scid::core::fyleT fyle = scid::core::square_Fyle(target);
+    scid::core::leftDiagT ul = scid::core::square_LeftDiag(target);
+    scid::core::rightDiagT ur = scid::core::square_RightDiag(target);
+    scid::core::uint rankCount = Pos.RankCount(scid::core::WQ,rank) + Pos.RankCount(scid::core::BQ,rank)
+                   + Pos.RankCount(scid::core::WR,rank) + Pos.RankCount(scid::core::BR,rank);
+    scid::core::uint fyleCount = Pos.FyleCount(scid::core::WQ,fyle) + Pos.FyleCount(scid::core::BQ,fyle)
+                   + Pos.FyleCount(scid::core::WR,fyle) + Pos.FyleCount(scid::core::BR,fyle);
+    scid::core::uint upLeftCount = Pos.LeftDiagCount(scid::core::WQ,ul) + Pos.LeftDiagCount(scid::core::BQ,ul)
+                     + Pos.LeftDiagCount(scid::core::WB,ul) + Pos.LeftDiagCount(scid::core::BB,ul);
+    scid::core::uint upRightCount = Pos.RightDiagCount(scid::core::WQ,ur) + Pos.RightDiagCount(scid::core::BQ,ur)
+                      + Pos.RightDiagCount(scid::core::WB,ur) + Pos.RightDiagCount(scid::core::BB,ur);
 
     // If the moving piece is a slider, it is worth removing it from the
     // rank/file/diagonal counts because we will avoid searching two
     // directions if it is the only slider on its rank/file/diagonal.
-    if (scid::database::piece_IsSlider(mover)) {
-        if (scid::database::square_Rank(from) == scid::database::square_Rank(target)) {
+    if (scid::core::piece_IsSlider(mover)) {
+        if (scid::core::square_Rank(from) == scid::core::square_Rank(target)) {
             rankCount--;
-        } else if (scid::database::square_Fyle(from) == scid::database::square_Fyle(target)) {
+        } else if (scid::core::square_Fyle(from) == scid::core::square_Fyle(target)) {
             fyleCount--;
-        } else if (scid::database::square_LeftDiag(from) == scid::database::square_LeftDiag(target)) {
+        } else if (scid::core::square_LeftDiag(from) == scid::core::square_LeftDiag(target)) {
             upLeftCount--;
         } else {
-            assert(scid::database::square_RightDiag(from) == scid::database::square_RightDiag(target));
+            assert(scid::core::square_RightDiag(from) == scid::core::square_RightDiag(target));
             upRightCount--;
         }
     }
 
     // Build the list of directions with potential sliding capturers:
-    scid::database::uint nDirs = 0;
-    scid::database::directionT sliderDir[8];
+    scid::core::uint nDirs = 0;
+    scid::core::directionT sliderDir[8];
     if (rankCount > 0) {
-        sliderDir[nDirs++] = scid::database::LEFT;
-        sliderDir[nDirs++] = scid::database::RIGHT;
+        sliderDir[nDirs++] = scid::core::LEFT;
+        sliderDir[nDirs++] = scid::core::RIGHT;
     }
     if (fyleCount > 0) {
-        sliderDir[nDirs++] = scid::database::UP;
-        sliderDir[nDirs++] = scid::database::DOWN;
+        sliderDir[nDirs++] = scid::core::UP;
+        sliderDir[nDirs++] = scid::core::DOWN;
     }
     if (upLeftCount > 0) {
-        sliderDir[nDirs++] = scid::database::UP_LEFT;
-        sliderDir[nDirs++] = scid::database::DOWN_RIGHT;
+        sliderDir[nDirs++] = scid::core::UP_LEFT;
+        sliderDir[nDirs++] = scid::core::DOWN_RIGHT;
     }
     if (upRightCount > 0) {
-        sliderDir[nDirs++] = scid::database::UP_RIGHT;
-        sliderDir[nDirs++] = scid::database::DOWN_LEFT;
+        sliderDir[nDirs++] = scid::core::UP_RIGHT;
+        sliderDir[nDirs++] = scid::core::DOWN_LEFT;
     }
 
     // Iterate over each direction, looking for an attacking slider:
 
-    for (scid::database::uint dirIndex = 0; dirIndex < nDirs; dirIndex++) {
-        scid::database::directionT dir = sliderDir[dirIndex];
-        scid::database::squareT dest = target;
-        scid::database::squareT last = scid::database::square_Last (target, dir);
-        int delta = scid::database::direction_Delta (dir);
-        scid::database::uint distance = 0;
+    for (scid::core::uint dirIndex = 0; dirIndex < nDirs; dirIndex++) {
+        scid::core::directionT dir = sliderDir[dirIndex];
+        scid::core::squareT dest = target;
+        scid::core::squareT last = scid::core::square_Last (target, dir);
+        int delta = scid::core::direction_Delta (dir);
+        scid::core::uint distance = 0;
 
         while (dest != last) {
             dest += delta;
             distance++;
-            scid::database::pieceT p = board[dest];
-            if (p == scid::database::EMPTY) { continue; }
+            scid::core::pieceT p = board[dest];
+            if (p == scid::core::EMPTY) { continue; }
             if (dest == from) { continue; }
-            scid::database::pieceT ptype = scid::database::piece_Type(p);
-            if (ptype == scid::database::PAWN) {
+            scid::core::pieceT ptype = scid::core::piece_Type(p);
+            if (ptype == scid::core::PAWN) {
                 // Look through this pawn if it was also a capturer.
                 if (distance != 1) { break; }
-                if (p == scid::database::WP) {
-                    if (dir == scid::database::DOWN_LEFT  ||  dir == scid::database::DOWN_RIGHT) { continue; }
+                if (p == scid::core::WP) {
+                    if (dir == scid::core::DOWN_LEFT  ||  dir == scid::core::DOWN_RIGHT) { continue; }
                 } else {
-                    if (dir == scid::database::UP_LEFT  ||  dir == scid::database::UP_RIGHT) { continue; }
+                    if (dir == scid::core::UP_LEFT  ||  dir == scid::core::UP_RIGHT) { continue; }
                 }
                 break;
             }
-            if (! scid::database::piece_IsSlider(ptype)) { break; }
-            if (ptype == scid::database::ROOK  &&  scid::database::direction_IsDiagonal(dir)) { break; }
-            if (ptype == scid::database::BISHOP  &&  !scid::database::direction_IsDiagonal(dir)) { break; }
-            scid::database::colorT c = scid::database::piece_Color_NotEmpty(p);
+            if (! scid::core::piece_IsSlider(ptype)) { break; }
+            if (ptype == scid::core::ROOK  &&  scid::core::direction_IsDiagonal(dir)) { break; }
+            if (ptype == scid::core::BISHOP  &&  !scid::core::direction_IsDiagonal(dir)) { break; }
+            scid::core::colorT c = scid::core::piece_Color_NotEmpty(p);
 
             // Quick estimate when this recapture ensures a negative result:
-            if (fastResult < -BishopValue  &&  ptype == scid::database::BISHOP) {
+            if (fastResult < -BishopValue  &&  ptype == scid::core::BISHOP) {
                 if (c != stm) { return fastResult + BishopValue / 2; }
-            } else if (fastResult < -RookValue  &&  ptype == scid::database::ROOK) {
+            } else if (fastResult < -RookValue  &&  ptype == scid::core::ROOK) {
                 if (c != stm) { return fastResult + RookValue / 2; }
             }
 
-            // scid::database::OK, we have a sliding attacker. Add it:
+            // OK, we have a sliding attacker. Add it:
             SEE_ADD (c, dest);
             break;
         }
     }
 
     // Add one capturing king if the other king cannot capture:
-    scid::database::squareT wk = Pos.GetKingSquare (scid::database::WHITE);
-    scid::database::squareT bk = Pos.GetKingSquare (scid::database::BLACK);
+    scid::core::squareT wk = Pos.GetKingSquare (scid::core::WHITE);
+    scid::core::squareT bk = Pos.GetKingSquare (scid::core::BLACK);
     if (wk != from  &&  bk != from) {
-        bool wkAttacks = scid::database::square_Adjacent (target, wk);
-        bool bkAttacks = scid::database::square_Adjacent (target, bk);
+        bool wkAttacks = scid::core::square_Adjacent (target, wk);
+        bool bkAttacks = scid::core::square_Adjacent (target, bk);
         if (wkAttacks && !bkAttacks) {
-            SEE_ADD (scid::database::WHITE, wk);
+            SEE_ADD (scid::core::WHITE, wk);
         } else if (bkAttacks && !wkAttacks) {
-            SEE_ADD (scid::database::BLACK, bk);
+            SEE_ADD (scid::core::BLACK, bk);
         }
     }
 
     // Now go through the attack lists (which may get hidden sliders added
     // as sliding pieces make captures) finding the best capture sequence.
 
-    bool targetIsPromoSquare = (target <= scid::database::H1  ||  target >= scid::database::A8);
+    bool targetIsPromoSquare = (target <= scid::core::H1  ||  target >= scid::core::A8);
     int swaplist[32];
-    scid::database::uint nswaps = 1;
+    scid::core::uint nswaps = 1;
     swaplist[0] = PieceValue (board[target]);
     int attackedVal = PieceValue (mover);
 
@@ -2060,20 +2060,20 @@ Engine::SEE (scid::database::squareT from, scid::database::squareT target)
     // lowest-valued pieces first:
     while (true) {
         // Switch to the other side:
-        stm = scid::database::color_Flip(stm);
-        scid::database::SquareList * attackList = &(attackers[stm]);
-        scid::database::uint attackCount = attackList->Size();
+        stm = scid::core::color_Flip(stm);
+        scid::core::SquareList * attackList = &(attackers[stm]);
+        scid::core::uint attackCount = attackList->Size();
 
         // Has this side run out of pieces to capture with?
         if (attackCount == 0) { break; }
 
         // Find the best (lowest-valued) piece to capture with:
-        scid::database::uint bestIndex = 0;
-        scid::database::squareT attackSquare = attackList->Get(0);
+        scid::core::uint bestIndex = 0;
+        scid::core::squareT attackSquare = attackList->Get(0);
         int attackValue = PieceValue(board[attackSquare]);
-        for (scid::database::uint i = 1; i < attackCount; i++) {
+        for (scid::core::uint i = 1; i < attackCount; i++) {
             if (attackValue == PawnValue) { break; }
-            scid::database::squareT newSquare = attackList->Get(i);
+            scid::core::squareT newSquare = attackList->Get(i);
             int newValue = PieceValue(board[newSquare]);
             if (newValue < attackValue) {
                 attackSquare = newSquare;
@@ -2081,7 +2081,7 @@ Engine::SEE (scid::database::squareT from, scid::database::squareT target)
                 bestIndex = i;
             }
         }
-        scid::database::pieceT attackPiece = scid::database::piece_Type(board[attackSquare]);
+        scid::core::pieceT attackPiece = scid::core::piece_Type(board[attackSquare]);
 
         // Update the swap list:
         swaplist[nswaps] = -swaplist[nswaps-1] + attackedVal;
@@ -2098,23 +2098,23 @@ Engine::SEE (scid::database::squareT from, scid::database::squareT target)
         attackList->Remove(bestIndex);
 
         // If the attacker is a slider, look for another slider behind it:
-        if (scid::database::piece_IsSlider (attackPiece)) {
-            scid::database::directionT dir = scid::database::sqDir[target][attackSquare];
-            assert(dir != scid::database::NULL_DIR);
-            scid::database::squareT dest = attackSquare;
-            scid::database::squareT last = scid::database::square_Last (dest, dir);
-            int delta = scid::database::direction_Delta (dir);
+        if (scid::core::piece_IsSlider (attackPiece)) {
+            scid::core::directionT dir = scid::core::sqDir[target][attackSquare];
+            assert(dir != scid::core::NULL_DIR);
+            scid::core::squareT dest = attackSquare;
+            scid::core::squareT last = scid::core::square_Last (dest, dir);
+            int delta = scid::core::direction_Delta (dir);
 
             while (dest != last) {
                 dest += delta;
-                scid::database::pieceT p = board[dest];
-                if (p == scid::database::EMPTY) { continue; }
-                scid::database::pieceT pt = scid::database::piece_Type(p);
-                if (! scid::database::piece_IsSlider(pt)) { break; }
-                if (pt == scid::database::ROOK  &&  scid::database::direction_IsDiagonal(dir)) { break; }
-                if (pt == scid::database::BISHOP  &&  !scid::database::direction_IsDiagonal(dir)) { break; }
-                // scid::database::OK, we have another sliding attacker. Add it:
-                SEE_ADD (scid::database::piece_Color_NotEmpty(p), dest);
+                scid::core::pieceT p = board[dest];
+                if (p == scid::core::EMPTY) { continue; }
+                scid::core::pieceT pt = scid::core::piece_Type(p);
+                if (! scid::core::piece_IsSlider(pt)) { break; }
+                if (pt == scid::core::ROOK  &&  scid::core::direction_IsDiagonal(dir)) { break; }
+                if (pt == scid::core::BISHOP  &&  !scid::core::direction_IsDiagonal(dir)) { break; }
+                // OK, we have another sliding attacker. Add it:
+                SEE_ADD (scid::core::piece_Color_NotEmpty(p), dest);
                 break;
             }
         }
@@ -2124,7 +2124,7 @@ Engine::SEE (scid::database::squareT from, scid::database::squareT target)
     // side would stop because further exchanges would be useless:
     nswaps--;
     while (nswaps > 0) {
-        scid::database::uint prev = nswaps - 1;
+        scid::core::uint prev = nswaps - 1;
         if (swaplist[nswaps] > -swaplist[prev]) {
             swaplist[prev] = -swaplist[nswaps];
         }
@@ -2146,11 +2146,11 @@ Engine::SEE (scid::database::squareT from, scid::database::squareT target)
 //      (4) Losing captures (ordered by SEE value, score < 0).
 //   where EMH = ENGINE_MAX_HISTORY is the history value threshold.
 void
-Engine::ScoreMoves (scid::database::MoveList * mlist)
+Engine::ScoreMoves (scid::core::MoveList * mlist)
 {
-    for (scid::database::uint i = 0; i < mlist->Size(); i++) {
+    for (scid::core::uint i = 0; i < mlist->Size(); i++) {
         auto sm = mlist->Get(i);
-        if (sm->capturedPiece != scid::database::EMPTY  ||  sm->promote != scid::database::EMPTY) {
+        if (sm->capturedPiece != scid::core::EMPTY  ||  sm->promote != scid::core::EMPTY) {
             int see = SEE (sm->from, sm->to);
             if (see >= 0) {
                 sm->score = ENGINE_MAX_HISTORY * 2 + see;
@@ -2188,16 +2188,16 @@ Engine::Output (const char * format, ...)
 //   This output format is the only supported format (legacy XBoard output has
 //   been removed).
 void
-Engine::PrintPV (scid::database::uint depth, int score, const char * note)
+Engine::PrintPV (scid::core::uint depth, int score, const char * note)
 {
     if (! PostInfo) { return; }
-    scid::database::uint ms = Elapsed.MilliSecs();
+    scid::core::uint ms = Elapsed.MilliSecs();
     Output (" %2u %-3s %+6d %5u %9u  ", depth, note, score, ms, NodeCount);
 
     principalVarT * pv = &(PV[0]);
-    scid::database::uint i;
+    scid::core::uint i;
 
-    if (Pos.GetToMove() == scid::database::BLACK) {
+    if (Pos.GetToMove() == scid::core::BLACK) {
         Output ("%u...", Pos.GetFullMoveCount());
     }
 
@@ -2212,11 +2212,11 @@ Engine::PrintPV (scid::database::uint depth, int score, const char * note)
             break;
         }
         if (i > 0) { Output (" "); }
-        if (Pos.GetToMove() == scid::database::WHITE) {
+        if (Pos.GetToMove() == scid::core::WHITE) {
             Output  ("%u.", Pos.GetFullMoveCount());
         }
-        scid::database::sanStringT s;
-        Pos.MakeSANString (sm, s, scid::database::SAN_MATETEST);
+        scid::core::sanStringT s;
+        Pos.MakeSANString (sm, s, scid::core::SAN_MATETEST);
         Output ("%s", s);
         Pos.DoSimpleMove (sm);
     }
@@ -2259,14 +2259,14 @@ Engine::OutOfTime ()
 // Engine::PerfTest
 //   Returns the number of leaf node moves when generating, making and
 //   unmaking every move to the specified depth from the current position.
-scid::database::uint
-Engine::PerfTest (scid::database::uint depth)
+scid::core::uint
+Engine::PerfTest (scid::core::uint depth)
 {
     if (depth <= 0) { return 1; }
-    scid::database::MoveList mlist;
+    scid::core::MoveList mlist;
     Pos.GenerateMoves (&mlist);
-    scid::database::uint nmoves = 0;
-    for (scid::database::uint i = 0; i < mlist.Size(); i++) {
+    scid::core::uint nmoves = 0;
+    for (scid::core::uint i = 0; i < mlist.Size(); i++) {
         auto sm = mlist.Get(i);
         Pos.DoSimpleMove (*sm);
         nmoves += PerfTest (depth-1);

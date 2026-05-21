@@ -8,7 +8,7 @@
 
 #include <cassert>
 
-namespace scid::database {
+namespace scid::core {
 
 // Minor piece definitions, used for searching by material only:
 const pieceT WM = 16, BM = 17;
@@ -269,4 +269,4 @@ inline bool square_Adjacent(squareT from, squareT to) {
     return true;
 }
 
-} // namespace scid::database
+} // namespace scid::core

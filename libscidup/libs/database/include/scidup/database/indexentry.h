@@ -33,13 +33,13 @@ namespace scid::database {
 using idNumberT = uint32_t; // Should be idNameT
 
 // HPSIG_SIZE = size of HomePawnData array in an IndexEntry.
-// It is nine bytes: the first byte contains the number of valid entries
-// in the array, and the next 8 bytes contain up to 16 half-byte entries.
-const uint HPSIG_SIZE = 9;
+// It is nine bytes: the first scid::core::byte contains the number of valid entries
+// in the array, and the next 8 bytes contain up to 16 half-scid::core::byte entries.
+const scid::core::uint HPSIG_SIZE = 9;
 
-const ratingT MAX_ELO = 4000; // Since we store Elo Ratings in 12 bits
+const scid::core::ratingT MAX_ELO = 4000; // Since we store Elo Ratings in 12 bits
 
-const byte CUSTOM_FLAG_MASK[] = { 1, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5 };
+const scid::core::byte CUSTOM_FLAG_MASK[] = { 1, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5 };
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -86,29 +86,29 @@ class IndexEntry {
 
     uint8_t  storedLineCode_;
 
-    byte     HomePawnData [HPSIG_SIZE];  // homePawnSig data.
+    scid::core::byte     HomePawnData [HPSIG_SIZE];  // homePawnSig data.
 
 public:
     uint64_t  GetOffset() const { return offset_; }
     uint32_t  GetLength() const { return gameDataSize_; }
     idNumberT GetWhite() const { return whiteID_; }
-    ratingT      GetWhiteElo() const { return whiteElo_; }
-    ratingTypeT GetWhiteRatingType() const { return whiteEloType_; }
+    scid::core::ratingT      GetWhiteElo() const { return whiteElo_; }
+    scid::core::ratingTypeT GetWhiteRatingType() const { return whiteEloType_; }
     idNumberT GetBlack() const { return blackID_; }
-    ratingT      GetBlackElo() const { return blackElo_; }
-    ratingTypeT GetBlackRatingType() const { return blackEloType_; }
+    scid::core::ratingT      GetBlackElo() const { return blackElo_; }
+    scid::core::ratingTypeT GetBlackRatingType() const { return blackEloType_; }
     idNumberT GetEvent() const { return eventID_; }
     idNumberT GetSite() const { return siteID_; }
     idNumberT GetRound() const { return roundID_; }
-    dateT     GetDate() const { return date_; }
-    dateT     GetEventDate() const { return eventDate_; }
-    resultT   GetResult() const { return result_; }
-    uint      GetVariationCount() const { return DecodeCount(nVariations_); }
-    uint      GetCommentCount() const { return DecodeCount(nComments_); }
-    uint      GetNagCount() const { return DecodeCount(nNags_); }
+    scid::core::dateT     GetDate() const { return date_; }
+    scid::core::dateT     GetEventDate() const { return eventDate_; }
+    scid::core::resultT   GetResult() const { return result_; }
+    scid::core::uint      GetVariationCount() const { return DecodeCount(nVariations_); }
+    scid::core::uint      GetCommentCount() const { return DecodeCount(nComments_); }
+    scid::core::uint      GetNagCount() const { return DecodeCount(nNags_); }
     uint16_t  GetNumHalfMoves() const { return numHalfMoves_; }
     matSigT   GetFinalMatSig() const { return finalMatSig_; }
-    byte      GetStoredLineCode() const { return storedLineCode_; }
+    scid::core::byte      GetStoredLineCode() const { return storedLineCode_; }
     scidup::eco::Code GetEcoCode() const { return ECOcode_; }
     bool      GetFlag(uint32_t mask) const { return (flags_ & mask) == mask; }
     uint32_t  GetRawFlags() const { return flags_; }
@@ -123,9 +123,9 @@ public:
     void setChess960() { variant_ = 1; }
     bool isChessStd() const { return variant_ == 0; }
 
-    const byte* GetHomePawnData() const { return HomePawnData; }
-    void SetHomePawnData(byte hpCount, const byte hpVal[8]) {
-        HomePawnData[0] = hpCount; // First byte stores the count
+    const scid::core::byte* GetHomePawnData() const { return HomePawnData; }
+    void SetHomePawnData(scid::core::byte hpCount, const scid::core::byte hpVal[8]) {
+        HomePawnData[0] = hpCount; // First scid::core::byte stores the count
         std::copy_n(hpVal, 8, HomePawnData + 1);
     }
 
@@ -142,11 +142,11 @@ public:
         whiteID_ = id;
         ASSERT(GetWhite() == id);
     }
-    void SetWhiteElo(ratingT elo) {
+    void SetWhiteElo(scid::core::ratingT elo) {
         whiteElo_ = elo;
         ASSERT(GetWhiteElo() == elo);
     }
-    void SetWhiteRatingType(ratingTypeT b) {
+    void SetWhiteRatingType(scid::core::ratingTypeT b) {
         whiteEloType_ = b;
         ASSERT(GetWhiteRatingType() == b);
     }
@@ -154,11 +154,11 @@ public:
         blackID_ = id;
         ASSERT(GetBlack() == id);
     }
-    void SetBlackElo(ratingT elo) {
+    void SetBlackElo(scid::core::ratingT elo) {
         blackElo_ = elo;
         ASSERT(GetBlackElo() == elo);
     }
-    void SetBlackRatingType(ratingTypeT b) {
+    void SetBlackRatingType(scid::core::ratingTypeT b) {
         blackEloType_ = b;
         ASSERT(GetBlackRatingType() == b);
     }
@@ -174,15 +174,15 @@ public:
         roundID_ = id;
         ASSERT(GetRound() == id);
     }
-    void SetDate(dateT date) {
+    void SetDate(scid::core::dateT date) {
         date_ = date;
         ASSERT(GetDate() == date);
     }
-    void SetEventDate(dateT edate) {
+    void SetEventDate(scid::core::dateT edate) {
         eventDate_ = edate;
         ASSERT(GetEventDate() == edate);
     }
-    void SetResult(resultT res) {
+    void SetResult(scid::core::resultT res) {
         result_ = res;
         ASSERT(GetResult() == res);
     }
@@ -201,7 +201,7 @@ public:
         nNags_ = x;
         ASSERT(x == nNags_);
     }
-    void SetNumHalfMoves(ushort b) {
+    void SetNumHalfMoves(scid::core::ushort b) {
         numHalfMoves_ = b;
         ASSERT(GetNumHalfMoves() == b);
     }
@@ -209,7 +209,7 @@ public:
         finalMatSig_ = ms;
         ASSERT(GetFinalMatSig() == ms);
     }
-    void SetStoredLineCode(byte b) {
+    void SetStoredLineCode(scid::core::byte b) {
         storedLineCode_ = b;
         ASSERT(GetStoredLineCode() == b);
     }
@@ -225,15 +225,15 @@ public:
     }
 
     // Handy functions that do not directly access member vars.
-    uint  GetYear () const { return date_GetYear (GetDate()); }
-    uint  GetMonth() const { return date_GetMonth (GetDate()); }
-    uint  GetDay ()  const { return date_GetDay (GetDate()); }
+    scid::core::uint  GetYear () const { return scid::core::date_GetYear (GetDate()); }
+    scid::core::uint  GetMonth() const { return scid::core::date_GetMonth (GetDate()); }
+    scid::core::uint  GetDay ()  const { return scid::core::date_GetDay (GetDate()); }
 
-    void SetPlayer(colorT col, idNumberT id) {
-        return (col == BLACK) ? SetBlack(id) : SetWhite(id);
+    void SetPlayer(scid::core::colorT col, idNumberT id) {
+        return (col == scid::core::BLACK) ? SetBlack(id) : SetWhite(id);
     }
 
-    byte   GetRating() const;
+    scid::core::byte   GetRating() const;
 
     bool GetStartFlag () const      { return GetFlag(1 << IDX_FLAG_START); }
     bool GetPromotionsFlag () const { return GetFlag(1 << IDX_FLAG_PROMO); }
@@ -243,10 +243,10 @@ public:
     bool GetNagsFlag () const       { return (GetNagCount() > 0); }
     bool GetDeleteFlag () const     { return GetFlag(1 << IDX_FLAG_DELETE); }
 
-    static uint CharToFlag (char ch);
+    static scid::core::uint CharToFlag (char ch);
     static uint32_t CharToFlagMask (char flag);
     static uint32_t StrToFlagMask (const char* flags);
-    uint GetFlagStr(char* dest, const char* flags) const;
+    scid::core::uint GetFlagStr(char* dest, const char* flags) const;
 
     void SetStartFlag (bool b)      { SetFlag(1 << IDX_FLAG_START, b); }
     void SetPromotionsFlag (bool b) { SetFlag(1 << IDX_FLAG_PROMO, b); }
@@ -288,7 +288,7 @@ public:
     static const uint32_t IDX_MASK_ALLFLAGS = 0xFFFFFFFF;
 
 private:
-    static uint EncodeCount (uint x) {
+    static scid::core::uint EncodeCount (scid::core::uint x) {
         if (x <= 10) { return x; }
         if (x <= 12) { return 10; }
         if (x <= 17) { return 11; }  // 11 indicates 15 (13-17)
@@ -297,16 +297,16 @@ private:
         if (x <= 44) { return 14; }  // 14 indicates 40 (35-44)
         return 15;                   // 15 indicates 50 or more
     }
-    static uint DecodeCount (uint x) {
-        static uint countCodes[16] = {0,1,2,3,4,5,6,7,8,9,10,15,20,30,40,50};
+    static scid::core::uint DecodeCount (scid::core::uint x) {
+        static scid::core::uint countCodes[16] = {0,1,2,3,4,5,6,7,8,9,10,15,20,30,40,50};
         return countCodes[x & 15];
     }
 };
 
 
-inline byte IndexEntry::GetRating() const {
-    ratingT welo = GetWhiteElo();
-    ratingT belo = GetBlackElo();
+inline scid::core::byte IndexEntry::GetRating() const {
+    scid::core::ratingT welo = GetWhiteElo();
+    scid::core::ratingT belo = GetBlackElo();
     auto rating = (welo != 0 && belo != 0) ? (welo + belo) / 140 : 0;
     static_assert(std::is_signed_v<decltype(rating)>);
 
@@ -320,8 +320,8 @@ inline byte IndexEntry::GetRating() const {
     }
 
     // Early draw penalty
-    if (GetResult() == RESULT_Draw) {
-        uint moves = GetNumHalfMoves();
+    if (GetResult() == scid::core::RESULT_Draw) {
+        scid::core::uint moves = GetNumHalfMoves();
         if (moves < 80) {
             rating -= 3;
             if (moves < 60) {
@@ -332,16 +332,16 @@ inline byte IndexEntry::GetRating() const {
     }
 
     if (rating < 0) return 0;
-    else return static_cast<byte> (rating);
+    else return static_cast<scid::core::byte> (rating);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // IndexEntry::CharToFlag():
 //    Returns the flag number corresponding to the given character.
-inline uint
+inline scid::core::uint
 IndexEntry::CharToFlag (char ch)
 {
-    uint flag = 0;
+    scid::core::uint flag = 0;
     switch (toupper(ch)) {
         case 'D': flag = IDX_FLAG_DELETE;     break;
         case 'W': flag = IDX_FLAG_WHITE_OP;   break;
@@ -419,11 +419,11 @@ inline uint32_t IndexEntry::StrToFlagMask(const char* flags)
 //    Fills in the provided flag string with information on the
 //    user-settable flags set for this game.
 //    Returns the number of specified flags that are turned on.
-inline uint
+inline scid::core::uint
 IndexEntry::GetFlagStr(char* dest, const char* flags) const
 {
     if (flags == NULL) { flags = "DWBMENPTKQ!?U123456"; }
-    uint count = 0;
+    scid::core::uint count = 0;
     while (*flags != 0) {
         uint32_t mask = CharToFlagMask(*flags);
         ASSERT(mask != 0);

@@ -51,10 +51,10 @@ public:
 		return std::vector<std::string>(1, filename_);
 	};
 
-	errorT flush() final {
-		errorT errFile = (file_.pubsync() == 0) ? OK : ERROR_FileWrite;
-		errorT errProxy = CodecProxy<CodecPgn>::flush();
-		return (errFile != OK) ? errFile : errProxy;
+	scid::core::errorT flush() final {
+		scid::core::errorT errFile = (file_.pubsync() == 0) ? scid::core::OK : scid::core::ERROR_FileWrite;
+		scid::core::errorT errProxy = CodecProxy<CodecPgn>::flush();
+		return (errFile != scid::core::OK) ? errFile : errProxy;
 	}
 
 	/**
@@ -63,31 +63,31 @@ public:
 	 * parseNext() calls.
 	 * @param filename: full path of the pgn file to be opened.
 	 * @param fmode:    valid file access mode.
-	 * @returns OK in case of success, an @e errorT code otherwise.
+	 * @returns scid::core::OK in case of success, an @e scid::core::errorT code otherwise.
 	 */
-	errorT open(const char* filename, fileModeT fmode) {
+	scid::core::errorT open(const char* filename, fileModeT fmode) {
 		ASSERT(filename);
 
 		buf_.resize(128 * 1024);
 		nRead_ = nParsed_ = buf_.size();
 		filename_ = filename;
 		if (filename_.empty())
-			return ERROR_FileOpen;
+			return scid::core::ERROR_FileOpen;
 
 		if (auto err = file_.open(filename, fmode))
 			return err;
 
-		return file_.pubseekpos(0) == 0 ? OK : ERROR_FileSeek;
+		return file_.pubseekpos(0) == 0 ? scid::core::OK : scid::core::ERROR_FileSeek;
 	}
 
 	/**
 	 * Reads the next game.
 	 * @param game: the Game object where the data will be stored.
 	 * @returns
-	 * - ERROR_NotFound if there are no more games to be read.
-	 * - OK otherwise.
+	 * - scid::core::ERROR_NotFound if there are no more games to be read.
+	 * - scid::core::OK otherwise.
 	 */
-	errorT parseNext(scid::core::Game& game, char* scidFlagsOut,
+	scid::core::errorT parseNext(scid::core::Game& game, char* scidFlagsOut,
 	                 std::size_t scidFlagsOutLen) {
 		const auto verge = 3 * (nRead_ / 4);
 		if (nParsed_ > verge && nRead_ == buf_.size()) {
@@ -115,7 +115,7 @@ public:
 			// Abort
 			nRead_ = nParsed_ = 0;
 			parseLog_.log.append("PGN parsing aborted.\n");
-			return ERROR_NotFound;
+			return scid::core::ERROR_NotFound;
 		}
 
 		nParsed_ += parse.first;
@@ -127,9 +127,9 @@ public:
 			            scidFlagsOut);
 		}
 		if (eof && !parse.second && currentMoveComment(game).empty())
-			return ERROR_NotFound;
+			return scid::core::ERROR_NotFound;
 
-		return OK;
+		return scid::core::OK;
 	}
 
 	/**
@@ -150,9 +150,9 @@ public:
 	 * Add a game into the database.
 	 * The @e game is encoded in pgn format and appended at the end of @e file_.
 	 * @param game: core game data to append.
-	 * @returns OK in case of success, an @e errorT code otherwise.
+	 * @returns scid::core::OK in case of success, an @e scid::core::errorT code otherwise.
 	 */
-	errorT gameAdd(scid::core::Game const& game, const char*) {
+	scid::core::errorT gameAdd(scid::core::Game const& game, const char*) {
 		buf_.clear();
 		scid::core::pgn::encode(game, buf_);
 		buf_.push_back('\n');

@@ -6,15 +6,15 @@
 
 namespace {
 
-scid::core::MoveAction quiet(scid::database::squareT from,
-                             scid::database::squareT to) {
-	return {from, to, scid::database::EMPTY};
+scid::core::MoveAction quiet(scid::core::squareT from,
+                             scid::core::squareT to) {
+	return {from, to, scid::core::EMPTY};
 }
 
 TEST(CoreNotationTest, WritesCurrentPositionUciFromMainlineCursor) {
 	scid::core::Game game;
-	game.appendMainlineMove(quiet(scid::database::D2, scid::database::D4));
-	game.appendMainlineMove(quiet(scid::database::D7, scid::database::D5));
+	game.appendMainlineMove(quiet(scid::core::D2, scid::core::D4));
+	game.appendMainlineMove(quiet(scid::core::D7, scid::core::D5));
 	scid::core::GameCursor cursor(game);
 	ASSERT_TRUE(cursor.toPly(2));
 
@@ -25,8 +25,8 @@ TEST(CoreNotationTest, WritesCurrentPositionUciFromMainlineCursor) {
 
 TEST(CoreNotationTest, WritesPreviousAndNextMoveUciAtCursor) {
 	scid::core::Game game;
-	game.appendMainlineMove(quiet(scid::database::D2, scid::database::D4));
-	game.appendMainlineMove(quiet(scid::database::D7, scid::database::D5));
+	game.appendMainlineMove(quiet(scid::core::D2, scid::core::D4));
+	game.appendMainlineMove(quiet(scid::core::D7, scid::core::D5));
 	scid::core::GameCursor cursor(game);
 	ASSERT_TRUE(cursor.toPly(1));
 
@@ -38,7 +38,7 @@ TEST(CoreNotationTest, WritesPreviousAndNextMoveUciAtCursor) {
 
 TEST(CoreNotationTest, WritesEmptyPreviousAndNextMoveUciAtBoundaries) {
 	scid::core::Game game;
-	game.appendMainlineMove(quiet(scid::database::D2, scid::database::D4));
+	game.appendMainlineMove(quiet(scid::core::D2, scid::core::D4));
 	scid::core::GameCursor cursor(game);
 
 	EXPECT_EQ("",
@@ -54,8 +54,8 @@ TEST(CoreNotationTest, WritesEmptyPreviousAndNextMoveUciAtBoundaries) {
 
 TEST(CoreNotationTest, WritesNextAndPreviousSanAtCursor) {
 	scid::core::Game game;
-	game.appendMainlineMove(quiet(scid::database::D2, scid::database::D4));
-	game.appendMainlineMove(quiet(scid::database::D7, scid::database::D5));
+	game.appendMainlineMove(quiet(scid::core::D2, scid::core::D4));
+	game.appendMainlineMove(quiet(scid::core::D7, scid::core::D5));
 	scid::core::GameCursor cursor(game);
 	ASSERT_TRUE(cursor.toPly(1));
 
@@ -66,7 +66,7 @@ TEST(CoreNotationTest, WritesNextAndPreviousSanAtCursor) {
 
 TEST(CoreNotationTest, WritesEmptyPreviousAndNextSanAtBoundaries) {
 	scid::core::Game game;
-	game.appendMainlineMove(quiet(scid::database::D2, scid::database::D4));
+	game.appendMainlineMove(quiet(scid::core::D2, scid::core::D4));
 	scid::core::GameCursor cursor(game);
 
 	EXPECT_EQ("", scid::core::notation::previousSan(game, cursor.location()));
@@ -81,7 +81,7 @@ TEST(CoreNotationTest, WritesEmptyPreviousAndNextSanAtBoundaries) {
 TEST(CoreNotationTest, PrefersStoredSanWhenPresent) {
 	scid::core::Game game;
 	auto& move = game.appendMainlineMove(
-	    quiet(scid::database::D2, scid::database::D4));
+	    quiet(scid::core::D2, scid::core::D4));
 	move.san = "SAN";
 	scid::core::GameCursor cursor(game);
 
@@ -93,7 +93,7 @@ TEST(CoreNotationTest, PrefersStoredSanWhenPresent) {
 
 TEST(CoreNotationTest, ReturnsEmptySanForIllegalAction) {
 	scid::core::Game game;
-	game.appendMainlineMove(quiet(scid::database::A1, scid::database::A2));
+	game.appendMainlineMove(quiet(scid::core::A1, scid::core::A2));
 	scid::core::GameCursor cursor(game);
 
 	EXPECT_EQ("", scid::core::notation::nextSan(game, cursor.location()));
@@ -101,9 +101,9 @@ TEST(CoreNotationTest, ReturnsEmptySanForIllegalAction) {
 
 TEST(CoreNotationTest, WritesPartialMoveListFromMainlineStart) {
 	scid::core::Game game;
-	game.appendMainlineMove(quiet(scid::database::D2, scid::database::D4));
-	game.appendMainlineMove(quiet(scid::database::D7, scid::database::D5));
-	game.appendMainlineMove(quiet(scid::database::C2, scid::database::C4));
+	game.appendMainlineMove(quiet(scid::core::D2, scid::core::D4));
+	game.appendMainlineMove(quiet(scid::core::D7, scid::core::D5));
+	game.appendMainlineMove(quiet(scid::core::C2, scid::core::C4));
 
 	EXPECT_EQ("1. d4 d5 2. c4",
 	          scid::core::notation::partialMoveList(game, 3));
@@ -111,10 +111,10 @@ TEST(CoreNotationTest, WritesPartialMoveListFromMainlineStart) {
 
 TEST(CoreNotationTest, WritesPartialMoveListWithInitialBlackMoveNumber) {
 	scid::core::Game game;
-	ASSERT_EQ(scid::database::OK,
+	ASSERT_EQ(scid::core::OK,
 	          game.setStartFen("8/8/8/8/2p5/1k1p4/p4N2/2K5 b - - 0 198"));
 	game.appendMainlineMove(
-	    {scid::database::A2, scid::database::A1, scid::database::QUEEN});
+	    {scid::core::A2, scid::core::A1, scid::core::QUEEN});
 
 	EXPECT_EQ("198... a1=Q+",
 	          scid::core::notation::partialMoveList(game, 1));
@@ -123,11 +123,11 @@ TEST(CoreNotationTest, WritesPartialMoveListWithInitialBlackMoveNumber) {
 TEST(CoreNotationTest, WritesCurrentPositionUciFromVariationCursor) {
 	scid::core::Game game;
 	auto& first = game.appendMainlineMove(
-	    quiet(scid::database::D2, scid::database::D4));
+	    quiet(scid::core::D2, scid::core::D4));
 	first.childVariations.emplace_back().line.moves.push_back(
-	    {quiet(scid::database::E2, scid::database::E4), "e4", {}, {}});
+	    {quiet(scid::core::E2, scid::core::E4), "e4", {}, {}});
 	first.childVariations[0].line.moves.push_back(
-	    {quiet(scid::database::E7, scid::database::E5), "e5", {}, {}});
+	    {quiet(scid::core::E7, scid::core::E5), "e5", {}, {}});
 
 	scid::core::GameCursor cursor(game);
 	ASSERT_TRUE(cursor.enterVariation(0));
@@ -141,9 +141,9 @@ TEST(CoreNotationTest, WritesCurrentPositionUciFromVariationCursor) {
 
 TEST(CoreNotationTest, WritesCurrentPositionUciFromNonStandardStart) {
 	scid::core::Game game;
-	ASSERT_EQ(scid::database::OK,
+	ASSERT_EQ(scid::core::OK,
 	          game.setStartFen("8/8/8/8/2p5/1k1p4/p4N2/2K5 w - - 0 198"));
-	game.appendMainlineMove(quiet(scid::database::C1, scid::database::D2));
+	game.appendMainlineMove(quiet(scid::core::C1, scid::core::D2));
 	scid::core::GameCursor cursor(game);
 	ASSERT_TRUE(cursor.next());
 
@@ -154,9 +154,9 @@ TEST(CoreNotationTest, WritesCurrentPositionUciFromNonStandardStart) {
 
 TEST(CoreNotationTest, ResetsCurrentPositionUciAtNullMove) {
 	scid::core::Game game;
-	game.appendMainlineMove(quiet(scid::database::E2, scid::database::E4));
+	game.appendMainlineMove(quiet(scid::core::E2, scid::core::E4));
 	game.appendMainlineMove({});
-	game.appendMainlineMove(quiet(scid::database::G1, scid::database::F3));
+	game.appendMainlineMove(quiet(scid::core::G1, scid::core::F3));
 	scid::core::GameCursor cursor(game);
 	ASSERT_TRUE(cursor.toPly(3));
 

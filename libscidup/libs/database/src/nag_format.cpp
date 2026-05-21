@@ -9,7 +9,7 @@
 
 namespace scid::database {
 
-void game_printNag(byte nag, char* str, bool asSymbol, gameFormatT format) {
+void game_printNag(scid::core::byte nag, char* str, bool asSymbol, gameFormatT format) {
 	ASSERT(str != NULL);
 
 	if (nag == 0) {

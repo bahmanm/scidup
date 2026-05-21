@@ -8,7 +8,7 @@
 
 namespace {
 
-using namespace scid::database;
+using namespace scid::core;
 
 std::string longNotation(simpleMoveT const& move) {
 	char buf[UCI_MOVE_STRING_SIZE] = {};

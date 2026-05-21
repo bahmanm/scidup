@@ -40,9 +40,9 @@ public:
 	 * Opens a file.
 	 * @param filename: path to the file to be opened.
 	 * @param fmode: open the file for reading, writing, or both.
-	 * @returns OK on success, an @e errorT code on failure.
+	 * @returns scid::core::OK on success, an @e scid::core::errorT code on failure.
 	 */
-	errorT Open(const char* filename, fileModeT fmode) {
+	scid::core::errorT Open(const char* filename, fileModeT fmode) {
 		std::ios::openmode mode = std::ios::binary;
 		switch (fmode) {
 		case FMODE_ReadOnly:
@@ -58,10 +58,10 @@ public:
 			mode |= std::ios::in | std::ios::out | std::ios::trunc;
 			break;
 		default:
-			return ERROR_FileMode;
+			return scid::core::ERROR_FileMode;
 		}
 
-		return (open(filename, mode) != 0) ? OK : ERROR_FileOpen;
+		return (open(filename, mode) != 0) ? scid::core::OK : scid::core::ERROR_FileOpen;
 	}
 
 	/**
@@ -110,7 +110,7 @@ public:
 	 * Reads a 8-bit unsigned integer.
 	 * This function do not check for errors or EOF.
 	 */
-	byte ReadOneByte() { return static_cast<byte>(sbumpc()); }
+	scid::core::byte ReadOneByte() { return static_cast<scid::core::byte>(sbumpc()); }
 
 	/**
 	 * Reads a 16-bit unsigned integer.
@@ -134,7 +134,7 @@ public:
 	 * Writes a 8-bit unsigned integer.
 	 * @returns the number of characters successfully written.
 	 */
-	int WriteOneByte(byte value) {
+	int WriteOneByte(scid::core::byte value) {
 		int_type ch = sputc(static_cast<char_type>(value));
 		return (ch != traits_type::eof()) ? 1 : 0;
 	}
@@ -144,27 +144,27 @@ public:
 	 * @returns the number of characters successfully written.
 	 */
 	int WriteTwoBytes(uint32_t value) {
-		return WriteOneByte(static_cast<byte>(value >> 8)) +
-		       WriteOneByte(static_cast<byte>(value));
+		return WriteOneByte(static_cast<scid::core::byte>(value >> 8)) +
+		       WriteOneByte(static_cast<scid::core::byte>(value));
 	}
 	/**
 	 * Writes a 24-bit unsigned integer.
 	 * @returns the number of characters successfully written.
 	 */
 	int WriteThreeBytes(uint32_t value) {
-		return WriteOneByte(static_cast<byte>(value >> 16)) +
-		       WriteOneByte(static_cast<byte>(value >> 8)) +
-		       WriteOneByte(static_cast<byte>(value));
+		return WriteOneByte(static_cast<scid::core::byte>(value >> 16)) +
+		       WriteOneByte(static_cast<scid::core::byte>(value >> 8)) +
+		       WriteOneByte(static_cast<scid::core::byte>(value));
 	}
 	/**
 	 * Writes a 32-bit unsigned integer.
 	 * @returns the number of characters successfully written.
 	 */
 	int WriteFourBytes(uint32_t value) {
-		return WriteOneByte(static_cast<byte>(value >> 24)) +
-		       WriteOneByte(static_cast<byte>(value >> 16)) +
-		       WriteOneByte(static_cast<byte>(value >> 8)) +
-		       WriteOneByte(static_cast<byte>(value));
+		return WriteOneByte(static_cast<scid::core::byte>(value >> 24)) +
+		       WriteOneByte(static_cast<scid::core::byte>(value >> 16)) +
+		       WriteOneByte(static_cast<scid::core::byte>(value >> 8)) +
+		       WriteOneByte(static_cast<scid::core::byte>(value));
 	}
 
 private:
@@ -194,16 +194,16 @@ public:
 	 * Opens a file and store its size.
 	 * @param filename: path to the file to be opened.
 	 * @param fmode: open the file for reading, writing, or both.
-	 * @returns OK on success, an @e errorT code on failure.
+	 * @returns scid::core::OK on success, an @e scid::core::errorT code on failure.
 	 */
-	errorT open(const std::string& filename, fileModeT fmode) {
-		errorT res = Open(filename.c_str(), fmode);
-		if (res != OK)
+	scid::core::errorT open(const std::string& filename, fileModeT fmode) {
+		scid::core::errorT res = Open(filename.c_str(), fmode);
+		if (res != scid::core::OK)
 			return res;
 		fileSz_ = pubseekoff(0, std::ios::end);
 		if (fileSz_ == -1)
-			return ERROR_FileSeek;
-		return OK;
+			return scid::core::ERROR_FileSeek;
+		return scid::core::OK;
 	}
 
 	/**
@@ -220,21 +220,21 @@ public:
 	/**
 	 * Writes, at the end of the file, @p count characters from the character
 	 * array whose first element is pointed to by @p s.
-	 * @returns OK in case of success, an error code otherwise.
+	 * @returns scid::core::OK in case of success, an error code otherwise.
 	 */
-	errorT append(const char_type* s, std::streamsize count) {
+	scid::core::errorT append(const char_type* s, std::streamsize count) {
 		assert(s != 0);
 
 		if (filePos_ != -2) { // Seek to end of file, if necessary.
 			filePos_ = seekpos(fileSz_);
 			if (filePos_ == -1)
-				return ERROR_FileSeek;
+				return scid::core::ERROR_FileSeek;
 			filePos_ = -2;
 		}
 
 		std::streamsize n = xsputn(s, count);
 		fileSz_ += n;
-		return (n == count) ? OK : ERROR_FileWrite;
+		return (n == count) ? scid::core::OK : scid::core::ERROR_FileWrite;
 	}
 
 	/**

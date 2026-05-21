@@ -23,16 +23,16 @@
 #include "scidup/database/common.h"
 #include <scidup/spelling/spelling.h>
 
-const scid::database::uint CROSSTABLE_MaxPlayers = 500;  // Max. number of players.
-const scid::database::uint CROSSTABLE_MaxRounds =   60;  // Max. number of Swiss event rounds.
+const scid::core::uint CROSSTABLE_MaxPlayers = 500;  // Max. number of players.
+const scid::core::uint CROSSTABLE_MaxRounds =   60;  // Max. number of Swiss event rounds.
 
 struct clashT
 {
-    scid::database::resultT  result;
-    scid::database::uint     gameNum;
-    scid::database::uint     opponent;  // For swiss crosstables.
-    scid::database::colorT   color;
-    scid::database::uint     round;
+    scid::core::resultT  result;
+    scid::core::uint     gameNum;
+    scid::core::uint     opponent;  // For swiss crosstables.
+    scid::core::colorT   color;
+    scid::core::uint     round;
     clashT * next;
 };
 
@@ -56,24 +56,24 @@ struct playerDataT
 {
     scid::database::idNumberT   id;
     char *      name;
-    scid::database::ratingT        elo;
-    scid::database::uint        score;   // Score, stored as 2 pts per win, 1 pt per draw.
-    scid::database::uint        n_won;
-    scid::database::uint        n_draw;
-    scid::database::uint        n_loss;
-    scid::database::uint        gameCount;
-    scid::database::uint        tiebreak; // Sonneborn-Berger tiebreak for all-play-all,
+    scid::core::ratingT        elo;
+    scid::core::uint        score;   // Score, stored as 2 pts per win, 1 pt per draw.
+    scid::core::uint        n_won;
+    scid::core::uint        n_draw;
+    scid::core::uint        n_loss;
+    scid::core::uint        gameCount;
+    scid::core::uint        tiebreak; // Sonneborn-Berger tiebreak for all-play-all,
                           // or Bucholz tiebreak for Swiss.
-    scid::database::uint        oppEloCount;
-    scid::database::uint        oppEloTotal;
-    scid::database::uint        oppEloScore;  // score against Elo opponents
+    scid::core::uint        oppEloCount;
+    scid::core::uint        oppEloTotal;
+    scid::core::uint        oppEloScore;  // score against Elo opponents
     clashT *    firstClash [CROSSTABLE_MaxPlayers];
     clashT *    lastClash [CROSSTABLE_MaxPlayers];
-    scid::database::uint        clashCount[CROSSTABLE_MaxPlayers];
+    scid::core::uint        clashCount[CROSSTABLE_MaxPlayers];
     clashT *    roundClash [CROSSTABLE_MaxRounds];
     char        title [8];
     char        country [8];
-    scid::database::dateT       birthdate;
+    scid::core::dateT       birthdate;
     int         ageInYears;
     bool        printed;
 };
@@ -83,12 +83,12 @@ class Crosstable
 {
   private:
 
-    scid::database::uint         PlayerCount;
-    scid::database::uint         GameCount;
-    scid::database::uint         MaxClashes;  // Maximum games between any two players
-    scid::database::uint         MaxRound;
-    scid::database::uint         ResultCount [scid::database::NUM_RESULT_TYPES];
-    scid::database::dateT        FirstDate;
+    scid::core::uint         PlayerCount;
+    scid::core::uint         GameCount;
+    scid::core::uint         MaxClashes;  // Maximum games between any two players
+    scid::core::uint         MaxRound;
+    scid::core::uint         ResultCount [scid::core::NUM_RESULT_TYPES];
+    scid::core::dateT        FirstDate;
 
     bool         ShowTitles;
     bool         ShowElos;
@@ -130,22 +130,22 @@ class Crosstable
     const char * EndRightCol;
     const char * StartBoldCol;
     const char * EndBoldCol;
-    scid::database::uint         LongestNameLen;
-    scid::database::uint         LineWidth;
-    scid::database::uint         PlayerNumWidth;
-    scid::database::uint         SortedIndex [CROSSTABLE_MaxPlayers];
-    scid::database::uint         InvertedIndex [CROSSTABLE_MaxPlayers];
-    scid::database::uint         CurrentGame;
+    scid::core::uint         LongestNameLen;
+    scid::core::uint         LineWidth;
+    scid::core::uint         PlayerNumWidth;
+    scid::core::uint         SortedIndex [CROSSTABLE_MaxPlayers];
+    scid::core::uint         InvertedIndex [CROSSTABLE_MaxPlayers];
+    scid::core::uint         CurrentGame;
 
     void   Tiebreaks (crosstableModeT mode);
 
-    void   PrintDashesLine (scid::database::DString * dstr);
-    void   PrintPlayer (scid::database::DString * dstr, playerDataT * pdata);
-    void   PrintPerformance (scid::database::DString * dstr, playerDataT * pdata);
-    void   PrintScorePercentage (scid::database::DString * dstr, playerDataT * pdata);
-    void   PrintAllPlayAll (scid::database::DString * dstr, scid::database::uint playerLimit);
-    void   PrintKnockout (scid::database::DString * dstr, scid::database::uint playerLimit);
-    void   PrintSwiss (scid::database::DString * dstr, scid::database::uint playerLimit);
+    void   PrintDashesLine (scid::core::DString * dstr);
+    void   PrintPlayer (scid::core::DString * dstr, playerDataT * pdata);
+    void   PrintPerformance (scid::core::DString * dstr, playerDataT * pdata);
+    void   PrintScorePercentage (scid::core::DString * dstr, playerDataT * pdata);
+    void   PrintAllPlayAll (scid::core::DString * dstr, scid::core::uint playerLimit);
+    void   PrintKnockout (scid::core::DString * dstr, scid::core::uint playerLimit);
+    void   PrintSwiss (scid::core::DString * dstr, scid::core::uint playerLimit);
 
     void   Init();
     void   Destroy();
@@ -180,21 +180,21 @@ class Crosstable
     void   SetDecimalPointChar (char ch) { DecimalPointChar = ch; }
     void   SetNumberedColumns (bool b) { APAColumnNums = b; }
 
-    scid::database::uint   NumPlayers() { return PlayerCount; }
-    scid::database::errorT AddPlayer (scid::database::idNumberT id, const char * name, scid::database::ratingT elo,
+    scid::core::uint   NumPlayers() { return PlayerCount; }
+    scid::core::errorT AddPlayer (scid::database::idNumberT id, const char * name, scid::core::ratingT elo,
                       const scidup::spelling::SpellChecker*);
-    scid::database::errorT AddResult (scid::database::uint gameNumber, scid::database::idNumberT white, scid::database::idNumberT black,
-                      scid::database::resultT result, scid::database::uint round, scid::database::dateT date);
+    scid::core::errorT AddResult (scid::core::uint gameNumber, scid::database::idNumberT white, scid::database::idNumberT black,
+                      scid::core::resultT result, scid::core::uint round, scid::core::dateT date);
 
     crosstableModeT BestMode (void);
-    scid::database::ratingT   AvgRating();
-    void   PrintTable (scid::database::DString * dstr, crosstableModeT mode, scid::database::uint playerLimit, int currentGame);
+    scid::core::ratingT   AvgRating();
+    void   PrintTable (scid::core::DString * dstr, crosstableModeT mode, scid::core::uint playerLimit, int currentGame);
 
-    static scid::database::uint Performance (scid::database::uint oppAvg, scid::database::uint percentage);
-    static scid::database::uint FideCategory (scid::database::ratingT rating);
-    static scid::database::ratingT OpponentElo (scid::database::ratingT player, scid::database::ratingT opponent);
-    static int RatingChange (scid::database::ratingT player, scid::database::uint oppAvg, scid::database::uint percentage,
-                             scid::database::uint count);
+    static scid::core::uint Performance (scid::core::uint oppAvg, scid::core::uint percentage);
+    static scid::core::uint FideCategory (scid::core::ratingT rating);
+    static scid::core::ratingT OpponentElo (scid::core::ratingT player, scid::core::ratingT opponent);
+    static int RatingChange (scid::core::ratingT player, scid::core::uint oppAvg, scid::core::uint percentage,
+                             scid::core::uint count);
 };
 
 #endif  // #ifndef SCID_CROSSTAB_H

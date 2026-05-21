@@ -30,18 +30,18 @@ struct TreeNode {
 	unsigned long long eloWhiteSum = 0;   // Sum of white Elos.
 	unsigned long long eloBlackSum = 0;   // Sum of bLack Elos.
 	unsigned long long yearSum = 0;       // Sum of years.
-	gamenumT freq[NUM_RESULT_TYPES] = {}; // freq[0] is the total count.
+	gamenumT freq[scid::core::NUM_RESULT_TYPES] = {}; // freq[0] is the total count.
 	gamenumT eloCount = 0;                // Count of games with an Elo.
 	gamenumT yearCount = 0;               // Count of games with year != 0.
-	FullMove move;
+	scid::core::FullMove move;
 
 public:
-	explicit TreeNode(FullMove m) : move(m) {}
+	explicit TreeNode(scid::core::FullMove m) : move(m) {}
 
-	void add(resultT result, int eloW, int eloB, unsigned year) {
-		static_assert(RESULT_None == 0);
+	void add(scid::core::resultT result, int eloW, int eloB, unsigned year) {
+		static_assert(scid::core::RESULT_None == 0);
 		freq[0]++; // total count of games
-		if (result != RESULT_None) {
+		if (result != scid::core::RESULT_None) {
 			freq[result]++;
 		}
 		if (eloW > 0 && eloB > 0) {
@@ -58,8 +58,8 @@ public:
 	/// @return a value in the range [0, 1000] representing the score percentage
 	/// from the white prospective (999 = white won 99.9% of the games).
 	int score() const {
-		auto n = freq[RESULT_White] + freq[RESULT_Draw] + freq[RESULT_Black];
-		auto res = 1000ull * freq[RESULT_White] + 500ull * freq[RESULT_Draw];
+		auto n = freq[scid::core::RESULT_White] + freq[scid::core::RESULT_Draw] + freq[scid::core::RESULT_Black];
+		auto res = 1000ull * freq[scid::core::RESULT_White] + 500ull * freq[scid::core::RESULT_Draw];
 		return n ? static_cast<int>(res / n) : 500;
 	}
 
@@ -69,7 +69,7 @@ public:
 
 		int score = (this->score() + 5) / 10;
 		auto eloOpp = eloBlackSum;
-		if (move.getColor() != WHITE) {
+		if (move.getColor() != scid::core::WHITE) {
 			score = 100 - score;
 			eloOpp = eloWhiteSum;
 		}
@@ -80,14 +80,14 @@ public:
 		if (eloCount == 0)
 			return 0;
 
-		auto elo = (move.getColor() == WHITE) ? eloWhiteSum : eloBlackSum;
+		auto elo = (move.getColor() == scid::core::WHITE) ? eloWhiteSum : eloBlackSum;
 		return 1.0 * elo / eloCount;
 	}
 
 	double avgYear() const { return yearCount ? 1.0 * yearSum / yearCount : 0; }
 
 	double percDraws() const {
-		return freq[0] ? 100.0 * freq[RESULT_Draw] / freq[0] : 0;
+		return freq[0] ? 100.0 * freq[scid::core::RESULT_Draw] / freq[0] : 0;
 	}
 
 	static auto cmp_ngames_desc() {

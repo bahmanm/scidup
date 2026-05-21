@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <string>
 
-namespace scid::database {
+namespace scid::core {
 
 class FullMove {
 	// ** Lower 16 bits are compatible with Stockfish's Move **
@@ -132,4 +132,4 @@ public:
 };
 
 
-} // namespace scid::database
+} // namespace scid::core

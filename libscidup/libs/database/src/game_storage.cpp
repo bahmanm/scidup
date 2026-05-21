@@ -59,13 +59,13 @@ void game_storage::loadStandardTags(scid::core::Game& game, char* scidFlags,
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // encodeKing(): encoding of King moves.
 //
-static byte encodeKing(squareT from, int to) {
+static scid::core::byte encodeKing(scid::core::squareT from, int to) {
     // Valid King difference-from-old-square values are:
     // -9, -8, -7, -1, 1, 7, 8, 9, and -2 and 2 for castling.
     // To convert this to a val in the range [1-10], we add 9 and
     // then look up the val[] table.
     // Coded values 1-8 are one-square moves; 9 and 10 are Castling.
-    static const byte val[] = {
+    static const scid::core::byte val[] = {
     /* -9 -8 -7 -6 -5 -4 -3 -2 -1  0  1   2  3  4  5  6  7  8  9 */
         1, 2, 3, 0, 0, 0, 0, 9, 4, 0, 5, 10, 0, 0, 0, 0, 6, 7, 8
     };
@@ -85,7 +85,7 @@ static byte encodeKing(squareT from, int to) {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // encodeKnight(): encoding Knight moves.
 //
-static byte encodeKnight(squareT from, squareT to) {
+static scid::core::byte encodeKnight(scid::core::squareT from, scid::core::squareT to) {
     // Valid Knight difference-from-old-square values are:
     // -17, -15, -10, -6, 6, 10, 15, 17.
     // To convert this to a value in the range [1-8], we add 17 to
@@ -93,7 +93,7 @@ static byte encodeKnight(squareT from, squareT to) {
 
     auto diff = to - from;
     static_assert(std::is_same_v<decltype(diff), int>);
-    static const byte val[] = {
+    static const scid::core::byte val[] = {
     /* -17 -16 -15 -14 -13 -12 -11 -10 -9 -8 -7 -6 -5 -4 -3 -2 -1  0 */
         1,  0,  2,  0,  0,  0,  0,  3,  0, 0, 0, 4, 0, 0, 0, 0, 0, 0,
 
@@ -109,7 +109,7 @@ static byte encodeKnight(squareT from, squareT to) {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // encodeRook(): encoding rook moves.
 //
-static byte encodeRook(squareT from, squareT to) {
+static scid::core::byte encodeRook(scid::core::squareT from, scid::core::squareT to) {
     // Valid Rook moves are to same rank, OR to same fyle.
     // We encode the 8 squares on the same rank 0-8, and the 8
     // squares on the same fyle 9-15. This means that for any particular
@@ -117,44 +117,44 @@ static byte encodeRook(squareT from, squareT to) {
     // meaningless, as they will represent the from-square.
 
     // Check if the two squares share the same rank:
-    if (square_Rank(from) == square_Rank(to)) {
-        return square_Fyle(to);
+    if (scid::core::square_Rank(from) == scid::core::square_Rank(to)) {
+        return scid::core::square_Fyle(to);
     }
-    return 8 + square_Rank(to);
+    return 8 + scid::core::square_Rank(to);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // encodeBishop(): encoding Bishop moves.
 //
-static byte encodeBishop(squareT from, squareT to) {
+static scid::core::byte encodeBishop(scid::core::squareT from, scid::core::squareT to) {
     // We encode a Bishop move as the Fyle moved to, plus
     // a one-bit flag to indicate if the direction was
     // up-right/down-left or vice versa.
 
-    auto rankdiff = square_Rank(to) - square_Rank(from);
-    auto fylediff = square_Fyle(to) - square_Fyle(from);
+    auto rankdiff = scid::core::square_Rank(to) - scid::core::square_Rank(from);
+    auto fylediff = scid::core::square_Fyle(to) - scid::core::square_Fyle(from);
     static_assert(std::is_same_v<decltype(rankdiff), int>);
     static_assert(std::is_same_v<decltype(fylediff), int>);
 
     // If (rankdiff * fylediff) is negative, it's up-left/down-right:
     if (rankdiff * fylediff < 0)
-        return square_Fyle(to) + 8;
+        return scid::core::square_Fyle(to) + 8;
 
-    return square_Fyle(to);
+    return scid::core::square_Fyle(to);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // encodeQueen(): encoding Queen moves.
 //
-static byte encodeQueen(squareT from, squareT to, byte& multibyte) {
+static scid::core::byte encodeQueen(scid::core::squareT from, scid::core::squareT to, scid::core::byte& multibyte) {
     // We cannot fit all Queen moves in one byte, so Rooklike moves
     // are in one byte (encoded the same way as Rook moves),
     // while diagonal moves are in two bytes.
-    if (square_Rank(from) == square_Rank(to)) // Rook-horizontal move:
-        return square_Fyle(to);
+    if (scid::core::square_Rank(from) == scid::core::square_Rank(to)) // Rook-horizontal move:
+        return scid::core::square_Fyle(to);
 
-    if (square_Fyle(from) == square_Fyle(to)) // Rook-vertical move:
-        return 8 + square_Rank(to);
+    if (scid::core::square_Fyle(from) == scid::core::square_Fyle(to)) // Rook-vertical move:
+        return 8 + scid::core::square_Rank(to);
 
     // Diagonal move:
     ASSERT(std::abs(to / 8 - from / 8) == std::abs(to % 8 - from % 8));
@@ -164,13 +164,13 @@ static byte encodeQueen(squareT from, squareT to, byte& multibyte) {
     // to make sure that it cannot clash with the Special tokens (which
     // are in the range 0 to 15, since they are special King moves).
     multibyte = to + 64;
-    return square_Fyle(from);
+    return scid::core::square_Fyle(from);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // encodePawn(): encoding Pawn moves.
 //
-static byte encodePawn(squareT from, squareT to, pieceT promo) {
+static scid::core::byte encodePawn(scid::core::squareT from, scid::core::squareT to, scid::core::pieceT promo) {
     // Pawn moves require a promotion encoding.
     // The pawn moves are:
     // 0 = capture-left,
@@ -182,14 +182,14 @@ static byte encodePawn(squareT from, squareT to, pieceT promo) {
     // 12/13/14 = 0/1/2 with Knight promo;
     // 15 = forward TWO squares.
 
-    byte val;
+    scid::core::byte val;
     auto diff = to - from;
     static_assert(std::is_same_v<decltype(diff), int>);
 
     if (diff < 0) { diff = -diff; }
     if (diff == 16) { // Move forward two squares
         val = 15;
-        ASSERT (promo == EMPTY);
+        ASSERT (promo == scid::core::EMPTY);
 
     } else {
         if (diff == 7) { val = 0; }
@@ -198,12 +198,12 @@ static byte encodePawn(squareT from, squareT to, pieceT promo) {
             ASSERT (diff == 9);
             val = 2;
         }
-        if (promo != EMPTY) {
+        if (promo != scid::core::EMPTY) {
             // Handle promotions.
             // sm->promote must be Queen=2,Rook=3, Bishop=4 or Knight=5.
             // We add 3 for Queen, 6 for Rook, 9 for Bishop, 12 for Knight.
 
-            ASSERT (promo >= QUEEN  &&  promo <= KNIGHT);
+            ASSERT (promo >= scid::core::QUEEN  &&  promo <= scid::core::KNIGHT);
             val += 3 * ((promo) - 1);
         }
     }
@@ -230,55 +230,55 @@ static byte encodePawn(squareT from, squareT to, pieceT promo) {
 
 
 template <typename DestT>
-void encodeMove(const simpleMoveT& sm, DestT& dest) {
-	byte multibyte = 0;
-	byte val;
-	switch (piece_Type(sm.movingPiece)) {
-	case KING:
+void encodeMove(const scid::core::simpleMoveT& sm, DestT& dest) {
+	scid::core::byte multibyte = 0;
+	scid::core::byte val;
+	switch (scid::core::piece_Type(sm.movingPiece)) {
+	case scid::core::KING:
 		ASSERT(sm.pieceNum == 0); // Kings MUST be piece Number zero.
 		val = encodeKing(sm.from,
 		                 sm.isCastle() ? sm.from + sm.isCastle() : sm.to);
 		break;
-	case QUEEN:
+	case scid::core::QUEEN:
 		val = encodeQueen(sm.from, sm.to, multibyte);
 		break;
-	case ROOK:
+	case scid::core::ROOK:
 		val = encodeRook(sm.from, sm.to);
 		break;
-	case BISHOP:
+	case scid::core::BISHOP:
 		val = encodeBishop(sm.from, sm.to);
 		break;
-	case KNIGHT:
+	case scid::core::KNIGHT:
 		val = encodeKnight(sm.from, sm.to);
 		break;
 	default:
-		ASSERT(PAWN == piece_Type(sm.movingPiece));
+		ASSERT(scid::core::PAWN == scid::core::piece_Type(sm.movingPiece));
 		val = encodePawn(sm.from, sm.to, sm.promote);
 	}
 	ASSERT(sm.pieceNum <= 15 && val <= 15);
-	const auto encoded = static_cast<byte>(val | (sm.pieceNum << 4));
+	const auto encoded = static_cast<scid::core::byte>(val | (sm.pieceNum << 4));
 	dest.emplace_back(encoded);
 	if (multibyte) { // Diagonal Queen moves are stored using two bytes.
 		dest.emplace_back(multibyte);
 	}
 }
 
-simpleMoveT toSimpleMove(Position& position,
+scid::core::simpleMoveT toSimpleMove(scid::core::Position& position,
                          scid::core::MoveAction const& action) {
-	simpleMoveT move = {};
+	scid::core::simpleMoveT move = {};
 	if (action.isNull()) {
-		position.makeMove(action.from, action.to, PAWN, move);
+		position.makeMove(action.from, action.to, scid::core::PAWN, move);
 		return move;
 	}
 	if (action.castling) {
 		position.makeMove(action.from, action.from,
-		                  action.to > action.from ? KING : QUEEN, move);
+		                  action.to > action.from ? scid::core::KING : scid::core::QUEEN, move);
 		return move;
 	}
 
 	const auto notation = action.longNotation();
 	if (position.ReadCoordMove(&move, notation.data(), notation.size(),
-	                           false) == OK) {
+	                           false) == scid::core::OK) {
 		return move;
 	}
 
@@ -289,7 +289,7 @@ simpleMoveT toSimpleMove(Position& position,
 	return move;
 }
 
-scid::core::MoveAction toMoveAction(simpleMoveT const& move) {
+scid::core::MoveAction toMoveAction(scid::core::simpleMoveT const& move) {
 	return {move.from, move.to, move.promote, move.isCastle() != 0};
 }
 
@@ -301,7 +301,7 @@ struct MovelistStats {
 template <typename DestT>
 void encodeMovelistLine(bool markComments,
                         scid::core::MoveSequence const& line,
-                        Position& position,
+                        scid::core::Position& position,
                         DestT& dest,
                         MovelistStats& stats) {
 	for (auto const& coreMove : line.moves) {
@@ -344,7 +344,7 @@ std::pair<unsigned, unsigned> encodeMovelist(
 
 	MovelistStats stats;
 	auto position =
-	    game.startPosition() ? *game.startPosition() : Position::getStdStart();
+	    game.startPosition() ? *game.startPosition() : scid::core::Position::getStdStart();
 	encodeMovelistLine(markComments, game.movetext().mainline, position, dest,
 	                   stats);
 	dest.emplace_back(ENCODE_END_GAME);
@@ -352,21 +352,21 @@ std::pair<unsigned, unsigned> encodeMovelist(
 }
 
 /// Decodes the game moves.
-errorT decodeMovelist(ByteBuffer& buf, scid::core::Game& game,
+scid::core::errorT decodeMovelist(ByteBuffer& buf, scid::core::Game& game,
                       std::vector<scid::core::MovetextLocation>&
                           comment_marks) {
 	struct VariationFrame {
-		Position resumePosition;
-		simpleMoveT resumeMove;
+		scid::core::Position resumePosition;
+		scid::core::simpleMoveT resumeMove;
 	};
 
 	scid::core::MovetextCursor cursor(game);
-	Position position = game.startPosition()
+	scid::core::Position position = game.startPosition()
 	                        ? *game.startPosition()
-	                        : Position::getStdStart();
+	                        : scid::core::Position::getStdStart();
 	std::vector<VariationFrame> variationStack;
-	std::optional<simpleMoveT> previousMove;
-	simpleMoveT sm;
+	std::optional<scid::core::simpleMoveT> previousMove;
+	scid::core::simpleMoveT sm;
 	int varDepth = 0;
 	for (;;) {
 		auto [err, val] = game_storage::ByteBufferAccess::nextMove(
@@ -405,7 +405,7 @@ errorT decodeMovelist(ByteBuffer& buf, scid::core::Game& game,
 			    return true;
 		    });
 		if (err)
-			return (err == ERROR_EndOfMoveList) ? OK : err;
+			return (err == scid::core::ERROR_EndOfMoveList) ? scid::core::OK : err;
 
 		auto errMove = game_storage::decodeEncodedMove(buf, val, position, sm);
 		if (errMove)
@@ -416,14 +416,14 @@ errorT decodeMovelist(ByteBuffer& buf, scid::core::Game& game,
 	}
 }
 
-errorT resetStartFen(scid::core::Game& game, const char* fen) {
-	Position position;
+scid::core::errorT resetStartFen(scid::core::Game& game, const char* fen) {
+	scid::core::Position position;
 	if (auto err = position.ReadFromFEN(fen))
 		return err;
 
 	game.clearMovetext();
 	game.setStartPosition(position);
-	return OK;
+	return scid::core::OK;
 }
 
 struct CommentStats {
@@ -532,7 +532,7 @@ static void setCoreCommentAt(scid::core::Game& game,
 // marked location. This way it is possible to not add encode marks for games
 // that are almost fully commented.
 template <typename SourceT>
-static errorT decodeComments(
+static scid::core::errorT decodeComments(
     SourceT& buf,
     scid::core::Game& game,
     std::vector<scid::core::MovetextLocation>& comment_marks) {
@@ -543,7 +543,7 @@ static errorT decodeComments(
 			if (auto str = buf.GetTerminatedString())
 				setCoreCommentAt(game, location, str);
 			else
-				return ERROR_Decode;
+				return scid::core::ERROR_Decode;
 		}
 
 		scid::core::MovetextCursor cursor(game);
@@ -557,7 +557,7 @@ static errorT decodeComments(
 
 	while (auto str = buf.GetTerminatedString()) {
 		if (!hasFirstCommentLocation)
-			return ERROR_Decode;
+			return scid::core::ERROR_Decode;
 
 		setCoreCommentAt(game, firstCommentLocation, str);
 		scid::core::MovetextCursor cursor(game);
@@ -568,7 +568,7 @@ static errorT decodeComments(
 		if (hasFirstCommentLocation)
 			firstCommentLocation = cursor.location();
 	}
-	return OK;
+	return scid::core::OK;
 }
 
 
@@ -578,16 +578,16 @@ static errorT decodeComments(
 /// - number of half moves
 /// - final material signature
 /// - stored line code
-std::pair<bool, bool> mainlineInfo(const Position* customStart,
+std::pair<bool, bool> mainlineInfo(const scid::core::Position* customStart,
                                    scid::core::MoveSequence const& mainline,
                                    IndexEntry& dest) {
-	ushort nHalfMoves = 0;
+	scid::core::ushort nHalfMoves = 0;
 	bool PromoFlag = false;
 	bool UnderPromosFlag = false;
 	unsigned hpCount = 0;
-	byte hpVal[8] = {};
-	Position pos = customStart ? *customStart : Position::getStdStart();
-	std::vector<simpleMoveT> moves;
+	scid::core::byte hpVal[8] = {};
+	scid::core::Position pos = customStart ? *customStart : scid::core::Position::getStdStart();
+	std::vector<scid::core::simpleMoveT> moves;
 	moves.reserve(mainline.moves.size());
 
 	auto hpOld = HPSIG_StdStart; // All 16 pawns are on their home squares.
@@ -595,9 +595,9 @@ std::pair<bool, bool> mainlineInfo(const Position* customStart,
 		auto move = toSimpleMove(pos, coreMove.action);
 		++nHalfMoves;
 
-		if (move.promote != EMPTY) {
+		if (move.promote != scid::core::EMPTY) {
 			PromoFlag = true;
-			if (piece_Type(move.promote) != QUEEN) {
+			if (scid::core::piece_Type(move.promote) != scid::core::QUEEN) {
 				UnderPromosFlag = true;
 			}
 		}
@@ -608,7 +608,7 @@ std::pair<bool, bool> mainlineInfo(const Position* customStart,
 			const auto hpNew = pos.GetHPSig();
 			if (unsigned changed = hpOld - hpNew) {
 				hpOld = hpNew;
-				byte idxMovedPawn = 0; // __builtin_ctz(changed)
+				scid::core::byte idxMovedPawn = 0; // __builtin_ctz(changed)
 				while (changed >>= 1) {
 					++idxMovedPawn;
 				}
@@ -620,7 +620,7 @@ std::pair<bool, bool> mainlineInfo(const Position* customStart,
 		}
 	}
 
-	byte storedCode = 0;
+	scid::core::byte storedCode = 0;
 	if (!customStart) {
 		storedCode = StoredLine::classify([&](auto begin, auto end) {
 			if (std::distance(begin, end) > nHalfMoves)
@@ -644,7 +644,7 @@ std::pair<bool, bool> mainlineInfo(const Position* customStart,
 		});
 	}
 
-	dest.SetHomePawnData(static_cast<byte>(hpCount), hpVal);
+	dest.SetHomePawnData(static_cast<scid::core::byte>(hpCount), hpVal);
 	dest.SetPromotionsFlag(PromoFlag);
 	dest.SetUnderPromoFlag(UnderPromosFlag);
 	dest.SetNumHalfMoves(nHalfMoves);
@@ -656,7 +656,7 @@ std::pair<bool, bool> mainlineInfo(const Position* customStart,
 
 std::pair<IndexEntry, TagRoster> game_storage::encode(
     const scid::core::Game& coreGame, const char* scidFlags,
-    std::vector<byte>& dest) {
+    std::vector<scid::core::byte>& dest) {
 	// TODO [Game]: Keep IndexEntry/TagRoster projection in the database storage
 	// boundary. Core metadata should be projected here, not stored in database
 	// codec types.
@@ -720,13 +720,13 @@ std::pair<IndexEntry, TagRoster> game_storage::encode(
 	return {ie, tags};
 }
 
-errorT game_storage::decode(scid::core::Game& coreGame, char* scidFlags,
+scid::core::errorT game_storage::decode(scid::core::Game& coreGame, char* scidFlags,
                             std::size_t scidFlagsLen, IndexEntry const& ie,
                             TagRoster const& tags, ByteBuffer buf) {
 	coreGame.clear();
 	game_storage::loadStandardTags(coreGame, scidFlags, scidFlagsLen, ie, tags);
 
-	errorT err = buf.decodeTags([&](const auto& tag, const auto& value) {
+	scid::core::errorT err = buf.decodeTags([&](const auto& tag, const auto& value) {
 		auto& dest = coreGame.findOrCreateTag(tag);
 		dest.assign(value.begin(), value.end());
 	});
@@ -741,28 +741,28 @@ errorT game_storage::decode(scid::core::Game& coreGame, char* scidFlags,
 		err = resetStartFen(coreGame, fen);
 
 	std::vector<scid::core::MovetextLocation> comment_marks;
-	if (err == OK)
+	if (err == scid::core::OK)
 		err = decodeMovelist(buf, coreGame, comment_marks);
 
-	if (err != OK)
+	if (err != scid::core::OK)
 		return err;
 
-	if (err == OK)
+	if (err == scid::core::OK)
 		err = decodeComments(buf, coreGame, comment_marks);
 
 	return err;
 }
 
-errorT game_storage::decodeMovesOnly(scid::core::Game& game, ByteBuffer& buf) {
+scid::core::errorT game_storage::decodeMovesOnly(scid::core::Game& game, ByteBuffer& buf) {
 	game.clear();
-	if (errorT err = buf.decodeTags([](auto, auto) {}))
+	if (scid::core::errorT err = buf.decodeTags([](auto, auto) {}))
 		return err;
 
 	const auto [errStartPos, fen] = buf.decodeStartBoard();
 	if (errStartPos)
 		return errStartPos;
 	if (fen) {
-		if (errorT err = resetStartFen(game, fen))
+		if (scid::core::errorT err = resetStartFen(game, fen))
 			return err;
 	}
 
@@ -771,35 +771,35 @@ errorT game_storage::decodeMovesOnly(scid::core::Game& game, ByteBuffer& buf) {
 	return err;
 }
 
-errorT game_storage::decodeEncodedMove(ByteBuffer& buf, byte val,
-                                       const Position& pos, simpleMoveT& sm) {
-	const colorT toMove = pos.GetToMove();
-	const squareT from = pos.GetList(toMove)[val >> 4];
-	if (from > H8)
-		return ERROR_Decode;
+scid::core::errorT game_storage::decodeEncodedMove(ByteBuffer& buf, scid::core::byte val,
+                                       const scid::core::Position& pos, scid::core::simpleMoveT& sm) {
+	const scid::core::colorT toMove = pos.GetToMove();
+	const scid::core::squareT from = pos.GetList(toMove)[val >> 4];
+	if (from > scid::core::H8)
+		return scid::core::ERROR_Decode;
 
-	const auto ptype = piece_Type(pos.GetPiece(from));
+	const auto ptype = scid::core::piece_Type(pos.GetPiece(from));
 	const auto [to, promo] = game_storage::ByteBufferAccess::decodeMove(
 	    buf, toMove, ptype, from, val);
 	if (to < 0 || to > 63)
-		return ERROR_Decode;
+		return scid::core::ERROR_Decode;
 
 	if (to == from) {
-		if (promo == INVALID_PIECE)
-			return ERROR_Decode;
+		if (promo == scid::core::INVALID_PIECE)
+			return scid::core::ERROR_Decode;
 
-		if (promo != PAWN && !pos.canCastle<false>(promo == KING))
-			return ERROR_Decode;
+		if (promo != scid::core::PAWN && !pos.canCastle<false>(promo == scid::core::KING))
+			return scid::core::ERROR_Decode;
 	} else {
-		if (to == pos.GetKingSquare(WHITE) || to == pos.GetKingSquare(BLACK))
-			return ERROR_Decode;
+		if (to == pos.GetKingSquare(scid::core::WHITE) || to == pos.GetKingSquare(scid::core::BLACK))
+			return scid::core::ERROR_Decode;
 	}
 	pos.makeMove(from, to, promo, sm);
-	return OK;
+	return scid::core::OK;
 }
 
-errorT game_storage::decodeMainlineMove(ByteBuffer& buf, const Position& pos,
-                                        simpleMoveT& sm) {
+scid::core::errorT game_storage::decodeMainlineMove(ByteBuffer& buf, const scid::core::Position& pos,
+                                        scid::core::simpleMoveT& sm) {
 	auto [err, val] = ByteBufferAccess::nextLineMove(buf);
 	if (err)
 		return err;

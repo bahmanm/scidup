@@ -300,8 +300,8 @@ TEST(Test_PgnParser, pgn_trim) {
 TEST(Test_PgnParser, date_parsePGNTag) {
 	auto test = [](const char* str, const char* expected) {
 		char buf[16];
-		scid::database::date_DecodeToString(
-		    scid::database::date_parsePGNTag(str, std::strlen(str)), buf);
+		scid::core::date_DecodeToString(
+		    scid::core::date_parsePGNTag(str, std::strlen(str)), buf);
 		EXPECT_STREQ(buf, expected);
 	};
 

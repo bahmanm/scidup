@@ -25,20 +25,20 @@ namespace scid::database {
 
 class StoredLine {
 	static constexpr int STORED_LINES = 255;
-	static const FullMove* Moves_[STORED_LINES + 1];
+	static const scid::core::FullMove* Moves_[STORED_LINES + 1];
 
 	int8_t matches_[STORED_LINES + 1];
 
 public:
-	StoredLine(const pieceT* board, colorT toMove);
+	StoredLine(const scid::core::pieceT* board, scid::core::colorT toMove);
 
 	// Result:
 	//-2 : the game cannot reach the searched position
 	//-1 : the game can reach the searched position
 	//>=0: the game reach the searched position at the returned ply
-	int match(byte code) const { return matches_[code]; }
+	int match(scid::core::byte code) const { return matches_[code]; }
 
-	template <typename CompareOp> static byte classify(CompareOp comp) {
+	template <typename CompareOp> static scid::core::byte classify(CompareOp comp) {
 		int res = 0;
 		std::ptrdiff_t longest = 0;
 		for (int i = 1; i < STORED_LINES; ++i) {
@@ -49,14 +49,14 @@ public:
 				longest = std::distance(begin, end);
 			}
 		}
-		return static_cast<byte>(res);
+		return static_cast<scid::core::byte>(res);
 	}
 
-	static FullMove getMove(byte code, uint ply = 0) {
+	static scid::core::FullMove getMove(scid::core::byte code, scid::core::uint ply = 0) {
 		if ((code < STORED_LINES) && (Moves_[code] + ply) < Moves_[code + 1]) {
 			return Moves_[code][ply];
 		}
-		return FullMove();
+		return scid::core::FullMove();
 	}
 };
 

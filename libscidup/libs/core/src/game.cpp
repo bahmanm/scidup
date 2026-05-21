@@ -8,8 +8,8 @@ namespace scid::core {
 
 namespace {
 Rating normalizeRating(Rating rating) {
-	if (rating.type > scid::database::NUM_RATING_TYPES)
-		rating.type = scid::database::RATING_Elo;
+	if (rating.type > scid::core::NUM_RATING_TYPES)
+		rating.type = scid::core::RATING_Elo;
 	return rating;
 }
 
@@ -47,14 +47,14 @@ std::string MoveAction::longNotation() const {
 
 	std::string notation;
 	notation.reserve(5);
-	notation.push_back(scid::database::square_FyleChar(from));
-	notation.push_back(scid::database::square_RankChar(from));
-	notation.push_back(scid::database::square_FyleChar(to));
-	notation.push_back(scid::database::square_RankChar(to));
-	if (promotion != scid::database::EMPTY) {
+	notation.push_back(scid::core::square_FyleChar(from));
+	notation.push_back(scid::core::square_RankChar(from));
+	notation.push_back(scid::core::square_FyleChar(to));
+	notation.push_back(scid::core::square_RankChar(to));
+	if (promotion != scid::core::EMPTY) {
 		constexpr const char promotionChars[] = "  qrbn ";
 		notation.push_back(
-		    promotionChars[scid::database::piece_Type(promotion)]);
+		    promotionChars[scid::core::piece_Type(promotion)]);
 	}
 	return notation;
 }
@@ -105,15 +105,15 @@ const Player& Game::black() const {
 	return header_.black;
 }
 
-scid::database::dateT Game::date() const {
+scid::core::dateT Game::date() const {
 	return header_.event.date;
 }
 
-scid::database::dateT Game::eventDate() const {
+scid::core::dateT Game::eventDate() const {
 	return header_.event.eventDate;
 }
 
-scid::database::resultT Game::result() const {
+scid::core::resultT Game::result() const {
 	return header_.result;
 }
 
@@ -127,7 +127,7 @@ const std::string& Game::eco() const {
 	return header_.eco;
 }
 
-scid::database::ratingT Game::averageRating() const {
+scid::core::ratingT Game::averageRating() const {
 	auto white = header_.white.rating.value;
 	auto black = header_.black.rating.value;
 	return (white == 0 || black == 0) ? 0 : (white + black) / 2;
@@ -169,15 +169,15 @@ void Game::setBlackRating(Rating value) {
 	header_.black.rating = normalizeRating(value);
 }
 
-void Game::setDate(scid::database::dateT value) {
+void Game::setDate(scid::core::dateT value) {
 	header_.event.date = value;
 }
 
-void Game::setEventDate(scid::database::dateT value) {
+void Game::setEventDate(scid::core::dateT value) {
 	header_.event.eventDate = value;
 }
 
-void Game::setResult(scid::database::resultT value) {
+void Game::setResult(scid::core::resultT value) {
 	header_.result = value;
 }
 
@@ -259,24 +259,24 @@ bool Game::hasNonStandardStart(char* outFen, std::size_t outFenLen) const {
 	return true;
 }
 
-scid::database::Position* Game::startPosition() {
+scid::core::Position* Game::startPosition() {
 	return startPosition_ ? &*startPosition_ : nullptr;
 }
 
-const scid::database::Position* Game::startPosition() const {
+const scid::core::Position* Game::startPosition() const {
 	return startPosition_ ? &*startPosition_ : nullptr;
 }
 
-scid::database::errorT Game::setStartFen(const char* fen) {
-	scid::database::Position position;
+scid::core::errorT Game::setStartFen(const char* fen) {
+	scid::core::Position position;
 	if (auto err = position.ReadFromFEN(fen))
 		return err;
 
 	setStartPosition(position);
-	return scid::database::OK;
+	return scid::core::OK;
 }
 
-void Game::setStartPosition(const scid::database::Position& position) {
+void Game::setStartPosition(const scid::core::Position& position) {
 	startPosition_ = position;
 }
 

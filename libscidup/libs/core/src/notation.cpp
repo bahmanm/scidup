@@ -12,17 +12,17 @@
 
 namespace scid::core::notation {
 
-std::optional<scid::database::simpleMoveT>
-toSimpleMove(scid::database::Position& position, MoveAction const& action) {
-	scid::database::simpleMoveT move;
+std::optional<scid::core::simpleMoveT>
+toSimpleMove(scid::core::Position& position, MoveAction const& action) {
+	scid::core::simpleMoveT move;
 	if (action.isNull()) {
-		position.makeMove(action.from, action.to, scid::database::PAWN, move);
+		position.makeMove(action.from, action.to, scid::core::PAWN, move);
 		return move;
 	}
 	if (action.castling) {
 		position.makeMove(action.from, action.from,
-		                  action.to > action.from ? scid::database::KING
-		                                          : scid::database::QUEEN,
+		                  action.to > action.from ? scid::core::KING
+		                                          : scid::core::QUEEN,
 		                  move);
 		return move;
 	}
@@ -30,7 +30,7 @@ toSimpleMove(scid::database::Position& position, MoveAction const& action) {
 	const auto notation = action.longNotation();
 	const auto err =
 	    position.ReadCoordMove(&move, notation.data(), notation.size(), false);
-	if (err != scid::database::OK)
+	if (err != scid::core::OK)
 		return std::nullopt;
 	return move;
 }
@@ -42,12 +42,12 @@ GameCursor cursorAt(const Game& game, MovetextLocation location) {
 	return cursor;
 }
 
-scid::database::Position startPosition(const Game& game) {
+scid::core::Position startPosition(const Game& game) {
 	return game.startPosition() ? *game.startPosition()
-	                            : scid::database::Position::getStdStart();
+	                            : scid::core::Position::getStdStart();
 }
 
-std::optional<scid::database::Position> positionAfter(
+std::optional<scid::core::Position> positionAfter(
     const Game& game,
     const std::vector<const Move*>& moves,
     std::size_t count) {
@@ -61,13 +61,13 @@ std::optional<scid::database::Position> positionAfter(
 	return position;
 }
 
-std::string makeSan(scid::database::Position& position,
+std::string makeSan(scid::core::Position& position,
                     const Move& move,
-                    scid::database::sanFlagT flag) {
+                    scid::core::sanFlagT flag) {
 	if (!move.san.empty())
 		return move.san;
 
-	scid::database::sanStringT san = {};
+	scid::core::sanStringT san = {};
 	auto simpleMove = toSimpleMove(position, move.action);
 	if (!simpleMove)
 		return {};
@@ -134,7 +134,7 @@ std::string previousSan(const Game& game, MovetextLocation location) {
 	auto position = positionAfter(game, moves, moves.size() - 1);
 	if (!position)
 		return {};
-	return makeSan(*position, *moves.back(), scid::database::SAN_MATETEST);
+	return makeSan(*position, *moves.back(), scid::core::SAN_MATETEST);
 }
 
 std::string nextSan(const Game& game, MovetextLocation location) {
@@ -150,8 +150,8 @@ std::string nextSan(const Game& game, MovetextLocation location) {
 	auto afterMove = cursor;
 	[[maybe_unused]] const bool advanced = afterMove.next();
 	assert(advanced);
-	const auto flag = afterMove.isAtLineEnd() ? scid::database::SAN_MATETEST
-	                                          : scid::database::SAN_CHECKTEST;
+	const auto flag = afterMove.isAtLineEnd() ? scid::core::SAN_MATETEST
+	                                          : scid::core::SAN_CHECKTEST;
 	return makeSan(*position, *move, flag);
 }
 
@@ -165,9 +165,9 @@ std::string partialMoveList(const Game& game, std::size_t plyCount) {
 		assert(move);
 
 		std::string entry;
-		if (i == 0 || position.GetToMove() == scid::database::WHITE) {
+		if (i == 0 || position.GetToMove() == scid::core::WHITE) {
 			entry += std::to_string(position.GetFullMoveCount());
-			entry += position.GetToMove() == scid::database::WHITE ? "." : "...";
+			entry += position.GetToMove() == scid::core::WHITE ? "." : "...";
 			entry.push_back(' ');
 		}
 
@@ -175,8 +175,8 @@ std::string partialMoveList(const Game& game, std::size_t plyCount) {
 		[[maybe_unused]] const bool advanced = afterMove.next();
 		assert(advanced);
 		const auto flag = afterMove.isAtLineEnd()
-		                      ? scid::database::SAN_MATETEST
-		                      : scid::database::SAN_CHECKTEST;
+		                      ? scid::core::SAN_MATETEST
+		                      : scid::core::SAN_CHECKTEST;
 		const auto san = makeSan(position, *move, flag);
 		if (san.empty())
 			break;

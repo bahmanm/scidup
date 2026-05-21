@@ -35,14 +35,14 @@ void expect_roundtrip(std::string_view pgn) {
 	                                         originalLocation,
 	                                         parseLog));
 
-	std::vector<scid::database::byte> encoded;
+	std::vector<scid::core::byte> encoded;
 	scid::database::game_storage::encode(original,
 	                                     "", encoded);
 
 	scid::database::ByteBuffer bbuf(encoded.data(), encoded.size());
 	scid::core::Game decoded;
 	decoded.clear();
-	ASSERT_EQ(scid::database::OK,
+	ASSERT_EQ(scid::core::OK,
 	          scid::database::game_storage::decodeMovesOnly(decoded,
 	                                                        bbuf));
 
@@ -62,13 +62,13 @@ void expect_roundtrip(std::string_view pgn) {
 		scid::core::GameCursor decodedCursor(decoded);
 		EXPECT_TRUE(decodedCursor.restore(decodedLocation));
 		const auto originalErr = originalCursor.next()
-		                             ? scid::database::OK
-		                             : scid::database::ERROR_EndOfMoveList;
+		                             ? scid::core::OK
+		                             : scid::core::ERROR_EndOfMoveList;
 		const auto decodedErr = decodedCursor.next()
-		                            ? scid::database::OK
-		                            : scid::database::ERROR_EndOfMoveList;
+		                            ? scid::core::OK
+		                            : scid::core::ERROR_EndOfMoveList;
 		EXPECT_EQ(originalErr, decodedErr);
-		if (originalErr != scid::database::OK)
+		if (originalErr != scid::core::OK)
 			break;
 		originalLocation = originalCursor.location();
 		decodedLocation = decodedCursor.location();

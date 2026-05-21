@@ -24,7 +24,7 @@
 #include <vector>
 
 namespace v4_6_2 {
-	scid::database::uint strTrimRight(char * target, const char * trimChars);
+	scid::core::uint strTrimRight(char * target, const char * trimChars);
 }
 
 
@@ -51,7 +51,7 @@ protected:
 		char* input1;
 		char* input2;
 		const char* expected;
-		scid::database::uint nTrimmed;
+		scid::core::uint nTrimmed;
 	};
 	std::vector<Data> data_ = {
 		{ ""    , nullptr, nullptr, ""   , 0 } ,
@@ -108,8 +108,8 @@ TEST_F(Test_StrLib, strTrimRight_consistency) {
 }
 
 namespace v4_6_2 {
-	scid::database::uint strTrimRight(char * target, const char * trimChars) {
-		scid::database::uint trimCount = 0;
+	scid::core::uint strTrimRight(char * target, const char * trimChars) {
+		scid::core::uint trimCount = 0;
 		char * s = target;
 		char * lastNonTrim = NULL;
 		while (*s) {

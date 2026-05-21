@@ -5,19 +5,22 @@
 
 #include <cstddef>
 
+namespace scid::core {
+class Position;
+} // namespace scid::core
+
 namespace scid::database {
 
 class ByteBuffer;
-class Position;
 
 // Pattern filter for material searches.
 // It can specify, for example, a white pawn on the f-file, or a black bishop
 // on f2 and white king on e1.
 struct patternT {
-	pieceT pieceMatch;
-	rankT rankMatch;
-	fyleT fyleMatch;
-	byte flag; // 0 means this pattern must not occur.
+	scid::core::pieceT pieceMatch;
+	scid::core::rankT rankMatch;
+	scid::core::fyleT fyleMatch;
+	scid::core::byte flag; // 0 means this pattern must not occur.
 };
 
 enum gameExactMatchT : int {
@@ -29,13 +32,13 @@ enum gameExactMatchT : int {
 
 namespace game_search {
 
-bool materialMatch(bool promotionsFlag, ByteBuffer& buf, byte* min, byte* max,
+bool materialMatch(bool promotionsFlag, ByteBuffer& buf, scid::core::byte* min, scid::core::byte* max,
                    patternT* ptn, std::size_t ptnSize, int minPly, int maxPly,
                    int matchLength, bool oppBishops, bool sameBishops,
                    int minDiff, int maxDiff);
-bool exactMatch(const scid::core::Game& game, Position* pos, ByteBuffer* buf,
+bool exactMatch(const scid::core::Game& game, scid::core::Position* pos, ByteBuffer* buf,
                 gameExactMatchT searchType);
-bool varExactMatch(const scid::core::Game& game, Position* pos,
+bool varExactMatch(const scid::core::Game& game, scid::core::Position* pos,
                    gameExactMatchT searchType);
 
 } // namespace game_search

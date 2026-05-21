@@ -8,7 +8,7 @@
 
 #include <cassert>
 
-namespace scid::database {
+namespace scid::core {
 
 constexpr uint MAX_SQUARELIST = 65; // 64 squares plus null square
 
@@ -65,4 +65,4 @@ public:
 	}
 };
 
-} // namespace scid::database
+} // namespace scid::core

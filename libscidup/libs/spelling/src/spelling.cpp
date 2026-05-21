@@ -162,57 +162,57 @@ size_t NameNormalizer::normalize(std::string* name) const
 	return corrections;
 }
 
-scid::database::errorT NameNormalizer::addPrefix(const char* s)
+scid::core::errorT NameNormalizer::addPrefix(const char* s)
 {
 	return add(prefix_, s);
 }
 
-scid::database::errorT NameNormalizer::addInfix(const char* s)
+scid::core::errorT NameNormalizer::addInfix(const char* s)
 {
 	return add(infix_, s);
 }
 
-scid::database::errorT NameNormalizer::addSuffix(const char* s)
+scid::core::errorT NameNormalizer::addSuffix(const char* s)
 {
 	return add(suffix_, s);
 }
 
-scid::database::errorT NameNormalizer::add(Cont& v, const char* s)
+scid::core::errorT NameNormalizer::add(Cont& v, const char* s)
 {
 	ASSERT(s != 0);
 	std::vector<size_t> parse;
 	for (size_t i=0; *(s+i) != 0; i++) {
 		if (*(s+i) == '"') parse.push_back(i);
 	}
-	if (parse.size() != 4) return scid::database::ERROR_CorruptData;
+	if (parse.size() != 4) return scid::core::ERROR_CorruptData;
 	parse[0] += 1; //skip "
 	parse[1] -= parse[0]; //n_chars
-	if (parse[1] == 0) return scid::database::ERROR_CorruptData;
+	if (parse[1] == 0) return scid::core::ERROR_CorruptData;
 	parse[2] += 1; //skip "
 	parse[3] -= parse[2]; //n_chars
 	v.push_back(std::make_pair(
 		std::string(s + parse[0], parse[1]),
 		std::string(s + parse[2], parse[3])
 	));
-	return scid::database::OK;
+	return scid::core::OK;
 }
 
-scid::database::ratingT PlayerElo::getElo(scid::database::dateT date) const
+scid::core::ratingT PlayerElo::getElo(scid::core::dateT date) const
 {
-	scid::database::uint year = scid::database::date_GetYear(date);
+	scid::core::uint year = scid::core::date_GetYear(date);
 	auto itBegin = std::find_if(elo_.begin(), elo_.end(),
-	                            [&](const std::pair<uint16_t, scid::database::ratingT>& e) {
+	                            [&](const std::pair<uint16_t, scid::core::ratingT>& e) {
 		                            return e.first == year;
 	                            });
 	auto itEnd = std::find_if(itBegin, elo_.end(),
-	                          [&](const std::pair<uint16_t, scid::database::ratingT>& e) {
+	                          [&](const std::pair<uint16_t, scid::core::ratingT>& e) {
 		                          return e.first != year;
 	                          });
 
 	size_t n = std::distance(itBegin, itEnd);
 	if (n == 0) return 0; // No data for that year
 
-	scid::database::uint month = scid::database::date_GetMonth(date);
+	scid::core::uint month = scid::core::date_GetMonth(date);
 	if (month == 0 || month > 12) month = 0;
 	else month -= 1;
 
@@ -244,12 +244,12 @@ std::string PlayerElo::isValid() const
 		if (elo_[i].first < elo_[i -1].first) return "unsorted";
 	}
 
-	auto count = [this](scid::database::uint year) {
+	auto count = [this](scid::core::uint year) {
 		return std::count_if(this->elo_.begin(), this->elo_.end(),
-			[&](const std::pair<uint16_t, scid::database::ratingT>& e) { return e.first == year; });
+			[&](const std::pair<uint16_t, scid::core::ratingT>& e) { return e.first == year; });
 	};
 
-	auto expected = [](scid::database::uint year) {
+	auto expected = [](scid::core::uint year) {
 		if (year < 1990) return 1;
 		if (year < 2001) return 2;
 		if (year < 2009) return 4;
@@ -259,7 +259,7 @@ std::string PlayerElo::isValid() const
 		return 12;
 	};
 
-	for (scid::database::uint y=1970; y<2015; y++) {
+	for (scid::core::uint y=1970; y<2015; y++) {
 		auto n = count(y);
 		if (n == 0) continue;
 		if (n != expected(y))
@@ -290,18 +290,18 @@ bool SpellChecker::Idx::operator<(const std::string& b) const
 	return alias < b;
 }
 
-std::pair<scid::database::errorT, std::unique_ptr<SpellChecker>> SpellChecker::create(
+std::pair<scid::core::errorT, std::unique_ptr<SpellChecker>> SpellChecker::create(
     const char* filename, const scid::database::Progress& progress)
 {
 	auto res = std::unique_ptr<SpellChecker>(new SpellChecker);
-	scid::database::errorT err = res->read(filename, progress);
-	if (err != scid::database::OK) {
+	scid::core::errorT err = res->read(filename, progress);
+	if (err != scid::core::OK) {
 		res.reset();
 	}
 	return std::make_pair(err, std::move(res));
 }
 
-std::vector<const char*> SpellChecker::find(const scid::database::nameT& nt, const char* name, scid::database::uint nMaxRes) const
+std::vector<const char*> SpellChecker::find(const scid::database::nameT& nt, const char* name, scid::core::uint nMaxRes) const
 {
 	ASSERT(nt < scid::database::NUM_NAME_TYPES);
 	ASSERT(name != 0);
@@ -493,18 +493,18 @@ public:
 	: sp_(sp), validate_(v), nt_(scid::database::NAME_INVALID), nameIdx_(-1) {
 	}
 
-	scid::database::errorT load(const Parser& data) {
+	scid::core::errorT load(const Parser& data) {
 		switch (data.type) {
 			case SPELL_SECTIONSTART:
 				nt_ = scid::database::NameBase::NameTypeFromString(data.name);
-				if (!scid::database::NameBase::IsValidNameType(nt_)) return scid::database::ERROR_CorruptData;
+				if (!scid::database::NameBase::IsValidNameType(nt_)) return scid::core::ERROR_CorruptData;
 				if (data.extra != NULL) {
 					sp_.excludeChars_[nt_] = data.extra;
 				} else {
 					sp_.excludeChars_[nt_].clear();
 				}
 				nameIdx_ = -1;
-				return scid::database::OK;
+				return scid::core::OK;
 			case SPELL_NEWNAME:
 			case SPELL_ALIAS:
 			case SPELL_PREFIX:
@@ -515,21 +515,21 @@ public:
 			case SPELL_ELO:
 				return playerInfo(data);
 			case SPELL_EMPTY:
-				return scid::database::OK;
+				return scid::core::OK;
 			case SPELL_OLDBIO:
 			case SPELL_UNKNOWN:
 				validate_.ignoredLine(data.name);
-				return scid::database::OK;
+				return scid::core::OK;
 		}
 
 		ASSERT(0);
-		return scid::database::ERROR_CorruptData;
+		return scid::core::ERROR_CorruptData;
 	}
 
 private:
-	scid::database::errorT nameSection(const Parser& data) {
+	scid::core::errorT nameSection(const Parser& data) {
 		// Must be in a valid name section
-		if (!scid::database::NameBase::IsValidNameType(nt_)) return scid::database::ERROR_CorruptData;
+		if (!scid::database::NameBase::IsValidNameType(nt_)) return scid::core::ERROR_CorruptData;
 
 		switch (data.type) {
 			case SPELL_NEWNAME:
@@ -542,14 +542,14 @@ private:
 				/* FALLTHRU */
 			case SPELL_ALIAS:
 				if (nameIdx_ == -1) {
-					return scid::database::ERROR_CorruptData;
+					return scid::core::ERROR_CorruptData;
 				} else {
 					sp_.idx_[nt_].push_back(SpellChecker::Idx(
 						sp_.normalizeAndTransform(nt_, data.name),
 						nameIdx_
 						));
 				}
-				return scid::database::OK;
+				return scid::core::OK;
 			case SPELL_PREFIX:
 				return sp_.general_[nt_].addPrefix(data.name);
 			case SPELL_INFIX:
@@ -560,12 +560,12 @@ private:
 				ASSERT(0);
 		}
 
-		return scid::database::ERROR_CorruptData;
+		return scid::core::ERROR_CorruptData;
 	}
 
-	scid::database::errorT playerInfo(const Parser& data) {
+	scid::core::errorT playerInfo(const Parser& data) {
 		// SPELL_BIO and SPELL_ELO are valid only for a PLAYER name
-		if (nt_ != scid::database::NAME_PLAYER || nameIdx_ == -1) return scid::database::ERROR_CorruptData;
+		if (nt_ != scid::database::NAME_PLAYER || nameIdx_ == -1) return scid::core::ERROR_CorruptData;
 
 		if (data.type == SPELL_BIO) {
 			sp_.pInfo_[nameIdx_].bio_.push_back(sp_.storeString(data.name));
@@ -576,7 +576,7 @@ private:
 			sp_.pElo_[nameIdx_].addEloData(data.name);
 		}
 
-		return scid::database::OK;
+		return scid::core::OK;
 	}
 };
 
@@ -588,34 +588,34 @@ private:
  * into the SpellChecker object.
  * The object must be empty. In practice the requirement is to not call
  * this function twice, because this is the only non-const member function.
- * If the function fails (result != scid::database::OK) the object state is undefined
+ * If the function fails (result != scid::core::OK) the object state is undefined
  * and the only valid operation is to destroy the object.
  * If SCIDUP_SPELLING_VALIDATE is defined, it also creates a @filename.validate log.
  */
-scid::database::errorT SpellChecker::read(const char* filename, const scid::database::Progress& progress)
+scid::core::errorT SpellChecker::read(const char* filename, const scid::database::Progress& progress)
 {
 	ASSERT(filename != NULL);
 	ASSERT(strings_.empty());
 
 	// Open the file and read it into memory; Parser mutates each line.
 	std::ifstream file(filename, std::ios::binary | std::ios::ate);
-	if (!file) return scid::database::ERROR_FileOpen;
+	if (!file) return scid::core::ERROR_FileOpen;
 
 	const std::streamoff fileSize = file.tellg();
-	if (fileSize < 0) return scid::database::ERROR_FileOpen;
+	if (fileSize < 0) return scid::core::ERROR_FileOpen;
 	file.seekg(0, std::ios::beg);
 
 	std::vector<char> fileBuffer(static_cast<size_t>(fileSize));
 	if (!fileBuffer.empty() &&
 	    !file.read(fileBuffer.data(), static_cast<std::streamsize>(fileBuffer.size()))) {
-		return scid::database::ERROR_FileRead;
+		return scid::core::ERROR_FileRead;
 	}
 
 	SpellingValidate validate(filename, *this);
 
 	// Parse the file lines.
 	std::vector<char> lineBuffer;
-	scid::database::uint report_i = 0;
+	scid::core::uint report_i = 0;
 	std::streamsize report_done = 0;
 	SpellingLoader loader(*this, validate);
 	for (size_t lineStart = 0; lineStart < fileBuffer.size();) {
@@ -634,15 +634,15 @@ scid::database::errorT SpellChecker::read(const char* filename, const scid::data
 		if ((++report_i % 10000) == 0) {
 			if (!progress.report(static_cast<size_t>(report_done),
 			                     static_cast<size_t>(fileSize)))
-				return scid::database::ERROR_UserCancel;
+				return scid::core::ERROR_UserCancel;
 		}
 
-		scid::database::errorT err = loader.load(Parser(lineBuffer.data()));
-		if (err != scid::database::OK) return err;
+		scid::core::errorT err = loader.load(Parser(lineBuffer.data()));
+		if (err != scid::core::OK) return err;
 
 		lineStart = nextLine;
 	}
-	if (report_done != fileSize) return scid::database::ERROR_FileRead;
+	if (report_done != fileSize) return scid::core::ERROR_FileRead;
 
 	// Success:
 	if (pElo_.size() > 0) {
@@ -656,7 +656,7 @@ scid::database::errorT SpellChecker::read(const char* filename, const scid::data
 		std::sort(idx_[i].begin(), idx_[i].end());
 		validate.idxDuplicates(i);
 	}
-	return scid::database::OK;
+	return scid::core::OK;
 }
 
 
@@ -700,7 +700,7 @@ void PlayerElo::addEloData(const char * str)
 
         // Now read all the ratings for this year:
         //
-        scid::database::ratingT elo = 0;
+        scid::core::ratingT elo = 0;
         while (1) {
             if (isdigit(static_cast<unsigned char>(*str))) {
                 elo = scid::database::strGetUnsigned (str);
@@ -778,7 +778,7 @@ PlayerInfo::getLastCountry() const
 //    Scan the player comment string for the peak rating
 //    field (which is contained in brackets), convert it
 //    to an unsigned integer, and return it.
-scid::database::ratingT
+scid::core::ratingT
 PlayerInfo::getPeakRating() const
 {
     const char* s = getComment();
@@ -795,43 +795,43 @@ PlayerInfo::getPeakRating() const
 // PlayerInfo::GetBirthdate:
 //    Scan the player comment string for the birthdate
 //    field, convert it to a date, and return it.
-scid::database::dateT
+scid::core::dateT
 PlayerInfo::getBirthdate() const
 {
     const char* s = getComment();
-    if (*s == 0) { return scid::database::ZERO_DATE; }
+    if (*s == 0) { return scid::core::ZERO_DATE; }
 
     // Find the end-bracket character after the rating:
     while (*s != ']'  &&  *s != 0) { s++; }
-    if (*s != ']') { return scid::database::ZERO_DATE; }
+    if (*s != ']') { return scid::core::ZERO_DATE; }
     s++;
     // Now skip over any spaces:
     while (*s == ' ') { s++; }
-    if (*s == 0) { return scid::database::ZERO_DATE; }
-    return scid::database::date_EncodeFromString (s);
+    if (*s == 0) { return scid::core::ZERO_DATE; }
+    return scid::core::date_EncodeFromString (s);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // PlayerInfo::GetDeathdate:
 //    Scan the player comment string for the deathdate
 //    field, convert it to a date, and return it.
-scid::database::dateT
+scid::core::dateT
 PlayerInfo::getDeathdate() const
 {
     const char* s = getComment();
-    if (*s == 0) { return scid::database::ZERO_DATE; }
+    if (*s == 0) { return scid::core::ZERO_DATE; }
 
     // Find the end-bracket character after the rating:
     while (*s != ']'  &&  *s != 0) { s++; }
-    if (*s != ']') { return scid::database::ZERO_DATE; }
+    if (*s != ']') { return scid::core::ZERO_DATE; }
     s++;
     // Now skip over any spaces:
     while (*s == ' ') { s++; }
     // Now skip over the birthdate and dashes:
     while (*s != 0  &&  *s != '-') { s++; }
     while (*s == '-') { s++; }
-    if (*s == 0) { return scid::database::ZERO_DATE; }
-    return scid::database::date_EncodeFromString (s);
+    if (*s == 0) { return scid::core::ZERO_DATE; }
+    return scid::core::date_EncodeFromString (s);
 }
 
 //////////////////////////////////////////////////////////////////////

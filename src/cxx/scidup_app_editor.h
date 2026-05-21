@@ -172,13 +172,13 @@ public:
 		s.deprecatedPushPop = {};
 	}
 
-	scid::database::errorT load(scid::database::gamenumT gameId) const {
+	scid::core::errorT load(scid::database::gamenumT gameId) const {
 		auto& s = state();
 		s.history.clear();
 		const auto err = base_->loadGame(gameId, s.game->coreGame(),
 		                                 s.game->scidFlagsData(),
 		                                 s.game->scidFlagsCapacity());
-		if (err != scid::database::OK)
+		if (err != scid::core::OK)
 			return err;
 
 		if (base_->defaultFilterGet(gameId) > 0) {
@@ -191,26 +191,26 @@ public:
 		}
 		s.loadedGameId = gameId;
 		s.dirty = false;
-		return scid::database::OK;
+		return scid::core::OK;
 	}
 
-	scid::database::errorT undoAll() const {
+	scid::core::errorT undoAll() const {
 		auto& s = state();
 		s.dirty = false;
 		s.history.clear();
 		if (!s.loadedGameId) {
 			s.game->clear();
 			s.location = {};
-			return scid::database::OK;
+			return scid::core::OK;
 		}
 
 		const auto err = base_->loadGame(*s.loadedGameId, s.game->coreGame(),
 		                                 s.game->scidFlagsData(),
 		                                 s.game->scidFlagsCapacity());
-		if (err != scid::database::OK)
+		if (err != scid::core::OK)
 			return err;
 		s.location = {};
-		return scid::database::OK;
+		return scid::core::OK;
 	}
 
 	void push(bool copy) const {

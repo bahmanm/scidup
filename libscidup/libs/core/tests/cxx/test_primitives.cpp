@@ -4,7 +4,7 @@
 
 namespace {
 
-using namespace scid::database;
+using namespace scid::core;
 
 TEST(PrimitivesTest, DefinesScalarAndDirectionTypes) {
 	EXPECT_EQ(1U, sizeof(byte));

@@ -4,7 +4,7 @@
 
 namespace {
 
-using namespace scid::database;
+using namespace scid::core;
 
 TEST(SquareMovesTest, MovesOneStepInCardinalAndDiagonalDirections) {
 	EXPECT_EQ(A2, square_Move(A1, UP));

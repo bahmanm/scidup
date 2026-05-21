@@ -46,13 +46,16 @@
  * Some common tags are encoded in one byte, using a tag_length value over 240
  * and a tag name of 0 bytes.
  */
+namespace scid::core {
+class Position;
+struct simpleMoveT;
+} // namespace scid::core
+
 namespace scid::database {
 
 class ByteBuffer;
 class Game;
 class GameView;
-class Position;
-struct simpleMoveT;
 
 namespace game_storage {
 // TODO [Game]: Replace this friendship-based transitional storage decode
@@ -157,16 +160,16 @@ public:
 	/// @param fn: a function that should accept 2 parameters
 	///            (string_view tag_name, string_view tag_value)
 	///            and that will be called for each tag pair.
-	template <typename FuncT> errorT decodeTags(FuncT fn) {
+	template <typename FuncT> scid::core::errorT decodeTags(FuncT fn) {
 		if (data_ == end_)
-			return ERROR_BufferRead;
+			return scid::core::ERROR_BufferRead;
 
 		auto it = data_;
 		for (;;) {
 			const auto tagLen = *it++;
 			if (tagLen == 0) {
 				data_ = it;
-				return OK; // Reached the end of the tags section
+				return scid::core::OK; // Reached the end of the tags section
 			}
 
 			const char* tag = nullptr;
@@ -180,14 +183,14 @@ public:
 			}
 
 			if (it >= end_)
-				return ERROR_Decode;
+				return scid::core::ERROR_Decode;
 
 			// 255 was a special 3-bytes encoding of EventDate used in SCID2
 			const auto valueLen = (tagLen != 255) ? *it++ : 3;
 			const char* value = reinterpret_cast<const char*>(it);
 			it += valueLen;
 			if (it >= end_)
-				return ERROR_Decode;
+				return scid::core::ERROR_Decode;
 
 			if (tag) {
 				fn(std::string_view(tag, tagLen),
@@ -199,7 +202,7 @@ public:
 	}
 
 	/// Decodes the start position.
-	/// @returns OK on success and the FEN of the start position (nullptr for
+	/// @returns scid::core::OK on success and the FEN of the start position (nullptr for
 	///          the standard starting position).
 	/// To decode the moves the correct index should be assigned to each piece:
 	/// they are assigned from left to right, but the king should always have
@@ -207,18 +210,18 @@ public:
 	/// For example with "rnb1k2Q/1p5p/p7/4p3/4q3/8/PPP2R1P/2K5 b" the black
 	/// rook on A8 gets index 3, the black night on B8 gets index 1 .... and the
 	/// white queen on H8 gets index 6, the pawn on A2 gets index 1 ...
-	std::pair<errorT, const char*> decodeStartBoard() {
+	std::pair<scid::core::errorT, const char*> decodeStartBoard() {
 		if (data_ == end_)
-			return {ERROR_Decode, nullptr};
+			return {scid::core::ERROR_Decode, nullptr};
 
 		const auto flags = *data_++;
 		if ((flags & 1) == 0)
-			return {OK, nullptr};
+			return {scid::core::OK, nullptr};
 
 		if (const auto FEN = GetTerminatedString())
-			return {OK, FEN};
+			return {scid::core::OK, FEN};
 
-		return {ERROR_Decode, nullptr};
+		return {scid::core::ERROR_Decode, nullptr};
 	}
 
 	/// Reads a null-terminated string from the buffer.
@@ -234,12 +237,12 @@ public:
 
 private:
 	/// Extract the next move.
-	/// @returns a std::pair containing OK and the move value.
-	///          Returns ERROR_EndOfMoveList when the end of the game is
+	/// @returns a std::pair containing scid::core::OK and the move value.
+	///          Returns scid::core::ERROR_EndOfMoveList when the end of the game is
 	///          reached, an error otherwise.
 	template <typename MoveFn, typename CommentFn, typename VariationFn,
 	          typename NagFn>
-	std::pair<errorT, unsigned char>
+	std::pair<scid::core::errorT, unsigned char>
 	nextMove(int varDepth, MoveFn acceptMove, CommentFn commentMarker,
 	         VariationFn changeVar, NagFn addNag) {
 		// The king has always index 0 and only 11 possible moves (8 destination
@@ -261,10 +264,10 @@ private:
 			switch (*it) {
 			case ENCODE_NAG:
 				if (++it == end_) {
-					return {ERROR_Decode, 0}; // ERROR: missing nag
+					return {scid::core::ERROR_Decode, 0}; // ERROR: missing nag
 				}
 				if (!addNag(*it)) {
-					return {ERROR_Decode, 0}; // ERROR: marker decoding
+					return {scid::core::ERROR_Decode, 0}; // ERROR: marker decoding
 				}
 				continue;
 
@@ -275,40 +278,40 @@ private:
 			case ENCODE_START_MARKER:
 				++varDepth;
 				if (!changeVar(true)) {
-					return {ERROR_Decode, 0}; // ERROR: variation
+					return {scid::core::ERROR_Decode, 0}; // ERROR: variation
 				}
 				continue;
 
 			case ENCODE_END_MARKER:
 				if (varDepth == 0) {
-					return {ERROR_Decode, 0}; // ERROR: end marker in main line
+					return {scid::core::ERROR_Decode, 0}; // ERROR: end marker in main line
 				}
 				--varDepth;
 				if (!changeVar(false)) {
-					return {ERROR_Decode, 0}; // ERROR: variation
+					return {scid::core::ERROR_Decode, 0}; // ERROR: variation
 				}
 				continue;
 
 			case ENCODE_END_GAME:
 				if (varDepth != 0) {
-					return {ERROR_Decode, 0}; // ERROR: unexpected end of game
+					return {scid::core::ERROR_Decode, 0}; // ERROR: unexpected end of game
 				}
 				data_ = ++it;
-				return {ERROR_EndOfMoveList, 0}; // SUCCESS: end of game
+				return {scid::core::ERROR_EndOfMoveList, 0}; // SUCCESS: end of game
 
 			default:
 				if (acceptMove(varDepth)) {
 					data_ = it;
-					return {OK, *data_++}; // SUCCESS
+					return {scid::core::OK, *data_++}; // SUCCESS
 				}
 			}
 		}
-		return {ERROR_Decode, 0}; // ERROR: missing ENCODE_END_GAME
+		return {scid::core::ERROR_Decode, 0}; // ERROR: missing ENCODE_END_GAME
 	}
 
 	/// Find the next move in the current line.
 	/// Ignore variations, comments and nags.
-	std::pair<errorT, unsigned char> nextLineMove() {
+	std::pair<scid::core::errorT, unsigned char> nextLineMove() {
 		return nextMove(
 		    0, [](auto varDepth) { return varDepth == 0; },
 		    [] {},                     // Ignore comments
@@ -321,72 +324,72 @@ private:
 	/// Excluding queens, the other chess pieces cannot reach more than 16
 	/// target squares from any given position. This allow to store the target
 	/// square of a move into 4 bits, as an index of all the reachable squares.
-	/// @param movingPiece: the type (PAWN, BISHOP, etc.) of the piece to move.
+	/// @param movingPiece: the type (scid::core::PAWN, scid::core::BISHOP, etc.) of the piece to move.
 	/// @param from: the square where is the piece to move.
 	/// @param moveCode: the SCID4 encoding of the move (a 0-15 value).
 	/// @returns a pair containing the destination square and the new type of
-	///          the piece for promotions (INVALID_PIECE for normal moves).
+	///          the piece for promotions (scid::core::INVALID_PIECE for normal moves).
 	///          Special moves are returned as:
-	///          - castle kingside: {from, KING}
-	///          - castle queenside: {from, QUEEN}
-	///          - null move: {from, PAWN}
-	/// On error returns an invalid square (<0 or >63) or {from, INVALID_PIECE}.
-	std::pair<int, pieceT> decodeMove(colorT toMove, pieceT movingPiece,
-	                                  squareT from, unsigned char moveCode) {
+	///          - castle kingside: {from, scid::core::KING}
+	///          - castle queenside: {from, scid::core::QUEEN}
+	///          - null move: {from, scid::core::PAWN}
+	/// On error returns an invalid square (<0 or >63) or {from, scid::core::INVALID_PIECE}.
+	std::pair<int, scid::core::pieceT> decodeMove(scid::core::colorT toMove, scid::core::pieceT movingPiece,
+	                                  scid::core::squareT from, unsigned char moveCode) {
 		moveCode &= 0x0F;
 		switch (movingPiece) {
-		case PAWN: {
-			static const pieceT promoPiece[] = {
-			    INVALID_PIECE, INVALID_PIECE, INVALID_PIECE, QUEEN,
-			    QUEEN,         QUEEN,         ROOK,          ROOK,
-			    ROOK,          BISHOP,        BISHOP,        BISHOP,
-			    KNIGHT,        KNIGHT,        KNIGHT,        INVALID_PIECE};
+		case scid::core::PAWN: {
+			static const scid::core::pieceT promoPiece[] = {
+			    scid::core::INVALID_PIECE, scid::core::INVALID_PIECE, scid::core::INVALID_PIECE, scid::core::QUEEN,
+			    scid::core::QUEEN,         scid::core::QUEEN,         scid::core::ROOK,          scid::core::ROOK,
+			    scid::core::ROOK,          scid::core::BISHOP,        scid::core::BISHOP,        scid::core::BISHOP,
+			    scid::core::KNIGHT,        scid::core::KNIGHT,        scid::core::KNIGHT,        scid::core::INVALID_PIECE};
 			static const int8_t sqdiff[] = {7, 8, 9, 7, 8, 9, 7, 8,
 			                                9, 7, 8, 9, 7, 8, 9, 16};
-			int to = (toMove == WHITE) ? from + sqdiff[moveCode]
+			int to = (toMove == scid::core::WHITE) ? from + sqdiff[moveCode]
 			                           : from - sqdiff[moveCode];
 			return {to, promoPiece[moveCode]};
 		}
-		case BISHOP: {
-			int fylediff = square_Fyle(moveCode) - square_Fyle(from);
+		case scid::core::BISHOP: {
+			int fylediff = scid::core::square_Fyle(moveCode) - scid::core::square_Fyle(from);
 			int to = (moveCode >= 8) ? from - 7 * fylediff
 			                         : from + 9 * fylediff;
-			return {to, INVALID_PIECE};
+			return {to, scid::core::INVALID_PIECE};
 		}
-		case KNIGHT: {
+		case scid::core::KNIGHT: {
 			static const int8_t sqdiff[] = {0,  -17, -15, -10, -6, 6, 10, 15,
 			                                17, 0,   0,   0,   0,  0, 0,  0};
-			return {from + sqdiff[moveCode], INVALID_PIECE};
+			return {from + sqdiff[moveCode], scid::core::INVALID_PIECE};
 		}
-		case QUEEN:
-			if (moveCode == square_Fyle(from)) { // 2 BYTES MOVE
+		case scid::core::QUEEN:
+			if (moveCode == scid::core::square_Fyle(from)) { // 2 BYTES MOVE
 				int to = (data_ != end_) ? *data_++ : 0;
-				return {to - 64, INVALID_PIECE};
+				return {to - 64, scid::core::INVALID_PIECE};
 			}
 			[[fallthrough]];
-		case ROOK: {
+		case scid::core::ROOK: {
 			int to = (moveCode >= 8) // a vertical move
-			             ? square_Make(square_Fyle(from), (moveCode - 8))
-			             : square_Make(moveCode, square_Rank(from));
-			return {to, INVALID_PIECE};
+			             ? scid::core::square_Make(scid::core::square_Fyle(from), (moveCode - 8))
+			             : scid::core::square_Make(moveCode, scid::core::square_Rank(from));
+			return {to, scid::core::INVALID_PIECE};
 		}
-		case KING:
+		case scid::core::KING:
 			if (moveCode == 0) // NULL MOVE
-				return {from, PAWN};
+				return {from, scid::core::PAWN};
 
 			if (moveCode <= 8) {
 				static const int8_t sqdiff[] = {0, -9, -8, -7, -1, 1, 7, 8, 9};
-				return {from + sqdiff[moveCode], INVALID_PIECE};
+				return {from + sqdiff[moveCode], scid::core::INVALID_PIECE};
 			}
 
 			if (moveCode == 9) // CASTLE QUEENSIDE
-				return {from, QUEEN};
+				return {from, scid::core::QUEEN};
 
 			if (moveCode == 10) // CASTLE KINGSIDE
-				return {from, KING};
+				return {from, scid::core::KING};
 		}
 
-		return {from, INVALID_PIECE}; // decode error
+		return {from, scid::core::INVALID_PIECE}; // decode error
 	}
 };
 

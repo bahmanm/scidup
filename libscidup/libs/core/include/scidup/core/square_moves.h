@@ -6,7 +6,7 @@
 
 #include "scidup/core/board.h"
 
-namespace scid::database {
+namespace scid::core {
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // sqMove
@@ -182,4 +182,4 @@ square_Last (squareT sq, directionT dir)
 }
 
 
-} // namespace scid::database
+} // namespace scid::core

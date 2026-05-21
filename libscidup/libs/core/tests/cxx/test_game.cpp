@@ -12,9 +12,9 @@ TEST(CoreGameTest, DefaultsToEmptyMetadataAndStandardStart) {
 	EXPECT_TRUE(game.round().empty());
 	EXPECT_TRUE(game.white().name.empty());
 	EXPECT_TRUE(game.black().name.empty());
-	EXPECT_EQ(scid::database::ZERO_DATE, game.date());
-	EXPECT_EQ(scid::database::ZERO_DATE, game.eventDate());
-	EXPECT_EQ(scid::database::RESULT_None, game.result());
+	EXPECT_EQ(scid::core::ZERO_DATE, game.date());
+	EXPECT_EQ(scid::core::ZERO_DATE, game.eventDate());
+	EXPECT_EQ(scid::core::RESULT_None, game.result());
 	EXPECT_TRUE(game.eco().empty());
 	EXPECT_TRUE(game.extraTags().empty());
 	EXPECT_FALSE(game.hasNonStandardStart());
@@ -67,27 +67,27 @@ TEST(CoreGameTest, StoresRatingsDatesAndResult) {
 	scid::core::Player white;
 	white.name = "Player A";
 	white.rating.value = 2800;
-	white.rating.type = scid::database::RATING_Rapid;
+	white.rating.type = scid::core::RATING_Rapid;
 	scid::core::Player black;
 	black.name = "Player B";
 	black.rating.value = 2650;
 
 	game.setWhite(white);
 	game.setBlack(black);
-	game.setDate(scid::database::date_parsePGNTag("2018.06.11", 10));
-	game.setEventDate(scid::database::date_parsePGNTag("2018.06.01", 10));
-	game.setResult(scid::database::RESULT_White);
+	game.setDate(scid::core::date_parsePGNTag("2018.06.11", 10));
+	game.setEventDate(scid::core::date_parsePGNTag("2018.06.01", 10));
+	game.setResult(scid::core::RESULT_White);
 	game.setEco("A01");
 
 	EXPECT_EQ("Player A", game.white().name);
 	EXPECT_EQ(2800, game.white().rating.value);
-	EXPECT_EQ(scid::database::RATING_Rapid, game.white().rating.type);
+	EXPECT_EQ(scid::core::RATING_Rapid, game.white().rating.type);
 	EXPECT_EQ("Player B", game.black().name);
 	EXPECT_EQ(2650, game.black().rating.value);
-	EXPECT_EQ(scid::database::date_parsePGNTag("2018.06.11", 10), game.date());
-	EXPECT_EQ(scid::database::date_parsePGNTag("2018.06.01", 10),
+	EXPECT_EQ(scid::core::date_parsePGNTag("2018.06.11", 10), game.date());
+	EXPECT_EQ(scid::core::date_parsePGNTag("2018.06.01", 10),
 	          game.eventDate());
-	EXPECT_EQ(scid::database::RESULT_White, game.result());
+	EXPECT_EQ(scid::core::RESULT_White, game.result());
 	EXPECT_EQ("1-0", game.resultString());
 	EXPECT_EQ("A01", game.eco());
 	EXPECT_EQ(2725, game.averageRating());
@@ -100,25 +100,25 @@ TEST(CoreGameTest, SetsPlayerNamesAndRatingsDirectly) {
 
 	game.setWhiteName("Player A");
 	game.setBlackName("Player B");
-	game.setWhiteRating({2800, scid::database::RATING_Rapid});
-	game.setBlackRating({0, scid::database::RATING_Elo});
+	game.setWhiteRating({2800, scid::core::RATING_Rapid});
+	game.setBlackRating({0, scid::core::RATING_Elo});
 
 	EXPECT_EQ("Player A", game.white().name);
 	EXPECT_EQ("Player B", game.black().name);
 	EXPECT_EQ(2800, game.white().rating.value);
-	EXPECT_EQ(scid::database::RATING_Rapid, game.white().rating.type);
+	EXPECT_EQ(scid::core::RATING_Rapid, game.white().rating.type);
 	EXPECT_EQ(0, game.averageRating());
 
-	game.setWhiteRating({2500, static_cast<scid::database::ratingTypeT>(8)});
+	game.setWhiteRating({2500, static_cast<scid::core::ratingTypeT>(8)});
 	EXPECT_EQ(2500, game.white().rating.value);
-	EXPECT_EQ(scid::database::RATING_Elo, game.white().rating.type);
+	EXPECT_EQ(scid::core::RATING_Elo, game.white().rating.type);
 }
 
 TEST(CoreGameTest, SetStartFenStoresNonStandardStartPosition) {
 	const char* fen = "8/K7/8/8/7k/8/8/8 w - - 45 25";
 	scid::core::Game game;
 
-	ASSERT_EQ(scid::database::OK, game.setStartFen(fen));
+	ASSERT_EQ(scid::core::OK, game.setStartFen(fen));
 
 	EXPECT_TRUE(game.hasNonStandardStart());
 	ASSERT_NE(nullptr, game.startPosition());
@@ -132,9 +132,9 @@ TEST(CoreGameTest, SetStartFenStoresNonStandardStartPosition) {
 TEST(CoreGameTest, InvalidStartFenLeavesExistingStartPositionUnchanged) {
 	const char* fen = "8/K7/8/8/7k/8/8/8 w - - 45 25";
 	scid::core::Game game;
-	ASSERT_EQ(scid::database::OK, game.setStartFen(fen));
+	ASSERT_EQ(scid::core::OK, game.setStartFen(fen));
 
-	EXPECT_NE(scid::database::OK, game.setStartFen("invalid"));
+	EXPECT_NE(scid::core::OK, game.setStartFen("invalid"));
 
 	char printed[256];
 	ASSERT_TRUE(game.hasNonStandardStart(printed, sizeof(printed)));
@@ -145,21 +145,21 @@ TEST(CoreGameTest, AppendsMainlineMovesWithMetadataAndVariations) {
 	scid::core::Game game;
 
 	auto& move = game.appendMainlineMove(
-	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
+	    {scid::core::E2, scid::core::E4, scid::core::EMPTY});
 	move.san = "e4";
 	move.metadata.comment = "Best by test";
 	move.metadata.nags.push_back(scid::core::NAG_GoodMove);
 	auto& childVariation = move.addVariation("Alternative line");
 	auto& childMove = childVariation.line.appendMove(
-	    {scid::database::D2, scid::database::D4, scid::database::EMPTY});
+	    {scid::core::D2, scid::core::D4, scid::core::EMPTY});
 	childMove.san = "d4";
 
 	ASSERT_EQ(1U, game.movetext().mainline.moves.size());
 	EXPECT_EQ(1U, game.mainlineHalfMoveCount());
 	auto const& savedMove = game.movetext().mainline.moves[0];
-	EXPECT_EQ(scid::database::E2, savedMove.action.from);
-	EXPECT_EQ(scid::database::E4, savedMove.action.to);
-	EXPECT_EQ(scid::database::EMPTY, savedMove.action.promotion);
+	EXPECT_EQ(scid::core::E2, savedMove.action.from);
+	EXPECT_EQ(scid::core::E4, savedMove.action.to);
+	EXPECT_EQ(scid::core::EMPTY, savedMove.action.promotion);
 	EXPECT_EQ("e4", savedMove.san);
 	EXPECT_EQ("Best by test", savedMove.metadata.comment);
 	ASSERT_EQ(1U, savedMove.metadata.nags.size());
@@ -167,25 +167,25 @@ TEST(CoreGameTest, AppendsMainlineMovesWithMetadataAndVariations) {
 	ASSERT_EQ(1U, savedMove.childVariations.size());
 	EXPECT_EQ("Alternative line", savedMove.childVariations[0].initialComment);
 	ASSERT_EQ(1U, savedMove.childVariations[0].line.moves.size());
-	EXPECT_EQ(scid::database::D4,
+	EXPECT_EQ(scid::core::D4,
 	          savedMove.childVariations[0].line.moves[0].action.to);
 }
 
 TEST(CoreGameTest, MoveActionFormatsLongNotation) {
 	EXPECT_EQ("e2e4",
-	          (scid::core::MoveAction{scid::database::E2,
-	                                  scid::database::E4,
-	                                  scid::database::EMPTY})
+	          (scid::core::MoveAction{scid::core::E2,
+	                                  scid::core::E4,
+	                                  scid::core::EMPTY})
 	              .longNotation());
 	EXPECT_EQ("a7a8q",
-	          (scid::core::MoveAction{scid::database::A7,
-	                                  scid::database::A8,
-	                                  scid::database::QUEEN})
+	          (scid::core::MoveAction{scid::core::A7,
+	                                  scid::core::A8,
+	                                  scid::core::QUEEN})
 	              .longNotation());
 
-	scid::core::MoveAction nullMove{scid::database::E1,
-	                                scid::database::E1,
-	                                scid::database::EMPTY};
+	scid::core::MoveAction nullMove{scid::core::E1,
+	                                scid::core::E1,
+	                                scid::core::EMPTY};
 	EXPECT_TRUE(nullMove.isNull());
 	EXPECT_EQ("0000", nullMove.longNotation());
 }
@@ -193,11 +193,11 @@ TEST(CoreGameTest, MoveActionFormatsLongNotation) {
 TEST(CoreGameTest, ClearMovetextLeavesHeaderAndStartPositionIntact) {
 	scid::core::Game game;
 	game.setEvent("Candidates");
-	ASSERT_EQ(scid::database::OK,
+	ASSERT_EQ(scid::core::OK,
 	          game.setStartFen("8/K7/8/8/7k/8/8/8 w - - 45 25"));
 	game.setInitialComment("Before the first move");
 	game.appendMainlineMove(
-	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
+	    {scid::core::E2, scid::core::E4, scid::core::EMPTY});
 
 	game.clearMovetext();
 
@@ -212,13 +212,13 @@ TEST(CoreGameTest, StripMovetextRemovesCommentsAndNagsButKeepsMoves) {
 	scid::core::Game game;
 	game.setInitialComment("Before the first move");
 	auto& move = game.appendMainlineMove(
-	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
+	    {scid::core::E2, scid::core::E4, scid::core::EMPTY});
 	move.san = "e4";
 	move.metadata.comment = "Best by test";
 	move.metadata.nags.push_back(scid::core::NAG_GoodMove);
 	auto& variation = move.addVariation("Alternative line");
 	auto& childMove = variation.line.appendMove(
-	    {scid::database::D2, scid::database::D4, scid::database::EMPTY});
+	    {scid::core::D2, scid::core::D4, scid::core::EMPTY});
 	childMove.metadata.comment = "Queen pawn";
 	childMove.metadata.nags.push_back(scid::core::NAG_InterestingMove);
 
@@ -239,12 +239,12 @@ TEST(CoreGameTest, StripMovetextRemovesCommentsAndNagsButKeepsMoves) {
 TEST(CoreGameTest, StripMovetextRemovesVariationsButKeepsMainlineMetadata) {
 	scid::core::Game game;
 	auto& move = game.appendMainlineMove(
-	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
+	    {scid::core::E2, scid::core::E4, scid::core::EMPTY});
 	move.metadata.comment = "Best by test";
 	move.metadata.nags.push_back(scid::core::NAG_GoodMove);
 	move.addVariation("Alternative line")
 	    .line.appendMove(
-	        {scid::database::D2, scid::database::D4, scid::database::EMPTY});
+	        {scid::core::D2, scid::core::D4, scid::core::EMPTY});
 
 	game.stripMovetext(true, false, false);
 

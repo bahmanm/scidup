@@ -2,7 +2,7 @@
 
 #include "scidup/core/primitives.h"
 
-namespace scid::database {
+namespace scid::core {
 
 const uint NUM_RESULT_TYPES = 4;
 typedef byte resultT;
@@ -16,4 +16,4 @@ const char RESULT_LONGSTR[4][8] = {"*", "1-0", "0-1", "1/2-1/2"};
 const resultT RESULT_OPPOSITE[4] = {
     RESULT_None, RESULT_Black, RESULT_White, RESULT_Draw};
 
-} // namespace scid::database
+} // namespace scid::core

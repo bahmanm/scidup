@@ -42,7 +42,7 @@ bool LegacyGameEncodeOptions::legacyFormatFromString(const char* str,
 //    Called by WriteMoveList to write a single comment.
 static void writeComment(TextBuffer* tb, const char* preStr,
                          const char* comment, const char* postStr,
-                         bool colorFormat, uint numMovesPrinted) {
+                         bool colorFormat, scid::core::uint numMovesPrinted) {
     const char* s = comment;
     if (s[0] != '\0') {
 
@@ -71,13 +71,13 @@ static void writeComment(TextBuffer* tb, const char* preStr,
     }
 }
 
-static std::string sanForMove(Position& position, scid::core::Move const& move,
-                              sanFlagT flag, simpleMoveT& simpleMove) {
+static std::string sanForMove(scid::core::Position& position, scid::core::Move const& move,
+                              scid::core::sanFlagT flag, scid::core::simpleMoveT& simpleMove) {
     if (!move.san.empty()) {
         return move.san;
     }
 
-    sanStringT san = {};
+    scid::core::sanStringT san = {};
     position.MakeSANString(&simpleMove, san, flag);
     return san;
 }
@@ -87,17 +87,17 @@ struct LegacyGamePgnEncoder {
 	const char* scidFlags;
 	TextBuffer* tb;
 	LegacyGameEncodeOptions options;
-	uint numMovesPrinted = 1;
+	scid::core::uint numMovesPrinted = 1;
 
 	static std::pair<const char*, unsigned>
 	encodeToPgnText(const scid::core::Game& game, const char* scidFlags,
-	                LegacyGameEncodeOptions options, uint lineWidth,
+	                LegacyGameEncodeOptions options, scid::core::uint lineWidth,
 	                bool newLineAtEnd,
 	                bool newLineToSpaces);
 
-	errorT encode();
-	errorT writeMoveList(bool printMoveNum, bool inComment, uint depth,
-	                     scid::core::GameCursor& cursor, Position position);
+	scid::core::errorT encode();
+	scid::core::errorT writeMoveList(bool printMoveNum, bool inComment, scid::core::uint depth,
+	                     scid::core::GameCursor& cursor, scid::core::Position position);
 };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -105,10 +105,10 @@ struct LegacyGamePgnEncoder {
 //      Write the moves, variations and comments in PGN notation.
 //      Recursive; calls itself to write variations.
 //
-errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
-                                           uint depth,
+scid::core::errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
+                                           scid::core::uint depth,
                                            scid::core::GameCursor& cursor,
-                                           Position position) {
+                                           scid::core::Position position) {
     const char * preCommentStr = "{";
     const char * postCommentStr = "}";
     const char * startTable = "\n";
@@ -201,11 +201,11 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
     while (!cursor.isAtLineEnd()) {
         const auto* coreMove = cursor.nextMove();
         if (!coreMove) {
-            return ERROR;
+            return scid::core::ERROR;
         }
         auto afterCoreMove = cursor;
         if (!afterCoreMove.next()) {
-            return ERROR;
+            return scid::core::ERROR;
         }
         const bool isNullMove = coreMove->action.isNull();
         const bool isLastMoveInLine = afterCoreMove.isAtLineEnd();
@@ -215,14 +215,14 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
         const auto simpleMove =
             scid::core::notation::toSimpleMove(position, coreMove->action);
         if (!simpleMove) {
-            return ERROR;
+            return scid::core::ERROR;
         }
         auto positionAfterMove = position;
         positionAfterMove.DoSimpleMove(*simpleMove);
         auto sanMove = *simpleMove;
         const auto san = sanForMove(
             position, *coreMove,
-            !isLastMoveInLine ? SAN_CHECKTEST : SAN_MATETEST, sanMove);
+            !isLastMoveInLine ? scid::core::SAN_CHECKTEST : scid::core::SAN_MATETEST, sanMove);
 
         bool printThisMove = true;
         if (isNullMove) {
@@ -256,13 +256,13 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
             tb->PrintInt (numMovesPrinted);
             tb->PrintChar ('>');
         }
-        if (printMoveNum  ||  (position.GetToMove() == WHITE)) {
+        if (printMoveNum  ||  (position.GetToMove() == scid::core::WHITE)) {
             if ((options.style & PGN_STYLE_COLUMN)  &&  depth == 0) {
                 tb->PrintString (startColumn);
                 char temp [10];
                 std::snprintf(temp, sizeof(temp), "%4u.", position.GetFullMoveCount());
                 tb->PrintString (temp);
-                if (position.GetToMove() == BLACK) {
+                if (position.GetToMove() == scid::core::BLACK) {
                     tb->PauseTranslations();
                     tb->PrintString (nextColumn);
                     tb->PrintString ("...");
@@ -273,9 +273,9 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
                 }
             } else {
             if (options.style & PGN_STYLE_MOVENUM_SPACE) {
-                tb->PrintInt(position.GetFullMoveCount(), (position.GetToMove() == WHITE ? "." : ". ..."));
+                tb->PrintInt(position.GetFullMoveCount(), (position.GetToMove() == scid::core::WHITE ? "." : ". ..."));
                 } else {
-                    tb->PrintInt(position.GetFullMoveCount(), (position.GetToMove() == WHITE ? "." : "..."));
+                    tb->PrintInt(position.GetFullMoveCount(), (position.GetToMove() == scid::core::WHITE ? "." : "..."));
                 }
                 if (options.style & PGN_STYLE_MOVENUM_SPACE) {
                     if (options.isLatexFormat()) {
@@ -338,7 +338,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
             if (options.isColorFormat()  &&  !nags.empty()) {
                 tb->PrintString ("<nag>");
             }
-            for (uint i = 0; i < (uint) nags.size(); i++) {
+            for (scid::core::uint i = 0; i < (scid::core::uint) nags.size(); i++) {
                 char temp[20];
                 game_printNag (nags[i], temp, options.style & PGN_STYLE_SYMBOLS,
                                options.legacyFormat);
@@ -372,7 +372,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
             if (printDiagramHere) {
                 if ((options.style & PGN_STYLE_COLUMN)  &&  depth == 0) {
                     if (! endedColumn) {
-                        if (position.GetToMove() == WHITE) {
+                        if (position.GetToMove() == scid::core::WHITE) {
                             tb->PauseTranslations ();
                             tb->PrintString (nextColumn);
                             tb->ResumeTranslations ();
@@ -395,7 +395,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
                     //}
                     tb->PrintString ("\n\\begin{diagram}\n");
                 }
-                DString * dstr = new DString;
+                scid::core::DString * dstr = new scid::core::DString;
                 if (options.isHtmlFormat()) {
                     positionAfterMove.DumpHtmlBoard (dstr, options.htmlStyle, NULL);
                 } else {
@@ -437,7 +437,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
 /* Code commented to remove extra lines
                 if ((options.style & PGN_STYLE_COLUMN)  &&  depth == 0) {
                        if (! endedColumn) {
-                           if (position.GetToMove() == WHITE) {
+                           if (position.GetToMove() == scid::core::WHITE) {
                                tb->PauseTranslations ();
                                tb->PrintString (nextColumn);
                                tb->ResumeTranslations ();
@@ -476,7 +476,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
                     if (options.isLatexFormat()) {
                         tb->PrintString ("\n\\begin{diagram}\n");
                     }
-                    DString * dstr = new DString;
+                    scid::core::DString * dstr = new scid::core::DString;
                     if (options.isHtmlFormat()) {
                         positionAfterMove.DumpHtmlBoard (dstr, options.htmlStyle, NULL);
                     } else {
@@ -499,11 +499,11 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
 
         // Print any variations if the style indicates:
         const auto variationCount =
-            static_cast<uint>(coreMove->childVariations.size());
+            static_cast<scid::core::uint>(coreMove->childVariations.size());
         if ((options.style & PGN_STYLE_VARS)  &&  (variationCount > 0)) {
             if ((options.style & PGN_STYLE_COLUMN)  &&  depth == 0) {
                 if (! endedColumn) {
-                    if (position.GetToMove() == WHITE) {
+                    if (position.GetToMove() == scid::core::WHITE) {
                         tb->PauseTranslations ();
                         tb->PrintString (nextColumn);
                         tb->ResumeTranslations ();
@@ -523,7 +523,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
                     tb->PrintString ("<br>");
                 }
             }
-            for (uint i=0; i < variationCount; i++) {
+            for (scid::core::uint i=0; i < variationCount; i++) {
                 if (options.style & PGN_STYLE_INDENT_VARS) {
                     if (options.isColorFormat()) {
                         if (depth < 19) {
@@ -554,7 +554,7 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
                 }
 
                 if (!cursor.enterVariation(i)) {
-                    return ERROR;
+                    return scid::core::ERROR;
                 }
                 numMovesPrinted++;
                 tb->PrintSpace();
@@ -564,9 +564,9 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
                     writeMoveList(true, inComment, depth + 1, cursor, position);
 
                 if (!cursor.exitVariation()) {
-                    return ERROR;
+                    return scid::core::ERROR;
                 }
-                if (err != OK) {
+                if (err != scid::core::OK) {
                     return err;
                 }
                 if (!options.isLatexFormat()  ||  depth != 0) {
@@ -602,13 +602,13 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
         }
         if ((options.style & PGN_STYLE_COLUMN)  &&  depth == 0) {
             if (endedColumn) { tb->PrintString(startTable); }
-            if (!endedColumn  &&  position.GetToMove() == BLACK) {
+            if (!endedColumn  &&  position.GetToMove() == scid::core::BLACK) {
                 tb->PrintString (endColumn);
                 endedColumn = true;
             }
         }
         if (!cursor.next()) {
-            return ERROR;
+            return scid::core::ERROR;
         }
         position = positionAfterMove;
     }
@@ -617,14 +617,14 @@ errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool inComment,
     if ((options.style & PGN_STYLE_COLUMN)  &&  depth == 0) {
         tb->PrintString(endTable);
     }
-    return OK;
+    return scid::core::OK;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // LegacyGamePgnEncoder::encode():
 //      Write a game in PGN to a textbuffer.
 //
-errorT LegacyGamePgnEncoder::encode() {
+scid::core::errorT LegacyGamePgnEncoder::encode() {
     auto const& coreGame = game;
     const auto& BlackElo = coreGame.black().rating.value;
     const auto& BlackRatingType = coreGame.black().rating.type;
@@ -673,7 +673,7 @@ errorT LegacyGamePgnEncoder::encode() {
         options.style |= PGN_STYLE_INDENT_VARS;
     }
 
-    date_DecodeToString (Date, dateStr);
+    scid::core::date_DecodeToString (Date, dateStr);
     if (options.isHtmlFormat()) { tb->PrintLine("<p><b>"); }
     if (options.isLatexFormat()) { tb->PrintLine ("{\\bf"); }
 
@@ -734,7 +734,7 @@ errorT LegacyGamePgnEncoder::encode() {
         // Print ECO code:
         tb->PrintString (options.isHtmlFormat() ? " &nbsp; &nbsp; " : "  ");
         if (options.isLatexFormat()) { tb->PrintString ("\\hfill "); }
-        tb->PrintString (RESULT_LONGSTR[Result]);
+        tb->PrintString (scid::core::RESULT_LONGSTR[Result]);
         if (EcoCode != 0) {
             tb->PrintString (options.isHtmlFormat() ? " &nbsp; &nbsp; " : "  ");
             if (options.isLatexFormat()) { tb->PrintString ("\\hfill "); }
@@ -755,18 +755,18 @@ errorT LegacyGamePgnEncoder::encode() {
         if (startPos) {
             if (options.isLatexFormat()) {
                 tb->PrintString ("\n\\begin{diagram}\n");
-                DString dstr;
-                Position diagramPosition = *startPos;
+                scid::core::DString dstr;
+                scid::core::Position diagramPosition = *startPos;
                 diagramPosition.DumpLatexBoard (&dstr);
                 tb->PrintString (dstr.Data());
                 tb->PrintString ("\n\\end{diagram}\n");
             } else if (options.isHtmlFormat()) {
-                DString dstr;
-                Position diagramPosition = *startPos;
+                scid::core::DString dstr;
+                scid::core::Position diagramPosition = *startPos;
                 diagramPosition.DumpHtmlBoard (&dstr, options.htmlStyle, NULL);
                 tb->PrintString (dstr.Data());
             } else {
-	                auto* out = std::copy_n("Position: ", 10, temp);
+	                auto* out = std::copy_n("scid::core::Position: ", 10, temp);
 	                startPos->PrintFEN(out, sizeof(temp) - 10);
 	                std::strcat(temp, newline);
 	                tb->PrintString (temp);
@@ -776,7 +776,7 @@ errorT LegacyGamePgnEncoder::encode() {
         // Print tags in standard PGN format, one per line:
         // Note: we want no line-wrapping when printing PGN tags
         // so set it to a huge value for now:
-        uint wrapColumn = tb->GetWrapColumn();
+        scid::core::uint wrapColumn = tb->GetWrapColumn();
         tb->SetWrapColumn (99999);
         if (options.isColorFormat()) { tb->PrintString ("<tag>"); }
         std::snprintf(temp, sizeof(temp), "[Event \"%s\"]%s", eventStr(), newline);
@@ -791,19 +791,19 @@ errorT LegacyGamePgnEncoder::encode() {
         tb->PrintString (temp);
         std::snprintf(temp, sizeof(temp), "[Black \"%s\"]%s", blackStr(), newline);
         tb->PrintString (temp);
-        std::snprintf(temp, sizeof(temp), "[Result \"%s\"]%s", RESULT_LONGSTR[Result], newline);
+        std::snprintf(temp, sizeof(temp), "[Result \"%s\"]%s", scid::core::RESULT_LONGSTR[Result], newline);
         tb->PrintString (temp);
 
         // Print all tags, not just the standard seven, if applicable:
             if (options.style & PGN_STYLE_TAGS) {
                 if (WhiteElo > 0) {
                 std::snprintf(temp, sizeof(temp), "[White%s \"%u\"]%s",
-                         ratingTypeNames [WhiteRatingType], WhiteElo, newline);
+                         scid::core::ratingTypeNames [WhiteRatingType], WhiteElo, newline);
                 tb->PrintString (temp);
                 }
                 if (BlackElo > 0) {
                 std::snprintf(temp, sizeof(temp), "[Black%s \"%u\"]%s",
-                         ratingTypeNames [BlackRatingType], BlackElo, newline);
+                         scid::core::ratingTypeNames [BlackRatingType], BlackElo, newline);
                 tb->PrintString (temp);
                 }
                 if (EcoCode != 0) {
@@ -812,9 +812,9 @@ errorT LegacyGamePgnEncoder::encode() {
                 std::snprintf(temp, sizeof(temp), "[ECO \"%s\"]%s", ecoStr, newline);
                 tb->PrintString (temp);
                 }
-                if (EventDate != ZERO_DATE) {
+                if (EventDate != scid::core::ZERO_DATE) {
                     char edateStr [20];
-                    date_DecodeToString (EventDate, edateStr);
+                    scid::core::date_DecodeToString (EventDate, edateStr);
                 std::snprintf(temp, sizeof(temp), "[EventDate \"%s\"]%s", edateStr, newline);
                 tb->PrintString (temp);
                 }
@@ -859,14 +859,14 @@ errorT LegacyGamePgnEncoder::encode() {
     if (options.isHtmlFormat()) { tb->PrintString ("<p>"); }
     numMovesPrinted = 1;
     scid::core::GameCursor cursor(coreGame);
-    auto position = startPos ? *startPos : Position::getStdStart();
+    auto position = startPos ? *startPos : scid::core::Position::getStdStart();
     if (auto err = writeMoveList(true, false, 0, cursor, position)) {
         return err;
     }
     if (options.isHtmlFormat()) { tb->PrintString ("<b>"); }
     if (options.isLatexFormat()) { tb->PrintString ("\n}\\end{chess}\n{\\bf "); }
     if (options.isColorFormat()) { tb->PrintString ("<tag>"); }
-    tb->PrintWord (RESULT_LONGSTR [Result]);
+    tb->PrintWord (scid::core::RESULT_LONGSTR [Result]);
     if (options.isLatexFormat()) {
         tb->PrintString ("}\n\\begin{center} \\hrule \\end{center}");
     }
@@ -874,12 +874,12 @@ errorT LegacyGamePgnEncoder::encode() {
     if (options.isColorFormat()) { tb->PrintString ("</tag>"); }
     tb->NewLine();
 
-    return OK;
+    return scid::core::OK;
 }
 
 std::pair<const char*, unsigned> LegacyGamePgnEncoder::encodeToPgnText(
     const scid::core::Game& game, const char* scidFlags,
-    LegacyGameEncodeOptions options, uint lineWidth, bool newLineAtEnd,
+    LegacyGameEncodeOptions options, scid::core::uint lineWidth, bool newLineAtEnd,
     bool newLineToSpaces) {
     static TextBuffer tbuf;
 

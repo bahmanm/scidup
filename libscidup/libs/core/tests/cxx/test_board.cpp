@@ -4,7 +4,7 @@
 
 namespace {
 
-using namespace scid::database;
+using namespace scid::core;
 
 TEST(BoardTest, DefinesMinorPieceAndSliderHelpers) {
 	EXPECT_EQ(16, WM);

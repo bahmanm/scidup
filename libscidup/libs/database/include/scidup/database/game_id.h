@@ -4,7 +4,7 @@
 
 namespace scid::database {
 
-using gamenumT = uint;
+using gamenumT = scid::core::uint;
 
 inline constexpr gamenumT INVALID_GAMEID = 0xffffffff;
 

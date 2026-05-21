@@ -4,17 +4,17 @@
 
 namespace {
 
-scid::core::MoveAction quiet(scid::database::squareT from,
-                             scid::database::squareT to) {
-	return {from, to, scid::database::EMPTY};
+scid::core::MoveAction quiet(scid::core::squareT from,
+                             scid::core::squareT to) {
+	return {from, to, scid::core::EMPTY};
 }
 
 TEST(CoreGameCursorTest, StartsBeforeFirstMainlineMove) {
 	scid::core::Game game;
 	auto& first = game.appendMainlineMove(
-	    quiet(scid::database::E2, scid::database::E4));
+	    quiet(scid::core::E2, scid::core::E4));
 	first.san = "e4";
-	game.appendMainlineMove(quiet(scid::database::E7, scid::database::E5));
+	game.appendMainlineMove(quiet(scid::core::E7, scid::core::E5));
 
 	scid::core::GameCursor cursor(game);
 
@@ -34,8 +34,8 @@ TEST(CoreGameCursorTest, StartsBeforeFirstMainlineMove) {
 
 TEST(CoreGameCursorTest, MovesNextAndPreviousThroughMainline) {
 	scid::core::Game game;
-	game.appendMainlineMove(quiet(scid::database::E2, scid::database::E4));
-	game.appendMainlineMove(quiet(scid::database::E7, scid::database::E5));
+	game.appendMainlineMove(quiet(scid::core::E2, scid::core::E4));
+	game.appendMainlineMove(quiet(scid::core::E7, scid::core::E5));
 
 	scid::core::GameCursor cursor(game);
 
@@ -70,8 +70,8 @@ TEST(CoreGameCursorTest, MovesNextAndPreviousThroughMainline) {
 
 TEST(CoreGameCursorTest, SavesAndRestoresLocation) {
 	scid::core::Game game;
-	game.appendMainlineMove(quiet(scid::database::D2, scid::database::D4));
-	game.appendMainlineMove(quiet(scid::database::D7, scid::database::D5));
+	game.appendMainlineMove(quiet(scid::core::D2, scid::core::D4));
+	game.appendMainlineMove(quiet(scid::core::D7, scid::core::D5));
 
 	scid::core::GameCursor cursor(game);
 	ASSERT_TRUE(cursor.next());
@@ -87,8 +87,8 @@ TEST(CoreGameCursorTest, SavesAndRestoresLocation) {
 
 TEST(CoreGameCursorTest, ReturnsMainlineMovesToCursor) {
 	scid::core::Game game;
-	game.appendMainlineMove(quiet(scid::database::D2, scid::database::D4));
-	game.appendMainlineMove(quiet(scid::database::D7, scid::database::D5));
+	game.appendMainlineMove(quiet(scid::core::D2, scid::core::D4));
+	game.appendMainlineMove(quiet(scid::core::D7, scid::core::D5));
 	scid::core::GameCursor cursor(game);
 	ASSERT_TRUE(cursor.toPly(2));
 
@@ -102,11 +102,11 @@ TEST(CoreGameCursorTest, ReturnsMainlineMovesToCursor) {
 TEST(CoreGameCursorTest, ReturnsVariationMovesToCursor) {
 	scid::core::Game game;
 	auto& first = game.appendMainlineMove(
-	    quiet(scid::database::D2, scid::database::D4));
+	    quiet(scid::core::D2, scid::core::D4));
 	first.childVariations.emplace_back().line.moves.push_back(
-	    {quiet(scid::database::E2, scid::database::E4), "e4", {}, {}});
+	    {quiet(scid::core::E2, scid::core::E4), "e4", {}, {}});
 	first.childVariations[0].line.moves.push_back(
-	    {quiet(scid::database::E7, scid::database::E5), "e5", {}, {}});
+	    {quiet(scid::core::E7, scid::core::E5), "e5", {}, {}});
 
 	scid::core::GameCursor cursor(game);
 	ASSERT_TRUE(cursor.enterVariation(0));
@@ -123,13 +123,13 @@ TEST(CoreGameCursorTest, ReturnsVariationMovesToCursor) {
 TEST(CoreGameCursorTest, ReturnsNestedVariationMovesToCursor) {
 	scid::core::Game game;
 	auto& first = game.appendMainlineMove(
-	    quiet(scid::database::D2, scid::database::D4));
+	    quiet(scid::core::D2, scid::core::D4));
 	auto& variation = first.childVariations.emplace_back();
-	variation.line.appendMove(quiet(scid::database::E2, scid::database::E4));
+	variation.line.appendMove(quiet(scid::core::E2, scid::core::E4));
 	auto& variationSecond = variation.line.appendMove(
-	    quiet(scid::database::E7, scid::database::E5));
+	    quiet(scid::core::E7, scid::core::E5));
 	variationSecond.childVariations.emplace_back().line.moves.push_back(
-	    {quiet(scid::database::C7, scid::database::C5), "c5", {}, {}});
+	    {quiet(scid::core::C7, scid::core::C5), "c5", {}, {}});
 
 	scid::core::GameCursor cursor(game);
 	ASSERT_TRUE(cursor.enterVariation(0));
@@ -146,8 +146,8 @@ TEST(CoreGameCursorTest, ReturnsNestedVariationMovesToCursor) {
 
 TEST(CoreGameCursorTest, ReturnsCurrentPositionAtMainlineLocation) {
 	scid::core::Game game;
-	game.appendMainlineMove(quiet(scid::database::E2, scid::database::E4));
-	game.appendMainlineMove(quiet(scid::database::E7, scid::database::E5));
+	game.appendMainlineMove(quiet(scid::core::E2, scid::core::E4));
+	game.appendMainlineMove(quiet(scid::core::E7, scid::core::E5));
 
 	scid::core::GameCursor cursor(game);
 	ASSERT_TRUE(cursor.toPly(2));
@@ -165,10 +165,10 @@ TEST(CoreGameCursorTest, ReturnsCurrentPositionAtMainlineLocation) {
 TEST(CoreGameCursorTest, ReturnsCurrentPositionAtVariationLocation) {
 	scid::core::Game game;
 	auto& first = game.appendMainlineMove(
-	    quiet(scid::database::D2, scid::database::D4));
+	    quiet(scid::core::D2, scid::core::D4));
 	auto& variation = first.childVariations.emplace_back();
-	variation.line.appendMove(quiet(scid::database::E2, scid::database::E4));
-	variation.line.appendMove(quiet(scid::database::E7, scid::database::E5));
+	variation.line.appendMove(quiet(scid::core::E2, scid::core::E4));
+	variation.line.appendMove(quiet(scid::core::E7, scid::core::E5));
 
 	scid::core::GameCursor cursor(game);
 	ASSERT_TRUE(cursor.enterVariation(0));
@@ -188,10 +188,10 @@ TEST(CoreGameCursorTest, ReturnsCurrentPositionAtVariationLocation) {
 TEST(CoreGameCursorTest, SeeksToMainlineStartAndEnd) {
 	scid::core::Game game;
 	auto& first = game.appendMainlineMove(
-	    quiet(scid::database::E2, scid::database::E4));
+	    quiet(scid::core::E2, scid::core::E4));
 	first.childVariations.emplace_back().line.moves.push_back(
-	    {quiet(scid::database::D2, scid::database::D4), "d4", {}, {}});
-	game.appendMainlineMove(quiet(scid::database::E7, scid::database::E5));
+	    {quiet(scid::core::D2, scid::core::D4), "d4", {}, {}});
+	game.appendMainlineMove(quiet(scid::core::E7, scid::core::E5));
 
 	scid::core::GameCursor cursor(game);
 	ASSERT_TRUE(cursor.enterVariation(0));
@@ -214,12 +214,12 @@ TEST(CoreGameCursorTest, SeeksToMainlineStartAndEnd) {
 
 TEST(CoreGameCursorTest, SeeksToMainlinePly) {
 	scid::core::Game game;
-	game.appendMainlineMove(quiet(scid::database::E2, scid::database::E4));
+	game.appendMainlineMove(quiet(scid::core::E2, scid::core::E4));
 	auto& second = game.appendMainlineMove(
-	    quiet(scid::database::E7, scid::database::E5));
+	    quiet(scid::core::E7, scid::core::E5));
 	second.childVariations.emplace_back().line.moves.push_back(
-	    {quiet(scid::database::C7, scid::database::C5), "c5", {}, {}});
-	game.appendMainlineMove(quiet(scid::database::G1, scid::database::F3));
+	    {quiet(scid::core::C7, scid::core::C5), "c5", {}, {}});
+	game.appendMainlineMove(quiet(scid::core::G1, scid::core::F3));
 
 	scid::core::GameCursor cursor(game);
 	ASSERT_TRUE(cursor.toPly(2));
@@ -253,10 +253,10 @@ TEST(CoreGameCursorTest, SeeksToMainlinePly) {
 TEST(CoreGameCursorTest, EntersAndExitsVariationFromNextMove) {
 	scid::core::Game game;
 	auto& first = game.appendMainlineMove(
-	    quiet(scid::database::E2, scid::database::E4));
+	    quiet(scid::core::E2, scid::core::E4));
 	first.childVariations.emplace_back("Queen pawn alternative").line.moves.push_back(
-	    {quiet(scid::database::D2, scid::database::D4), "d4", {}, {}});
-	game.appendMainlineMove(quiet(scid::database::E7, scid::database::E5));
+	    {quiet(scid::core::D2, scid::core::D4), "d4", {}, {}});
+	game.appendMainlineMove(quiet(scid::core::E7, scid::core::E5));
 
 	scid::core::GameCursor cursor(game);
 
@@ -291,14 +291,14 @@ TEST(CoreGameCursorTest, EntersAndExitsVariationFromNextMove) {
 
 TEST(CoreGameCursorTest, SavesAndRestoresVariationLocation) {
 	scid::core::Game game;
-	game.appendMainlineMove(quiet(scid::database::E2, scid::database::E4));
+	game.appendMainlineMove(quiet(scid::core::E2, scid::core::E4));
 	auto& second = game.appendMainlineMove(
-	    quiet(scid::database::E7, scid::database::E5));
+	    quiet(scid::core::E7, scid::core::E5));
 	auto& variationMoves = second.childVariations.emplace_back().line.moves;
 	variationMoves.push_back(
-	    {quiet(scid::database::C2, scid::database::C4), "c4", {}, {}});
+	    {quiet(scid::core::C2, scid::core::C4), "c4", {}, {}});
 	variationMoves.push_back(
-	    {quiet(scid::database::E7, scid::database::E5), "e5", {}, {}});
+	    {quiet(scid::core::E7, scid::core::E5), "e5", {}, {}});
 
 	scid::core::GameCursor cursor(game);
 	ASSERT_TRUE(cursor.next());
@@ -321,10 +321,10 @@ TEST(CoreGameCursorTest, SavesAndRestoresVariationLocation) {
 TEST(CoreGameCursorTest, ReportsVariationIndexAndEmptyVariationState) {
 	scid::core::Game game;
 	auto& first = game.appendMainlineMove(
-	    quiet(scid::database::E2, scid::database::E4));
+	    quiet(scid::core::E2, scid::core::E4));
 	first.childVariations.emplace_back();
 	first.childVariations.emplace_back().line.moves.push_back(
-	    {quiet(scid::database::G1, scid::database::F3), "Nf3", {}, {}});
+	    {quiet(scid::core::G1, scid::core::F3), "Nf3", {}, {}});
 
 	scid::core::GameCursor cursor(game);
 	ASSERT_TRUE(cursor.enterVariation(0));

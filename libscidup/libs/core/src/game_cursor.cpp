@@ -8,9 +8,9 @@ namespace scid::core {
 
 namespace {
 
-scid::database::Position startPosition(const Game& game) {
+scid::core::Position startPosition(const Game& game) {
 	return game.startPosition() ? *game.startPosition()
-	                            : scid::database::Position::getStdStart();
+	                            : scid::core::Position::getStdStart();
 }
 
 } // namespace
@@ -53,7 +53,7 @@ std::vector<const Move*> GameCursor::movesToCursor() const {
 	return result;
 }
 
-std::optional<scid::database::Position> GameCursor::currentPosition() const {
+std::optional<scid::core::Position> GameCursor::currentPosition() const {
 	auto position = startPosition(game_);
 	for (const auto* move : movesToCursor()) {
 		auto simpleMove = notation::toSimpleMove(position, move->action);

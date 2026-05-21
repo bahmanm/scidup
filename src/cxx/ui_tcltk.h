@@ -194,19 +194,19 @@ inline void List::push_back(const T& value) {
 }
 
 
-inline UI_res_t ResultHelper(UI_handle_t ti, scid::database::errorT res) {
-	if (res == scid::database::OK) return TCL_OK;
+inline UI_res_t ResultHelper(UI_handle_t ti, scid::core::errorT res) {
+	if (res == scid::core::OK) return TCL_OK;
 	Tcl_SetObjErrorCode(ti, Tcl_NewWideIntObj(res));
 	return TCL_ERROR;
 }
 
-inline UI_res_t Result(UI_handle_t ti, scid::database::errorT res) {
+inline UI_res_t Result(UI_handle_t ti, scid::core::errorT res) {
 	Tcl_ResetResult(ti);
 	return UI_impl::ResultHelper(ti, res);
 }
 
 template <typename T>
-inline UI_res_t Result(UI_handle_t ti, scid::database::errorT res, const T& value) {
+inline UI_res_t Result(UI_handle_t ti, scid::core::errorT res, const T& value) {
 	Tcl_SetObjResult(ti, UI_impl::ObjMaker(value));
 	return UI_impl::ResultHelper(ti, res);
 }

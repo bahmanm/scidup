@@ -14,7 +14,7 @@
 #include <string>
 #include <string_view>
 
-namespace scid::database {
+namespace scid::core {
 
 class DString;
 class SquareSet;
@@ -288,4 +288,4 @@ private:
 };
 
 
-} // namespace scid::database
+} // namespace scid::core

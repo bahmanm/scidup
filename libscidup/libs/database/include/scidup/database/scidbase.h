@@ -42,23 +42,23 @@ class SortCache;
 
 struct scidBaseT {
 	struct Stats {
-		uint flagCount[IndexEntry::IDX_NUM_FLAGS]; // Num of games with each
+		scid::core::uint flagCount[IndexEntry::IDX_NUM_FLAGS]; // Num of games with each
 		                                           // flag set.
-		dateT minDate;
-		dateT maxDate;
+		scid::core::dateT minDate;
+		scid::core::dateT maxDate;
 		uint64_t nYears;
 		uint64_t sumYears;
-		uint nResults[NUM_RESULT_TYPES];
-		uint nRatings;
+		scid::core::uint nResults[scid::core::NUM_RESULT_TYPES];
+		scid::core::uint nRatings;
 		uint64_t sumRatings;
-		uint minRating;
-		uint maxRating;
+		scid::core::uint minRating;
+		scid::core::uint maxRating;
 
 		Stats(const scidBaseT* dbase);
 
 		struct Eco {
-			uint count;
-			uint results[NUM_RESULT_TYPES];
+			scid::core::uint count;
+			scid::core::uint results[scid::core::NUM_RESULT_TYPES];
 
 			Eco();
 		};
@@ -76,7 +76,7 @@ struct scidBaseT {
 	scidBaseT();
 	~scidBaseT();
 
-		errorT open(std::string_view dbType, fileModeT fMode, const char* filename,
+		scid::core::errorT open(std::string_view dbType, fileModeT fMode, const char* filename,
 		            const Progress& progress = {});
 
 	void Close();
@@ -91,7 +91,7 @@ struct scidBaseT {
 		std::vector<std::pair<const char*, std::string>> getExtraInfo() const;
 
 	/// Store an extra information about the database (type, description, etc..)
-		errorT setExtraInfo(const char* tagname, const char* new_value);
+		scid::core::errorT setExtraInfo(const char* tagname, const char* new_value);
 
 	const IndexEntry* getIndexEntry(gamenumT g) const {
 		assert(g < numGames());
@@ -111,7 +111,7 @@ struct scidBaseT {
 	const NameBase* getNameBase() const { return nb_; }
 
 	/// Return the highest elo of the player (in the database's games)
-	ratingT peakElo(idNumberT playerID) const {
+	scid::core::ratingT peakElo(idNumberT playerID) const {
 		if (peakEloCache_.empty()) {
 			for (gamenumT gnum = 0, n = numGames(); gnum < n; gnum++) {
 				IndexEntry const& ie = *getIndexEntry(gnum);
@@ -128,14 +128,14 @@ struct scidBaseT {
 
 		GameView getGame(const IndexEntry* ie) const;
 		ByteBuffer getGame(const IndexEntry& ie) const;
-	errorT getGame(const IndexEntry& ie, scid::core::Game& dest,
+	scid::core::errorT getGame(const IndexEntry& ie, scid::core::Game& dest,
 	              char* scidFlags, std::size_t scidFlagsLen) const;
-	errorT loadGame(gamenumT gNum, scid::core::Game& dest,
+	scid::core::errorT loadGame(gamenumT gNum, scid::core::Game& dest,
 	               char* scidFlags, std::size_t scidFlagsLen) const;
 
-	errorT importGames(const scidBaseT* srcBase, const HFilter& filter,
+	scid::core::errorT importGames(const scidBaseT* srcBase, const HFilter& filter,
 	                   const Progress& progress);
-		errorT importGames(std::string_view dbType, const char* filename,
+		scid::core::errorT importGames(std::string_view dbType, const char* filename,
 		                   const Progress& progress, std::string& errorMsg);
 
 	/**
@@ -144,21 +144,21 @@ struct scidBaseT {
 	 * @param scidFlags: database/application Scid flags for the game.
 	 * @param replacedGameId: id of the game to replace.
 	 *                        If >= numGames(), a new game will be added.
-	 * @returns OK if successful or an error code.
+	 * @returns scid::core::OK if successful or an error code.
 	 */
-	errorT saveGame(scid::core::Game const& game, const char* scidFlags,
+	scid::core::errorT saveGame(scid::core::Game const& game, const char* scidFlags,
 	                gamenumT replacedGameId = INVALID_GAMEID);
-	errorT addGame(scid::core::Game const& game, const char* scidFlags) {
+	scid::core::errorT addGame(scid::core::Game const& game, const char* scidFlags) {
 		return saveGame(game, scidFlags, INVALID_GAMEID);
 	}
 
-	bool getFlag(uint flag, uint gNum) const {
+	bool getFlag(scid::core::uint flag, scid::core::uint gNum) const {
 		return idx->GetEntry(gNum)->GetFlag(flag);
 	}
-	errorT setFlag(bool value, uint flag, uint gNum);
-	errorT setFlags(bool value, uint flag, const HFilter& filter);
-	errorT invertFlag(uint flag, uint gNum);
-	errorT invertFlags(uint flag, const HFilter& filter);
+	scid::core::errorT setFlag(bool value, scid::core::uint flag, scid::core::uint gNum);
+	scid::core::errorT setFlags(bool value, scid::core::uint flag, const HFilter& filter);
+	scid::core::errorT invertFlag(scid::core::uint flag, scid::core::uint gNum);
+	scid::core::errorT invertFlags(scid::core::uint flag, const HFilter& filter);
 
 	/**
 	 * A Filter is a selection of games, usually obtained searching the
@@ -170,9 +170,9 @@ struct scidBaseT {
 	HFilter getFilter(std::string_view filterId) const;
 	HFilter defaultFilter() const { return HFilter(dbFilter); }
 	gamenumT defaultFilterCount() const { return dbFilter->Count(); }
-	byte defaultFilterGet(gamenumT g) const { return dbFilter->Get(g); }
-	void defaultFilterSet(gamenumT g, byte value) { dbFilter->Set(g, value); }
-	void defaultFilterFill(byte value) { dbFilter->Fill(value); }
+	scid::core::byte defaultFilterGet(gamenumT g) const { return dbFilter->Get(g); }
+	void defaultFilterSet(gamenumT g, scid::core::byte value) { dbFilter->Set(g, value); }
+	void defaultFilterFill(scid::core::byte value) { dbFilter->Fill(value); }
 	uint64_t cacheInvalidationToken() const { return cacheInvalidationToken_; }
 
 	/// A composed filter is a special construct created combining two filters
@@ -193,17 +193,17 @@ struct scidBaseT {
 
 	const Stats& getStats() const;
 	std::vector<TreeNode> getTreeStat(const HFilter& filter) const;
-	uint getNameFreq(nameT nt, idNumberT id) {
+	scid::core::uint getNameFreq(nameT nt, idNumberT id) {
 		if (nameFreq_[nt].size() == 0)
 			nameFreq_ = getNameBase()->calcNameFreq(*idx);
 		return nameFreq_[nt][id];
 	}
 
-	errorT getCompactStat(unsigned long long* n_deleted,
+	scid::core::errorT getCompactStat(unsigned long long* n_deleted,
 	                      unsigned long long* n_unused,
 	                      unsigned long long* n_sparse,
 	                      unsigned long long* n_badNameId);
-	errorT compact(const Progress& progress);
+	scid::core::errorT compact(const Progress& progress);
 
 	/**
 	 * Increment the reference count of a SortCache object matching @e criteria.
@@ -266,18 +266,18 @@ struct scidBaseT {
 	 * @param hfilter:  HFilter containing the games to be transformed.
 	 * @param progress: a Progress object used for GUI communications.
 	 * @param entry_op: operator that will be applied to games' IndexEntry.
-	 * @returns a std::pair containing OK (or an error code) and the number of
+	 * @returns a std::pair containing scid::core::OK (or an error code) and the number of
 	 * games modified.
 	 */
 	template <typename TOper>
-	std::pair<errorT, size_t>
+	std::pair<scid::core::errorT, size_t>
 	transformIndex(HFilter hfilter, const Progress& progress, TOper entry_op) {
 		if (auto errModify = beginTransaction())
 			return {errModify, 0};
 
 		auto res = transformIndex_(hfilter, progress, entry_op);
 		auto err = endTransaction();
-		res.first = (res.first == OK) ? err : res.first;
+		res.first = (res.first == scid::core::OK) ? err : res.first;
 		return res;
 	}
 
@@ -294,11 +294,11 @@ struct scidBaseT {
 	 *                  transformation; must accept a vector that contains the
 	 *                  idNumberTs of the names in @e newNames.
 	 * @param getID:    function that maps the old idNumberTs to the new ones.
-	 * @returns a std::pair containing OK (or an error code) and the number of
+	 * @returns a std::pair containing scid::core::OK (or an error code) and the number of
 	 * games modified.
 	 */
 	template <typename TInitFunc, typename TMapFunc>
-	std::pair<errorT, size_t>
+	std::pair<scid::core::errorT, size_t>
 	transformNames(nameT nt, HFilter hfilter, const Progress& progress,
 	               const std::vector<std::string>& newNames, TInitFunc fnInit,
 	               TMapFunc getID);
@@ -308,24 +308,24 @@ struct scidBaseT {
 	 * @param hfilter:  HFilter containing the games to be transformed.
 	 * @param progress: a Progress object used for GUI communications.
 	 * @param entry_op: operator that will be applied to games.
-	 * @returns a std::pair containing OK (or an error code) and the number of
+	 * @returns a std::pair containing scid::core::OK (or an error code) and the number of
 	 * games modified.
 	 */
-	std::pair<errorT, size_t>
+	std::pair<scid::core::errorT, size_t>
 	stripGames(HFilter hfilter, const Progress& progress,
 	           std::vector<std::string_view> const& removeTags) {
 		if (auto errModify = beginTransaction())
 			return {errModify, 0};
 
 		std::vector<std::pair<std::string_view, std::string_view>> tagsBuf;
-		std::vector<byte> encodeBuf;
+		std::vector<scid::core::byte> encodeBuf;
 		size_t nCorrections = 0;
 		size_t iProg = 0;
 		const size_t totProg = hfilter->size();
-		errorT err = OK;
+		scid::core::errorT err = scid::core::OK;
 		for (const auto gnum : hfilter) {
 			if ((++iProg % 1024 == 0) && !progress.report(iProg, totProg)) {
-				err = ERROR_UserCancel;
+				err = scid::core::ERROR_UserCancel;
 				break;
 			}
 
@@ -341,7 +341,7 @@ struct scidBaseT {
 				    else
 					    tagsBuf.emplace_back(tag, value);
 			    });
-			if (err != OK)
+			if (err != scid::core::OK)
 				break;
 
 			if (!changed)
@@ -353,13 +353,13 @@ struct scidBaseT {
 			                 gamedata.data() + gamedata.size());
 				err = saveGameData(ie, tagRoster(ie),
 				                   {encodeBuf.data(), encodeBuf.size()}, gnum);
-			if (err != OK)
+			if (err != scid::core::OK)
 				break;
 
 			++nCorrections;
 		}
 		const auto err_trans = endTransaction();
-		if (err == OK)
+		if (err == scid::core::OK)
 			err = err_trans;
 		return {err, nCorrections};
 	}
@@ -390,12 +390,12 @@ private:
 	// For each game: idx of duplicate game + 1 (0 if there is no duplicate).
 	std::unique_ptr<gamenumT[]> duplicates_;
 	std::vector<std::pair<std::string, SortCache*>> sortCaches_;
-	mutable std::unordered_map<idNumberT, ratingT> peakEloCache_;
-	errorT err_open_ = OK;
+	mutable std::unordered_map<idNumberT, scid::core::ratingT> peakEloCache_;
+	scid::core::errorT err_open_ = scid::core::OK;
 	uint64_t cacheInvalidationToken_ = 0;
 
 private:
-		errorT openHelper(std::string_view dbType, fileModeT mode,
+		scid::core::errorT openHelper(std::string_view dbType, fileModeT mode,
 		                  const char* filename, const Progress& progress = {});
 
 	void clear();
@@ -403,20 +403,20 @@ private:
 	/// This function must be called before modifying the games of the database.
 	/// Currently this function do not guarantees that the database is not
 	/// altered in case of errors.
-	errorT beginTransaction();
+	scid::core::errorT beginTransaction();
 
 	/// Update caches and flush the database's files.
 	/// This function must be called after changing one or more games.
 	/// @param gameId: id of the modified game
 	///                INVALID_GAMEID to update all games.
-	/// @returns OK if successful or an error code.
-	errorT endTransaction(gamenumT gameId = INVALID_GAMEID);
+	/// @returns scid::core::OK if successful or an error code.
+	scid::core::errorT endTransaction(gamenumT gameId = INVALID_GAMEID);
 
-		errorT importGameHelper(const scidBaseT* sourceBase, uint gNum);
-		errorT saveGameData(IndexEntry const& ie, TagRoster const& tags,
+		scid::core::errorT importGameHelper(const scidBaseT* sourceBase, scid::core::uint gNum);
+		scid::core::errorT saveGameData(IndexEntry const& ie, TagRoster const& tags,
 		                     ByteBuffer const& data, gamenumT replaced);
-		errorT saveIndexEntry(IndexEntry const& ie, gamenumT replaced);
-		std::pair<errorT, idNumberT> addName(nameT nt, const char* name);
+		scid::core::errorT saveIndexEntry(IndexEntry const& ie, gamenumT replaced);
+		std::pair<scid::core::errorT, idNumberT> addName(nameT nt, const char* name);
 
 		SortCache* getSortCache(const char* criteria);
 
@@ -427,35 +427,35 @@ private:
 	 * @param hfilter:  HFilter containing the games to be transformed.
 	 * @param progress: a Progress object used for GUI communications.
 	 * @param entry_op: operator that will be applied to games' IndexEntry.
-	 * @returns a std::pair containing OK (or an error code) and the number of
+	 * @returns a std::pair containing scid::core::OK (or an error code) and the number of
 	 * games modified.
 	 */
 	template <typename TOper>
-	std::pair<errorT, size_t>
+	std::pair<scid::core::errorT, size_t>
 	transformIndex_(HFilter hfilter, const Progress& progress, TOper entry_op) {
 		size_t nCorrections = 0;
 		size_t iProg = 0;
 		size_t totProg = hfilter->size();
 		for (auto& gnum : hfilter) {
 			if ((++iProg % 8192 == 0) && !progress.report(iProg, totProg))
-				return std::make_pair(ERROR_UserCancel, nCorrections);
+				return std::make_pair(scid::core::ERROR_UserCancel, nCorrections);
 
 			IndexEntry newIE = *getIndexEntry(gnum);
 			if (!entry_op(newIE))
 				continue;
 
 				auto err = saveIndexEntry(newIE, gnum);
-			if (err != OK)
+			if (err != scid::core::OK)
 				return std::make_pair(err, nCorrections);
 
 			++nCorrections;
 		}
-		return std::make_pair(OK, nCorrections);
+		return std::make_pair(scid::core::OK, nCorrections);
 	}
 };
 
 template <typename TInitFunc, typename TMapFunc>
-std::pair<errorT, size_t>
+std::pair<scid::core::errorT, size_t>
 scidBaseT::transformNames(nameT nt, HFilter hfilter, const Progress& progress,
                           const std::vector<std::string>& newNames,
                           TInitFunc initFunc, TMapFunc getNewID) {
@@ -466,7 +466,7 @@ scidBaseT::transformNames(nameT nt, HFilter hfilter, const Progress& progress,
 	auto it = nameIDs.begin();
 	for (auto& name : newNames) {
 			auto id = addName(nt, name.c_str());
-		if (id.first != OK) {
+		if (id.first != scid::core::OK) {
 			endTransaction();
 			return std::make_pair(id.first, size_t(0));
 		}
@@ -519,7 +519,7 @@ scidBaseT::transformNames(nameT nt, HFilter hfilter, const Progress& progress,
 	});
 
 	auto err = endTransaction();
-	res.first = (res.first == OK) ? err : res.first;
+	res.first = (res.first == scid::core::OK) ? err : res.first;
 	return res;
 }
 

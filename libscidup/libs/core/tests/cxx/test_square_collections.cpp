@@ -4,7 +4,7 @@
 
 namespace {
 
-using namespace scid::database;
+using namespace scid::core;
 
 TEST(SquareCollectionsTest, SquareListTracksAddedSquares) {
 	SquareList squares;

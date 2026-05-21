@@ -128,23 +128,23 @@ public:
 
 class SearchResult {
 	const scidBaseT* base_;
-	bool result_[NUM_RESULT_TYPES];
+	bool result_[scid::core::NUM_RESULT_TYPES];
 
 public:
 	SearchResult(const scidBaseT* base,
 	             const char* results)
 	: base_(base) {
-		std::fill_n(result_, NUM_RESULT_TYPES, false);
-		const char* end = RESULT_CHAR + NUM_RESULT_TYPES;
+		std::fill_n(result_, scid::core::NUM_RESULT_TYPES, false);
+		const char* end = scid::core::RESULT_CHAR + scid::core::NUM_RESULT_TYPES;
 		while (*results != 0) {
-			const char* it = std::find(RESULT_CHAR, end, *results);
-			if (it != end) result_[std::distance(RESULT_CHAR, it)] = true;
+			const char* it = std::find(scid::core::RESULT_CHAR, end, *results);
+			if (it != end) result_[std::distance(scid::core::RESULT_CHAR, it)] = true;
 			results++;
 		}
 	}
 
 	bool operator() (gamenumT gnum) const {
-		resultT r = base_->getIndexEntry(gnum)->GetResult();
+		scid::core::resultT r = base_->getIndexEntry(gnum)->GetResult();
 		return result_[r];
 	}
 };
@@ -185,27 +185,27 @@ public:
 	}
 };
 
-class SearchRangeDate : public SearchRange<dateT> {
+class SearchRangeDate : public SearchRange<scid::core::dateT> {
 public:
 	SearchRangeDate(const scidBaseT* base,
 	                const char* range,
-	                dateT (IndexEntry::* f) () const)
-	: SearchRange<dateT>(base, f) {
+	                scid::core::dateT (IndexEntry::* f) () const)
+	: SearchRange<scid::core::dateT>(base, f) {
 		// Extract two whitespace-separated dates:
 		const char* v = strFirstWord(range);
-		min_ = date_EncodeFromString(v);
+		min_ = scid::core::date_EncodeFromString(v);
 		const char* next = strNextWord(v);
 		if (*next == 0) {
-			auto year = date_GetYear(min_);
-			auto month = date_GetMonth(min_);
-			auto day = date_GetDay(min_);
+			auto year = scid::core::date_GetYear(min_);
+			auto month = scid::core::date_GetMonth(min_);
+			auto day = scid::core::date_GetDay(min_);
 			if (month == 0)
 				month = 12;
 			if (day == 0)
 				day = 31;
 			max_ = DATE_MAKE(year, month, day);
 		} else {
-			max_ = date_EncodeFromString(next);
+			max_ = scid::core::date_EncodeFromString(next);
 		}
 		if (min_ > max_)
 			std::swap(min_, max_);
@@ -252,16 +252,16 @@ public:
 	}
 };
 
-class SearchRangeElo : public SearchRange<ratingT> {
+class SearchRangeElo : public SearchRange<scid::core::ratingT> {
 protected:
-	ratingT (IndexEntry::*fElo1_)() const;
-	ratingT (IndexEntry::*fElo2_)() const;
+	scid::core::ratingT (IndexEntry::*fElo1_)() const;
+	scid::core::ratingT (IndexEntry::*fElo2_)() const;
 
 public:
 	SearchRangeElo(const scidBaseT* base, const char* range,
-	               ratingT (IndexEntry::*f1)() const,
-	               ratingT (IndexEntry::*f2)() const = 0)
-	    : SearchRange<ratingT>(base, range, 0), fElo1_(f1), fElo2_(f2) {}
+	               scid::core::ratingT (IndexEntry::*f1)() const,
+	               scid::core::ratingT (IndexEntry::*f2)() const = 0)
+	    : SearchRange<scid::core::ratingT>(base, range, 0), fElo1_(f1), fElo2_(f2) {}
 
 	bool operator()(gamenumT gnum) const {
 		long v1 = (base_->getIndexEntry(gnum)->*fElo1_)();
@@ -277,8 +277,8 @@ public:
 class SearchRangeEloDiff : public SearchRangeElo {
 public:
 	SearchRangeEloDiff(const scidBaseT* base, const char* range,
-	                   ratingT (IndexEntry::*f1)() const,
-	                   ratingT (IndexEntry::*f2)() const)
+	                   scid::core::ratingT (IndexEntry::*f1)() const,
+	                   scid::core::ratingT (IndexEntry::*f2)() const)
 	    : SearchRangeElo(base, range, f1, f2) {}
 
 	bool operator()(gamenumT gnum) const {
@@ -462,16 +462,16 @@ I doSearch(I itB, I itR, I itE, const scidBaseT* base, SearchParam& param) {
 		SearchRangeGamenum(base, param.getValue())
 	);
 	if (param == "length") return std::stable_partition(itB, itE,
-		SearchRange<ushort>(base, param.getValue(), &IndexEntry::GetNumHalfMoves)
+		SearchRange<scid::core::ushort>(base, param.getValue(), &IndexEntry::GetNumHalfMoves)
 	);
 	if (param == "n_variations") return std::stable_partition(itB, itE,
-		SearchRange<uint>(base, param.getValue(), &IndexEntry::GetVariationCount)
+		SearchRange<scid::core::uint>(base, param.getValue(), &IndexEntry::GetVariationCount)
 	);
 	if (param == "n_comments") return std::stable_partition(itB, itE,
-		SearchRange<uint>(base, param.getValue(), &IndexEntry::GetCommentCount)
+		SearchRange<scid::core::uint>(base, param.getValue(), &IndexEntry::GetCommentCount)
 	);
 	if (param == "n_nags") return std::stable_partition(itB, itE,
-		SearchRange<uint>(base, param.getValue(), &IndexEntry::GetNagCount)
+		SearchRange<scid::core::uint>(base, param.getValue(), &IndexEntry::GetNagCount)
 	);
 	if (param == "flag") return std::stable_partition(itB, itE,
 		SearchFlag(base, param.getValue())
@@ -529,7 +529,7 @@ I doSearch(I itB, I itR, I itE, const scidBaseT* base, SearchParam& param) {
  * -welo "2700 4000" -belo|! "0 2700" -delo "-200 200"
  * means (white elo > 2700 && white elo < 4000) || (belo is not in the range 0-2700) && ((welo - belo) > -200 && (welo - belo) < 200)
  */
-errorT search_index(const scidBaseT* base, HFilter& filter, int argc,
+scid::core::errorT search_index(const scidBaseT* base, HFilter& filter, int argc,
                     const char** argv, const Progress& progress) {
 	ASSERT(base != 0);
 	ASSERT(filter != 0);
@@ -545,7 +545,7 @@ errorT search_index(const scidBaseT* base, HFilter& filter, int argc,
 	iter it_end = glist.end();
 	iter it_res = glist.end();
 	for (size_t i = 0, n = params.size(); i < n; i++) {
-		if (!progress.report(i, n)) return ERROR_UserCancel;
+		if (!progress.report(i, n)) return scid::core::ERROR_UserCancel;
 
 		if (params[i].isOr()) {
 			it_begin = it_res;
@@ -583,7 +583,7 @@ errorT search_index(const scidBaseT* base, HFilter& filter, int argc,
 	}
 	progress.report(1,1);
 
-	return OK;
+	return scid::core::OK;
 }
 
 

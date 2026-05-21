@@ -47,7 +47,7 @@ class ICodecDatabase {
 public:
 	virtual ~ICodecDatabase(){};
 
-	friend std::pair<ICodecDatabase*, errorT>
+	friend std::pair<ICodecDatabase*, scid::core::errorT>
 	openCodec(CodecType codec, fileModeT fMode, const char* filename,
 	          const Progress& progress, Index* idx, NameBase* nb);
 
@@ -73,7 +73,7 @@ public:
 	/**
 	 * Store an extra information about the database (type, description, etc..)
 	 */
-	virtual errorT setExtraInfo(const char* tagname, const char* new_value) = 0;
+	virtual scid::core::errorT setExtraInfo(const char* tagname, const char* new_value) = 0;
 
 	/**
 	 * Fetches the data (encoded in native format) of a game.
@@ -94,9 +94,9 @@ public:
 	 * @param ie:   the header data of the source game.
 	 * @param tags: contains 5 of the Seven Tag Roster.
 	 * @param data: the data (encoded in native format) of the game.
-	 * @returns OK if successful or an error code.
+	 * @returns scid::core::OK if successful or an error code.
 	 */
-	virtual errorT addGame(IndexEntry const& ie, TagRoster const& tags,
+	virtual scid::core::errorT addGame(IndexEntry const& ie, TagRoster const& tags,
 	                       ByteBuffer const& data) = 0;
 
 	/**
@@ -105,35 +105,35 @@ public:
 	 * @param tags: contains 5 of the Seven Tag Roster.
 	 * @param data: the data (encoded in native format) of the game.
 	 * @param replaced: valid gamenumT of the game to be replaced
-	 * @returns OK if successful or an error code.
+	 * @returns scid::core::OK if successful or an error code.
 	 */
-	virtual errorT saveGame(IndexEntry const& ie, TagRoster const& tags,
+	virtual scid::core::errorT saveGame(IndexEntry const& ie, TagRoster const& tags,
 	                        ByteBuffer const& data, gamenumT replaced) = 0;
 
 	/**
 	 * Replaces a game's IndexEntry (which contains the header data of a game).
 	 * @param ie:       reference to the IndexEntry with the new data.
 	 * @param replaced: valid gamenumT of the game to be replaced
-	 * @returns OK if successful or an error code.
+	 * @returns scid::core::OK if successful or an error code.
 	 */
-	virtual errorT saveIndexEntry(const IndexEntry& ie, gamenumT replaced) = 0;
+	virtual scid::core::errorT saveIndexEntry(const IndexEntry& ie, gamenumT replaced) = 0;
 
 	/**
 	 * Adds a name (player, event, site or round) to the database.
 	 * @param nt:   nameT type of the name to add.
 	 * @param name: the name to add.
 	 * @returns
-	 * - on success, a @e std::pair containing OK and the corresponding ID.
+	 * - on success, a @e std::pair containing scid::core::OK and the corresponding ID.
 	 * - on failure, a @e std::pair containing an error code and 0.
 	 */
-	virtual std::pair<errorT, idNumberT> addName(nameT nt,
+	virtual std::pair<scid::core::errorT, idNumberT> addName(nameT nt,
 	                                             const char* name) = 0;
 
 	/**
 	 * Writes all pending output to the files.
-	 * @returns OK if successful or an error code.
+	 * @returns scid::core::OK if successful or an error code.
 	 */
-	virtual errorT flush() = 0;
+	virtual scid::core::errorT flush() = 0;
 
 private:
 	/**
@@ -146,22 +146,22 @@ private:
 	 * @param idx:      valid pointer to the Index object for this database.
 	 * @param nb:       valid pointer to the NameBase object for this database.
 	 * @returns
-	 * - OK: the object is ready to be used.
-	 * - ERROR_NameDataLoss: some names are corrupted and cannot be recovered,
+	 * - scid::core::OK: the object is ready to be used.
+	 * - scid::core::ERROR_NameDataLoss: some names are corrupted and cannot be recovered,
 	 *                       however the object can still be used.
 	 * - Other error codes: the operation failed (the object must be destroyed).
 	 */
-	virtual errorT dyn_open(fileModeT fMode, const char* filename,
+	virtual scid::core::errorT dyn_open(fileModeT fMode, const char* filename,
 	                        const Progress& progress, Index* idx,
 	                        NameBase* nb) = 0;
 };
 
 /**
  * Creates a new codec and calls its dyn_open().
- * @returns a valid codec and OK/error warning on usable open, otherwise
+ * @returns a valid codec and scid::core::OK/error warning on usable open, otherwise
  *          nullptr and the error code.
  */
-std::pair<ICodecDatabase*, errorT> openCodec(CodecType codec,
+std::pair<ICodecDatabase*, scid::core::errorT> openCodec(CodecType codec,
                                              fileModeT fMode,
                                              const char* filename,
                                              const Progress& progress,

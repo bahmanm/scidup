@@ -45,8 +45,8 @@ namespace {
  * composed by:
  * - name_id (2-3 bytes): the idx (idNumberT) stored in the Index (.si4) file
  * - unused (1-3 bytes): obsolete frequency
- * - length (1 byte): the total number of bytes of the name (max 255)
- * - prefix (1 byte): the number of bytes in common with the previous name
+ * - length (1 scid::core::byte): the total number of bytes of the name (max 255)
+ * - prefix (1 scid::core::byte): the number of bytes in common with the previous name
  * - name (0-255 bytes): the part of the name that differs from the previous
  *   one.
  */
@@ -56,16 +56,16 @@ const char* NAMEBASE_MAGIC = "Scid.sn";
 /// @param filename: the full path of the file to open.
 /// @param fMode:    a valid file mode.
 /// @param nb:       reference to the object where the names will be stored.
-/// @returns OK if successful or an error code.
-errorT namefileRead(const char* filename, fileModeT fmode, NameBase& nb) {
+/// @returns scid::core::OK if successful or an error code.
+scid::core::errorT namefileRead(const char* filename, fileModeT fmode, NameBase& nb) {
 	Filebuf file;
-	if (file.Open(filename, fmode) != OK)
-		return ERROR_FileOpen;
+	if (file.Open(filename, fmode) != scid::core::OK)
+		return scid::core::ERROR_FileOpen;
 
 	char Header_magic[9] = {0}; // magic identifier must be "Scid.sn"
 	file.sgetn(Header_magic, 8);
 	if (strcmp(Header_magic, NAMEBASE_MAGIC) != 0)
-		return ERROR_BadMagic;
+		return scid::core::ERROR_BadMagic;
 
 	// *** Compatibility ***
 	// Even if timeStamp is not used we still need to read the bytes
@@ -80,7 +80,7 @@ errorT namefileRead(const char* filename, fileModeT fmode, NameBase& nb) {
 
 	// *** Compatibility ***
 	// Even if frequency is no longer used we still need to read the bytes
-	uint obsolete_maxFreq[NUM_NAME_TYPES];
+	scid::core::uint obsolete_maxFreq[NUM_NAME_TYPES];
 	obsolete_maxFreq[NAME_PLAYER] = file.ReadThreeBytes();
 	obsolete_maxFreq[NAME_EVENT] = file.ReadThreeBytes();
 	obsolete_maxFreq[NAME_SITE] = file.ReadThreeBytes();
@@ -104,7 +104,7 @@ errorT namefileRead(const char* filename, fileModeT fmode, NameBase& nb) {
 				file.ReadThreeBytes();
 			} else if (obsolete_maxFreq[nt] >= 256) {
 				file.ReadTwoBytes();
-			} else { // Frequencies all <= 255: fit in one byte
+			} else { // Frequencies all <= 255: fit in one scid::core::byte
 				file.ReadOneByte();
 			}
 			// ***
@@ -114,32 +114,32 @@ errorT namefileRead(const char* filename, fileModeT fmode, NameBase& nb) {
 			int length = file.ReadOneByte();
 			int prefix = (i > 0) ? file.ReadOneByte() : 0;
 			if (prefix > length)
-				return ERROR_Corrupt;
+				return scid::core::ERROR_Corrupt;
 
 			prevName.resize(length);
 			const auto new_chars = length - prefix;
 			if (new_chars != file.sgetn(prevName.data() + prefix, new_chars))
-				return ERROR_FileRead;
+				return scid::core::ERROR_FileRead;
 
 			if (id >= Header_numNames[nt] ||
 			    !nb.insert(prevName.c_str(), length, nt, id))
-				return ERROR_Corrupt;
+				return scid::core::ERROR_Corrupt;
 		}
 	}
 
-	return OK;
+	return scid::core::OK;
 }
 
 /// Write a SCIDv4 NameBase file.
 /// @param filename: the full path of the file to open.
 /// @param nb:       reference to the object where the names will be stored.
-/// @returns OK if successful or an error code.
+/// @returns scid::core::OK if successful or an error code.
 template <typename TCont, typename TFreq>
-errorT namefileWrite(const char* filename, const TCont& names_ids,
+scid::core::errorT namefileWrite(const char* filename, const TCont& names_ids,
                      const TFreq& freq) {
 	Filebuf file;
-	if (file.Open(filename, FMODE_WriteOnly) != OK)
-		return ERROR_FileOpen;
+	if (file.Open(filename, FMODE_WriteOnly) != scid::core::OK)
+		return scid::core::ERROR_FileOpen;
 
 	file.sputn(NAMEBASE_MAGIC, 8);
 
@@ -185,8 +185,8 @@ errorT namefileWrite(const char* filename, const TCont& names_ids,
 			// it could create Namebase objects with duplicate entries.
 			// ***
 			ASSERT(prevName == nullptr ||
-			       static_cast<uint>(*prevName) < static_cast<uint>(*name) ||
-			       (static_cast<uint>(*prevName) == static_cast<uint>(*name) &&
+			       static_cast<scid::core::uint>(*prevName) < static_cast<scid::core::uint>(*name) ||
+			       (static_cast<scid::core::uint>(*prevName) == static_cast<scid::core::uint>(*name) &&
 			        strCompare(prevName, name) < 0));
 
 			// write idNumber in 2 bytes if possible, otherwise 3.
@@ -203,23 +203,23 @@ errorT namefileWrite(const char* filename, const TCont& names_ids,
 			} else if (maxFreq[nt] >= 256) {
 				file.WriteTwoBytes(freq[nt][id]);
 			} else {
-				file.WriteOneByte(static_cast<byte>(freq[nt][id]));
+				file.WriteOneByte(static_cast<scid::core::byte>(freq[nt][id]));
 			}
 			// ***
 
 			ASSERT(strlen(name) < 256);
-			byte length = static_cast<byte>(strlen(name));
+			scid::core::byte length = static_cast<scid::core::byte>(strlen(name));
 			file.WriteOneByte(length);
-			byte prefix = 0;
+			scid::core::byte prefix = 0;
 			if (prevName) {
-				prefix = (byte)strPrefix(name, prevName);
+				prefix = (scid::core::byte)strPrefix(name, prevName);
 				file.WriteOneByte(prefix);
 			}
 			file.sputn(name + prefix, (length - prefix));
 			prevName = name;
 		}
 	}
-	return OK;
+	return scid::core::OK;
 }
 
 /**
@@ -256,14 +256,14 @@ constexpr size_t INDEX_HEADER_SIZE = 8 + 2 + 3 + 4 + 3 + SCID_DESC_LENGTH + 1 +
 /// @param indexFile: file handle positioned at the start of the Index file.
 /// @param fMode:     a valid file mode.
 /// @param header:    reference to the object where the data will be stored.
-/// @returns OK if successful or an error code.
+/// @returns scid::core::OK if successful or an error code.
 template <typename FileT, typename HeaderT>
-std::pair<errorT, gamenumT> readIndexHeader(FileT& indexFile, HeaderT& header) {
+std::pair<scid::core::errorT, gamenumT> readIndexHeader(FileT& indexFile, HeaderT& header) {
 	char magic[8];
 	indexFile.sgetn(magic, 8);
 	if (!std::equal(std::begin(magic), std::end(magic), std::begin(INDEX_MAGIC),
 	                std::end(INDEX_MAGIC))) {
-		return {ERROR_BadMagic, {}};
+		return {scid::core::ERROR_BadMagic, {}};
 	}
 
 	header.version = indexFile.ReadTwoBytes();
@@ -282,18 +282,18 @@ std::pair<errorT, gamenumT> readIndexHeader(FileT& indexFile, HeaderT& header) {
 			    buf, std::find(buf, buf + CUSTOM_FLAG_DESC_LENGTH, '\0'));
 		}
 	}
-	return {OK, numGames};
+	return {scid::core::OK, numGames};
 }
 
 /// Write the header section of a SCIDv4 Index file.
 /// @param indexFile: file handle of the Index file.
 /// @param header:    reference to the object containing the header data.
-/// @returns OK if successful or an error code.
+/// @returns scid::core::OK if successful or an error code.
 template <typename FileT, typename HeaderT>
-errorT writeIndexHeader(FileT& indexFile, HeaderT const& Header,
+scid::core::errorT writeIndexHeader(FileT& indexFile, HeaderT const& Header,
                         gamenumT nGames) {
 	if (indexFile.pubseekpos(0) != std::streampos(0))
-		return ERROR_FileWrite;
+		return scid::core::ERROR_FileWrite;
 
 	std::streamsize n = 0;
 	n += indexFile.sputn(INDEX_MAGIC, 8);
@@ -313,9 +313,9 @@ errorT writeIndexHeader(FileT& indexFile, HeaderT const& Header,
 		n += indexFile.sputn(buf, CUSTOM_FLAG_DESC_LENGTH + 1);
 	}
 	if (n != INDEX_HEADER_SIZE || indexFile.pubsync() == -1)
-		return ERROR_FileWrite;
+		return scid::core::ERROR_FileWrite;
 
-	return OK;
+	return scid::core::OK;
 }
 
 /// Decode SCID4 (or SCID3) data into an IndexEntry object.
@@ -347,7 +347,7 @@ void decodeIndexEntry(const char* buf_it, versionT version, IndexEntry* ie) {
 
 	// Length of gamefile record for this game: 17 bits are used so the max
 	// length is 128 ko (131071).
-	// Lower bits of the extra byte are used for custom flags: LxFFFFFF ( L =
+	// Lower bits of the extra scid::core::byte are used for custom flags: LxFFFFFF ( L =
 	// length for long games, x = spare, F = custom flags)
 	uint32_t len_Low = ReadTwoBytes();
 	uint32_t len_flags = (version < 400) ? 0 : ReadOneByte();
@@ -394,13 +394,13 @@ void decodeIndexEntry(const char* buf_it, versionT version, IndexEntry* ie) {
 	uint32_t date = date_edate & 0xFFFFF;
 	ie->SetDate(date);
 	uint32_t edate = date_edate >> 20;
-	uint32_t eyear = date_GetYear(edate) & 0x07;
+	uint32_t eyear = scid::core::date_GetYear(edate) & 0x07;
 	if (eyear == 0) {
-		edate = ZERO_DATE;
+		edate = scid::core::ZERO_DATE;
 	} else {
-		eyear += date_GetYear(date);
+		eyear += scid::core::date_GetYear(date);
 		eyear = (eyear < 4) ? 0 : eyear - 4;
-		edate = DATE_MAKE(eyear, date_GetMonth(edate), date_GetDay(edate));
+		edate = DATE_MAKE(eyear, scid::core::date_GetMonth(edate), scid::core::date_GetDay(edate));
 	}
 	ie->SetEventDate(edate);
 
@@ -418,8 +418,8 @@ void decodeIndexEntry(const char* buf_it, versionT version, IndexEntry* ie) {
 	ie->SetFinalMatSig(finalMatSig & 0xFFFFFF);
 	ie->SetStoredLineCode(finalMatSig >> 24);
 
-	// Read the 9-byte homePawnData array:
-	// The first byte of HomePawnData has high bits of the NumHalfMoves
+	// Read the 9-scid::core::byte homePawnData array:
+	// The first scid::core::byte of HomePawnData has high bits of the NumHalfMoves
 	// counter in its top two bits:
 	uint16_t NumHalfMoves = ReadOneByte();
 	uint16_t pawnData0 = ReadOneByte();
@@ -491,13 +491,13 @@ void encodeIndexEntry(const IndexEntry* ie, char* buf_it) {
 	// must be within a few years of the Date.
 	uint32_t date = ie->GetDate() & 0xFFFFF;
 	uint32_t edate = ie->GetEventDate();
-	uint32_t eyear = date_GetYear(edate);
-	uint32_t dyear = date_GetYear(date);
+	uint32_t eyear = scid::core::date_GetYear(edate);
+	uint32_t dyear = scid::core::date_GetYear(date);
 	if ((eyear + 3) < dyear || eyear > (dyear + 3)) {
-		edate = ZERO_DATE;
+		edate = scid::core::ZERO_DATE;
 	} else {
 		eyear = (eyear + 4 - dyear) & 7;
-		edate = (eyear << 9) | (date_GetMonth(edate) << 5) | date_GetDay(edate);
+		edate = (eyear << 9) | (scid::core::date_GetMonth(edate) << 5) | scid::core::date_GetDay(edate);
 	}
 	WriteFourBytes((edate << 20) | date);
 
@@ -518,15 +518,15 @@ void encodeIndexEntry(const IndexEntry* ie, char* buf_it) {
 	FinalMatSig |= static_cast<uint32_t>(ie->GetStoredLineCode()) << 24;
 	WriteFourBytes(FinalMatSig);
 
-	// The first byte of HomePawnData has high bits of the NumHalfMoves
+	// The first scid::core::byte of HomePawnData has high bits of the NumHalfMoves
 	// counter in its top two bits:
 	uint16_t nMoves = ie->GetNumHalfMoves();
 	ASSERT(nMoves < (1ULL << 10));
 	WriteOneByte(static_cast<uint8_t>(nMoves));
 	uint8_t pawnData0 = static_cast<uint8_t>(nMoves >> 8) << 6;
 
-	// Write the 9-byte homePawnData array:
-	const byte* pb = ie->GetHomePawnData();
+	// Write the 9-scid::core::byte homePawnData array:
+	const scid::core::byte* pb = ie->GetHomePawnData();
 	pawnData0 |= *pb & 0x3F;
 	WriteOneByte(pawnData0);
 	std::copy(pb + 1, pb + HPSIG_SIZE, buf_it);
@@ -534,18 +534,18 @@ void encodeIndexEntry(const IndexEntry* ie, char* buf_it) {
 
 } // namespace
 
-errorT CodecSCID4::dyn_open(fileModeT fMode, const char* filename,
+scid::core::errorT CodecSCID4::dyn_open(fileModeT fMode, const char* filename,
                             const Progress& progress, Index* idx,
                             NameBase* nb) {
 	if (fMode == FMODE_WriteOnly || !filename || !idx || !nb)
-		return ERROR;
+		return scid::core::ERROR;
 
 	auto dbname = std::string_view(filename);
 	if (dbname.ends_with(".si4"))
 		dbname.remove_suffix(4);
 
 	if (dbname.empty())
-		return ERROR_FileOpen;
+		return scid::core::ERROR_FileOpen;
 
 	idx_ = idx;
 	idx_->Close();
@@ -556,23 +556,23 @@ errorT CodecSCID4::dyn_open(fileModeT fMode, const char* filename,
 	filenames_[1].assign(dbname).append(".sn4");
 	filenames_[2].assign(dbname).append(".sg4");
 
-	errorT err = gfile_.open(filenames_[2], fMode);
-	if (err != OK)
+	scid::core::errorT err = gfile_.open(filenames_[2], fMode);
+	if (err != scid::core::OK)
 		return err;
 
 	const char* indexFilename = filenames_[0].c_str();
 	if (fMode == FMODE_Create) {
 		// Check that the file does not exists
-		if (idxfile_.Open(indexFilename, FMODE_ReadOnly) == OK)
-			err = ERROR_FileOpen;
+		if (idxfile_.Open(indexFilename, FMODE_ReadOnly) == scid::core::OK)
+			err = scid::core::ERROR_FileOpen;
 
-		if (err == OK)
+		if (err == scid::core::OK)
 			err = idxfile_.Open(indexFilename, FMODE_Create);
 
-		if (err == OK)
+		if (err == scid::core::OK)
 			err = writeIndexHeader(idxfile_, header_, idx_->GetNumGames());
 
-		if (err == OK) {
+		if (err == scid::core::OK) {
 			err = namefileWrite(filenames_[1].c_str(), nb_->getNames(),
 			                    nb->calcNameFreq(*idx_));
 		}
@@ -590,10 +590,10 @@ errorT CodecSCID4::dyn_open(fileModeT fMode, const char* filename,
 		constexpr versionT SCID_OLDEST_VERSION = 300; // Oldest readable version
 		if (header_.version < SCID_OLDEST_VERSION ||
 		    header_.version > SCID_VERSION)
-			return ERROR_FileVersion;
+			return scid::core::ERROR_FileVersion;
 
 		if (header_.version != SCID_VERSION && fMode != FMODE_ReadOnly)
-			return ERROR_FileMode; // Old versions must be opened readonly
+			return scid::core::ERROR_FileMode; // Old versions must be opened readonly
 
 		err = readIndex(nGames, progress);
 	}
@@ -601,18 +601,18 @@ errorT CodecSCID4::dyn_open(fileModeT fMode, const char* filename,
 	return err;
 }
 
-errorT CodecSCID4::flush() {
+scid::core::errorT CodecSCID4::flush() {
 	seqWrite_ = 0;
-	errorT errHeader = OK;
+	scid::core::errorT errHeader = scid::core::OK;
 	if (header_.dirty) {
 		errHeader = writeIndexHeader(idxfile_, header_, idx_->GetNumGames());
-		if (errHeader == OK)
+		if (errHeader == scid::core::OK)
 			header_.dirty = false;
 	}
-	errorT errSync = (idxfile_.pubsync() != 0) ? ERROR_FileWrite : OK;
-	errorT err = (errHeader == OK) ? errSync : errHeader;
+	scid::core::errorT errSync = (idxfile_.pubsync() != 0) ? scid::core::ERROR_FileWrite : scid::core::OK;
+	scid::core::errorT err = (errHeader == scid::core::OK) ? errSync : errHeader;
 
-	if (err == OK) {
+	if (err == scid::core::OK) {
 		// *** Compatibility ***
 		// Even if name's frequency is no longer used, it's necessary to
 		// keep the compatibility with older Scid versions, forcing a
@@ -620,18 +620,18 @@ errorT CodecSCID4::flush() {
 		err = namefileWrite(filenames_[1].c_str(), nb_->getNames(),
 		                    nb_->calcNameFreq(*idx_));
 	}
-	errorT errGfile = (gfile_.pubsync() == 0) ? OK : ERROR_FileWrite;
+	scid::core::errorT errGfile = (gfile_.pubsync() == 0) ? scid::core::OK : scid::core::ERROR_FileWrite;
 
-	return (err == OK) ? errGfile : err;
+	return (err == scid::core::OK) ? errGfile : err;
 }
 
 /**
  * Reads the entire index file into memory.
  * Invalid name IDs are replaced with "?" if possible.
  * @param progress: a Progress object used for GUI communications.
- * @returns OK if successful or an error code.
+ * @returns scid::core::OK if successful or an error code.
  */
-errorT CodecSCID4::readIndex(gamenumT nGames, Progress const& progress) {
+scid::core::errorT CodecSCID4::readIndex(gamenumT nGames, Progress const& progress) {
 	gamenumT nUnknowIDs = 0;
 	idNumberT maxID[NUM_NAME_TYPES];
 	for (nameT nt = NAME_PLAYER; nt < NUM_NAME_TYPES; nt++) {
@@ -640,35 +640,35 @@ errorT CodecSCID4::readIndex(gamenumT nGames, Progress const& progress) {
 	auto validateNameIDs = [&](IndexEntry* ie) {
 		if (ie->GetWhite() >= maxID[NAME_PLAYER]) {
 			auto unknown = dyn_addName(NAME_PLAYER, "?");
-			if (unknown.first != OK)
+			if (unknown.first != scid::core::OK)
 				return false;
 			ie->SetWhite(unknown.second);
 			++nUnknowIDs;
 		}
 		if (ie->GetBlack() >= maxID[NAME_PLAYER]) {
 			auto unknown = dyn_addName(NAME_PLAYER, "?");
-			if (unknown.first != OK)
+			if (unknown.first != scid::core::OK)
 				return false;
 			ie->SetBlack(unknown.second);
 			++nUnknowIDs;
 		}
 		if (ie->GetEvent() >= maxID[NAME_EVENT]) {
 			auto unknown = dyn_addName(NAME_EVENT, "?");
-			if (unknown.first != OK)
+			if (unknown.first != scid::core::OK)
 				return false;
 			ie->SetEvent(unknown.second);
 			++nUnknowIDs;
 		}
 		if (ie->GetSite() >= maxID[NAME_SITE]) {
 			auto unknown = dyn_addName(NAME_SITE, "?");
-			if (unknown.first != OK)
+			if (unknown.first != scid::core::OK)
 				return false;
 			ie->SetSite(unknown.second);
 			++nUnknowIDs;
 		}
 		if (ie->GetRound() >= maxID[NAME_ROUND]) {
 			auto unknown = dyn_addName(NAME_ROUND, "?");
-			if (unknown.first != OK)
+			if (unknown.first != scid::core::OK)
 				return false;
 			ie->SetRound(unknown.second);
 			++nUnknowIDs;
@@ -680,54 +680,54 @@ errorT CodecSCID4::readIndex(gamenumT nGames, Progress const& progress) {
 	                                            : INDEX_ENTRY_SIZE;
 	for (gamenumT gNum = 0; idxfile_.sgetc() != EOF; ++gNum) {
 		if (gNum == nGames)
-			return ERROR_CorruptData;
+			return scid::core::ERROR_CorruptData;
 
 		if ((gNum % 8192) == 0) {
 			if (!progress.report(gNum, nGames))
-				return ERROR_UserCancel;
+				return scid::core::ERROR_UserCancel;
 		}
 
 		char buf[INDEX_ENTRY_SIZE];
 		if (idxfile_.sgetn(buf, nBytes) != nBytes)
-			return ERROR_FileRead;
+			return scid::core::ERROR_FileRead;
 
 		IndexEntry ie;
 		decodeIndexEntry(buf, header_.version, &ie);
 
 		if (!validateNameIDs(&ie))
-			return ERROR_CorruptData;
+			return scid::core::ERROR_CorruptData;
 
 		idx_->addEntry(ie);
 	}
 	progress.report(1, 1);
 
 	if (idx_->GetNumGames() != nGames)
-		return ERROR_FileRead;
+		return scid::core::ERROR_FileRead;
 
 	idx_->setBadNameIdCount(nUnknowIDs);
-	return (nUnknowIDs == 0) ? OK : ERROR_NameDataLoss;
+	return (nUnknowIDs == 0) ? scid::core::OK : scid::core::ERROR_NameDataLoss;
 }
 
-errorT CodecSCID4::writeEntry(const IndexEntry& ie, gamenumT gnum) {
+scid::core::errorT CodecSCID4::writeEntry(const IndexEntry& ie, gamenumT gnum) {
 	if (seqWrite_ == 0 || (gnum != seqWrite_ + 1)) {
 		std::streampos pos = gnum;
 		pos = pos * INDEX_ENTRY_SIZE + INDEX_HEADER_SIZE;
 		if (idxfile_.pubseekpos(pos) != pos) {
 			seqWrite_ = 0;
-			return ERROR_FileWrite;
+			return scid::core::ERROR_FileWrite;
 		}
 	}
 	char buf[INDEX_ENTRY_SIZE];
 	encodeIndexEntry(&ie, buf);
-	errorT res = idxfile_.sputn(buf, INDEX_ENTRY_SIZE) == INDEX_ENTRY_SIZE
-	                 ? OK
-	                 : ERROR_FileWrite;
+	scid::core::errorT res = idxfile_.sputn(buf, INDEX_ENTRY_SIZE) == INDEX_ENTRY_SIZE
+	                 ? scid::core::OK
+	                 : scid::core::ERROR_FileWrite;
 
-	seqWrite_ = (res == OK) ? gnum : 0;
+	seqWrite_ = (res == scid::core::OK) ? gnum : 0;
 	return res;
 }
 
-errorT CodecSCID4::setExtraInfo(const char* tagname, const char* new_value) {
+scid::core::errorT CodecSCID4::setExtraInfo(const char* tagname, const char* new_value) {
 	if (std::strcmp(tagname, "type") == 0) {
 		header_.baseType = strGetUnsigned(new_value);
 
@@ -742,12 +742,12 @@ errorT CodecSCID4::setExtraInfo(const char* tagname, const char* new_value) {
 	} else {
 		auto len = std::strlen(tagname);
 		if (len != 5 || !std::equal(tagname, tagname + 4, "flag"))
-			return ERROR_CodecUnsupFeat;
+			return scid::core::ERROR_CodecUnsupFeat;
 
-		uint flag = IndexEntry::CharToFlag(tagname[4]);
+		scid::core::uint flag = IndexEntry::CharToFlag(tagname[4]);
 		if (flag < IndexEntry::IDX_FLAG_CUSTOM1 ||
 		    flag > IndexEntry::IDX_FLAG_CUSTOM6)
-			return ERROR_CodecUnsupFeat;
+			return scid::core::ERROR_CodecUnsupFeat;
 
 		const auto idx = flag - IndexEntry::IDX_FLAG_CUSTOM1;
 		header_.flagDesc[idx] = new_value;
@@ -756,7 +756,7 @@ errorT CodecSCID4::setExtraInfo(const char* tagname, const char* new_value) {
 	}
 
 	header_.dirty = true;
-	return OK;
+	return scid::core::OK;
 }
 
 } // namespace scid::database

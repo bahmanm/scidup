@@ -16,14 +16,14 @@ namespace db = scid::database;
 struct TourneyGame {
 	db::idNumberT siteID_;
 	db::idNumberT eventID_;
-	db::dateT eventDate_;
+	scid::core::dateT eventDate_;
 	db::idNumberT whiteID_;
 	db::idNumberT blackID_;
-	db::ratingT wElo_;
-	db::ratingT bElo_;
-	db::dateT date_;
+	scid::core::ratingT wElo_;
+	scid::core::ratingT bElo_;
+	scid::core::dateT date_;
 	db::gamenumT gnum_;
-	db::resultT result_;
+	scid::core::resultT result_;
 
 	TourneyGame(const db::IndexEntry* ie, db::gamenumT gnum) {
 		siteID_ = ie->GetSite();
@@ -50,9 +50,9 @@ public:
 
 		for (auto it = begin; it != end; it++) {
 			auto& white = add_player(it->whiteID_, it->wElo_);
-			white.score += db::RESULT_SCORE[it->result_];
+			white.score += scid::core::RESULT_SCORE[it->result_];
 			auto& black = add_player(it->blackID_, it->bElo_);
-			black.score += db::RESULT_SCORE[db::RESULT_OPPOSITE[it->result_]];
+			black.score += scid::core::RESULT_SCORE[scid::core::RESULT_OPPOSITE[it->result_]];
 
 			if (it->date_ < minDateGame_->date_) minDateGame_ = it;
 		}
@@ -75,7 +75,7 @@ public:
 
 	db::idNumberT getEventId() const { return begin_->eventID_; }
 	db::idNumberT getSiteId() const { return begin_->siteID_; }
-	db::dateT getStartDate() const { return minDateGame_->date_; }
+	scid::core::dateT getStartDate() const { return minDateGame_->date_; }
 	db::gamenumT getStartGameNum() const { return minDateGame_->gnum_; }
 	unsigned getAvgElo() const { return avgElo_; }
 	db::gamenumT nGames() const { return n_games_; }
@@ -84,7 +84,7 @@ public:
 	struct Player {
 		db::idNumberT nameId;
 		uint16_t score;
-		db::ratingT elo;
+		scid::core::ratingT elo;
 
 		bool operator==(db::idNumberT id) const { return nameId == id; }
 	};
@@ -100,7 +100,7 @@ private:
 	db::gamenumT n_games_;
 	unsigned avgElo_;
 
-	Player& add_player(db::idNumberT nameID, db::ratingT elo) {
+	Player& add_player(db::idNumberT nameID, scid::core::ratingT elo) {
 		auto it = std::find(players_.begin(), players_.end(), nameID);
 		if (it != players_.end()) {
 			if (elo > it->elo)
@@ -134,8 +134,8 @@ public:
 				          return a.eventID_ < b.eventID_;
 			          if (a.siteID_ != b.siteID_)
 				          return a.siteID_ < b.siteID_;
-			          db::dateT d1 = a.eventDate_ != 0 ? a.eventDate_ : a.date_;
-			          db::dateT d2 = b.eventDate_ != 0 ? b.eventDate_ : b.date_;
+			          scid::core::dateT d1 = a.eventDate_ != 0 ? a.eventDate_ : a.date_;
+			          scid::core::dateT d2 = b.eventDate_ != 0 ? b.eventDate_ : b.date_;
 			          return d1 < d2;
 		          });
 
@@ -195,7 +195,7 @@ public:
 	bool sort(const char* criteria, size_t max);
 
 private:
-	template <db::uint (Tourney::* f)() const>
+	template <scid::core::uint (Tourney::* f)() const>
 	class Filter {
 		const db::StrRange& range_;
 
@@ -230,7 +230,7 @@ private:
 		}
 	};
 
-	template <db::uint (Tourney::* f)() const>
+	template <scid::core::uint (Tourney::* f)() const>
 	struct SortDesc {
 		bool operator()(const Tourney& a, const Tourney& b) {
 			return (a.*f)() > (b.*f)();

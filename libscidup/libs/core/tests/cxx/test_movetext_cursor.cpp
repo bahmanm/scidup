@@ -4,19 +4,19 @@
 
 namespace {
 
-scid::core::MoveAction quiet(scid::database::squareT from,
-                             scid::database::squareT to) {
-	return {from, to, scid::database::EMPTY};
+scid::core::MoveAction quiet(scid::core::squareT from,
+                             scid::core::squareT to) {
+	return {from, to, scid::core::EMPTY};
 }
 
 TEST(CoreMovetextCursorTest, AddsMainlineMovesAtCursorAndAdvances) {
 	scid::core::Game game;
 	scid::core::MovetextCursor cursor(game);
 
-	auto& first = cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	auto& first = cursor.addMove(quiet(scid::core::E2, scid::core::E4));
 	first.san = "e4";
 	auto& second =
-	    cursor.addMove(quiet(scid::database::E7, scid::database::E5));
+	    cursor.addMove(quiet(scid::core::E7, scid::core::E5));
 	second.san = "e5";
 
 	EXPECT_TRUE(cursor.isAtGameEnd());
@@ -33,11 +33,11 @@ TEST(CoreMovetextCursorTest, AddsMainlineMovesAtCursorAndAdvances) {
 TEST(CoreMovetextCursorTest, ReplacesContinuationWhenAddingBeforeLineEnd) {
 	scid::core::Game game;
 	scid::core::MovetextCursor cursor(game);
-	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
-	cursor.addMove(quiet(scid::database::E7, scid::database::E5));
+	cursor.addMove(quiet(scid::core::E2, scid::core::E4));
+	cursor.addMove(quiet(scid::core::E7, scid::core::E5));
 	ASSERT_TRUE(cursor.toPly(1));
 
-	cursor.addMove(quiet(scid::database::C7, scid::database::C5));
+	cursor.addMove(quiet(scid::core::C7, scid::core::C5));
 
 	auto const& mainline = game.movetext().mainline.moves;
 	ASSERT_EQ(2U, mainline.size());
@@ -49,8 +49,8 @@ TEST(CoreMovetextCursorTest, ReplacesContinuationWhenAddingBeforeLineEnd) {
 
 TEST(CoreMovetextCursorTest, AddsVariationToNextMoveAndEntersIt) {
 	scid::core::Game game;
-	game.appendMainlineMove(quiet(scid::database::E2, scid::database::E4));
-	game.appendMainlineMove(quiet(scid::database::E7, scid::database::E5));
+	game.appendMainlineMove(quiet(scid::core::E2, scid::core::E4));
+	game.appendMainlineMove(quiet(scid::core::E7, scid::core::E5));
 	scid::core::MovetextCursor cursor(game);
 
 	auto variation = cursor.addVariation("Queen pawn alternative");
@@ -61,7 +61,7 @@ TEST(CoreMovetextCursorTest, AddsVariationToNextMoveAndEntersIt) {
 	EXPECT_TRUE(cursor.isAtEmptyVariation());
 
 	auto& variationMove =
-	    cursor.addMove(quiet(scid::database::D2, scid::database::D4));
+	    cursor.addMove(quiet(scid::core::D2, scid::core::D4));
 	variationMove.san = "d4";
 
 	auto const& first = game.movetext().mainline.moves[0];
@@ -81,7 +81,7 @@ TEST(CoreMovetextCursorTest, AddsVariationToNextMoveAndEntersIt) {
 TEST(CoreMovetextCursorTest, SetsPreviousMoveMetadataAtCursor) {
 	scid::core::Game game;
 	scid::core::MovetextCursor cursor(game);
-	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.addMove(quiet(scid::core::E2, scid::core::E4));
 
 	scid::core::MoveMetadata metadata;
 	metadata.comment = "Best by test";
@@ -106,8 +106,8 @@ TEST(CoreMovetextCursorTest, RefusesToSetPreviousMoveMetadataAtLineStart) {
 TEST(CoreMovetextCursorTest, SetsPreviousAndNextMoveSanAtCursor) {
 	scid::core::Game game;
 	scid::core::MovetextCursor cursor(game);
-	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
-	cursor.addMove(quiet(scid::database::E7, scid::database::E5));
+	cursor.addMove(quiet(scid::core::E2, scid::core::E4));
+	cursor.addMove(quiet(scid::core::E7, scid::core::E5));
 	ASSERT_TRUE(cursor.previous());
 
 	ASSERT_TRUE(cursor.setPreviousMoveSan("e4"));
@@ -130,7 +130,7 @@ TEST(CoreMovetextCursorTest, RefusesToSetSanWhenMoveIsMissing) {
 TEST(CoreMovetextCursorTest, SetsCurrentVariationInitialComment) {
 	scid::core::Game game;
 	scid::core::MovetextCursor cursor(game);
-	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.addMove(quiet(scid::core::E2, scid::core::E4));
 	cursor.toStart();
 	ASSERT_NE(nullptr, cursor.addVariation("Old comment"));
 
@@ -155,7 +155,7 @@ TEST(CoreMovetextCursorTest, RefusesToAddVariationAtLineEnd) {
 	scid::core::MovetextCursor cursor(game);
 
 	EXPECT_EQ(nullptr, cursor.addVariation());
-	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.addMove(quiet(scid::core::E2, scid::core::E4));
 	EXPECT_TRUE(cursor.isAtGameEnd());
 	EXPECT_EQ(nullptr, cursor.addVariation());
 }
@@ -164,10 +164,10 @@ TEST(CoreMovetextCursorTest, SavesAndRestoresVariationLocation) {
 	scid::core::Game game;
 	scid::core::MovetextCursor cursor(game);
 
-	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.addMove(quiet(scid::core::E2, scid::core::E4));
 	cursor.toStart();
 	ASSERT_NE(nullptr, cursor.addVariation());
-	cursor.addMove(quiet(scid::database::D2, scid::database::D4));
+	cursor.addMove(quiet(scid::core::D2, scid::core::D4));
 	auto variationLocation = cursor.location();
 
 	ASSERT_TRUE(cursor.exitVariation());
@@ -184,9 +184,9 @@ TEST(CoreMovetextCursorTest, TruncatesMainlineAtCursor) {
 	scid::core::Game game;
 	scid::core::MovetextCursor cursor(game);
 
-	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
-	cursor.addMove(quiet(scid::database::E7, scid::database::E5));
-	cursor.addMove(quiet(scid::database::G1, scid::database::F3));
+	cursor.addMove(quiet(scid::core::E2, scid::core::E4));
+	cursor.addMove(quiet(scid::core::E7, scid::core::E5));
+	cursor.addMove(quiet(scid::core::G1, scid::core::F3));
 	ASSERT_TRUE(cursor.toPly(1));
 
 	cursor.truncate();
@@ -201,12 +201,12 @@ TEST(CoreMovetextCursorTest, TruncatesVariationLineAtCursor) {
 	scid::core::Game game;
 	scid::core::MovetextCursor cursor(game);
 
-	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.addMove(quiet(scid::core::E2, scid::core::E4));
 	cursor.toStart();
 	auto variation = cursor.addVariation();
 	ASSERT_NE(nullptr, variation);
-	cursor.addMove(quiet(scid::database::D2, scid::database::D4));
-	cursor.addMove(quiet(scid::database::D7, scid::database::D5));
+	cursor.addMove(quiet(scid::core::D2, scid::core::D4));
+	cursor.addMove(quiet(scid::core::D7, scid::core::D5));
 	ASSERT_TRUE(cursor.previous());
 
 	cursor.truncate();
@@ -220,15 +220,15 @@ TEST(CoreMovetextCursorTest, DeletesCurrentVariationAndExitsToParent) {
 	scid::core::Game game;
 	scid::core::MovetextCursor cursor(game);
 
-	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.addMove(quiet(scid::core::E2, scid::core::E4));
 	cursor.toStart();
 	auto firstVariation = cursor.addVariation("Queen pawn alternative");
 	ASSERT_NE(nullptr, firstVariation);
-	cursor.addMove(quiet(scid::database::D2, scid::database::D4));
+	cursor.addMove(quiet(scid::core::D2, scid::core::D4));
 	ASSERT_TRUE(cursor.exitVariation());
 	auto secondVariation = cursor.addVariation("English alternative");
 	ASSERT_NE(nullptr, secondVariation);
-	cursor.addMove(quiet(scid::database::C2, scid::database::C4));
+	cursor.addMove(quiet(scid::core::C2, scid::core::C4));
 
 	ASSERT_TRUE(cursor.deleteVariation());
 
@@ -247,7 +247,7 @@ TEST(CoreMovetextCursorTest, RefusesToDeleteVariationFromMainline) {
 	scid::core::Game game;
 	scid::core::MovetextCursor cursor(game);
 
-	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.addMove(quiet(scid::core::E2, scid::core::E4));
 
 	EXPECT_FALSE(cursor.deleteVariation());
 	ASSERT_EQ(1U, game.movetext().mainline.moves.size());
@@ -259,15 +259,15 @@ TEST(CoreMovetextCursorTest, PromotesCurrentVariationToFirst) {
 	scid::core::Game game;
 	scid::core::MovetextCursor cursor(game);
 
-	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.addMove(quiet(scid::core::E2, scid::core::E4));
 	cursor.toStart();
 	auto queenPawn = cursor.addVariation("Queen pawn alternative");
 	ASSERT_NE(nullptr, queenPawn);
-	cursor.addMove(quiet(scid::database::D2, scid::database::D4));
+	cursor.addMove(quiet(scid::core::D2, scid::core::D4));
 	ASSERT_TRUE(cursor.exitVariation());
 	auto english = cursor.addVariation("English alternative");
 	ASSERT_NE(nullptr, english);
-	cursor.addMove(quiet(scid::database::C2, scid::database::C4));
+	cursor.addMove(quiet(scid::core::C2, scid::core::C4));
 
 	ASSERT_TRUE(cursor.promoteVariationToFirst());
 
@@ -286,7 +286,7 @@ TEST(CoreMovetextCursorTest, RefusesToPromoteVariationFromMainline) {
 	scid::core::Game game;
 	scid::core::MovetextCursor cursor(game);
 
-	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.addMove(quiet(scid::core::E2, scid::core::E4));
 
 	EXPECT_FALSE(cursor.promoteVariationToFirst());
 	ASSERT_EQ(1U, game.movetext().mainline.moves.size());
@@ -298,17 +298,17 @@ TEST(CoreMovetextCursorTest, PromotesCurrentVariationToMainline) {
 	scid::core::Game game;
 	scid::core::MovetextCursor cursor(game);
 
-	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
-	cursor.addMove(quiet(scid::database::E7, scid::database::E5));
+	cursor.addMove(quiet(scid::core::E2, scid::core::E4));
+	cursor.addMove(quiet(scid::core::E7, scid::core::E5));
 	cursor.toStart();
 	auto queenPawn = cursor.addVariation("Queen pawn alternative");
 	ASSERT_NE(nullptr, queenPawn);
-	cursor.addMove(quiet(scid::database::D2, scid::database::D4));
+	cursor.addMove(quiet(scid::core::D2, scid::core::D4));
 	ASSERT_TRUE(cursor.exitVariation());
 	auto english = cursor.addVariation("English alternative");
 	ASSERT_NE(nullptr, english);
-	cursor.addMove(quiet(scid::database::C2, scid::database::C4));
-	cursor.addMove(quiet(scid::database::C7, scid::database::C5));
+	cursor.addMove(quiet(scid::core::C2, scid::core::C4));
+	cursor.addMove(quiet(scid::core::C7, scid::core::C5));
 
 	ASSERT_TRUE(cursor.promoteVariationToMainline());
 
@@ -336,7 +336,7 @@ TEST(CoreMovetextCursorTest, RefusesToPromoteEmptyVariationToMainlineAsNoOp) {
 	scid::core::Game game;
 	scid::core::MovetextCursor cursor(game);
 
-	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.addMove(quiet(scid::core::E2, scid::core::E4));
 	cursor.toStart();
 	ASSERT_NE(nullptr, cursor.addVariation());
 
@@ -351,9 +351,9 @@ TEST(CoreMovetextCursorTest, TruncatesBeforeMainlineCursor) {
 	scid::core::Game game;
 	scid::core::MovetextCursor cursor(game);
 
-	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
-	cursor.addMove(quiet(scid::database::E7, scid::database::E5));
-	cursor.addMove(quiet(scid::database::G1, scid::database::F3));
+	cursor.addMove(quiet(scid::core::E2, scid::core::E4));
+	cursor.addMove(quiet(scid::core::E7, scid::core::E5));
+	cursor.addMove(quiet(scid::core::G1, scid::core::F3));
 	ASSERT_TRUE(cursor.toPly(1));
 
 	cursor.truncateBeforeCursor();
@@ -370,11 +370,11 @@ TEST(CoreMovetextCursorTest, TruncatesBeforeVariationCursor) {
 	scid::core::Game game;
 	scid::core::MovetextCursor cursor(game);
 
-	cursor.addMove(quiet(scid::database::E2, scid::database::E4));
+	cursor.addMove(quiet(scid::core::E2, scid::core::E4));
 	cursor.toStart();
 	ASSERT_NE(nullptr, cursor.addVariation());
-	cursor.addMove(quiet(scid::database::C2, scid::database::C4));
-	cursor.addMove(quiet(scid::database::C7, scid::database::C5));
+	cursor.addMove(quiet(scid::core::C2, scid::core::C4));
+	cursor.addMove(quiet(scid::core::C7, scid::core::C5));
 	ASSERT_TRUE(cursor.previous());
 
 	cursor.truncateBeforeCursor();

@@ -5,7 +5,7 @@
 
 namespace {
 
-using namespace scid::database;
+using namespace scid::core;
 
 template <std::size_t N>
 void expectAttackList(const squareT (&actual)[9],

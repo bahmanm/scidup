@@ -77,7 +77,7 @@ scidup::eco::Error ReadLine(scidup::eco::Position& pos, const char* s) {
 			s++;
 		}
 
-		scid::database::simpleMoveT sm;
+		scid::core::simpleMoveT sm;
 		scidup::eco::Error err = pos.ParseMove(&sm, begin, s);
 		if (err != scidup::eco::OK)
 			return err;

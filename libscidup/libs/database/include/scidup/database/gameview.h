@@ -39,7 +39,7 @@ class MaterialCount {
 
 public:
 	/// Add one piece.
-	void incr(colorT color, pieceT piece_type) {
+	void incr(scid::core::colorT color, scid::core::pieceT piece_type) {
 		ASSERT(color == 0 || color == 1);
 		ASSERT(piece_type > 0 && piece_type < 8);
 
@@ -48,7 +48,7 @@ public:
 	}
 
 	/// Subtract one piece.
-	void decr(colorT color, pieceT piece_type) {
+	void decr(scid::core::colorT color, scid::core::pieceT piece_type) {
 		ASSERT(color == 0 || color == 1);
 		ASSERT(piece_type > 0 && piece_type < 8);
 
@@ -57,14 +57,14 @@ public:
 	}
 
 	/// Return the total number of pieces of the specified color.
-	int8_t count(colorT color) const {
+	int8_t count(scid::core::colorT color) const {
 		ASSERT(color == 0 || color == 1);
 
 		return n_[color][0];
 	}
 
 	/// Return the number of pieces of the specified color and type.
-	int8_t count(colorT color, pieceT piece_type) const {
+	int8_t count(scid::core::colorT color, scid::core::pieceT piece_type) const {
 		ASSERT(color == 0 || color == 1);
 		ASSERT(piece_type > 0 && piece_type < 8);
 
@@ -83,8 +83,8 @@ public:
 /// Store the type and position of the pieces compatibly with the SCID4 coding.
 class PieceList {
 	struct {
-		squareT sq;
-		pieceT piece_type;
+		scid::core::squareT sq;
+		scid::core::pieceT piece_type;
 	} pieces_[2][16];
 
 public:
@@ -92,7 +92,7 @@ public:
 	int8_t getKingIdx() const { return 0; }
 
 	/// Return the type of the piece with index @e idx
-	pieceT getPieceType(colorT color, int idx) const {
+	scid::core::pieceT getPieceType(scid::core::colorT color, int idx) const {
 		ASSERT(color == 0 || color == 1);
 		ASSERT(idx >= 0 && idx < 16);
 
@@ -100,7 +100,7 @@ public:
 	}
 
 	/// Return the square position of the piece with index @e idx
-	squareT getSquare(colorT color, int idx) const {
+	scid::core::squareT getSquare(scid::core::colorT color, int idx) const {
 		ASSERT(color == 0 || color == 1);
 		ASSERT(idx >= 0 && idx < 16);
 
@@ -108,7 +108,7 @@ public:
 	}
 
 	/// Change the square position of the piece with index @e idx
-	void changeSq(colorT color, int idx, squareT to) {
+	void changeSq(scid::core::colorT color, int idx, scid::core::squareT to) {
 		ASSERT(color == 0 || color == 1);
 		ASSERT(idx >= 0 && idx < 16);
 
@@ -116,7 +116,7 @@ public:
 	}
 
 	/// Change the type of the piece with index @e idx
-	void promote(colorT color, int idx, pieceT piece_type) {
+	void promote(scid::core::colorT color, int idx, scid::core::pieceT piece_type) {
 		ASSERT(color == 0 || color == 1);
 		ASSERT(idx >= 0 && idx < 16);
 
@@ -127,7 +127,7 @@ public:
 	/// Piece's indexes are important for decoding SCID4 moves:  when a piece is
 	/// removed it's index is used by the last valid index @e lastvalid_idx.
 	/// Return the square of the new piece with index @e removed_idx.
-	squareT remove(colorT color, int removed_idx, int lastvalid_idx) {
+	scid::core::squareT remove(scid::core::colorT color, int removed_idx, int lastvalid_idx) {
 		ASSERT(color == 0 || color == 1);
 		ASSERT(removed_idx >= 0 && removed_idx < 16);
 		ASSERT(lastvalid_idx >= 0 && lastvalid_idx < 16);
@@ -137,10 +137,10 @@ public:
 	}
 
 	/// Set the type and square of the piece with index @e idx
-	void set(colorT color, int idx, squareT sq, pieceT piece_type) {
+	void set(scid::core::colorT color, int idx, scid::core::squareT sq, scid::core::pieceT piece_type) {
 		ASSERT(color == 0 || color == 1);
 		ASSERT(idx >= 0 && idx < 16);
-		ASSERT(piece_type != KING || idx == getKingIdx());
+		ASSERT(piece_type != scid::core::KING || idx == getKingIdx());
 
 		pieces_[color][idx].sq = sq;
 		pieces_[color][idx].piece_type = piece_type;
@@ -151,46 +151,46 @@ class FastBoard {
 	uint8_t board_[64];
 	MaterialCount mt_;
 	PieceList pieces_;
-	uint8_t castlingRook_[2][2]; // [WHITE|BLACK][long|short] the idx of the
+	uint8_t castlingRook_[2][2]; // [scid::core::WHITE|scid::core::BLACK][long|short] the idx of the
 	                             // rooks that can castle. 0 if none
 
 	enum { EMPTY_SQ_ = 0xFF };
 
 public:
-	explicit FastBoard(const Position& pos) { Init(pos); }
+	explicit FastBoard(const scid::core::Position& pos) { Init(pos); }
 
 	static FastBoard stdStart() {
-		static const auto std_start = FastBoard(Position::getStdStart());
+		static const auto std_start = FastBoard(scid::core::Position::getStdStart());
 		return std_start;
 	}
 
-	static MaterialCount countMaterial(const pieceT* board) {
+	static MaterialCount countMaterial(const scid::core::pieceT* board) {
 		MaterialCount mt_count;
 		for (int i = 0; i < 64; ++i) {
-			if (board[i] != EMPTY) {
-				mt_count.incr(piece_Color_NotEmpty(board[i]), piece_Type(board[i]));
+			if (board[i] != scid::core::EMPTY) {
+				mt_count.incr(scid::core::piece_Color_NotEmpty(board[i]), scid::core::piece_Type(board[i]));
 			}
 		}
 		return mt_count;
 	}
 
-	void Init(const Position& pos) {
+	void Init(const scid::core::Position& pos) {
 		std::fill_n(board_, 64, EMPTY_SQ_);
 		std::fill_n(*castlingRook_, 4, 0);
 
-		for (auto color : {WHITE, BLACK}) {
+		for (auto color : {scid::core::WHITE, scid::core::BLACK}) {
 			const auto pos_count = pos.GetCount(color);
 			const auto pos_list = pos.GetList(color);
 			for (uint8_t idx = 0; idx < 16; ++idx) {
 				if (idx < pos_count) {
-					const squareT sq = pos_list[idx];
-					const pieceT piece_type = piece_Type(pos.GetPiece(sq));
+					const scid::core::squareT sq = pos_list[idx];
+					const scid::core::pieceT piece_type = scid::core::piece_Type(pos.GetPiece(sq));
 					pieces_.set(color, idx, sq, piece_type);
 					board_[sq] = idx;
 					mt_.incr(color, piece_type);
 
-					if (piece_type == ROOK &&
-					    square_Rank(sq) == rank_Relative(color, RANK_1)) {
+					if (piece_type == scid::core::ROOK &&
+					    scid::core::square_Rank(sq) == scid::core::rank_Relative(color, scid::core::RANK_1)) {
 						auto oldIdx = castlingRook_[color][0];
 						if (!oldIdx || sq < pieces_.getSquare(color, oldIdx))
 							castlingRook_[color][0] = idx;
@@ -200,26 +200,26 @@ public:
 							castlingRook_[color][1] = idx;
 					}
 				} else {
-					pieces_.set(color, idx, 0, INVALID_PIECE);
+					pieces_.set(color, idx, 0, scid::core::INVALID_PIECE);
 				}
 			}
 		}
 	}
 
-	bool isEqual(const pieceT* board, const MaterialCount& mt_count) const {
+	bool isEqual(const scid::core::pieceT* board, const MaterialCount& mt_count) const {
 		if (mt_ != mt_count)
 			return false;
 
-		for (int idx = 0, n = mt_.count(WHITE); idx < n; ++idx) {
-			const auto sq = pieces_.getSquare(WHITE, idx);
-			const auto pt = pieces_.getPieceType(WHITE, idx);
-			if (board[sq] != piece_Make(WHITE, pt))
+		for (int idx = 0, n = mt_.count(scid::core::WHITE); idx < n; ++idx) {
+			const auto sq = pieces_.getSquare(scid::core::WHITE, idx);
+			const auto pt = pieces_.getPieceType(scid::core::WHITE, idx);
+			if (board[sq] != scid::core::piece_Make(scid::core::WHITE, pt))
 				return false;
 		}
-		for (int idx = 0, n = mt_.count(BLACK); idx < n; ++idx) {
-			const auto sq = pieces_.getSquare(BLACK, idx);
-			const auto pt = pieces_.getPieceType(BLACK, idx);
-			if (board[sq] != piece_Make(BLACK, pt))
+		for (int idx = 0, n = mt_.count(scid::core::BLACK); idx < n; ++idx) {
+			const auto sq = pieces_.getSquare(scid::core::BLACK, idx);
+			const auto pt = pieces_.getPieceType(scid::core::BLACK, idx);
+			if (board[sq] != scid::core::piece_Make(scid::core::BLACK, pt))
 				return false;
 		}
 		return true;
@@ -227,11 +227,11 @@ public:
 
 	const MaterialCount& materialCount() const { return mt_; }
 
-	squareT getSquare(colorT color, int idx) const {
+	scid::core::squareT getSquare(scid::core::colorT color, int idx) const {
 		return pieces_.getSquare(color, idx);
 	}
 
-	pieceT getPiece(colorT color, int idx) const {
+	scid::core::pieceT getPiece(scid::core::colorT color, int idx) const {
 		return pieces_.getPieceType(color, idx);
 	}
 
@@ -239,17 +239,17 @@ public:
 	/// no longer in their starting squares).
 	/// @returns the previous position of the rook on success.
 	///          On error returns the king's square (no piece is moved).
-	template <colorT color> squareT castle(bool king_side) {
-		const squareT king_to = king_side ? square_Relative(color, G1)
-		                                  : square_Relative(color, C1);
-		const squareT rook_to = king_side ? square_Relative(color, F1)
-		                                  : square_Relative(color, D1);
+	template <scid::core::colorT color> scid::core::squareT castle(bool king_side) {
+		const scid::core::squareT king_to = king_side ? scid::core::square_Relative(color, scid::core::G1)
+		                                  : scid::core::square_Relative(color, scid::core::C1);
+		const scid::core::squareT rook_to = king_side ? scid::core::square_Relative(color, scid::core::F1)
+		                                  : scid::core::square_Relative(color, scid::core::D1);
 		const auto king_idx = pieces_.getKingIdx();
-		const squareT king_from = pieces_.getSquare(color, king_idx);
+		const scid::core::squareT king_from = pieces_.getSquare(color, king_idx);
 		const auto rook_idx = castlingRook_[color][king_side ? 1 : 0];
-		const squareT rook_from = pieces_.getSquare(color, rook_idx);
+		const scid::core::squareT rook_from = pieces_.getSquare(color, rook_idx);
 
-		if (pieces_.getPieceType(color, rook_idx) != ROOK)
+		if (pieces_.getPieceType(color, rook_idx) != scid::core::ROOK)
 			return king_from; // No rook or captured
 
 		pieces_.changeSq(color, rook_idx, rook_to);
@@ -261,11 +261,11 @@ public:
 		return rook_from;
 	}
 
-	template <colorT color> pieceT move(int idx, squareT to, pieceT promo) {
-		if (promo != INVALID_PIECE) {
+	template <scid::core::colorT color> scid::core::pieceT move(int idx, scid::core::squareT to, scid::core::pieceT promo) {
+		if (promo != scid::core::INVALID_PIECE) {
 			pieces_.promote(color, idx, promo);
 			mt_.incr(color, promo);
-			mt_.decr(color, PAWN);
+			mt_.decr(color, scid::core::PAWN);
 		}
 		const auto from = pieces_.getSquare(color, idx);
 		board_[from] = EMPTY_SQ_;
@@ -273,18 +273,18 @@ public:
 		return remove<1 - color>(to, idx);
 	}
 
-	template <colorT color> pieceT remove(squareT sq, int newIdx = EMPTY_SQ_) {
+	template <scid::core::colorT color> scid::core::pieceT remove(scid::core::squareT sq, int newIdx = EMPTY_SQ_) {
 		ASSERT(static_cast<uint8_t>(newIdx) == newIdx);
 		const auto oldIdx = board_[sq];
 		board_[sq] = static_cast<uint8_t>(newIdx);
 		if (oldIdx == EMPTY_SQ_)
-			return INVALID_PIECE;
+			return scid::core::INVALID_PIECE;
 
-		pieceT removed_pt = pieces_.getPieceType(color, oldIdx);
+		scid::core::pieceT removed_pt = pieces_.getPieceType(color, oldIdx);
 		mt_.decr(color, removed_pt);
 		int lastvalid_idx = mt_.count(color);
 		if (oldIdx != lastvalid_idx) {
-			squareT moved_sq = pieces_.remove(color, oldIdx, lastvalid_idx);
+			scid::core::squareT moved_sq = pieces_.remove(color, oldIdx, lastvalid_idx);
 			board_[moved_sq] = oldIdx;
 
 			for (auto& cRook : castlingRook_[color]) {
@@ -301,13 +301,13 @@ public:
 	 * appropriate bits in @e lastmove.
 	 * @param lastmove: the last move played.
 	 */
-	void fillSANInfo(FullMove& lastmove) const {
+	void fillSANInfo(scid::core::FullMove& lastmove) const {
 		const auto lastFrom = lastmove.getFrom();
 		const auto lastTo = lastmove.getTo();
 		const auto lastCol = lastmove.getColor();
 		auto lastPt = lastmove.getPiece();
 
-		if (lastPt == PAWN) {
+		if (lastPt == scid::core::PAWN) {
 			if (lastmove.isPromo())
 				lastPt = lastmove.getPromo();
 		} else if (mt_.count(lastCol, lastPt) > 1) {
@@ -317,12 +317,12 @@ public:
 		}
 
 		// Look for checks
-		ASSERT(mt_.count(WHITE) >= 1 && mt_.count(BLACK) >= 1);
+		ASSERT(mt_.count(scid::core::WHITE) >= 1 && mt_.count(scid::core::BLACK) >= 1);
 
 		auto isOccupied = [this](auto sq) { return board_[sq] != EMPTY_SQ_; };
-		const auto enemyKingSq = getKingSquare(color_Flip(lastCol));
-		bool direct_check = (lastPt != KING) &&
-		                    move_predicates::attack(lastTo, enemyKingSq, lastCol,
+		const auto enemyKingSq = getKingSquare(scid::core::color_Flip(lastCol));
+		bool direct_check = (lastPt != scid::core::KING) &&
+		                    scid::core::move_predicates::attack(lastTo, enemyKingSq, lastCol,
 		                                    lastPt, isOccupied);
 		if (direct_check || // Look for a discovered check
 		    find_attacker_slider(enemyKingSq, lastCol) >= 0) {
@@ -336,21 +336,21 @@ public:
 	}
 
 private:
-	squareT getKingSquare(colorT color) const {
+	scid::core::squareT getKingSquare(scid::core::colorT color) const {
 		return pieces_.getSquare(color, pieces_.getKingIdx());
 	}
 
-	int ambiguousMove(squareT lastFrom, squareT lastTo, colorT lastCol,
-	                  pieceT lastPt) const {
+	int ambiguousMove(scid::core::squareT lastFrom, scid::core::squareT lastTo, scid::core::colorT lastCol,
+	                  scid::core::pieceT lastPt) const {
 		int ambiguity = 0;
 
-		const squareT kingSq = getKingSquare(lastCol);
-		const colorT enemyCol = color_Flip(lastCol);
+		const scid::core::squareT kingSq = getKingSquare(lastCol);
+		const scid::core::colorT enemyCol = scid::core::color_Flip(lastCol);
 		for (int i = 1, n = mt_.count(lastCol); i < n; i++) {
 			if (getPiece(lastCol, i) != lastPt)
 				continue; // Skip: different type
 
-			const squareT sq = getSquare(lastCol, i);
+			const scid::core::squareT sq = getSquare(lastCol, i);
 			if (sq == lastTo)
 				continue; // Skip: this is the analyzed piece
 
@@ -361,16 +361,16 @@ private:
 					return true;
 				return board_[square] != EMPTY_SQ_;
 			};
-			if (!move_predicates::pseudo(sq, lastTo, lastCol, lastPt, isOccupied))
+			if (!scid::core::move_predicates::pseudo(sq, lastTo, lastCol, lastPt, isOccupied))
 				continue; // Skip: illegal move
 
-			const auto pin = move_predicates::opens_ray(sq, lastTo, kingSq, isOccupied);
-			if (pin.first != INVALID_PIECE) {
+			const auto pin = scid::core::move_predicates::opens_ray(sq, lastTo, kingSq, isOccupied);
+			if (pin.first != scid::core::INVALID_PIECE) {
 				uint8_t idx = board_[pin.second];
 				if (idx != EMPTY_SQ_ && idx < mt_.count(enemyCol) &&
 				    getSquare(enemyCol, idx) == pin.second) {
-					const pieceT pt = getPiece(enemyCol, idx);
-					if (pt == QUEEN || pt == pin.first)
+					const scid::core::pieceT pt = getPiece(enemyCol, idx);
+					if (pt == scid::core::QUEEN || pt == pin.first)
 						continue; // Skip: pinned piece
 				}
 			}
@@ -381,9 +381,9 @@ private:
 			// 5 (0101) --> need from-rank
 			// 7 (0111) --> need both from-file and from-rank
 			ambiguity |= 1;
-			if (square_Rank(lastFrom) == square_Rank(sq)) {
+			if (scid::core::square_Rank(lastFrom) == scid::core::square_Rank(sq)) {
 				ambiguity |= 2; // 0b0010
-			} else if (square_Fyle(lastFrom) == square_Fyle(sq)) {
+			} else if (scid::core::square_Fyle(lastFrom) == scid::core::square_Fyle(sq)) {
 				ambiguity |= 4; // 0b0100
 			}
 		}
@@ -391,17 +391,17 @@ private:
 		return ambiguity;
 	}
 
-	int find_attacker_slider(squareT destSq, colorT color) const {
+	int find_attacker_slider(scid::core::squareT destSq, scid::core::colorT color) const {
 		for (int idx = 0, n = mt_.count(color); idx < n; ++idx) {
-			const pieceT pt = getPiece(color, idx);
-			if (pt != QUEEN && pt != ROOK && pt != BISHOP)
+			const scid::core::pieceT pt = getPiece(color, idx);
+			if (pt != scid::core::QUEEN && pt != scid::core::ROOK && pt != scid::core::BISHOP)
 				continue;
 
 			auto isOccupied = [this](auto square) {
 				return board_[square] != EMPTY_SQ_;
 			};
-			const squareT sq = getSquare(color, idx);
-			if (move_predicates::attack_slider(sq, destSq, pt, isOccupied)) {
+			const scid::core::squareT sq = getSquare(color, idx);
+			if (scid::core::move_predicates::attack_slider(sq, destSq, pt, isOccupied)) {
 				return idx;
 			}
 		}
@@ -411,29 +411,29 @@ private:
 
 	FastBoard board_;
 	ByteBuffer bbuf_;
-	colorT cToMove_;
+	scid::core::colorT cToMove_;
 
 public:
 	explicit GameView(const ByteBuffer& bbuf)
-	    : board_(FastBoard::stdStart()), bbuf_(bbuf), cToMove_(WHITE) {}
+	    : board_(FastBoard::stdStart()), bbuf_(bbuf), cToMove_(scid::core::WHITE) {}
 
-	GameView(const ByteBuffer& bbuf, const Position& startPos)
+	GameView(const ByteBuffer& bbuf, const scid::core::Position& startPos)
 	    : board_(startPos), bbuf_(bbuf), cToMove_(startPos.GetToMove()) {}
 
 	template <typename FuncT> void mainLine(FuncT fn) {
-		while (const auto move = (cToMove_ == WHITE)
-		                             ? DecodeNextMove<FullMove, WHITE>()
-		                             : DecodeNextMove<FullMove, BLACK>()) {
+		while (const auto move = (cToMove_ == scid::core::WHITE)
+		                             ? DecodeNextMove<scid::core::FullMove, scid::core::WHITE>()
+		                             : DecodeNextMove<scid::core::FullMove, scid::core::BLACK>()) {
 			cToMove_ = 1 - cToMove_;
 			if (!fn(move))
 				return;
 		}
 	}
 
-	FullMove getMove(int ply_to_skip) {
+	scid::core::FullMove getMove(int ply_to_skip) {
 		for (int ply = 0; ply <= ply_to_skip; ply++, cToMove_ = 1 - cToMove_) {
-			auto move = (cToMove_ == WHITE) ? DecodeNextMove<FullMove, WHITE>()
-			                                : DecodeNextMove<FullMove, BLACK>();
+			auto move = (cToMove_ == scid::core::WHITE) ? DecodeNextMove<scid::core::FullMove, scid::core::WHITE>()
+			                                : DecodeNextMove<scid::core::FullMove, scid::core::BLACK>();
 			if (!move)
 				break;
 
@@ -448,12 +448,12 @@ public:
 
 	std::string getMoveSAN(int ply_to_skip, int count) {
 		std::stringstream res;
-		const auto ply_num = (cToMove_ == WHITE) ? 2 : 3;
+		const auto ply_num = (cToMove_ == scid::core::WHITE) ? 2 : 3;
 		for (int ply = 0; ply < ply_to_skip + count;
 		     ply++, cToMove_ = 1 - cToMove_) {
-			FullMove move;
-			if (cToMove_ == WHITE) {
-				move = DecodeNextMove<FullMove, WHITE>();
+			scid::core::FullMove move;
+			if (cToMove_ == scid::core::WHITE) {
+				move = DecodeNextMove<scid::core::FullMove, scid::core::WHITE>();
 				if (!move)
 					break;
 				if (ply < ply_to_skip)
@@ -462,7 +462,7 @@ public:
 					res << "  ";
 				res << (ply_num + ply) / 2 << ".";
 			} else {
-				move = DecodeNextMove<FullMove, BLACK>();
+				move = DecodeNextMove<scid::core::FullMove, scid::core::BLACK>();
 				if (!move)
 					break;
 				if (ply < ply_to_skip)
@@ -478,27 +478,27 @@ public:
 		return res.str();
 	}
 
-	template <colorT toMove> int search(const pieceT* board) {
+	template <scid::core::colorT toMove> int search(const scid::core::pieceT* board) {
 		const auto mt_count = FastBoard::countMaterial(board);
 		int ply = 1;
 		auto less_material = [](const MaterialCount& a, const MaterialCount& b,
-		                        const colorT color, const auto move) {
+		                        const scid::core::colorT color, const auto move) {
 			if (!move)
 				return true;
 
 			const auto captured_pt = move.getCaptured();
-			if (captured_pt == INVALID_PIECE)
+			if (captured_pt == scid::core::INVALID_PIECE)
 				return false;
 
 			if (a.count(color) < b.count(color))
 				return true;
 
-			return a.count(color, PAWN) + a.count(color, captured_pt) <
-			       b.count(color, PAWN) + b.count(color, captured_pt);
+			return a.count(color, scid::core::PAWN) + a.count(color, captured_pt) <
+			       b.count(color, scid::core::PAWN) + b.count(color, captured_pt);
 		};
 
 		if (cToMove_ != toMove) {
-			const auto move = DecodeNextMove<FullMove, 1 - toMove>();
+			const auto move = DecodeNextMove<scid::core::FullMove, 1 - toMove>();
 			if (!move)
 				return 0;
 			ply += 1;
@@ -508,13 +508,13 @@ public:
 				return ply;
 
 			{
-				const auto move = DecodeNextMove<FullMove, toMove>();
+				const auto move = DecodeNextMove<scid::core::FullMove, toMove>();
 				if (less_material(board_.materialCount(), mt_count, 1 - toMove,
 				                  move))
 					return 0;
 			}
 			{
-				const auto move = DecodeNextMove<FullMove, 1 - toMove>();
+				const auto move = DecodeNextMove<scid::core::FullMove, 1 - toMove>();
 				if (less_material(board_.materialCount(), mt_count, toMove,
 				                  move))
 					return 0;
@@ -526,7 +526,7 @@ public:
 	}
 
 private:
-	template <typename TResult, colorT toMove> TResult DecodeNextMove() {
+	template <typename TResult, scid::core::colorT toMove> TResult DecodeNextMove() {
 		auto [err, val] = bbuf_.nextLineMove();
 		if (err)
 			return {};
@@ -534,7 +534,7 @@ private:
 		return doPly<TResult, toMove>(val);
 	}
 
-	template <typename TResult, colorT toMove> TResult doPly(byte v) {
+	template <typename TResult, scid::core::colorT toMove> TResult doPly(scid::core::byte v) {
 		const auto idx_piece_moving = v >> 4;
 		const auto moving_piece = board_.getPiece(toMove, idx_piece_moving);
 		const auto from = board_.getSquare(toMove, idx_piece_moving);
@@ -543,30 +543,30 @@ private:
 		if (destSq < 0 || destSq > 63)
 			return {}; // decode error
 
-		const auto to = static_cast<squareT>(destSq);
+		const auto to = static_cast<scid::core::squareT>(destSq);
 		if (to == from) {
-			if (promo == INVALID_PIECE)
+			if (promo == scid::core::INVALID_PIECE)
 				return {}; // decode error
 
-			if (promo == PAWN) // NULL MOVE
-				return TResult(toMove, 0, 0, KING);
+			if (promo == scid::core::PAWN) // NULL MOVE
+				return TResult(toMove, 0, 0, scid::core::KING);
 
 			// CASTLE
-			const auto rook_from = board_.castle<toMove>(promo == KING);
+			const auto rook_from = board_.castle<toMove>(promo == scid::core::KING);
 			return (rook_from == from) ? TResult() // decode error
 			                           : TResult(toMove, from, rook_from);
 		}
 
-		bool enPassant = moving_piece == PAWN &&
-		                 square_Fyle(from) != square_Fyle(to);
-		pieceT captured = board_.move<toMove>(idx_piece_moving, to, promo);
+		bool enPassant = moving_piece == scid::core::PAWN &&
+		                 scid::core::square_Fyle(from) != scid::core::square_Fyle(to);
+		scid::core::pieceT captured = board_.move<toMove>(idx_piece_moving, to, promo);
 		TResult res(toMove, from, to, moving_piece);
-		if (promo != INVALID_PIECE)
+		if (promo != scid::core::INVALID_PIECE)
 			res.setPromo(promo);
-		if (captured != INVALID_PIECE) {
+		if (captured != scid::core::INVALID_PIECE) {
 			res.setCapture(captured, false);
 		} else if (enPassant) {
-			squareT sq = (toMove == WHITE) ? to - 8 : to + 8;
+			scid::core::squareT sq = (toMove == scid::core::WHITE) ? to - 8 : to + 8;
 			captured = board_.remove<1 - toMove>(0x3F & sq);
 			res.setCapture(captured, true);
 		}

@@ -246,16 +246,16 @@ struct MovetextEntry {
 	std::span<const std::uint8_t> nags;
 };
 
-inline std::string san_for_move(scid::database::Position& position,
+inline std::string san_for_move(scid::core::Position& position,
                                 const Move& move,
-                                scid::database::sanFlagT flag,
-                                scid::database::simpleMoveT* simpleMove) {
+                                scid::core::sanFlagT flag,
+                                scid::core::simpleMoveT* simpleMove) {
 	if (!move.san.empty())
 		return move.san;
 	if (!simpleMove)
 		return {};
 
-	scid::database::sanStringT san = {};
+	scid::core::sanStringT san = {};
 	position.MakeSANString(simpleMove, san, flag);
 	return san;
 }
@@ -319,7 +319,7 @@ void encode_movetext_entry(MovetextEntry const& entry,
 
 template <int hard_len = 0, typename TCont>
 void encode_core_line(MoveSequence const& line,
-                      scid::database::Position position,
+                      scid::core::Position position,
                       std::vector<long long>& ply,
                       typename TCont::size_type& move_end, TCont& dest,
                       EncodeOptions options = {}) {
@@ -328,8 +328,8 @@ void encode_core_line(MoveSequence const& line,
 		auto position_before_move = position;
 		auto simpleMove = notation::toSimpleMove(position, move.action);
 		const auto sanFlag = i + 1 == line.moves.size()
-		                         ? scid::database::SAN_MATETEST
-		                         : scid::database::SAN_CHECKTEST;
+		                         ? scid::core::SAN_MATETEST
+		                         : scid::core::SAN_CHECKTEST;
 		const auto san = detail::san_for_move(
 		    position, move, sanFlag, simpleMove ? &*simpleMove : nullptr);
 
@@ -378,7 +378,7 @@ void encode_movetext(Game const& game, TCont& dest,
 	}
 
 	auto position = game.startPosition() ? *game.startPosition()
-	                                     : scid::database::Position::getStdStart();
+	                                     : scid::core::Position::getStdStart();
 	encode_core_line<hard_len>(game.movetext().mainline, position, ply,
 	                           move_end, dest, options);
 
@@ -392,7 +392,7 @@ void encode_core_tag_pairs(Game const& game, TCont& dest,
 	char str_buf[256];
 	encode_tag_pair("Event", game.event(), dest);
 	encode_tag_pair("Site", game.site(), dest);
-	scid::database::date_DecodeToString(game.date(), str_buf);
+	scid::core::date_DecodeToString(game.date(), str_buf);
 	encode_tag_pair("Date", str_buf, dest);
 	encode_tag_pair("Round", game.round(), dest);
 	encode_tag_pair("White", game.white().name, dest);
@@ -402,18 +402,18 @@ void encode_core_tag_pairs(Game const& game, TCont& dest,
 	if (options.includeSupplementalTags) {
 		if (auto rating = game.white().rating.value) {
 			std::string tag = "White";
-			tag.append(scid::database::ratingTypeNames[game.white().rating.type]);
+			tag.append(scid::core::ratingTypeNames[game.white().rating.type]);
 			encode_tag_pair(tag, std::to_string(rating), dest);
 		}
 		if (auto rating = game.black().rating.value) {
 			std::string tag = "Black";
-			tag.append(scid::database::ratingTypeNames[game.black().rating.type]);
+			tag.append(scid::core::ratingTypeNames[game.black().rating.type]);
 			encode_tag_pair(tag, std::to_string(rating), dest);
 		}
 		if (!game.eco().empty())
 			encode_tag_pair("ECO", game.eco(), dest);
-		if (game.eventDate() != scid::database::ZERO_DATE) {
-			scid::database::date_DecodeToString(game.eventDate(), str_buf);
+		if (game.eventDate() != scid::core::ZERO_DATE) {
+			scid::core::date_DecodeToString(game.eventDate(), str_buf);
 			encode_tag_pair("EventDate", str_buf, dest);
 		}
 		for (auto const& tag : game.extraTags())

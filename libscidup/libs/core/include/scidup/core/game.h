@@ -23,8 +23,8 @@ class MovetextCursor;
 using TagPair = std::pair<std::string, std::string>;
 
 struct Rating {
-	scid::database::ratingT value = 0;
-	scid::database::ratingTypeT type = scid::database::RATING_Elo;
+	scid::core::ratingT value = 0;
+	scid::core::ratingTypeT type = scid::core::RATING_Elo;
 };
 
 struct Player {
@@ -36,23 +36,23 @@ struct EventInfo {
 	std::string name;
 	std::string site;
 	std::string round;
-	scid::database::dateT date = scid::database::ZERO_DATE;
-	scid::database::dateT eventDate = scid::database::ZERO_DATE;
+	scid::core::dateT date = scid::core::ZERO_DATE;
+	scid::core::dateT eventDate = scid::core::ZERO_DATE;
 };
 
 struct GameHeader {
 	EventInfo event;
 	Player white;
 	Player black;
-	scid::database::resultT result = scid::database::RESULT_None;
+	scid::core::resultT result = scid::core::RESULT_None;
 	std::string eco;
 	std::vector<TagPair> tags;
 };
 
 struct MoveAction {
-	scid::database::squareT from = scid::database::NULL_SQUARE;
-	scid::database::squareT to = scid::database::NULL_SQUARE;
-	scid::database::pieceT promotion = scid::database::EMPTY;
+	scid::core::squareT from = scid::core::NULL_SQUARE;
+	scid::core::squareT to = scid::core::NULL_SQUARE;
+	scid::core::pieceT promotion = scid::core::EMPTY;
 	bool castling = false;
 
 	bool isNull() const;
@@ -106,12 +106,12 @@ public:
 	const std::string& round() const;
 	const Player& white() const;
 	const Player& black() const;
-	scid::database::dateT date() const;
-	scid::database::dateT eventDate() const;
-	scid::database::resultT result() const;
+	scid::core::dateT date() const;
+	scid::core::dateT eventDate() const;
+	scid::core::resultT result() const;
 	std::string_view resultString() const;
 	const std::string& eco() const;
-	scid::database::ratingT averageRating() const;
+	scid::core::ratingT averageRating() const;
 
 	void setEvent(std::string_view value);
 	void setSite(std::string_view value);
@@ -122,9 +122,9 @@ public:
 	void setBlack(Player value);
 	void setWhiteRating(Rating value);
 	void setBlackRating(Rating value);
-	void setDate(scid::database::dateT value);
-	void setEventDate(scid::database::dateT value);
-	void setResult(scid::database::resultT value);
+	void setDate(scid::core::dateT value);
+	void setEventDate(scid::core::dateT value);
+	void setResult(scid::core::resultT value);
 	void setEco(std::string_view value);
 
 	std::string& addTag(std::string_view tag, std::string_view value);
@@ -136,10 +136,10 @@ public:
 
 	bool hasNonStandardStart() const;
 	bool hasNonStandardStart(char* outFen, std::size_t outFenLen) const;
-	scid::database::Position* startPosition();
-	const scid::database::Position* startPosition() const;
-	scid::database::errorT setStartFen(const char* fen);
-	void setStartPosition(const scid::database::Position& position);
+	scid::core::Position* startPosition();
+	const scid::core::Position* startPosition() const;
+	scid::core::errorT setStartFen(const char* fen);
+	void setStartPosition(const scid::core::Position& position);
 	void clearStartPosition();
 	long long initialPlyCounter() const;
 
@@ -155,7 +155,7 @@ private:
 
 	GameHeader header_;
 	Movetext movetext_;
-	std::optional<scid::database::Position> startPosition_;
+	std::optional<scid::core::Position> startPosition_;
 };
 
 } // namespace scid::core

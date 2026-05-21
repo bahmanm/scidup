@@ -4,7 +4,7 @@
 
 #pragma once
 
-namespace scid::database {
+namespace scid::core {
 
 typedef   unsigned short   errorT;
 
@@ -74,4 +74,4 @@ const errorT
 static_assert(OK == false);
 
 
-} // namespace scid::database
+} // namespace scid::core

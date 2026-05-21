@@ -36,7 +36,7 @@ UI_res_t sc_info_priority(UI_extra_t, UI_handle_t ti, int argc,
                           const char** argv) {
 	const char* usage = "Usage: sc_info priority <pid> [normal|idle]";
 	if (argc < 3 || argc > 4)
-		UI_Result(ti, scid::database::ERROR_BadArg, usage);
+		UI_Result(ti, scid::core::ERROR_BadArg, usage);
 
 	int pid = scid::database::strGetInteger(argv[2]);
 
@@ -50,7 +50,7 @@ UI_res_t sc_info_priority(UI_extra_t, UI_handle_t ti, int argc,
 			idlePriority = false;
 			break;
 		default:
-			return UI_Result(ti, scid::database::ERROR_BadArg, usage);
+			return UI_Result(ti, scid::core::ERROR_BadArg, usage);
 		}
 	}
 
@@ -59,7 +59,7 @@ UI_res_t sc_info_priority(UI_extra_t, UI_handle_t ti, int argc,
 	HANDLE hProcess = OpenProcess(
 	    PROCESS_SET_INFORMATION | PROCESS_QUERY_INFORMATION, false, pid);
 	if (hProcess == NULL)
-		return UI_Result(ti, scid::database::ERROR, "Unable to set process priority.");
+		return UI_Result(ti, scid::core::ERROR, "Unable to set process priority.");
 
 	if (argc == 4)
 		SetPriorityClass(hProcess, idlePriority ? IDLE_PRIORITY_CLASS
@@ -68,16 +68,16 @@ UI_res_t sc_info_priority(UI_extra_t, UI_handle_t ti, int argc,
 	DWORD priorityClass = GetPriorityClass(hProcess);
 	CloseHandle(hProcess);
 
-	return UI_Result(ti, scid::database::OK, priorityClass == NORMAL_PRIORITY_CLASS ? 0 : 15);
+	return UI_Result(ti, scid::core::OK, priorityClass == NORMAL_PRIORITY_CLASS ? 0 : 15);
 
 #else  // #ifdef WIN32
 	if (argc == 4) {
 		// Try to assign a new priority:
 		if (setpriority(PRIO_PROCESS, pid, idlePriority ? 15 : 0) != 0)
-			return UI_Result(ti, scid::database::ERROR, "Unable to set process priority.");
+			return UI_Result(ti, scid::core::ERROR, "Unable to set process priority.");
 	}
 	// Now return the process priority:
 	int priority = getpriority(PRIO_PROCESS, pid);
-	return UI_Result(ti, scid::database::OK, priority);
+	return UI_Result(ti, scid::core::OK, priority);
 #endif // #ifdef WIN32
 }

@@ -25,7 +25,7 @@ public:
 	const Move* nextMove() const;
 	const Variation* currentVariation() const;
 	std::vector<const Move*> movesToCursor() const;
-	std::optional<scid::database::Position> currentPosition() const;
+	std::optional<scid::core::Position> currentPosition() const;
 	std::size_t ply() const;
 	std::size_t variationCount() const;
 	std::size_t variationDepth() const;

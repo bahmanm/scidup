@@ -49,31 +49,31 @@ public:
 		return count;
 	}
 
-	scid::database::byte ReadOneByte() { return *it_++; }
+	scid::core::byte ReadOneByte() { return *it_++; }
 	uint16_t ReadTwoBytes() { return static_cast<uint16_t>(read<2>()); }
 	uint32_t ReadThreeBytes() { return read<3>(); }
 	uint32_t ReadFourBytes() { return read<4>(); }
 
-	int WriteOneByte(scid::database::byte value) {
+	int WriteOneByte(scid::core::byte value) {
 		*it_ = static_cast<char>(value);
 		++it_;
 		return 1;
 	}
 
 	int WriteTwoBytes(uint32_t value) {
-		return WriteOneByte(static_cast<scid::database::byte>(value >> 8)) +
-		       WriteOneByte(static_cast<scid::database::byte>(value));
+		return WriteOneByte(static_cast<scid::core::byte>(value >> 8)) +
+		       WriteOneByte(static_cast<scid::core::byte>(value));
 	}
 	int WriteThreeBytes(uint32_t value) {
-		return WriteOneByte(static_cast<scid::database::byte>(value >> 16)) +
-		       WriteOneByte(static_cast<scid::database::byte>(value >> 8)) +
-		       WriteOneByte(static_cast<scid::database::byte>(value));
+		return WriteOneByte(static_cast<scid::core::byte>(value >> 16)) +
+		       WriteOneByte(static_cast<scid::core::byte>(value >> 8)) +
+		       WriteOneByte(static_cast<scid::core::byte>(value));
 	}
 	int WriteFourBytes(uint32_t value) {
-		return WriteOneByte(static_cast<scid::database::byte>(value >> 24)) +
-		       WriteOneByte(static_cast<scid::database::byte>(value >> 16)) +
-		       WriteOneByte(static_cast<scid::database::byte>(value >> 8)) +
-		       WriteOneByte(static_cast<scid::database::byte>(value));
+		return WriteOneByte(static_cast<scid::core::byte>(value >> 24)) +
+		       WriteOneByte(static_cast<scid::core::byte>(value >> 16)) +
+		       WriteOneByte(static_cast<scid::core::byte>(value >> 8)) +
+		       WriteOneByte(static_cast<scid::core::byte>(value));
 	}
 
 private:

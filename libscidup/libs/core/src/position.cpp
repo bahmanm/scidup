@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-namespace scid::database {
+namespace scid::core {
 
 namespace {
 bool valid_sqlist(pieceT* begin, size_t n, pieceT* board) {
@@ -2717,4 +2717,4 @@ Position::Compare (Position * p)
     return (ToMove - p->GetToMove());
 }
 
-} // namespace scid::database
+} // namespace scid::core

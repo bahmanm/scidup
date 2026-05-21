@@ -73,7 +73,7 @@ strDuplicate (const char * original)
 //      The return value is the length copied: always 'width' if
 //      width is >= 0, or the length of original if 'width' is negative.
 //
-uint
+scid::core::uint
 strPad (char * target, const char * original, int width, char padding)
 {
     ASSERT (target != NULL  &&  original != NULL);
@@ -170,10 +170,10 @@ strTrimLeft (const char * target, const char * trimChars)
 //      Returns the number of characters trimmed.
 //      E.g., strTrimSuffix ("file.txt", '.') would leave the
 //      string as "file" and return 4.
-uint
+scid::core::uint
 strTrimSuffix (char * target, char suffixChar)
 {
-    uint trimCount = 0;
+    scid::core::uint trimCount = 0;
     char * lastSuffixPtr = NULL;
     char * s = target;
     while (*s) {
@@ -322,7 +322,7 @@ strIsUnknownName (const char * str)
 bool
 strIsSurnameOnly (const char * name)
 {
-    uint capcount = 0;
+    scid::core::uint capcount = 0;
     const char * s = name;
     while (*s != 0) {
         unsigned char c = *s;
@@ -382,9 +382,9 @@ strGetBoolean (const char * str)
 //    Extracts the specified number of signed integers in a
 //    whitespace-separated string to an array.
 void
-strGetIntegers (const char * str, int * results, uint nResults)
+strGetIntegers (const char * str, int * results, scid::core::uint nResults)
 {
-    for (uint i=0; i < nResults; i++) {
+    for (scid::core::uint i=0; i < nResults; i++) {
         while (*str != 0  &&  isspace(static_cast<unsigned char>(*str))) { str++; }
         results[i] = strGetInteger (str);
         while (*str != 0  &&  !isspace(static_cast<unsigned char>(*str))) { str++; }
@@ -396,9 +396,9 @@ strGetIntegers (const char * str, int * results, uint nResults)
 //    Extracts the specified number of unsigned integers in a
 //    whitespace-separated string to an array.
 void
-strGetUnsigneds (const char * str, uint * results, uint nResults)
+strGetUnsigneds (const char * str, scid::core::uint * results, scid::core::uint nResults)
 {
-    for (uint i=0; i < nResults; i++) {
+    for (scid::core::uint i=0; i < nResults; i++) {
         while (*str != 0  &&  isspace(static_cast<unsigned char>(*str))) { str++; }
         results[i] = strGetUnsigned (str);
         while (*str != 0  &&  !isspace(static_cast<unsigned char>(*str))) { str++; }
@@ -408,21 +408,21 @@ strGetUnsigneds (const char * str, uint * results, uint nResults)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // strGetResult:
 //    Extracts a game result value from a string.
-resultT
+scid::core::resultT
 strGetResult (const char * str)
 {
     switch (*str) {
     case '1':
         // Check for "1/2"-style draw result:
         if (str[1] == '/'  &&  str[2] == '2') {
-            return RESULT_Draw;
+            return scid::core::RESULT_Draw;
         }
-        return RESULT_White;
-    case '=': return RESULT_Draw;
-    case '0': return RESULT_Black;
-    case '*': return RESULT_None;
+        return scid::core::RESULT_White;
+    case '=': return scid::core::RESULT_Draw;
+    case '0': return scid::core::RESULT_Black;
+    case '*': return scid::core::RESULT_None;
     }
-    return RESULT_None;
+    return scid::core::RESULT_None;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -456,14 +456,14 @@ strGetFlag (const char * str)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // strGetSquare():
 //   Extracts a square value from a string, such as "a2".
-squareT
+scid::core::squareT
 strGetSquare (const char * str)
 {
     char chFyle = str[0];
-    if (chFyle < 'a'  ||  chFyle > 'h') { return NULL_SQUARE; }
+    if (chFyle < 'a'  ||  chFyle > 'h') { return scid::core::NULL_SQUARE; }
     char chRank = str[1];
-    if (chRank < '1'  ||  chRank > '8') { return NULL_SQUARE; }
-    return square_Make (fyle_FromChar(chFyle), rank_FromChar(chRank));
+    if (chRank < '1'  ||  chRank > '8') { return scid::core::NULL_SQUARE; }
+    return scid::core::square_Make (scid::core::fyle_FromChar(chFyle), scid::core::rank_FromChar(chRank));
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

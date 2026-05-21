@@ -55,25 +55,25 @@ TEST(Test_PgnEncodeCore, EncodeCoreGame) {
 	game.setRound("7");
 	game.setWhiteName("Player A");
 	game.setBlackName("Player B");
-	game.setWhiteRating({2800, scid::database::RATING_Rapid});
-	game.setResult(scid::database::RESULT_White);
+	game.setWhiteRating({2800, scid::core::RATING_Rapid});
+	game.setResult(scid::core::RESULT_White);
 	game.setEco("A01");
 	game.setInitialComment("Before the first move");
 
 	auto& first = game.appendMainlineMove(
-	    {scid::database::D2, scid::database::D4, scid::database::EMPTY});
+	    {scid::core::D2, scid::core::D4, scid::core::EMPTY});
 	first.metadata.nags.push_back(scid::core::NAG_GoodMove);
 	first.metadata.comment = "Best by test";
 	auto& childVariation = first.childVariations.emplace_back();
 	childVariation.initialComment = "Queen pawn alternative";
 	childVariation.line.appendMove(
-	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
+	    {scid::core::E2, scid::core::E4, scid::core::EMPTY});
 	childVariation.line.appendMove(
-	    {scid::database::E7, scid::database::E5, scid::database::EMPTY});
+	    {scid::core::E7, scid::core::E5, scid::core::EMPTY});
 	game.appendMainlineMove(
-	    {scid::database::D7, scid::database::D5, scid::database::EMPTY});
+	    {scid::core::D7, scid::core::D5, scid::core::EMPTY});
 	game.appendMainlineMove(
-	    {scid::database::C2, scid::database::C4, scid::database::EMPTY});
+	    {scid::core::C2, scid::core::C4, scid::core::EMPTY});
 
 	std::string pgn;
 	scid::core::pgn::encode_game(game, pgn);
@@ -104,9 +104,9 @@ TEST(Test_PgnEncodeCore, EncodeCoreGameWithLineBreaking) {
 	scid::core::Game game;
 	game.setEvent("Friendly");
 	game.appendMainlineMove(
-	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
+	    {scid::core::E2, scid::core::E4, scid::core::EMPTY});
 	game.appendMainlineMove(
-	    {scid::database::E7, scid::database::E5, scid::database::EMPTY});
+	    {scid::core::E7, scid::core::E5, scid::core::EMPTY});
 
 	std::string pgn;
 	scid::core::pgn::encode(game, pgn);
@@ -130,9 +130,9 @@ TEST(Test_PgnEncodeCore, EncodeCoreGameWithRuntimeLineWidth) {
 	scid::core::Game game;
 	game.setEvent("Friendly");
 	game.appendMainlineMove(
-	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
+	    {scid::core::E2, scid::core::E4, scid::core::EMPTY});
 	game.appendMainlineMove(
-	    {scid::database::E7, scid::database::E5, scid::database::EMPTY});
+	    {scid::core::E7, scid::core::E5, scid::core::EMPTY});
 
 	std::string pgn;
 	scid::core::pgn::encode(
@@ -156,7 +156,7 @@ TEST(Test_PgnEncodeCore, EncodeCoreGameWithSymbolicNags) {
 
 	scid::core::Game game;
 	auto& first = game.appendMainlineMove(
-	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
+	    {scid::core::E2, scid::core::E4, scid::core::EMPTY});
 	first.metadata.nags.push_back(scid::core::NAG_GoodMove);
 	first.metadata.nags.push_back(scid::core::NAG_Diagram);
 
@@ -182,17 +182,17 @@ TEST(Test_PgnEncodeCore, EncodeCoreGameWithContentSelection) {
 
 	scid::core::Game game;
 	game.setEvent("Candidates");
-	game.setWhiteRating({2800, scid::database::RATING_Elo});
+	game.setWhiteRating({2800, scid::core::RATING_Elo});
 	game.setEco("A01");
 	game.setInitialComment("Before the first move");
 	auto& first = game.appendMainlineMove(
-	    {scid::database::D2, scid::database::D4, scid::database::EMPTY});
+	    {scid::core::D2, scid::core::D4, scid::core::EMPTY});
 	first.metadata.nags.push_back(scid::core::NAG_GoodMove);
 	first.metadata.comment = "Best by test";
 	auto& childVariation = first.childVariations.emplace_back();
 	childVariation.initialComment = "Queen pawn alternative";
 	childVariation.line.appendMove(
-	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
+	    {scid::core::E2, scid::core::E4, scid::core::EMPTY});
 
 	std::string pgn;
 	scid::core::pgn::encode_game(

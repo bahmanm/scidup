@@ -5,15 +5,15 @@
 
 namespace scid::database {
 
-SearchPos::SearchPos(Position const& pos) {
+SearchPos::SearchPos(scid::core::Position const& pos) {
 	std::copy_n(pos.GetBoard(), 64, board_);
 	materialSig_ = matsig_Make(pos.GetMaterial());
 	hpSig_ = hpSig_make(board_);
 	toMove_ = pos.GetToMove();
 	isStdStard_ = pos.IsStdStart();
 
-	if ((board_[E1] == WK || board_[G1] == WK) &&
-	    (board_[E8] == BK || board_[G8] == BK)) {
+	if ((board_[scid::core::E1] == scid::core::WK || board_[scid::core::G1] == scid::core::WK) &&
+	    (board_[scid::core::E8] == scid::core::BK || board_[scid::core::G8] == scid::core::BK)) {
 		storedLine_ = std::make_unique<StoredLine>(board_, toMove_);
 	}
 }
@@ -41,7 +41,7 @@ int SearchPos::index_match(const IndexEntry& ie) const {
 	return -1;
 }
 
-std::pair<int, FullMove> SearchPos::match(scidBaseT const& base,
+std::pair<int, scid::core::FullMove> SearchPos::match(scidBaseT const& base,
                                           gamenumT gnum) const {
 	const IndexEntry* ie = base.getIndexEntry(gnum);
 	int ply = index_match(*ie);
@@ -57,8 +57,8 @@ std::pair<int, FullMove> SearchPos::match(scidBaseT const& base,
 	}
 
 	auto gameview = base.getGame(ie);
-	ply = (toMove_ == WHITE) ? gameview.search<WHITE>(board_)
-	                         : gameview.search<BLACK>(board_);
+	ply = (toMove_ == scid::core::WHITE) ? gameview.search<scid::core::WHITE>(board_)
+	                         : gameview.search<scid::core::BLACK>(board_);
 	if (ply > 0)
 		return {ply, gameview.getMove(0)};
 

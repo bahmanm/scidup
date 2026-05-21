@@ -18,39 +18,39 @@ namespace scid::database::game_storage {
 
 std::pair<IndexEntry, TagRoster> encode(const scid::core::Game& game,
                                         const char* scidFlags,
-                                        std::vector<byte>& dest);
+                                        std::vector<scid::core::byte>& dest);
 void loadStandardTags(scid::core::Game& game, char* scidFlags,
                       std::size_t scidFlagsLen, IndexEntry const& ie,
                       TagRoster const& tags);
-errorT decode(scid::core::Game& game, char* scidFlags,
+scid::core::errorT decode(scid::core::Game& game, char* scidFlags,
               std::size_t scidFlagsLen, IndexEntry const& ie,
               TagRoster const& tags, ByteBuffer buf);
-errorT decodeMovesOnly(scid::core::Game& game, ByteBuffer& buf);
+scid::core::errorT decodeMovesOnly(scid::core::Game& game, ByteBuffer& buf);
 
 struct ByteBufferAccess {
 	template <typename MoveFn, typename CommentFn, typename VariationFn,
 	          typename NagFn>
-	static std::pair<errorT, unsigned char>
+	static std::pair<scid::core::errorT, unsigned char>
 	nextMove(ByteBuffer& buf, int varDepth, MoveFn acceptMove,
 	         CommentFn commentMarker, VariationFn changeVar, NagFn addNag) {
 		return buf.nextMove(varDepth, acceptMove, commentMarker, changeVar,
 		                    addNag);
 	}
 
-	static std::pair<errorT, unsigned char> nextLineMove(ByteBuffer& buf) {
+	static std::pair<scid::core::errorT, unsigned char> nextLineMove(ByteBuffer& buf) {
 		return buf.nextLineMove();
 	}
 
-	static std::pair<int, pieceT> decodeMove(ByteBuffer& buf, colorT toMove,
-	                                         pieceT movingPiece, squareT from,
+	static std::pair<int, scid::core::pieceT> decodeMove(ByteBuffer& buf, scid::core::colorT toMove,
+	                                         scid::core::pieceT movingPiece, scid::core::squareT from,
 	                                         unsigned char moveCode) {
 		return buf.decodeMove(toMove, movingPiece, from, moveCode);
 	}
 };
 
-errorT decodeEncodedMove(ByteBuffer& buf, byte val, const Position& pos,
-                         simpleMoveT& sm);
-errorT decodeMainlineMove(ByteBuffer& buf, const Position& pos,
-                          simpleMoveT& sm);
+scid::core::errorT decodeEncodedMove(ByteBuffer& buf, scid::core::byte val, const scid::core::Position& pos,
+                         scid::core::simpleMoveT& sm);
+scid::core::errorT decodeMainlineMove(ByteBuffer& buf, const scid::core::Position& pos,
+                          scid::core::simpleMoveT& sm);
 
 } // namespace scid::database::game_storage

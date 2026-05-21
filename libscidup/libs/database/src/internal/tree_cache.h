@@ -10,7 +10,7 @@
 namespace scid::database {
 
 class CompressedFilter {
-	byte* CompressedData = nullptr;
+	scid::core::byte* CompressedData = nullptr;
 	gamenumT CFilterSize = 0;
 	gamenumT CompressedLength = 0;
 
@@ -20,16 +20,16 @@ public:
 	~CompressedFilter() { delete[] CompressedData; }
 
 	void CompressFrom(Filter* filter);
-	errorT UncompressTo(Filter* filter) const;
+	scid::core::errorT UncompressTo(Filter* filter) const;
 
 private:
-	errorT Verify(Filter* filter);
+	scid::core::errorT Verify(Filter* filter);
 };
 
 struct CachedFilter {
 	CompressedFilter cfilter_;
-	pieceT board_[64];
-	colorT toMove_;
+	scid::core::pieceT board_[64];
+	scid::core::colorT toMove_;
 };
 
 class TreeCache {
@@ -79,7 +79,7 @@ public:
 			return false;
 
 		auto idx = std::distance(cache_.begin(), it);
-		if (it->cfilter_.UncompressTo(&filter) != OK) {
+		if (it->cfilter_.UncompressTo(&filter) != scid::core::OK) {
 			ASSERT(false); // corrupted data: should not happen
 			return false;
 		}

@@ -3,7 +3,7 @@
 #include "scidup/core/primitives.h"
 #include <cstddef>
 
-namespace scid::database {
+namespace scid::core {
 
 using ratingT = ushort;
 using ratingTypeT = byte;
@@ -20,4 +20,4 @@ inline constexpr std::size_t NUM_RATING_TYPES = 7;
 inline constexpr const char* ratingTypeNames[NUM_RATING_TYPES + 1] = {
     "Elo", "Rating", "Rapid", "ICCF", "USCF", "DWZ", "ECF", nullptr};
 
-} // namespace scid::database
+} // namespace scid::core

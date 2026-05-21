@@ -47,8 +47,8 @@ const char* gameLatin1 = SCIDUP_TEST_RESOURCES_DIR "res_gameLatin1.pgn";
 const char* gameLatin1Conv = SCIDUP_TEST_RESOURCES_DIR "res_gameLatin1expected.pgn";
 
 void expectMoveAction(const scid::core::Move* move,
-                      scid::database::squareT from,
-                      scid::database::squareT to) {
+                      scid::core::squareT from,
+                      scid::core::squareT to) {
 	ASSERT_NE(nullptr, move);
 	EXPECT_EQ(from, move->action.from);
 	EXPECT_EQ(to, move->action.to);
@@ -63,7 +63,7 @@ scid::database::LegacyGameEncodeOptions scidFlagsPgnOptions() {
 	};
 }
 
-std::optional<scid::database::Position>
+std::optional<scid::core::Position>
 currentPosition(const scid::core::Game& game,
                 scid::core::MovetextLocation location) {
 	scid::core::GameCursor cursor(game);
@@ -84,19 +84,19 @@ std::string currentFen(const scid::core::Game& game,
 	return buf;
 }
 
-scid::database::simpleMoveT makeCurrentMove(scid::core::Game& game,
+scid::core::simpleMoveT makeCurrentMove(scid::core::Game& game,
                                             scid::core::MovetextLocation location,
-                                            scid::database::squareT from,
-                                            scid::database::squareT to) {
-	scid::database::simpleMoveT move;
+                                            scid::core::squareT from,
+                                            scid::core::squareT to) {
+	scid::core::simpleMoveT move;
 	if (auto position = currentPosition(game, location))
-		position->makeMove(from, to, scid::database::EMPTY, move);
+		position->makeMove(from, to, scid::core::EMPTY, move);
 	return move;
 }
 
 void addMove(scid::core::Game& game,
              scid::core::MovetextLocation& location,
-             scid::database::simpleMoveT const& move) {
+             scid::core::simpleMoveT const& move) {
 	scid::core::MovetextCursor cursor(game);
 	ASSERT_TRUE(cursor.restore(location));
 	cursor.addMove({move.from, move.to, move.promote, move.isCastle() != 0});
@@ -164,7 +164,7 @@ void setCurrentComment(scid::core::Game& game,
 
 bool addCurrentNag(scid::core::Game& game,
                    scid::core::MovetextLocation location,
-                   scid::database::byte nag) {
+                   scid::core::byte nag) {
 	scid::core::MovetextCursor cursor(game);
 	EXPECT_TRUE(cursor.restore(location));
 	return cursor.addPreviousMoveNag(nag);
@@ -199,10 +199,10 @@ void stripMovetext(scid::core::Game& game,
 	game.stripMovetext(variations, comments, nags);
 }
 
-scid::database::errorT resetGameStartFen(scid::core::Game& game,
+scid::core::errorT resetGameStartFen(scid::core::Game& game,
                                          scid::core::MovetextLocation& location,
                                          const char* fen) {
-	scid::database::Position position;
+	scid::core::Position position;
 	if (auto err = position.ReadFromFEN(fen))
 		return err;
 
@@ -210,7 +210,7 @@ scid::database::errorT resetGameStartFen(scid::core::Game& game,
 	game.setStartPosition(position);
 
 	location = {};
-	return scid::database::OK;
+	return scid::core::OK;
 }
 
 std::string nextLegacySan(scid::core::Game& game,
@@ -226,8 +226,8 @@ std::string nextLegacySan(scid::core::Game& game,
 	if (!simpleMove)
 		return {};
 
-	scid::database::sanStringT san = {};
-	position->MakeSANString(&*simpleMove, san, scid::database::SAN_MATETEST);
+	scid::core::sanStringT san = {};
+	position->MakeSANString(&*simpleMove, san, scid::core::SAN_MATETEST);
 	return san;
 }
 
@@ -237,12 +237,12 @@ TEST(Test_Game, clone) {
 	for (auto filename : {gameUTF8, gameLatin1, gameLatin1Conv}) {
 
 		scid::database::scidBaseT dbase;
-		ASSERT_EQ(scid::database::OK, dbase.open("PGN", scid::database::FMODE_Both, filename));
+		ASSERT_EQ(scid::core::OK, dbase.open("PGN", scid::database::FMODE_Both, filename));
 		ASSERT_NE(nullptr, dbase.getIndexEntry_bounds(0));
 
 		scid::core::Game game;
 		std::array<char, 22> scidFlags{};
-		ASSERT_EQ(scid::database::OK,
+		ASSERT_EQ(scid::core::OK,
 		          dbase.getGame(*dbase.getIndexEntry(0), game,
 		                        scidFlags.data(), scidFlags.size()));
 		scid::core::MovetextLocation location;
@@ -353,14 +353,14 @@ TEST(Test_Game, locationInPGN) {
 	for (auto filename : {gameUTF8, gameLatin1, gameLatin1Conv}) {
 
 		scid::database::scidBaseT dbase;
-		ASSERT_EQ(scid::database::OK, dbase.open("PGN", scid::database::FMODE_Both, filename));
+		ASSERT_EQ(scid::core::OK, dbase.open("PGN", scid::database::FMODE_Both, filename));
 		ASSERT_NE(nullptr, dbase.getIndexEntry_bounds(0));
 
 		scid::core::Game game;
 		 auto bufGame = dbase.getGame(*dbase.getIndexEntry(0));
 		 ASSERT_TRUE(bufGame);
 		 game.clear();
-		 ASSERT_EQ(scid::database::OK,
+		 ASSERT_EQ(scid::core::OK,
 		          scid::database::game_storage::decodeMovesOnly(
 		              game, bufGame));
 		scid::core::MovetextLocation currentLocation;
@@ -391,7 +391,7 @@ TEST(Test_Game, locationInPGN) {
 
 TEST(Test_Game, toStart_toEnd) {
 	scid::database::scidBaseT dbase;
-	ASSERT_EQ(scid::database::OK, dbase.open("PGN", scid::database::FMODE_Both, gameUTF8));
+	ASSERT_EQ(scid::core::OK, dbase.open("PGN", scid::database::FMODE_Both, gameUTF8));
 	auto ie = dbase.getIndexEntry_bounds(0);
 	ASSERT_NE(nullptr, ie);
 
@@ -399,7 +399,7 @@ TEST(Test_Game, toStart_toEnd) {
 	auto distribution = std::uniform_int_distribution<>{2, 500};
 	scid::core::Game game;
 	std::array<char, 22> scidFlags{};
-	ASSERT_EQ(scid::database::OK,
+	ASSERT_EQ(scid::core::OK,
 	          dbase.getGame(*ie, game, scidFlags.data(), scidFlags.size()));
 	scid::core::MovetextLocation location;
 
@@ -441,17 +441,17 @@ TEST(Test_Game, coreGamePgnEncodingIncludesLegacyMetadataTags) {
 
 	game.addTag("White", "white player");
 	game.addTag("Black", "black player");
-	game.setDate(scid::database::date_parsePGNTag("2018.06.11", 10));
-	game.setWhiteRating({2800, scid::database::RATING_Rapid});
-	game.setBlackRating({2650, scid::database::RATING_Elo});
+	game.setDate(scid::core::date_parsePGNTag("2018.06.11", 10));
+	game.setWhiteRating({2800, scid::core::RATING_Rapid});
+	game.setBlackRating({2650, scid::core::RATING_Elo});
 	game.setEco("A01");
-	game.setEventDate(scid::database::date_parsePGNTag("2018.06.01", 10));
+	game.setEventDate(scid::core::date_parsePGNTag("2018.06.01", 10));
 	game.addTag("UTCDate", "2018.06.10");
 	game.addTag("Annotator", "Example");
-	game.setResult(scid::database::RESULT_Black);
+	game.setResult(scid::core::RESULT_Black);
 	const char* fen = "8/N2P1pk1/2n2q2/1P2pp2/5PN1/QKPp1P2/8/8 w - - 0 1";
 	scid::core::MovetextLocation location;
-	ASSERT_EQ(scid::database::OK, resetGameStartFen(game, location, fen));
+	ASSERT_EQ(scid::core::OK, resetGameStartFen(game, location, fen));
 	game.addTag("Event", "event nAme");
 	game.addTag("Round", "round 4");
 	game.addTag("Site", "a long site maybe in a long country");
@@ -513,7 +513,7 @@ TEST(Test_Game, encodeFEN) {
 	{
 		scid::core::Game game;
 		scid::core::MovetextLocation location;
-		ASSERT_EQ(scid::database::OK, resetGameStartFen(game, location, kiwipete));
+		ASSERT_EQ(scid::core::OK, resetGameStartFen(game, location, kiwipete));
 		scid::database::game_storage::encode(game, "",
 		                                     encodedGame);
 	}
@@ -563,11 +563,11 @@ TEST(Test_Game, coreGameMovetextMirrorsLegacyMoveTree) {
 	                                scid::database::PgnVisitor{game});
 
 	scid::core::GameCursor cursor(game);
-	expectMoveAction(cursor.nextMove(), scid::database::D2, scid::database::D4);
+	expectMoveAction(cursor.nextMove(), scid::core::D2, scid::core::D4);
 	ASSERT_TRUE(cursor.next());
-	expectMoveAction(cursor.nextMove(), scid::database::D7, scid::database::D5);
+	expectMoveAction(cursor.nextMove(), scid::core::D7, scid::core::D5);
 	ASSERT_TRUE(cursor.next());
-	expectMoveAction(cursor.nextMove(), scid::database::C2, scid::database::C4);
+	expectMoveAction(cursor.nextMove(), scid::core::C2, scid::core::C4);
 	ASSERT_TRUE(cursor.next());
 	EXPECT_TRUE(cursor.isAtGameEnd());
 
@@ -584,19 +584,19 @@ TEST(Test_Game, coreGameMovetextMirrorsLegacyMoveTree) {
 	cursor.toStart();
 	ASSERT_EQ(2U, cursor.variationCount());
 	ASSERT_TRUE(cursor.enterVariation(0));
-	expectMoveAction(cursor.nextMove(), scid::database::E2, scid::database::E4);
+	expectMoveAction(cursor.nextMove(), scid::core::E2, scid::core::E4);
 	ASSERT_TRUE(cursor.next());
-	expectMoveAction(cursor.nextMove(), scid::database::E7, scid::database::E5);
+	expectMoveAction(cursor.nextMove(), scid::core::E7, scid::core::E5);
 	ASSERT_EQ(1U, cursor.variationCount());
 	ASSERT_TRUE(cursor.enterVariation(0));
-	expectMoveAction(cursor.nextMove(), scid::database::C7, scid::database::C5);
+	expectMoveAction(cursor.nextMove(), scid::core::C7, scid::core::C5);
 	ASSERT_TRUE(cursor.next());
 	EXPECT_TRUE(cursor.isAtVariationEnd());
 
 	ASSERT_TRUE(cursor.exitVariation());
 	ASSERT_TRUE(cursor.exitVariation());
 	ASSERT_TRUE(cursor.enterVariation(1));
-	expectMoveAction(cursor.nextMove(), scid::database::C2, scid::database::C4);
+	expectMoveAction(cursor.nextMove(), scid::core::C2, scid::core::C4);
 	ASSERT_TRUE(cursor.next());
 	EXPECT_TRUE(cursor.isAtVariationEnd());
 
@@ -609,11 +609,11 @@ TEST(Test_Game, coreGameMovetextMirrorsProgrammaticVariationAdds) {
 	scid::core::Game game;
 	scid::core::MovetextLocation location;
 
-	addMove(game, location, makeCurrentMove(game, location, scid::database::E2,
-	                              scid::database::E4));
+	addMove(game, location, makeCurrentMove(game, location, scid::core::E2,
+	                              scid::core::E4));
 	addVariation(game, location);
-	addMove(game, location, makeCurrentMove(game, location, scid::database::D2,
-	                              scid::database::D4));
+	addMove(game, location, makeCurrentMove(game, location, scid::core::D2,
+	                              scid::core::D4));
 
 	auto const& mainline = game.movetext().mainline.moves;
 	ASSERT_EQ(1U, mainline.size());
@@ -629,8 +629,8 @@ TEST(Test_Game, stateQueriesMirrorCoreCursorForProgrammaticVariation) {
 	scid::core::Game game;
 	scid::core::MovetextLocation location;
 
-	addMove(game, location, makeCurrentMove(game, location, scid::database::E2,
-	                              scid::database::E4));
+	addMove(game, location, makeCurrentMove(game, location, scid::core::E2,
+	                              scid::core::E4));
 	addVariation(game, location);
 	auto cursor = coreCursor(game, location);
 	EXPECT_EQ(0U, coreCursor(game, location).ply());
@@ -643,8 +643,8 @@ TEST(Test_Game, stateQueriesMirrorCoreCursorForProgrammaticVariation) {
 	EXPECT_FALSE(cursor.isAtGameStart());
 	EXPECT_FALSE(cursor.isAtGameEnd());
 
-	addMove(game, location, makeCurrentMove(game, location, scid::database::D2,
-	                              scid::database::D4));
+	addMove(game, location, makeCurrentMove(game, location, scid::core::D2,
+	                              scid::core::D4));
 	auto cursorAfterMove = coreCursor(game, location);
 	EXPECT_EQ(1U, coreCursor(game, location).ply());
 	EXPECT_EQ(1U, cursorAfterMove.variationDepth());
@@ -672,11 +672,11 @@ TEST(Test_Game, savedLocationRestoresProgrammaticVariationState) {
 	scid::core::Game game;
 	scid::core::MovetextLocation location;
 
-	addMove(game, location, makeCurrentMove(game, location, scid::database::E2,
-	                              scid::database::E4));
+	addMove(game, location, makeCurrentMove(game, location, scid::core::E2,
+	                              scid::core::E4));
 	addVariation(game, location);
-	addMove(game, location, makeCurrentMove(game, location, scid::database::D2,
-	                              scid::database::D4));
+	addMove(game, location, makeCurrentMove(game, location, scid::core::D2,
+	                              scid::core::D4));
 
 	auto savedLocation = location;
 	{
@@ -699,8 +699,8 @@ TEST(Test_Game, coreGameMoveMetadataMirrorsProgrammaticNagMutation) {
 	scid::core::Game game;
 	scid::core::MovetextLocation location;
 
-	addMove(game, location, makeCurrentMove(game, location, scid::database::E2,
-	                              scid::database::E4));
+	addMove(game, location, makeCurrentMove(game, location, scid::core::E2,
+	                              scid::core::E4));
 	ASSERT_TRUE(addCurrentNag(game, location, scid::core::NAG_GoodMove));
 	ASSERT_TRUE(addCurrentNag(game, location, scid::core::NAG_PoorMove));
 	ASSERT_TRUE(addCurrentNag(game, location, scid::core::NAG_Equal));
@@ -726,11 +726,11 @@ TEST(Test_Game, coreGameVariationMetadataMirrorsProgrammaticNagMutation) {
 	scid::core::Game game;
 	scid::core::MovetextLocation location;
 
-	addMove(game, location, makeCurrentMove(game, location, scid::database::E2,
-	                              scid::database::E4));
+	addMove(game, location, makeCurrentMove(game, location, scid::core::E2,
+	                              scid::core::E4));
 	addVariation(game, location);
-	addMove(game, location, makeCurrentMove(game, location, scid::database::D2,
-	                              scid::database::D4));
+	addMove(game, location, makeCurrentMove(game, location, scid::core::D2,
+	                              scid::core::D4));
 	ASSERT_TRUE(addCurrentNag(game, location, scid::core::NAG_InterestingMove));
 
 	auto const& variationMove =
@@ -750,13 +750,13 @@ TEST(Test_Game, coreGameMirrorsProgrammaticCommentMutation) {
 	scid::core::Game game;
 	scid::core::MovetextLocation location;
 	setCurrentComment(game, location, "Before the first move");
-	addMove(game, location, makeCurrentMove(game, location, scid::database::E2,
-	                              scid::database::E4));
+	addMove(game, location, makeCurrentMove(game, location, scid::core::E2,
+	                              scid::core::E4));
 	setCurrentComment(game, location, "After e4");
 	addVariation(game, location);
 	setCurrentComment(game, location, "Queen pawn alternative");
-	addMove(game, location, makeCurrentMove(game, location, scid::database::D2,
-	                              scid::database::D4));
+	addMove(game, location, makeCurrentMove(game, location, scid::core::D2,
+	                              scid::core::D4));
 	setCurrentComment(game, location, "After d4");
 
 	auto const& movetext = game.movetext();
@@ -781,8 +781,8 @@ TEST(Test_Game, moveCommentReadsCoreCommentAtCurrentLocation) {
 	EXPECT_EQ("Core initial comment",
 	          std::string(scid::database::currentMoveComment(game, &location)));
 
-	addMove(game, location, makeCurrentMove(game, location, scid::database::E2,
-	                              scid::database::E4));
+	addMove(game, location, makeCurrentMove(game, location, scid::core::E2,
+	                              scid::core::E4));
 	scid::core::MovetextCursor mainlineCursor(game);
 	ASSERT_TRUE(mainlineCursor.restore(location));
 	scid::core::MoveMetadata metadata;
@@ -804,14 +804,14 @@ TEST(Test_Game, coreGameMirrorsStrip) {
 	scid::core::Game game;
 	scid::core::MovetextLocation location;
 	setCurrentComment(game, location, "Before the first move");
-	addMove(game, location, makeCurrentMove(game, location, scid::database::E2,
-	                              scid::database::E4));
+	addMove(game, location, makeCurrentMove(game, location, scid::core::E2,
+	                              scid::core::E4));
 	ASSERT_TRUE(addCurrentNag(game, location, scid::core::NAG_GoodMove));
 	setCurrentComment(game, location, "After e4");
 	addVariation(game, location);
 	setCurrentComment(game, location, "Alternative");
-	addMove(game, location, makeCurrentMove(game, location, scid::database::D2,
-	                              scid::database::D4));
+	addMove(game, location, makeCurrentMove(game, location, scid::core::D2,
+	                              scid::core::D4));
 
 	stripMovetext(game, location, true, true, true);
 
@@ -974,7 +974,7 @@ template <typename DataT> std::string decode_gameview(DataT const& data) {
 	auto bbuf = scid::database::ByteBuffer{data.data() + 1, data.size()};
 	auto fen = bbuf.decodeStartBoard().second;
 	if (fen) {
-		scid::database::Position startPos;
+		scid::core::Position startPos;
 		startPos.ReadFromFEN(fen);
 		return scid::database::GameView(bbuf, startPos).getMoveSAN(0, 99);
 	}
@@ -1047,7 +1047,7 @@ TEST(Test_Game, illegalSCID4_Castling) {
 	EXPECT_EQ(decode_gameview(twice),
 	          "1.e4 e5  2.Nf3 Nf6  3.Be2 Be7  4.O-O O-O  5.O-O-O a5  6.Kh1");
 
-	// Moved rook. Allowed by gameview: the rook is moved to D1
+	// Moved rook. Allowed by gameview: the rook is moved to scid::core::D1
 	auto moved_rook = make_invalid(
 	    9, // replace 2.c4 with O-O-O
 	    "[FEN r3k2r/2p2p2/2pq1p2/p2pp2p/P2PP2P/2PQ1P2/2P2P2/R3K2R w KQkq]\n"

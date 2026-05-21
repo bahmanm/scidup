@@ -30,19 +30,18 @@
 #include <unordered_map>
 #include <vector>
 
-namespace scid::database {
+namespace scid::core {
 class Position;
 }
 
 namespace scidup::eco {
 
-// These are core APIs that still live in the legacy scid::database namespace.
-using Error = scid::database::errorT;
-using Position = scid::database::Position;
+using Error = scid::core::errorT;
+using Position = scid::core::Position;
 
-inline constexpr Error OK = scid::database::OK;
-inline constexpr Error ERROR_FileOpen = scid::database::ERROR_FileOpen;
-inline constexpr Error ERROR_Corrupt = scid::database::ERROR_Corrupt;
+inline constexpr Error OK = scid::core::OK;
+inline constexpr Error ERROR_FileOpen = scid::core::ERROR_FileOpen;
+inline constexpr Error ERROR_Corrupt = scid::core::ERROR_Corrupt;
 
 /**
  * A Book is a collection of chess positions, each with the corresponding ECO

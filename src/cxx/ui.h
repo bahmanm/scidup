@@ -42,11 +42,11 @@ public:
 	void clear() {}
 	template <typename T> void push_back(const T&) {}
 };
-inline UI_res_t Result(UI_handle_t, scid::database::errorT) {
+inline UI_res_t Result(UI_handle_t, scid::core::errorT) {
 	return 0;
 }
 template <typename T>
-inline UI_res_t Result(UI_handle_t, scid::database::errorT, const T&) {
+inline UI_res_t Result(UI_handle_t, scid::core::errorT, const T&) {
 	return 0;
 }
 
@@ -130,11 +130,11 @@ inline scid::database::Progress UI_CreateProgress(UI_handle_t ti) {
  * UI_Result(ti, OK, "string value");
  * UI_Result(ti, OK, 5);
  */
-inline UI_res_t UI_Result(UI_handle_t ti, scid::database::errorT res) {
+inline UI_res_t UI_Result(UI_handle_t ti, scid::core::errorT res) {
 	return UI_impl::Result(ti, res);
 }
 template <typename T>
-inline UI_res_t UI_Result(UI_handle_t ti, scid::database::errorT res, const T& value) {
+inline UI_res_t UI_Result(UI_handle_t ti, scid::core::errorT res, const T& value) {
 	return UI_impl::Result(ti, res, value);
 }
 

@@ -5,7 +5,7 @@
 
 namespace {
 
-using namespace scid::database;
+using namespace scid::core;
 
 TEST(MovePredicatesTest, ValidatesPieceGeometry) {
 	EXPECT_TRUE(move_predicates::valid_king(E4, E5));

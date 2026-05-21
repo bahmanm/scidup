@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////
 //  MoveList:  Constants
 
-namespace scid::database {
+namespace scid::core {
 
 const uint  MAX_LEGAL_MOVES = 256;  // max. length of the moves list
 
@@ -119,4 +119,4 @@ public:
 };
 
 
-} // namespace scid::database
+} // namespace scid::core

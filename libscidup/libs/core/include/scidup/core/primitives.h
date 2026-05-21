@@ -24,7 +24,7 @@
 
 #include <cstdint>
 
-namespace scid::database {
+namespace scid::core {
 
 //  General scalar types
 typedef unsigned char byte;      //  8 bit unsigned
@@ -160,4 +160,4 @@ constexpr rankT rank_Relative(colorT c, rankT r) {
 	return static_cast<rankT>(r ^ (c * 7));
 }
 
-} // namespace scid::database
+} // namespace scid::core

@@ -27,13 +27,13 @@ private:
     //----------------------------------
     //  TextBuffer:  Data Structures
     
-    uint   Column;
-    uint   IndentColumn;
-    uint   WrapColumn;
-    uint   LineIsEmpty;  // true if current line is empty.
-    uint   LineCount;
-    uint   ByteCount;
-    uint   BufferSize;
+    scid::core::uint   Column;
+    scid::core::uint   IndentColumn;
+    scid::core::uint   WrapColumn;
+    scid::core::uint   LineIsEmpty;  // true if current line is empty.
+    scid::core::uint   LineCount;
+    scid::core::uint   ByteCount;
+    scid::core::uint   BufferSize;
     bool   ConvertNewlines;  // If true, convert newlines to spaces.
     char * Buffer;
     char * Current;
@@ -59,15 +59,15 @@ public:
     void     Free ();
     void     Empty ();
     
-    void     SetBufferSize (uint length);
-    uint     GetBufferSize()     { return BufferSize; }
-    uint     GetByteCount()      { return ByteCount; }
-    uint     GetLineCount()      { return LineCount; }
-    uint     GetColumn()         { return Column; }
-    uint     GetWrapColumn ()    { return WrapColumn; }
-    void     SetWrapColumn (uint column) { WrapColumn = column; }
-    uint     GetIndent ()        { return IndentColumn; }
-    void     SetIndent (uint column) { IndentColumn = column; }
+    void     SetBufferSize (scid::core::uint length);
+    scid::core::uint     GetBufferSize()     { return BufferSize; }
+    scid::core::uint     GetByteCount()      { return ByteCount; }
+    scid::core::uint     GetLineCount()      { return LineCount; }
+    scid::core::uint     GetColumn()         { return Column; }
+    scid::core::uint     GetWrapColumn ()    { return WrapColumn; }
+    void     SetWrapColumn (scid::core::uint column) { WrapColumn = column; }
+    scid::core::uint     GetIndent ()        { return IndentColumn; }
+    void     SetIndent (scid::core::uint column) { IndentColumn = column; }
     char *   GetBuffer ()        { return Buffer; }
     void     NewlinesToSpaces (bool b) { ConvertNewlines = b; }
 
@@ -79,16 +79,16 @@ public:
     void     PauseTranslations () { PausedTranslations = true; }
     void     ResumeTranslations () { PausedTranslations = false; }
 
-    errorT   NewLine();
-    errorT   Indent();
-    errorT   PrintLine (const char * str);
-    errorT   PrintWord (const char * str);
-    errorT   PrintString (const char * str);
-    errorT   PrintSpace ();
-    errorT   PrintChar (char b);
+    scid::core::errorT   NewLine();
+    scid::core::errorT   Indent();
+    scid::core::errorT   PrintLine (const char * str);
+    scid::core::errorT   PrintWord (const char * str);
+    scid::core::errorT   PrintString (const char * str);
+    scid::core::errorT   PrintSpace ();
+    scid::core::errorT   PrintChar (char b);
 
-    errorT   PrintInt (uint i, const char * str);
-    inline errorT PrintInt (uint i) { return PrintInt (i, ""); }
+    scid::core::errorT   PrintInt (scid::core::uint i, const char * str);
+    inline scid::core::errorT PrintInt (scid::core::uint i) { return PrintInt (i, ""); }
 
 };
 
@@ -96,7 +96,7 @@ inline void
 TextBuffer::AddChar (char ch)
 {
     if (HasTranslations  &&  !PausedTranslations) {
-        byte b = (byte) ch;
+        scid::core::byte b = (scid::core::byte) ch;
         const char * str = Translation[b];
         if (str != NULL) {
             const char * s = str;

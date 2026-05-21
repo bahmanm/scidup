@@ -6,7 +6,7 @@
 
 #include "scidup/core/board.h"
 
-namespace scid::database {
+namespace scid::core {
 
 class HashVal {
     unsigned hashVal_[16][64] = {};
@@ -195,4 +195,4 @@ constexpr inline unsigned stdStartHash = [] {
     return h;
 }();
 
-} // namespace scid::database
+} // namespace scid::core

@@ -70,17 +70,17 @@ TextBuffer::AddTranslation (char ch, const char * str)
 {
     if (! HasTranslations) {
         HasTranslations = true;
-        for (uint i=0; i < 256; i++) {
+        for (scid::core::uint i=0; i < 256; i++) {
             Translation [i] = NULL;
         }
     }
-    Translation [(byte) ch] = str;
+    Translation [(scid::core::byte) ch] = str;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //### TextBuffer::SetBufferSize(): Set the buffer size.
 void
-TextBuffer::SetBufferSize (uint length)
+TextBuffer::SetBufferSize (scid::core::uint length)
 {
 #ifdef WINCE
     if (Buffer != NULL) { my_Tcl_Free( Buffer); }
@@ -97,25 +97,25 @@ TextBuffer::SetBufferSize (uint length)
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //### TextBuffer::NewLine(): Add a newline.
-errorT
+scid::core::errorT
 TextBuffer::NewLine ()
 {
     ASSERT (Current != NULL);
-    if (ByteCount >= BufferSize) { return ERROR_BufferFull; }
+    if (ByteCount >= BufferSize) { return scid::core::ERROR_BufferFull; }
     *Current++ = '\n'; 
     LineCount++; ByteCount++; LineIsEmpty = 1;
     Column = 0; 
     while (Column < IndentColumn) {
-        if (ByteCount >= BufferSize) { return ERROR_BufferFull; }
+        if (ByteCount >= BufferSize) { return scid::core::ERROR_BufferFull; }
         *Current++ = ' '; Column++; ByteCount++;
     }
     *Current = 0;
-    return OK;
+    return scid::core::OK;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //### TextBuffer::Indent(): Indent to the current Indentation level..
-errorT
+scid::core::errorT
 TextBuffer::Indent ()
 {
     ASSERT (Current != NULL);
@@ -123,23 +123,23 @@ TextBuffer::Indent ()
         return NewLine();
     } else {
         while (Column < IndentColumn) {
-            if (ByteCount >= BufferSize) { return ERROR_BufferFull; }
+            if (ByteCount >= BufferSize) { return scid::core::ERROR_BufferFull; }
             *Current++ = ' '; Column++; ByteCount++;
         }
         *Current = 0;
     }
-    return OK;
+    return scid::core::OK;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //### TextBuffer::PrintLine(): Print a string then newline. Does not
 //          check for the line going past WrapColumn.
-errorT
+scid::core::errorT
 TextBuffer::PrintLine (const char * str)
 {
     ASSERT(Current != NULL);
     while (*str != 0) {
-        if (ByteCount > BufferSize) { return ERROR_BufferFull; }
+        if (ByteCount > BufferSize) { return scid::core::ERROR_BufferFull; }
         AddChar (*str);
         str++;
     }
@@ -150,13 +150,13 @@ TextBuffer::PrintLine (const char * str)
 //### TextBuffer::PrintWord(): Prints a word, wrapping if necessary.
 //     It does NOT add a space, since that is left to the caller to
 //     provide in the string.
-errorT
+scid::core::errorT
 TextBuffer::PrintWord (const char * str)
 {
     ASSERT(Current != NULL);
-    uint length = strLength (str);
+    scid::core::uint length = strLength (str);
     if (Column + length >= WrapColumn)    { NewLine(); }
-    if (ByteCount + length >= BufferSize) { return ERROR_BufferFull; }
+    if (ByteCount + length >= BufferSize) { return scid::core::ERROR_BufferFull; }
     while (*str != 0) {
         char ch = *str;
         AddChar (ch);
@@ -165,44 +165,44 @@ TextBuffer::PrintWord (const char * str)
     }
     *Current = 0;  // add trailing end-of-string to buffer
     LineIsEmpty = 0;
-    return OK;
+    return scid::core::OK;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //### TextBuffer::PrintSpace(): Prints a space OR a newline character,
 //     but not both.
-errorT
+scid::core::errorT
 TextBuffer::PrintSpace (void)
 {
-    if (ByteCount + 1 >= BufferSize)  { return ERROR_BufferFull; }
+    if (ByteCount + 1 >= BufferSize)  { return scid::core::ERROR_BufferFull; }
     if (Column + 1 >= WrapColumn) {
         NewLine();
     } else {
         *Current = ' '; Current++; ByteCount++; Column++; LineIsEmpty = 0;
     }
-    return OK;
+    return scid::core::OK;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //### TextBuffer::PrintChar(): prints a single char, adding a newline
 //      first if necessary.
-errorT
+scid::core::errorT
 TextBuffer::PrintChar (char b)
 {
     if (Column + 1 >= WrapColumn)  { NewLine(); }
-    if (ByteCount + 1 >= BufferSize)  { return ERROR_BufferFull; }
+    if (ByteCount + 1 >= BufferSize)  { return scid::core::ERROR_BufferFull; }
     AddChar (b);
     Column++; LineIsEmpty = 0;
-    return OK;
+    return scid::core::OK;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //### TextBuffer::PrintString(): Print a string, wrapping at spaces.
 //      Also converts newlines in the string into spaces.
-errorT
+scid::core::errorT
 TextBuffer::PrintString (const char * str)
 {
-    errorT err;
+    scid::core::errorT err;
     char currentWord[1024];  // should be long enough for a word
     while (*str != 0) {
         char * b = currentWord;
@@ -214,25 +214,25 @@ TextBuffer::PrintString (const char * str)
         // end of word/line/text reached
         *b = 0;
         err = PrintWord (currentWord);
-        if (err != OK) { return err; }
-        if (*str == 0) { return OK; }
+        if (err != scid::core::OK) { return err; }
+        if (*str == 0) { return scid::core::OK; }
         if (*str == '\n'  &&  !ConvertNewlines) {
             err = NewLine();
         } else {
             err = PrintSpace();
         }
-        if (err != OK) { return err; }
+        if (err != scid::core::OK) { return err; }
         str++;
     }
-    return OK;
+    return scid::core::OK;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //### TextBuffer::PrintInt(): Print a decimal number followed by string
 //      as a word (so it appends a space at the end and wraps if
 //      necessary).
-errorT
-TextBuffer::PrintInt (uint i, const char * str)
+scid::core::errorT
+TextBuffer::PrintInt (scid::core::uint i, const char * str)
 {
     char temp[255];
     std::snprintf(temp, sizeof(temp), "%u%s", i, str);

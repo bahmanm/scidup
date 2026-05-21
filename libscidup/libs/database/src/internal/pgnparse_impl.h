@@ -60,7 +60,7 @@ inline bool setCurrentMoveComment(
 }
 
 inline bool addCurrentMoveNag(
-    scid::core::Game& game, byte nag,
+    scid::core::Game& game, scid::core::byte nag,
     const scid::core::MovetextLocation* location = nullptr) {
 	scid::core::MovetextCursor cursor(game);
 	[[maybe_unused]] const bool restored =
@@ -69,10 +69,10 @@ inline bool addCurrentMoveNag(
 	return cursor.addPreviousMoveNag(nag);
 }
 
-inline errorT resetStartFen(scid::core::Game& game,
+inline scid::core::errorT resetStartFen(scid::core::Game& game,
                             scid::core::MovetextLocation* location,
                             const char* fen) {
-	Position position;
+	scid::core::Position position;
 	if (auto err = position.ReadFromFEN(fen))
 		return err;
 
@@ -80,7 +80,7 @@ inline errorT resetStartFen(scid::core::Game& game,
 	game.setStartPosition(position);
 
 	setCurrentLocation(game, location, scid::core::MovetextLocation{});
-	return OK;
+	return scid::core::OK;
 }
 
 class PgnVisitor {
@@ -142,7 +142,7 @@ public:
 	void visitPGN_EPD(TView line) {
 		ASSERT(nErrorsAllowed_ >= 0);
 		std::string tmp(line.first, line.second);
-		if (resetStartFen(game, location_, tmp.c_str()) == OK) {
+		if (resetStartFen(game, location_, tmp.c_str()) == scid::core::OK) {
 			auto opcode = std::find_if(
 			    line.first, line.second, [spaces = 0](char ch) mutable {
 				    return (ch == ' ') ? spaces++ == 4 : spaces == 4;
@@ -170,16 +170,16 @@ public:
 	}
 
 	void visitPGN_ResultFinal(char resultCh) {
-		auto result = RESULT_None;
+		auto result = scid::core::RESULT_None;
 		switch (resultCh) {
 		case '0':
-			result = RESULT_Black;
+			result = scid::core::RESULT_Black;
 			break;
 		case '1':
-			result = RESULT_White;
+			result = scid::core::RESULT_White;
 			break;
 		case '/':
-			result = RESULT_Draw;
+			result = scid::core::RESULT_Draw;
 			break;
 		default:
 			ASSERT(resultCh == '*');
@@ -188,7 +188,7 @@ public:
 		auto prev_result = game.result();
 		if (result != prev_result) {
 			game.setResult(result);
-			if (prev_result != RESULT_None && nErrorsAllowed_ >= 0)
+			if (prev_result != scid::core::RESULT_None && nErrorsAllowed_ >= 0)
 				logErr("Final result did not match the header tag.");
 		}
 	}
@@ -205,9 +205,9 @@ public:
 		if (!position)
 			return logFatalErr("Failed to parse the move: ", tok);
 
-		simpleMoveT sm;
+		scid::core::simpleMoveT sm;
 		auto err = position->ParseMove(&sm, tok.first, tok.second);
-		if (err != OK) {
+		if (err != scid::core::OK) {
 			if (scid::core::parseNag(
 			        std::string_view(tok.first, tok.second - tok.first)))
 				return visitPGN_NAG(tok);
@@ -332,36 +332,36 @@ private:
 	bool parseTagResult(TView str) {
 		auto len = std::distance(str.first, str.second);
 		if (len > 0 && *str.first == '*') {
-			game.setResult(RESULT_None);
+			game.setResult(scid::core::RESULT_None);
 			return true;
 		}
 		if (len >= 3) {
 			if (std::equal(str.first, str.first + 3, "1-0")) {
-				game.setResult(RESULT_White);
+				game.setResult(scid::core::RESULT_White);
 				return true;
 			}
 			if (std::equal(str.first, str.first + 3, "0-1")) {
-				game.setResult(RESULT_Black);
+				game.setResult(scid::core::RESULT_Black);
 				return true;
 			}
 			if (std::equal(str.first, str.first + 3, "1/2")) {
-				game.setResult(RESULT_Draw);
+				game.setResult(scid::core::RESULT_Draw);
 				return true;
 			}
 		}
 		return logErr("Invalid Result tag: ", str);
 	}
 
-	int parseRating(colorT col, const char* ratingType, size_t ratingTypeLen,
+	int parseRating(scid::core::colorT col, const char* ratingType, size_t ratingTypeLen,
 	                TView rating) {
 		const auto ratingTypeView = std::string_view{ratingType, ratingTypeLen};
 		constexpr size_t ratingTypeCount = 7;
-		auto begin = ratingTypeNames;
+		auto begin = scid::core::ratingTypeNames;
 		auto it = std::find_if(begin, begin + ratingTypeCount,
 		                       [&](auto rType) {
 			                       return ratingTypeView == std::string_view{rType};
 		                       });
-		auto rType = static_cast<ratingTypeT>(std::distance(begin, it));
+		auto rType = static_cast<scid::core::ratingTypeT>(std::distance(begin, it));
 		if (rType >= ratingTypeCount)
 			return -1;
 
@@ -371,12 +371,12 @@ private:
 			elo = 0;
 			res = 0;
 		}
-		if (col == WHITE) {
+		if (col == scid::core::WHITE) {
 			game.setWhiteRating(
-			    {static_cast<ratingT>(elo), rType});
+			    {static_cast<scid::core::ratingT>(elo), rType});
 		} else {
 			game.setBlackRating(
-			    {static_cast<ratingT>(elo), rType});
+			    {static_cast<scid::core::ratingT>(elo), rType});
 		}
 		return res;
 	}
@@ -390,7 +390,7 @@ private:
 		if (tag == "Site")
 			return coreGame.site();
 		if (tag == "Date") {
-			date_DecodeToString(coreGame.date(), strBuf);
+			scid::core::date_DecodeToString(coreGame.date(), strBuf);
 			return strBuf;
 		}
 		if (tag == "Round")
@@ -404,21 +404,21 @@ private:
 
 		if (coreGame.white().rating.value != 0) {
 			std::string ratingTag = "White";
-			ratingTag.append(ratingTypeNames[coreGame.white().rating.type]);
+			ratingTag.append(scid::core::ratingTypeNames[coreGame.white().rating.type]);
 			if (tag == ratingTag)
 				return std::to_string(coreGame.white().rating.value);
 		}
 		if (coreGame.black().rating.value != 0) {
 			std::string ratingTag = "Black";
-			ratingTag.append(ratingTypeNames[coreGame.black().rating.type]);
+			ratingTag.append(scid::core::ratingTypeNames[coreGame.black().rating.type]);
 			if (tag == ratingTag)
 				return std::to_string(coreGame.black().rating.value);
 		}
 		if (tag == "ECO" && !coreGame.eco().empty())
 			return coreGame.eco();
 		if (tag == "EventDate" &&
-		    coreGame.eventDate() != scid::database::ZERO_DATE) {
-			date_DecodeToString(coreGame.eventDate(), strBuf);
+		    coreGame.eventDate() != scid::core::ZERO_DATE) {
+			scid::core::date_DecodeToString(coreGame.eventDate(), strBuf);
 			return strBuf;
 		}
 		for (auto const& entry : coreGame.extraTags()) {
@@ -444,14 +444,14 @@ private:
 			}
 			if (std::equal(tag, tag + 3, "FEN")) {
 				std::string tmp{value.first, value.second};
-				return resetStartFen(game, location_, tmp.c_str()) == OK;
+				return resetStartFen(game, location_, tmp.c_str()) == scid::core::OK;
 			}
 			break;
 		case 4:
 			if (std::equal(tag, tag + 4, "Date")) {
-				const auto date = date_parsePGNTag(value);
+				const auto date = scid::core::date_parsePGNTag(value);
 				game.setDate(date);
-				return !date_isPartial(date);
+				return !scid::core::date_isPartial(date);
 			}
 			break;
 		case 6:
@@ -460,17 +460,17 @@ private:
 			break;
 		case 7:
 			if (std::equal(tag, tag + 7, "UTCDate") &&
-			    game.date() == ZERO_DATE) {
-				const auto date = date_parsePGNTag(value);
-				if (!date_isPartial(date))
+			    game.date() == scid::core::ZERO_DATE) {
+				const auto date = scid::core::date_parsePGNTag(value);
+				if (!scid::core::date_isPartial(date))
 					game.setDate(date);
 			}
 			break;
 		case 9:
 			if (std::equal(tag, tag + 9, "EventDate")) {
-				const auto date = date_parsePGNTag(value);
+				const auto date = scid::core::date_parsePGNTag(value);
 				game.setEventDate(date);
-				return !date_isPartial(date);
+				return !scid::core::date_isPartial(date);
 			}
 			if (std::equal(tag, tag + 9, "ScidFlags")) {
 				if (scidFlags_) {
@@ -483,12 +483,12 @@ private:
 		if (tagLen >= 8) {
 			if (std::equal(tag, tag + 5, "White") &&
 			    game.white().rating.value == 0) {
-				auto res = parseRating(WHITE, tag + 5, tagLen - 5, value);
+				auto res = parseRating(scid::core::WHITE, tag + 5, tagLen - 5, value);
 				if (res >= 0)
 					return res;
 			} else if (std::equal(tag, tag + 5, "Black") &&
 			           game.black().rating.value == 0) {
-				auto res = parseRating(BLACK, tag + 5, tagLen - 5, value);
+				auto res = parseRating(scid::core::BLACK, tag + 5, tagLen - 5, value);
 				if (res >= 0)
 					return res;
 			}

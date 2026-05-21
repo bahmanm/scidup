@@ -10,7 +10,7 @@
 #include <cstdio>
 #include <string>
 
-namespace scid::database {
+namespace scid::core {
 
 class DString { // DEPRECATED
 	std::string s_;
@@ -118,4 +118,4 @@ public:
 };
 
 
-} // namespace scid::database
+} // namespace scid::core

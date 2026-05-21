@@ -39,14 +39,14 @@ class StoredLine;
 /// Search for an exact position (same material in the same squares).
 class SearchPos {
 	matSigT materialSig_;
-	pieceT board_[64];
+	scid::core::pieceT board_[64];
 	std::unique_ptr<StoredLine> storedLine_;
 	std::pair<uint16_t, uint16_t> hpSig_;
-	colorT toMove_;
+	scid::core::colorT toMove_;
 	bool isStdStard_;
 
 public:
-	explicit SearchPos(Position const& pos);
+	explicit SearchPos(scid::core::Position const& pos);
 	~SearchPos();
 
 	/// Disable the stored lines optimization
@@ -66,17 +66,17 @@ public:
 	/// @returns a std::pair containg the ply where the position was reached and
 	///          the next move. Returns ply==0 if the position was not found.
 	/// TODO: filling the SAN info of the returned move may be unnecessary
-	std::pair<int, FullMove> match(scidBaseT const& base, gamenumT gnum) const;
+	std::pair<int, scid::core::FullMove> match(scidBaseT const& base, gamenumT gnum) const;
 
 	/// Reset @e filter to include only the games that reached the searched
 	/// position in their main line.
 	bool setFilter(scidBaseT const& base, HFilter& filter,
 	               const Progress& progress) const {
-		if (toMove_ == BLACK)
-			return SetFilter<BLACK>(base, filter, progress);
+		if (toMove_ == scid::core::BLACK)
+			return SetFilter<scid::core::BLACK>(base, filter, progress);
 
 		if (!isStdStard_)
-			return SetFilter<WHITE>(base, filter, progress);
+			return SetFilter<scid::core::WHITE>(base, filter, progress);
 
 		return setFilterStdStart(base, filter);
 	}
@@ -87,14 +87,14 @@ private:
 		for (gamenumT i = 0, n = base.numGames(); i < n; i++) {
 			const IndexEntry* ie = base.getIndexEntry(i);
 			if (ie->GetStartFlag()) {
-				int ply = base.getGame(ie).search<WHITE>(board_);
+				int ply = base.getGame(ie).search<scid::core::WHITE>(board_);
 				filter.set(i, (ply > 255) ? 255 : ply);
 			}
 		}
 		return true;
 	}
 
-	template <colorT TOMOVE>
+	template <scid::core::colorT TOMOVE>
 	bool SetFilter(scidBaseT const& base, HFilter& filter,
 	               const Progress& prg) const {
 		filter->clear();
@@ -103,7 +103,7 @@ private:
 			const IndexEntry* ie = base.getIndexEntry(i);
 			int ply = index_match(*ie);
 			if (ply >= 0) {
-				filter.set(i, static_cast<byte>(ply + 1));
+				filter.set(i, static_cast<scid::core::byte>(ply + 1));
 			} else if (ply == -1) {
 				ply = base.getGame(ie).search<TOMOVE>(board_);
 				if (ply != 0)
