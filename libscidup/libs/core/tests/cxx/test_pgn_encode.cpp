@@ -16,6 +16,18 @@ TEST(Test_PgnEncodeCore, BreakLines) {
 	EXPECT_EQ("1. e4 e5 {inline comment} 2. Nf3 Nf6"sv, text);
 }
 
+TEST(Test_PgnEncodeCore, BreakLinesWithRuntimeWidth) {
+	using namespace std::literals;
+
+	auto text = std::string("1. e4\0"sv)
+	            + std::string("e5\0"sv)
+	            + std::string("2. Nf3\0"sv)
+	            + std::string("Nc6"sv);
+	scid::core::pgn::break_lines(text.begin(), text.end(), 12);
+
+	EXPECT_EQ("1. e4 e5\n2. Nf3 Nc6"sv, text);
+}
+
 TEST(Test_PgnEncodeCore, EncodeTagPairEscapesValue) {
 	using namespace std::literals;
 
@@ -98,6 +110,33 @@ TEST(Test_PgnEncodeCore, EncodeCoreGameWithLineBreaking) {
 
 	std::string pgn;
 	scid::core::pgn::encode(game, pgn);
+
+	auto expected = "[Event \"Friendly\"]\n"sv
+	                "[Site \"\"]\n"sv
+	                "[Date \"????.??.??\"]\n"sv
+	                "[Round \"\"]\n"sv
+	                "[White \"\"]\n"sv
+	                "[Black \"\"]\n"sv
+	                "[Result \"*\"]\n"sv
+	                "\n"sv
+	                "1.e4 e5\n"sv
+	                "*\n"sv;
+	EXPECT_EQ(expected, pgn);
+}
+
+TEST(Test_PgnEncodeCore, EncodeCoreGameWithRuntimeLineWidth) {
+	using namespace std::literals;
+
+	scid::core::Game game;
+	game.setEvent("Friendly");
+	game.appendMainlineMove(
+	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
+	game.appendMainlineMove(
+	    {scid::database::E7, scid::database::E5, scid::database::EMPTY});
+
+	std::string pgn;
+	scid::core::pgn::encode(
+	    game, pgn, scid::core::pgn::EncodeOptions{.lineWidth = 20});
 
 	auto expected = "[Event \"Friendly\"]\n"sv
 	                "[Site \"\"]\n"sv

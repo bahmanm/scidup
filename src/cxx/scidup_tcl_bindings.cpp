@@ -4048,7 +4048,7 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         (encodeOptions.style & PGN_STYLE_SYMBOLS) != 0;
     if (encodeOptions.legacyFormat == scid::database::PGN_FORMAT_Plain &&
         (encodeOptions.style & ~corePgnStyle) == 0 &&
-        encodeOptions.htmlStyle == 0 && lineWidth == 99999) {
+        encodeOptions.htmlStyle == 0) {
         std::string pgn;
         scid::core::pgn::encode<99999>(
             g->coreGame(), pgn,
@@ -4057,6 +4057,7 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 .includeSupplementalTags = supplementalTags,
                 .includeComments = comments,
                 .includeVariations = variations,
+                .lineWidth = lineWidth,
             });
         AppendResult(ti, pgn.c_str(), NULL);
     } else {

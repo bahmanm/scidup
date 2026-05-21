@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -43,6 +44,7 @@ struct EncodeOptions {
 	bool includeSupplementalTags = true;
 	bool includeComments = true;
 	bool includeVariations = true;
+	std::optional<unsigned> lineWidth = std::nullopt;
 };
 
 // We want to split the PGN text in lines to make it more readable, but we do
@@ -84,6 +86,36 @@ Iter break_lines(Iter begin, Iter end) {
 		if (*it == '\n') {
 			line_first_char = ++it;
 		} else /*  *it == breakpoint_char  */ {
+			last_breakpoint = it;
+			*it++ = ' ';
+		}
+	}
+	return line_first_char;
+}
+
+template <typename Iter>
+Iter break_lines(Iter begin, Iter end, unsigned desired_len) {
+	auto line_first_char = begin;
+	auto last_breakpoint = begin;
+	auto it = begin;
+	while (true) {
+		it = find_if(it, end, [](char ch) {
+			return ch == '\n' || ch == '\0';
+		});
+
+		if (desired_len != 0 &&
+		    std::distance(line_first_char, it) > desired_len &&
+		    last_breakpoint > line_first_char) {
+			*last_breakpoint = '\n';
+			line_first_char = last_breakpoint + 1;
+		}
+
+		if (it == end)
+			break;
+
+		if (*it == '\n') {
+			line_first_char = ++it;
+		} else {
 			last_breakpoint = it;
 			*it++ = ' ';
 		}
@@ -409,7 +441,11 @@ template <int desired_len = 80, typename TGame, typename TCont>
 void encode(TGame const& game, TCont& dest, EncodeOptions options = {}) {
 	auto begin = dest.size();
 	encode_game(game, dest, options);
-	break_lines<desired_len>(dest.begin() + begin, dest.end());
+	if (options.lineWidth) {
+		break_lines(dest.begin() + begin, dest.end(), *options.lineWidth);
+	} else {
+		break_lines<desired_len>(dest.begin() + begin, dest.end());
+	}
 }
 
 } // namespace scid::core::pgn
