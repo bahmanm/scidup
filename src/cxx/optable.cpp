@@ -54,15 +54,14 @@ currentPosition(const scid::core::Game& game,
     return currentCursor(game, location).currentPosition();
 }
 
-std::optional<scid::core::simpleMoveT>
+std::optional<scid::core::MoveAction>
 currentMove(const scid::core::Game& game,
             scid::core::MovetextLocation location) {
     auto cursor = currentCursor(game, location);
-    auto position = cursor.currentPosition();
     auto move = cursor.nextMove();
-    if (!position || !move)
+    if (!move)
         return std::nullopt;
-    return scid::core::notation::toSimpleMove(*position, move->action);
+    return move->action;
 }
 
 } // namespace
@@ -195,15 +194,16 @@ OpLine::Init (scid::core::Game * g, scid::core::MovetextLocation location,
     scid::core::uint i = 0;
     ShortGame = false;
     while (i < columnMoves) {
-        auto sm = currentMove(*g, location);
-        if (!sm) {
+        auto move = currentMove(*g, location);
+        if (!move) {
             Move[i][0] = 0;
             ShortGame = true;
         } else {
             Length++;
             auto position = currentPosition(*g, location);
             ASSERT(position);
-            position->MakeSANString (&*sm, Move[i], scid::core::SAN_CHECKTEST);
+            scid::database::strCopy(
+                Move[i], position->makeSan(*move, scid::core::SAN_CHECKTEST).c_str());
             scid::database::strStrip (Move[i], '-');
             scid::database::strStrip (Move[i], '=');
             auto cursor = currentCursor(*g, location);
@@ -215,15 +215,16 @@ OpLine::Init (scid::core::Game * g, scid::core::MovetextLocation location,
 
     // Now read in all the extra note moves:
     while (i < maxLineMoves) {
-        auto sm = currentMove(*g, location);
-        if (!sm) {
+        auto move = currentMove(*g, location);
+        if (!move) {
             Move[i][0] = 0;
             ShortGame = true;
         } else {
             Length++;
             auto position = currentPosition(*g, location);
             ASSERT(position);
-            position->MakeSANString (&*sm, Move[i], scid::core::SAN_CHECKTEST);
+            scid::database::strCopy(
+                Move[i], position->makeSan(*move, scid::core::SAN_CHECKTEST).c_str());
             scid::database::strStrip (Move[i], '-');
             scid::database::strStrip (Move[i], '=');
             auto cursor = currentCursor(*g, location);
@@ -582,12 +583,13 @@ OpTable::Init (const char * type, scid::core::Game * g,
             if (cursor.previous())
                 location = cursor.location();
         }
-        auto sm = currentMove(*g, location);
-        if (!sm) { break; }
+        auto move = currentMove(*g, location);
+        if (!move) { break; }
         auto position = currentPosition(*g, location);
         ASSERT(position);
-        position->MakeSANString (&*sm, StartLine[StartLength],
-                                 scid::core::SAN_CHECKTEST);
+        scid::database::strCopy(
+            StartLine[StartLength],
+            position->makeSan(*move, scid::core::SAN_CHECKTEST).c_str());
         StartLength++;
         if (StartLength >= OPTABLE_MAX_STARTLINE) { break; }
     }

@@ -248,16 +248,11 @@ struct MovetextEntry {
 
 inline std::string san_for_move(scid::core::Position& position,
                                 const Move& move,
-                                scid::core::sanFlagT flag,
-                                scid::core::simpleMoveT* simpleMove) {
+                                scid::core::sanFlagT flag) {
 	if (!move.san.empty())
 		return move.san;
-	if (!simpleMove)
-		return {};
 
-	scid::core::sanStringT san = {};
-	position.MakeSANString(simpleMove, san, flag);
-	return san;
+	return position.makeSan(move.action, flag);
 }
 
 template <int hard_len = 0, typename TCont>
@@ -326,12 +321,10 @@ void encode_core_line(MoveSequence const& line,
 	for (std::size_t i = 0; i < line.moves.size(); ++i) {
 		auto const& move = line.moves[i];
 		auto position_before_move = position;
-		auto simpleMove = notation::toSimpleMove(position, move.action);
 		const auto sanFlag = i + 1 == line.moves.size()
 		                         ? scid::core::SAN_MATETEST
 		                         : scid::core::SAN_CHECKTEST;
-		const auto san = detail::san_for_move(
-		    position, move, sanFlag, simpleMove ? &*simpleMove : nullptr);
+		const auto san = detail::san_for_move(position, move, sanFlag);
 
 		detail::encode_movetext_entry<hard_len>(
 		    {detail::MovetextEntryKind::Move,
@@ -356,8 +349,7 @@ void encode_core_line(MoveSequence const& line,
 			}
 		}
 
-		if (simpleMove)
-			position.DoSimpleMove(*simpleMove);
+		(void)position.applyMove(move.action);
 	}
 }
 

@@ -17,6 +17,7 @@
 namespace scid::core {
 
 class DString;
+struct MoveAction;
 class SquareSet;
 class SquareList;
 
@@ -240,6 +241,13 @@ public:
     bool        IsLegal ();
 
     bool        IsPromoMove (squareT from, squareT to);
+
+    errorT      parseMoveAction(MoveAction& action, std::string_view notation);
+    errorT      readCoordinateMoveAction(MoveAction& action,
+                                         std::string_view notation,
+                                         bool reverse);
+    std::string makeSan(MoveAction const& action, sanFlagT flag);
+    errorT      applyMove(MoveAction const& action);
 
     void        makeMove(squareT from, squareT to, pieceT promo, simpleMoveT& res) const;
     void        fillMove(simpleMoveT& sm) const;

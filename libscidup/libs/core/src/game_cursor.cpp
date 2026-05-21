@@ -1,7 +1,5 @@
 #include "scidup/core/game_cursor.h"
 
-#include "scidup/core/notation.h"
-
 #include <utility>
 
 namespace scid::core {
@@ -56,10 +54,8 @@ std::vector<const Move*> GameCursor::movesToCursor() const {
 std::optional<scid::core::Position> GameCursor::currentPosition() const {
 	auto position = startPosition(game_);
 	for (const auto* move : movesToCursor()) {
-		auto simpleMove = notation::toSimpleMove(position, move->action);
-		if (!simpleMove)
+		if (position.applyMove(move->action) != scid::core::OK)
 			return std::nullopt;
-		position.DoSimpleMove(*simpleMove);
 	}
 	return position;
 }

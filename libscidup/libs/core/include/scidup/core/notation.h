@@ -1,6 +1,5 @@
 #pragma once
 
-#include "scidup/core/movelist.h"
 #include "scidup/core/primitives.h"
 #include <cstddef>
 #include <optional>
@@ -17,8 +16,6 @@ struct MoveAction;
 
 namespace notation {
 
-std::optional<scid::core::simpleMoveT>
-toSimpleMove(scid::core::Position& position, MoveAction const& action);
 std::string currentPositionUci(const Game& game, MovetextLocation location);
 std::string previousMoveUci(const Game& game, MovetextLocation location);
 std::string nextMoveUci(const Game& game, MovetextLocation location);

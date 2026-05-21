@@ -71,15 +71,14 @@ static void writeComment(TextBuffer* tb, const char* preStr,
     }
 }
 
-static std::string sanForMove(scid::core::Position& position, scid::core::Move const& move,
-                              scid::core::sanFlagT flag, scid::core::simpleMoveT& simpleMove) {
+static std::string sanForMove(scid::core::Position& position,
+                              scid::core::Move const& move,
+                              scid::core::sanFlagT flag) {
     if (!move.san.empty()) {
         return move.san;
     }
 
-    scid::core::sanStringT san = {};
-    position.MakeSANString(&simpleMove, san, flag);
-    return san;
+    return position.makeSan(move.action, flag);
 }
 
 struct LegacyGamePgnEncoder {
@@ -212,17 +211,13 @@ scid::core::errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool i
         const auto* nextCoreMove = afterCoreMove.nextMove();
         bool commentLine = false;
 
-        const auto simpleMove =
-            scid::core::notation::toSimpleMove(position, coreMove->action);
-        if (!simpleMove) {
+        auto positionAfterMove = position;
+        if (positionAfterMove.applyMove(coreMove->action) != scid::core::OK) {
             return scid::core::ERROR;
         }
-        auto positionAfterMove = position;
-        positionAfterMove.DoSimpleMove(*simpleMove);
-        auto sanMove = *simpleMove;
         const auto san = sanForMove(
             position, *coreMove,
-            !isLastMoveInLine ? scid::core::SAN_CHECKTEST : scid::core::SAN_MATETEST, sanMove);
+            !isLastMoveInLine ? scid::core::SAN_CHECKTEST : scid::core::SAN_MATETEST);
 
         bool printThisMove = true;
         if (isNullMove) {

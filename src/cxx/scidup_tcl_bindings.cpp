@@ -253,19 +253,18 @@ currentPosition(const scid::core::Game& game,
 	return cursor.currentPosition();
 }
 
-static std::optional<scid::core::simpleMoveT>
+static std::optional<scid::core::MoveAction>
 currentMove(const scid::core::Game& game,
             scid::core::MovetextLocation location) {
 	scid::core::GameCursor cursor(game);
 	if (!cursor.restore(location))
 		return std::nullopt;
 
-	auto position = cursor.currentPosition();
 	auto move = cursor.nextMove();
-	if (!position || !move)
+	if (!move)
 		return std::nullopt;
 
-	return scid::core::notation::toSimpleMove(*position, move->action);
+	return move->action;
 }
 
 static std::optional<scid::core::MovetextLocation>
@@ -3601,7 +3600,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         gameLocation = cursor.location();
     }
     bool atLastMove = isAtEnd(game.coreGame(), gameLocation);
-    std::optional<scid::core::simpleMoveT> sm;
+    std::optional<scid::core::MoveAction> move;
     if (atLastMove) {
         // At end of game, so remember final game move for replicating
         // at the start of the variation:
@@ -3613,8 +3612,8 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             ASSERT(moved);
             gameLocation = cursor.location();
         }
-        sm = currentMove(game.coreGame(), gameLocation);
-        ASSERT(sm);
+        move = currentMove(game.coreGame(), gameLocation);
+        ASSERT(move);
         {
             scid::core::GameCursor cursor(game.coreGame());
             [[maybe_unused]] const bool restored = cursor.restore(gameLocation);
@@ -3640,12 +3639,12 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         gameLocation = cursor.location();
     }
     editor.setDirty();
-    if (sm) {
+    if (move) {
         // We need to replicate the last move of the current game.
         scid::core::MovetextCursor cursor(game.coreGame());
         [[maybe_unused]] const bool restored = cursor.restore(gameLocation);
         ASSERT(restored);
-        cursor.addMove({sm->from, sm->to, sm->promote, sm->isCastle() != 0});
+        cursor.addMove(*move);
         gameLocation = cursor.location();
     }
     {
@@ -3666,8 +3665,7 @@ sc_game_merge (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         {
             scid::core::MovetextCursor cursor(game.coreGame());
             if (!cursor.restore(gameLocation)) { break; }
-            cursor.addMove({mergeMove->from, mergeMove->to,
-                            mergeMove->promote, mergeMove->isCastle() != 0});
+            cursor.addMove(*mergeMove);
             gameLocation = cursor.location();
         }
         ply++;
@@ -3756,7 +3754,8 @@ sc_game_moves (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 scid::core::notation::nextSan(g->coreGame(), traversalLocation)
                     .c_str());
         } else {
-            s = sm->toLongNotation(s);
+            const auto notation = sm->longNotation();
+            s = std::copy(notation.begin(), notation.end(), s);
             *s = 0;
         }
         plyCount++;

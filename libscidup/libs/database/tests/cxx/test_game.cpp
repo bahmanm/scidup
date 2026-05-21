@@ -234,13 +234,7 @@ std::string nextLegacySan(scid::core::Game& game,
 	if (!position || !move)
 		return {};
 
-	auto simpleMove = scid::core::notation::toSimpleMove(*position, move->action);
-	if (!simpleMove)
-		return {};
-
-	scid::core::sanStringT san = {};
-	position->MakeSANString(&*simpleMove, san, scid::core::SAN_MATETEST);
-	return san;
+	return position->makeSan(move->action, scid::core::SAN_MATETEST);
 }
 
 } // namespace

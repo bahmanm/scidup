@@ -1,6 +1,7 @@
 #include "scidup/core/position.h"
 #include "scidup/core/attacks.h"
 #include "scidup/core/dstring.h"
+#include "scidup/core/game.h"
 #include "scidup/core/hash.h"
 #include "scidup/core/move_predicates.h"
 #include "scidup/core/square_collections.h"
@@ -35,6 +36,32 @@ bool valid_sqlist(pieceT* begin, size_t n, pieceT* board) {
 	       && unique_col.size() == 1 // not EMPTY and all of same side
 	       && kings[0] == KING       // only 1 king with idx == 0;
 	       && std::count(kings.begin(), kings.end(), KING) == 1;
+}
+
+MoveAction moveActionFrom(simpleMoveT const& sm) {
+	return {sm.from, sm.to, sm.promote, sm.isCastle() != 0};
+}
+
+errorT simpleMoveFromAction(Position const& position,
+                            MoveAction const& action,
+                            simpleMoveT& move) {
+	if (action.isNull()) {
+		position.makeMove(action.from, action.to, PAWN, move);
+		return OK;
+	}
+
+	if (action.castling) {
+		const bool kingSide = action.to > action.from;
+		position.makeMove(action.from, action.from,
+		                  kingSide ? KING : QUEEN, move);
+		return OK;
+	}
+
+	if (position.IsLegalMove(action.from, action.to, action.promotion) != 1)
+		return ERROR_InvalidMove;
+
+	position.makeMove(action.from, action.to, action.promotion, move);
+	return OK;
 }
 } // namespace
 
@@ -1419,6 +1446,47 @@ Position::IsPromoMove (squareT from, squareT to)
         return 1;
     }
     return 0;
+}
+
+errorT Position::parseMoveAction(MoveAction& action, std::string_view notation) {
+	simpleMoveT move;
+	auto err = ParseMove(&move, notation.data(), notation.data() + notation.size());
+	if (err != OK)
+		return err;
+
+	action = moveActionFrom(move);
+	return OK;
+}
+
+errorT Position::readCoordinateMoveAction(MoveAction& action,
+                                          std::string_view notation,
+                                          bool reverse) {
+	simpleMoveT move;
+	auto err = ReadCoordMove(&move, notation.data(), notation.size(), reverse);
+	if (err != OK)
+		return err;
+
+	action = moveActionFrom(move);
+	return OK;
+}
+
+std::string Position::makeSan(MoveAction const& action, sanFlagT flag) {
+	simpleMoveT move;
+	if (auto err = simpleMoveFromAction(*this, action, move); err != OK)
+		return {};
+
+	sanStringT san = {};
+	MakeSANString(&move, san, flag);
+	return san;
+}
+
+errorT Position::applyMove(MoveAction const& action) {
+	simpleMoveT move;
+	if (auto err = simpleMoveFromAction(*this, action, move); err != OK)
+		return err;
+
+	DoSimpleMove(move);
+	return OK;
 }
 
 /// Make a simpleMoveT.
