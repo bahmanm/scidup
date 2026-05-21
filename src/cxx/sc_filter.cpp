@@ -17,6 +17,7 @@
 */
 
 #include "dbasepool.h"
+#include "bytebuf.h"
 #include "scidup/database/game_id.h"
 #include "scidup/database/scidbase.h"
 #include "scidup_app_tree.h"

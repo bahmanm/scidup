@@ -1,6 +1,6 @@
 #include "scidup/core/game.h"
 #include "scidup/core/movetext_cursor.h"
-#include "scidup/database/bytebuf.h"
+#include "bytebuf.h"
 #include "scidup/database/common.h"
 #include "scidup/database/indexentry.h"
 #include "scidup/database/matsig.h"

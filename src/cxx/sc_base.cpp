@@ -17,8 +17,10 @@
 */
 
 #include "scidup/database/common.h"
+#include "bytebuf.h"
 #include "dbasepool.h"
 #include "game_positions.h"
+#include "gameview.h"
 #include "scidup/core/nags.h"
 #include "scidup/database/game_id.h"
 #include "scidup/database/misc.h"

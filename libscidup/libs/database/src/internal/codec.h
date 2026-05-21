@@ -25,7 +25,7 @@
 #ifndef CODEC_H
 #define CODEC_H
 
-#include "scidup/database/bytebuf.h"
+#include "bytebuf.h"
 #include "scidup/database/common.h"
 #include "scidup/database/game_id.h"
 #include "scidup/database/namebase.h"

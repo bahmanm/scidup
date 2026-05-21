@@ -1,6 +1,6 @@
 #pragma once
 
-#include "scidup/database/bytebuf.h"
+#include "bytebuf.h"
 #include "scidup/core/position.h"
 #include "scidup/database/common.h"
 #include "scidup/database/indexentry.h"

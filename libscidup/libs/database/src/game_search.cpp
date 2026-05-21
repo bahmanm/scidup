@@ -1,4 +1,4 @@
-#include "scidup/database/bytebuf.h"
+#include "bytebuf.h"
 #include "scidup/database/common.h"
 #include "game_search.h"
 #include "game_storage.h"

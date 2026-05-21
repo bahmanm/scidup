@@ -1,4 +1,4 @@
-#include "scidup/database/bytebuf.h"
+#include "bytebuf.h"
 #include "scidup/core/game.h"
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/notation.h"

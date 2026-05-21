@@ -26,6 +26,7 @@
 
 
 #include "crosstab.h"
+#include "bytebuf.h"
 #include "scidup/core/dstring.h"
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/movetext_cursor.h"
@@ -39,6 +40,7 @@
 #include "scidup/eco/book.h"
 #include "game_search.h"
 #include "game_storage.h"
+#include "gameview.h"
 #include "legacy_pgn.h"
 #include "piece_translation.h"
 #include "polyglot.h"

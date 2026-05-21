@@ -30,7 +30,8 @@
 #include "pgnparse_impl.h"
 #include <algorithm>
 #include <array>
-#include "scidup/database/bytebuf.h"
+#include "bytebuf.h"
+#include "gameview.h"
 #include <cstring>
 #include <gtest/gtest.h>
 #include <memory>

@@ -28,10 +28,8 @@ set(
 
 set(
     SCIDUP_DATABASE_PUBLIC_HEADERS
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/bytebuf.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/common.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/game_id.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/gameview.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/hfilter.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/index.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/database/indexentry.h"
@@ -45,6 +43,7 @@ set(
 
 set(
     SCIDUP_DATABASE_PRIVATE_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/bytebuf.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_memory.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/codec_pgn.h"
@@ -56,6 +55,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_positions.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_search.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_storage.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/gameview.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/legacy_encode_options.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/legacy_pgn.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/nag_format.h"

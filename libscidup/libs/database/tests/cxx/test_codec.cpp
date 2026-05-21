@@ -14,7 +14,7 @@
 * along with Scid. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "scidup/database/bytebuf.h"
+#include "bytebuf.h"
 #include "codec.h"
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/movetext_cursor.h"

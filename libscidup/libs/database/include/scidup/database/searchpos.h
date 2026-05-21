@@ -82,38 +82,11 @@ public:
 	}
 
 private:
-	bool setFilterStdStart(scidBaseT const& base, HFilter& filter) const {
-		filter->includeAll();
-		for (gamenumT i = 0, n = base.numGames(); i < n; i++) {
-			const IndexEntry* ie = base.getIndexEntry(i);
-			if (ie->GetStartFlag()) {
-				int ply = base.getGame(ie).search<scid::core::WHITE>(board_);
-				filter.set(i, (ply > 255) ? 255 : ply);
-			}
-		}
-		return true;
-	}
+	bool setFilterStdStart(scidBaseT const& base, HFilter& filter) const;
 
 	template <scid::core::colorT TOMOVE>
 	bool SetFilter(scidBaseT const& base, HFilter& filter,
-	               const Progress& prg) const {
-		filter->clear();
-		long long progress = 0;
-		for (gamenumT i = 0, n = base.numGames(); i < n; i++) {
-			const IndexEntry* ie = base.getIndexEntry(i);
-			int ply = index_match(*ie);
-			if (ply >= 0) {
-				filter.set(i, static_cast<scid::core::byte>(ply + 1));
-			} else if (ply == -1) {
-				ply = base.getGame(ie).search<TOMOVE>(board_);
-				if (ply != 0)
-					filter.set(i, (ply > 255) ? 255 : ply);
-			}
-			if (progress++ % 512 == 0 && !prg.report(i, n))
-				return false;
-		}
-		return true;
-	}
+	               const Progress& prg) const;
 
 	/// Return true if any searched material count is below its final-game
 	/// counterpart.

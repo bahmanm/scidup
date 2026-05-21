@@ -14,7 +14,7 @@
  * along with Scid. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "scidup/database/bytebuf.h"
+#include "bytebuf.h"
 #include "containers.h"
 #include <algorithm>
 #include <cmath>

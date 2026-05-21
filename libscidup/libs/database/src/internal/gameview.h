@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "scidup/database/bytebuf.h"
+#include "bytebuf.h"
 #include "scidup/core/fullmove.h"
 #include "scidup/core/move_predicates.h"
 #include "scidup/database/common.h"

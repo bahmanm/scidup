@@ -21,9 +21,7 @@
 
 #include "scidup/core/game.h"
 #include "scidup/core/game_result.h"
-#include "scidup/database/bytebuf.h"
 #include "scidup/database/game_id.h"
-#include "scidup/database/gameview.h"
 #include "scidup/database/hfilter.h"
 #include "scidup/database/index.h"
 #include "scidup/database/namebase.h"
@@ -37,6 +35,8 @@
 
 namespace scid::database {
 
+class ByteBuffer;
+class GameView;
 class Progress;
 class SortCache;
 
@@ -313,56 +313,7 @@ struct scidBaseT {
 	 */
 	std::pair<scid::core::errorT, size_t>
 	stripGames(HFilter hfilter, const Progress& progress,
-	           std::vector<std::string_view> const& removeTags) {
-		if (auto errModify = beginTransaction())
-			return {errModify, 0};
-
-		std::vector<std::pair<std::string_view, std::string_view>> tagsBuf;
-		std::vector<scid::core::byte> encodeBuf;
-		size_t nCorrections = 0;
-		size_t iProg = 0;
-		const size_t totProg = hfilter->size();
-		scid::core::errorT err = scid::core::OK;
-		for (const auto gnum : hfilter) {
-			if ((++iProg % 1024 == 0) && !progress.report(iProg, totProg)) {
-				err = scid::core::ERROR_UserCancel;
-				break;
-			}
-
-			bool changed = false;
-			tagsBuf.clear();
-			IndexEntry const& ie = *getIndexEntry(gnum);
-			auto gamedata = getGame(ie);
-			auto err = gamedata.decodeTags(
-			    [&](auto const& tag, auto const& value) {
-				    if (std::find(removeTags.begin(), removeTags.end(), tag) !=
-				        removeTags.end())
-					    changed = true;
-				    else
-					    tagsBuf.emplace_back(tag, value);
-			    });
-			if (err != scid::core::OK)
-				break;
-
-			if (!changed)
-				continue;
-
-			encodeBuf.clear();
-			encodeTags(tagsBuf, encodeBuf);
-			encodeBuf.insert(encodeBuf.end(), gamedata.data(),
-			                 gamedata.data() + gamedata.size());
-				err = saveGameData(ie, tagRoster(ie),
-				                   {encodeBuf.data(), encodeBuf.size()}, gnum);
-			if (err != scid::core::OK)
-				break;
-
-			++nCorrections;
-		}
-		const auto err_trans = endTransaction();
-		if (err == scid::core::OK)
-			err = err_trans;
-		return {err, nCorrections};
-	}
+	           std::vector<std::string_view> const& removeTags);
 
 	std::unique_ptr<gamenumT[]> extractDuplicates() {
 		return std::move(duplicates_);
