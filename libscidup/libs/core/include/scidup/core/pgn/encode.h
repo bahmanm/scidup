@@ -40,6 +40,9 @@ namespace scid::core::pgn {
 
 struct EncodeOptions {
 	bool symbolicNags = false;
+	bool includeSupplementalTags = true;
+	bool includeComments = true;
+	bool includeVariations = true;
 };
 
 // We want to split the PGN text in lines to make it more readable, but we do
@@ -233,14 +236,14 @@ void encode_movetext_entry(MovetextEntry const& entry,
                            EncodeOptions options) {
 	switch (entry.kind) {
 	case MovetextEntryKind::InitialComment:
-		if (!entry.comment.empty())
+		if (options.includeComments && !entry.comment.empty())
 			encode_comment<hard_len>(entry.comment, dest);
 		break;
 
 	case MovetextEntryKind::VariationStart:
 		ply.push_back(ply.back() - 1);
 		dest.push_back('(');
-		if (!entry.comment.empty())
+		if (options.includeComments && !entry.comment.empty())
 			encode_comment<hard_len>(entry.comment, dest);
 		break;
 
@@ -266,12 +269,14 @@ void encode_movetext_entry(MovetextEntry const& entry,
 		move_end = dest.size();
 		ply.back()++;
 
-		for (auto nag : entry.nags) {
-			auto nag_str = formatNag(nag, options.symbolicNags);
-			dest.insert(dest.end(), nag_str.begin(), nag_str.end());
-			dest.push_back('\0');
+		if (options.includeComments) {
+			for (auto nag : entry.nags) {
+				auto nag_str = formatNag(nag, options.symbolicNags);
+				dest.insert(dest.end(), nag_str.begin(), nag_str.end());
+				dest.push_back('\0');
+			}
 		}
-		if (!entry.comment.empty())
+		if (options.includeComments && !entry.comment.empty())
 			encode_comment<hard_len>(entry.comment, dest);
 		break;
 	}
@@ -303,18 +308,20 @@ void encode_core_line(MoveSequence const& line,
 		     {move.metadata.nags.data(), move.metadata.nags.size()}},
 		    ply, move_end, dest, options);
 
-		for (auto const& variation : move.childVariations) {
-			detail::encode_movetext_entry<hard_len>(
-			    {detail::MovetextEntryKind::VariationStart,
-			     {},
-			     variation.initialComment,
-			     {}},
-			    ply, move_end, dest, options);
-			encode_core_line<hard_len>(variation.line, position_before_move,
-			                           ply, move_end, dest, options);
-			detail::encode_movetext_entry<hard_len>(
-			    {detail::MovetextEntryKind::VariationEnd, {}, {}, {}},
-			    ply, move_end, dest, options);
+		if (options.includeVariations) {
+			for (auto const& variation : move.childVariations) {
+				detail::encode_movetext_entry<hard_len>(
+				    {detail::MovetextEntryKind::VariationStart,
+				     {},
+				     variation.initialComment,
+				     {}},
+				    ply, move_end, dest, options);
+				encode_core_line<hard_len>(variation.line, position_before_move,
+				                           ply, move_end, dest, options);
+				detail::encode_movetext_entry<hard_len>(
+				    {detail::MovetextEntryKind::VariationEnd, {}, {}, {}},
+				    ply, move_end, dest, options);
+			}
 		}
 
 		if (simpleMove)
@@ -329,7 +336,7 @@ void encode_movetext(Game const& game, TCont& dest,
 	auto move_end = dest.size();
 	dest.push_back('\n');
 
-	if (!game.initialComment().empty()) {
+	if (options.includeComments && !game.initialComment().empty()) {
 		detail::encode_movetext_entry<hard_len>(
 		    {detail::MovetextEntryKind::InitialComment,
 		     {},
@@ -348,7 +355,8 @@ void encode_movetext(Game const& game, TCont& dest,
 }
 
 template <typename TCont>
-void encode_core_tag_pairs(Game const& game, TCont& dest) {
+void encode_core_tag_pairs(Game const& game, TCont& dest,
+                           EncodeOptions options = {}) {
 	char str_buf[256];
 	encode_tag_pair("Event", game.event(), dest);
 	encode_tag_pair("Site", game.site(), dest);
@@ -359,31 +367,33 @@ void encode_core_tag_pairs(Game const& game, TCont& dest) {
 	encode_tag_pair("Black", game.black().name, dest);
 	encode_tag_pair("Result", game.resultString(), dest);
 
-	if (auto rating = game.white().rating.value) {
-		std::string tag = "White";
-		tag.append(scid::database::ratingTypeNames[game.white().rating.type]);
-		encode_tag_pair(tag, std::to_string(rating), dest);
+	if (options.includeSupplementalTags) {
+		if (auto rating = game.white().rating.value) {
+			std::string tag = "White";
+			tag.append(scid::database::ratingTypeNames[game.white().rating.type]);
+			encode_tag_pair(tag, std::to_string(rating), dest);
+		}
+		if (auto rating = game.black().rating.value) {
+			std::string tag = "Black";
+			tag.append(scid::database::ratingTypeNames[game.black().rating.type]);
+			encode_tag_pair(tag, std::to_string(rating), dest);
+		}
+		if (!game.eco().empty())
+			encode_tag_pair("ECO", game.eco(), dest);
+		if (game.eventDate() != scid::database::ZERO_DATE) {
+			scid::database::date_DecodeToString(game.eventDate(), str_buf);
+			encode_tag_pair("EventDate", str_buf, dest);
+		}
+		for (auto const& tag : game.extraTags())
+			encode_tag_pair(tag.first, tag.second, dest);
 	}
-	if (auto rating = game.black().rating.value) {
-		std::string tag = "Black";
-		tag.append(scid::database::ratingTypeNames[game.black().rating.type]);
-		encode_tag_pair(tag, std::to_string(rating), dest);
-	}
-	if (!game.eco().empty())
-		encode_tag_pair("ECO", game.eco(), dest);
-	if (game.eventDate() != scid::database::ZERO_DATE) {
-		scid::database::date_DecodeToString(game.eventDate(), str_buf);
-		encode_tag_pair("EventDate", str_buf, dest);
-	}
-	for (auto const& tag : game.extraTags())
-		encode_tag_pair(tag.first, tag.second, dest);
 	if (game.hasNonStandardStart(str_buf, sizeof(str_buf)))
 		encode_tag_pair("FEN", str_buf, dest);
 }
 
 template <int hard_len = 0, typename TCont>
 void encode_game(Game const& game, TCont& dest, EncodeOptions options = {}) {
-	encode_core_tag_pairs(game, dest);
+	encode_core_tag_pairs(game, dest, options);
 	encode_movetext<hard_len>(game, dest, options);
 
 	auto result = game.resultString();

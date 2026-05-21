@@ -137,3 +137,42 @@ TEST(Test_PgnEncodeCore, EncodeCoreGameWithSymbolicNags) {
 	                "*\n"sv;
 	EXPECT_EQ(expected, pgn);
 }
+
+TEST(Test_PgnEncodeCore, EncodeCoreGameWithContentSelection) {
+	using namespace std::literals;
+
+	scid::core::Game game;
+	game.setEvent("Candidates");
+	game.setWhiteRating({2800, scid::database::RATING_Elo});
+	game.setEco("A01");
+	game.setInitialComment("Before the first move");
+	auto& first = game.appendMainlineMove(
+	    {scid::database::D2, scid::database::D4, scid::database::EMPTY});
+	first.metadata.nags.push_back(scid::core::NAG_GoodMove);
+	first.metadata.comment = "Best by test";
+	auto& childVariation = first.childVariations.emplace_back();
+	childVariation.initialComment = "Queen pawn alternative";
+	childVariation.line.appendMove(
+	    {scid::database::E2, scid::database::E4, scid::database::EMPTY});
+
+	std::string pgn;
+	scid::core::pgn::encode_game(
+	    game, pgn,
+	    scid::core::pgn::EncodeOptions{
+	        .includeSupplementalTags = false,
+	        .includeComments = false,
+	        .includeVariations = false,
+	    });
+
+	auto expected = "[Event\0\"Candidates\"]\n"sv
+	                "[Site\0\"\"]\n"sv
+	                "[Date\0\"????.??.??\"]\n"sv
+	                "[Round\0\"\"]\n"sv
+	                "[White\0\"\"]\n"sv
+	                "[Black\0\"\"]\n"sv
+	                "[Result\0\"*\"]\n"sv
+	                "\n"sv
+	                "1.d4\n"sv
+	                "*\n"sv;
+	EXPECT_EQ(expected, pgn);
+}

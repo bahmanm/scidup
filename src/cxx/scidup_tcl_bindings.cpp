@@ -4036,18 +4036,28 @@ sc_game_pgn (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     const auto corePgnStyle =
-        PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS;
+        PGN_STYLE_TAGS | PGN_STYLE_VARS | PGN_STYLE_COMMENTS |
+        PGN_STYLE_SYMBOLS;
+    const bool supplementalTags =
+        (encodeOptions.style & PGN_STYLE_TAGS) != 0;
+    const bool comments =
+        (encodeOptions.style & PGN_STYLE_COMMENTS) != 0;
+    const bool variations =
+        (encodeOptions.style & PGN_STYLE_VARS) != 0;
     const bool symbolicNags =
         (encodeOptions.style & PGN_STYLE_SYMBOLS) != 0;
-    const auto coreSupportedStyle =
-        corePgnStyle | (symbolicNags ? PGN_STYLE_SYMBOLS : 0);
     if (encodeOptions.legacyFormat == scid::database::PGN_FORMAT_Plain &&
-        encodeOptions.style == coreSupportedStyle &&
+        (encodeOptions.style & ~corePgnStyle) == 0 &&
         encodeOptions.htmlStyle == 0 && lineWidth == 99999) {
         std::string pgn;
         scid::core::pgn::encode<99999>(
             g->coreGame(), pgn,
-            scid::core::pgn::EncodeOptions{.symbolicNags = symbolicNags});
+            scid::core::pgn::EncodeOptions{
+                .symbolicNags = symbolicNags,
+                .includeSupplementalTags = supplementalTags,
+                .includeComments = comments,
+                .includeVariations = variations,
+            });
         AppendResult(ti, pgn.c_str(), NULL);
     } else {
         std::pair<const char*, unsigned> pgnBuf =
