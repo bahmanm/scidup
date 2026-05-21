@@ -925,7 +925,7 @@ Engine::IsGettingMatedScore (int score)
 inline void
 Engine::DoMove (scid::core::ScoredMove * sm) {
     PushRepeat(&Pos);
-    Pos.apply(sm);
+    Pos.apply(*sm);
     Ply++;
 }
 
@@ -2216,9 +2216,9 @@ Engine::PrintPV (scid::core::uint depth, int score, const char * note)
             Output  ("%u.", Pos.GetFullMoveCount());
         }
         scid::core::sanStringT s;
-        Pos.writeSan (sm, s, scid::core::SAN_MATETEST);
+        Pos.writeSan (*sm, s, scid::core::SAN_MATETEST);
         Output ("%s", s);
-        Pos.apply (sm);
+        Pos.apply (*sm);
     }
     Output ("\n");
     // Undo each PV move that was made:

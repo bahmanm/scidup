@@ -42,27 +42,6 @@ MoveSpec moveSpecFrom(MoveAction const& sm) {
 	return {sm.from, sm.to, sm.promote, sm.isCastle() != 0};
 }
 
-errorT moveActionFromSpec(Position const& position,
-                          MoveSpec const& spec,
-                          MoveAction& move) {
-	if (spec.isNull()) {
-		position.resolveMove(spec.from, spec.to, PAWN, move);
-		return OK;
-	}
-
-	if (spec.castling) {
-		const bool kingSide = spec.to > spec.from;
-		position.resolveMove(spec.from, spec.from,
-		                  kingSide ? KING : QUEEN, move);
-		return OK;
-	}
-
-	if (position.IsLegalMove(spec.from, spec.to, spec.promotion) != 1)
-		return ERROR_InvalidMove;
-
-	position.resolveMove(spec.from, spec.to, spec.promotion, move);
-	return OK;
-}
 } // namespace
 
 inline void
@@ -1472,17 +1451,17 @@ errorT Position::readCoordinateMoveSpec(MoveSpec& spec,
 
 std::string Position::makeSan(MoveSpec const& spec, sanFlagT flag) {
 	MoveAction move;
-	if (auto err = moveActionFromSpec(*this, spec, move); err != OK)
+	if (auto err = resolveMove(spec, move); err != OK)
 		return {};
 
 	sanStringT san = {};
-	writeSan(&move, san, flag);
+	writeSan(move, san, flag);
 	return san;
 }
 
 errorT Position::applyMove(MoveSpec const& spec) {
 	MoveAction move;
-	if (auto err = moveActionFromSpec(*this, spec, move); err != OK)
+	if (auto err = resolveMove(spec, move); err != OK)
 		return err;
 
 	apply(move);
@@ -1490,7 +1469,22 @@ errorT Position::applyMove(MoveSpec const& spec) {
 }
 
 errorT Position::resolveMove(MoveSpec const& spec, MoveAction& action) const {
-	return moveActionFromSpec(*this, spec, action);
+	if (spec.isNull()) {
+		resolveMove(spec.from, spec.to, PAWN, action);
+		return OK;
+	}
+
+	if (spec.castling) {
+		const bool kingSide = spec.to > spec.from;
+		resolveMove(spec.from, spec.from, kingSide ? KING : QUEEN, action);
+		return OK;
+	}
+
+	if (IsLegalMove(spec.from, spec.to, spec.promotion) != 1)
+		return ERROR_InvalidMove;
+
+	resolveMove(spec.from, spec.to, spec.promotion, action);
+	return OK;
 }
 
 /// Make a MoveAction.
@@ -1559,20 +1553,6 @@ void Position::fillMoveAction(MoveAction& sm) const {
 	if (sm.capturedPiece != EMPTY) {
 		sm.capturedNum = ListPos[sm.capturedSquare];
 	}
-}
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Position::apply():
-//      Make the move on the board and update all the necessary
-//      fields in the MoveAction structure so it can be undone.
-//
-void
-Position::apply (MoveAction * sm)
-{
-    assert(sm != NULL);
-    // update move fields that (maybe) have not yet been set:
-	fillMoveAction(*sm);
-	apply(*sm);
 }
 
 void Position::apply(MoveAction const& sm) {
@@ -1809,12 +1789,12 @@ Position::MaterialValue (colorT c)
 //      The parameter 'sanFlag' indicates whether '+' and '#' symbols
 //      should be added to checking or mating moves.
 //
-void Position::writeSan(MoveAction* m, char* s, sanFlagT flag)
+void Position::writeSan(MoveAction const& action, char* s, sanFlagT flag)
 {
-    assert(m != NULL  &&  s != NULL);
-    assert(m->from == List[ToMove][ListPos[m->from]]);
-    const squareT from = m->from;
-    const squareT to   = m->to;
+    assert(s != NULL);
+    assert(action.from == List[ToMove][ListPos[action.from]]);
+    const squareT from = action.from;
+    const squareT to   = action.to;
     char * c     = s;
     pieceT piece = Board[from];
     pieceT p = piece_Type(piece);
@@ -1828,15 +1808,15 @@ void Position::writeSan(MoveAction* m, char* s, sanFlagT flag)
         *c++ = square_RankChar(to);
         if ((square_Rank(to)==RANK_1) || (square_Rank(to)==RANK_8)) {
             *c++ = '=';
-            *c++ = piece_Char(m->promote);
-            p = piece_Type(m->promote);
+            *c++ = piece_Char(action.promote);
+            p = piece_Type(action.promote);
         }
 
     } else if (p == KING) {
-        if (m->isNullMove()) {
+        if (action.isNullMove()) {
             //*c++ = 'n'; *c++ = 'u'; *c++ = 'l'; *c++ = 'l';
             *c++ = '-'; *c++ = '-';
-        } else if (auto castle = m->isCastle()) {
+        } else if (auto castle = action.isCastle()) {
             *c++ = 'O';
             *c++ = '-';
             *c++ = 'O';
@@ -1895,8 +1875,8 @@ void Position::writeSan(MoveAction* m, char* s, sanFlagT flag)
     // Now do the check or mate symbol:
     if (flag != SAN_NO_CHECKTEST) {
         // Now we make the move to test for check:
-        apply (m);
-        if (IsKingInCheck(*m)) {
+        apply(action);
+        if (IsKingInCheck(action)) {
             char ch = '+';
             if (flag == SAN_MATETEST) {
                 MoveList mlist;
@@ -1905,7 +1885,7 @@ void Position::writeSan(MoveAction* m, char* s, sanFlagT flag)
             }
             *c++ = ch;
         }
-        undo (*m);
+        undo(action);
     }
     *c = 0;
 }
@@ -1933,7 +1913,7 @@ errorT Position::applyCoordinateMoves(const char* moves, size_t moveslen,
 
         if (toSAN) {
             sanStringT san;
-            writeSan(&sm, san,
+            writeSan(sm, san,
                                moves != end ? SAN_CHECKTEST : SAN_MATETEST);
             if (WhiteToMove()) {
                 toSAN->append(std::to_string(GetFullMoveCount()));

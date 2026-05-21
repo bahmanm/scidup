@@ -51,7 +51,7 @@ TEST(Test_PositionSAN, WritesMoveActionSanFromUCI) {
 		ASSERT_EQ(scid::core::OK, pos.readCoordinateMoveSpec(spec, *it++, false));
 		scid::core::MoveAction sm;
 		ASSERT_EQ(scid::core::OK, pos.resolveMove(spec, sm));
-		pos.writeSan(&sm, buf, scid::core::SAN_MATETEST);
+		pos.writeSan(sm, buf, scid::core::SAN_MATETEST);
 		EXPECT_STREQ(*it, buf);
 	}
 }

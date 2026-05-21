@@ -116,6 +116,8 @@ private:
                                     size_t slen, bool reverse);
     errorT parseMoveAction(MoveAction* sm, const char* begin, const char* end);
     void   fillMoveAction(MoveAction& sm) const;
+    void   resolveMove(squareT from, squareT to, pieceT promo,
+                       MoveAction& action) const;
 
     template <typename TFunc>
     bool under_attack(squareT target_sq, squareT captured_sq,
@@ -257,13 +259,10 @@ public:
     errorT      applyMove(MoveSpec const& spec);
 
     errorT      resolveMove(MoveSpec const& spec, MoveAction& action) const;
-    void        resolveMove(squareT from, squareT to, pieceT promo,
-                            MoveAction& action) const;
     void        apply(MoveAction const& action);
-    void        apply(MoveAction* action);
     void        undo(MoveAction const& action);
 
-    void        writeSan(MoveAction* action, char* s, sanFlagT flag);
+    void        writeSan(MoveAction const& action, char* s, sanFlagT flag);
 
     errorT      applyCoordinateMoves(const char* moves, size_t movesLen,
                                      std::string* toSAN = nullptr);
