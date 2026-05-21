@@ -48,7 +48,6 @@
  */
 namespace scid::core {
 class Position;
-struct simpleMoveT;
 } // namespace scid::core
 
 namespace scid::database {

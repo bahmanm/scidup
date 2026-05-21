@@ -88,32 +88,6 @@ scid::core::errorT decodeSearchStart(ByteBuffer& buf, scid::core::Position& posi
     return scid::core::OK;
 }
 
-scid::core::simpleMoveT toSimpleMove(scid::core::Position& position,
-                         scid::core::MoveAction const& action) {
-    scid::core::simpleMoveT move = {};
-    if (action.isNull()) {
-        position.makeMove(action.from, action.to, scid::core::PAWN, move);
-        return move;
-    }
-    if (action.castling) {
-        position.makeMove(action.from, action.from,
-                          action.to > action.from ? scid::core::KING : scid::core::QUEEN, move);
-        return move;
-    }
-
-    const auto notation = action.longNotation();
-    if (position.ReadCoordMove(&move, notation.data(), notation.size(),
-                               false) == scid::core::OK) {
-        return move;
-    }
-
-    move.from = action.from;
-    move.to = action.to;
-    move.promote = action.promotion;
-    position.fillMove(move);
-    return move;
-}
-
 std::array<scid::core::uint, 8> pawnFylesFor(const scid::core::Position& position, scid::core::pieceT pawn) {
     std::array<scid::core::uint, 8> result = {};
     const scid::core::pieceT* board = position.GetBoard();
@@ -207,8 +181,7 @@ bool varExactMatchLine(scid::core::MoveSequence const& line,
             }
         }
 
-        auto simpleMove = toSimpleMove(currentPosition, move.action);
-        currentPosition.DoSimpleMove(simpleMove);
+        (void)currentPosition.applyMove(move.action);
     }
 
     return line.moves.empty() &&
@@ -329,10 +302,10 @@ bool materialMatches(bool promotionsFlag, ByteBuffer& buf, scid::core::byte* min
 
       Next_Move:
         {
-            scid::core::simpleMoveT sm;
-            err = game_storage::decodeMainlineMove(buf, currentPosition, sm);
+            scid::core::MoveAction action;
+            err = game_storage::decodeMainlineMove(buf, currentPosition, action);
             if (err == scid::core::OK) {
-                currentPosition.DoSimpleMove(sm);
+                err = currentPosition.applyMove(action);
             }
         }
         plyCount++;
@@ -500,15 +473,13 @@ bool exactMatches(const scid::core::Game& game, scid::core::Position* searchPos,
 
     Move_Forward:
         {
-            scid::core::simpleMoveT nextMove;
+            scid::core::MoveAction nextMove;
             if (buf == NULL) {
                 if (memoryLine == nullptr ||
                     memoryMoveIndex >= memoryLine->moves.size()) {
                     err = scid::core::ERROR_EndOfMoveList;
                 } else {
-                    nextMove = toSimpleMove(
-                        *currentPosition,
-                        memoryLine->moves[memoryMoveIndex].action);
+                    nextMove = memoryLine->moves[memoryMoveIndex].action;
                     memoryMoveIndex++;
                     err = scid::core::OK;
                 }
@@ -518,7 +489,10 @@ bool exactMatches(const scid::core::Game& game, scid::core::Position* searchPos,
             }
 
             if (err == scid::core::OK) {
-                currentPosition->DoSimpleMove(nextMove);
+                err = currentPosition->applyMove(nextMove);
+            }
+
+            if (err == scid::core::OK) {
                 if (doHomePawnChecks) {
                     scid::core::rankT rTo = scid::core::square_Rank (nextMove.to);
                     scid::core::rankT rFrom = scid::core::square_Rank (nextMove.from);

@@ -1,4 +1,5 @@
 #include "scidup/eco/book.h"
+#include "scidup/core/game.h"
 #include "scidup/core/position.h"
 #include <filesystem>
 #include <fstream>
@@ -21,11 +22,9 @@ void writeFile(const std::filesystem::path& path, std::string_view contents) {
 }
 
 void play(scid::core::Position& position, std::string_view san) {
-	scid::core::simpleMoveT sm;
-	const char* begin = san.data();
-	const char* end = begin + san.size();
-	ASSERT_EQ(scid::core::OK, position.ParseMove(&sm, begin, end));
-	position.DoSimpleMove(sm);
+	scid::core::MoveAction action;
+	ASSERT_EQ(scid::core::OK, position.parseMoveAction(action, san));
+	ASSERT_EQ(scid::core::OK, position.applyMove(action));
 }
 
 class EcoBookTest : public ::testing::Test {

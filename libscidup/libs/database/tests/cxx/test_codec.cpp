@@ -54,10 +54,10 @@ void setCurrentComment(scid::core::Game& game,
 
 void addMove(scid::core::Game& game,
              scid::core::MovetextLocation& location,
-             scid::core::simpleMoveT const& move) {
+             scid::core::MoveAction const& move) {
 	scid::core::MovetextCursor cursor(game);
 	ASSERT_TRUE(cursor.restore(location));
-	cursor.addMove({move.from, move.to, move.promote, move.isCastle() != 0});
+	cursor.addMove(move);
 	location = cursor.location();
 }
 
@@ -169,8 +169,9 @@ private:
 				break;
 
 			auto move = *mlist.Get(rand(0, mlist.Size() - 1));
-			position->fillMove(move);
-			addMove(*res, location, move);
+			addMove(*res, location,
+			        {move.from, move.to, move.promote,
+			         move.isCastle() != 0});
 
 			if (rand(0, 6) == 0)
 				setCurrentComment(*res, location, rand_comment());

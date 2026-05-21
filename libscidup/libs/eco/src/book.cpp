@@ -19,6 +19,7 @@
  */
 
 #include "scidup/eco/book.h"
+#include "scidup/core/game.h"
 #include "scidup/core/position.h"
 #include <algorithm>
 #include <cctype>
@@ -77,12 +78,14 @@ scidup::eco::Error ReadLine(scidup::eco::Position& pos, const char* s) {
 			s++;
 		}
 
-		scid::core::simpleMoveT sm;
-		scidup::eco::Error err = pos.ParseMove(&sm, begin, s);
+		scid::core::MoveAction action;
+		scidup::eco::Error err =
+		    pos.parseMoveAction(action, {begin, static_cast<std::size_t>(s - begin)});
 		if (err != scidup::eco::OK)
 			return err;
 
-		pos.DoSimpleMove(sm);
+		if (auto applyErr = pos.applyMove(action))
+			return applyErr;
 	}
 }
 

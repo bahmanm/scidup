@@ -457,12 +457,13 @@ scidBaseT::inferEcoCode(const IndexEntry& ie, const scidup::eco::Book& book,
 			ecoCode = eco;
 		}
 
-		scid::core::simpleMoveT sm;
-		if (game_storage::decodeMainlineMove(data, currentPosition, sm) !=
+		scid::core::MoveAction action;
+		if (game_storage::decodeMainlineMove(data, currentPosition, action) !=
 		    scid::core::OK)
 			break;
 
-		currentPosition.DoSimpleMove(sm);
+		if (currentPosition.applyMove(action) != scid::core::OK)
+			break;
 	}
 
 	if (!extendedCodes) {

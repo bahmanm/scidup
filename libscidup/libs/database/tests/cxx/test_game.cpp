@@ -96,22 +96,21 @@ std::string_view currentMoveComment(
 	return game.initialComment();
 }
 
-scid::core::simpleMoveT makeCurrentMove(scid::core::Game& game,
-                                            scid::core::MovetextLocation location,
-                                            scid::core::squareT from,
-                                            scid::core::squareT to) {
-	scid::core::simpleMoveT move;
-	if (auto position = currentPosition(game, location))
-		position->makeMove(from, to, scid::core::EMPTY, move);
-	return move;
+scid::core::MoveAction makeCurrentMove(scid::core::Game& game,
+                                       scid::core::MovetextLocation location,
+                                       scid::core::squareT from,
+                                       scid::core::squareT to) {
+	(void)game;
+	(void)location;
+	return {from, to, scid::core::EMPTY, false};
 }
 
 void addMove(scid::core::Game& game,
              scid::core::MovetextLocation& location,
-             scid::core::simpleMoveT const& move) {
+             scid::core::MoveAction const& move) {
 	scid::core::MovetextCursor cursor(game);
 	ASSERT_TRUE(cursor.restore(location));
-	cursor.addMove({move.from, move.to, move.promote, move.isCastle() != 0});
+	cursor.addMove(move);
 	location = cursor.location();
 }
 

@@ -12,6 +12,7 @@
 
 namespace scid::core {
 class Game;
+struct MoveAction;
 } // namespace scid::core
 
 namespace scid::database::game_storage {
@@ -48,9 +49,11 @@ struct ByteBufferAccess {
 	}
 };
 
-scid::core::errorT decodeEncodedMove(ByteBuffer& buf, scid::core::byte val, const scid::core::Position& pos,
-                         scid::core::simpleMoveT& sm);
-scid::core::errorT decodeMainlineMove(ByteBuffer& buf, const scid::core::Position& pos,
-                          scid::core::simpleMoveT& sm);
+scid::core::errorT decodeEncodedMove(ByteBuffer& buf, scid::core::byte val,
+                                      const scid::core::Position& pos,
+                                      scid::core::MoveAction& action);
+scid::core::errorT decodeMainlineMove(ByteBuffer& buf,
+                                      const scid::core::Position& pos,
+                                      scid::core::MoveAction& action);
 
 } // namespace scid::database::game_storage
