@@ -8,6 +8,7 @@
 #include "scidup/eco/code.h"
 #include <array>
 #include <cstdint>
+#include <optional>
 
 namespace scid::database {
 
@@ -81,6 +82,18 @@ struct GameInfo {
 	scid::core::uint day() const { return scid::core::date_GetDay(date); }
 	scid::core::byte rating() const;
 	scid::core::uint flagString(char* dest, const char* flags) const;
+};
+
+struct GameInfoUpdate {
+	std::optional<scid::core::dateT> date;
+	std::optional<idNumberT> event;
+	std::optional<idNumberT> round;
+	std::optional<scid::core::ratingT> whiteElo;
+	std::optional<scid::core::ratingT> blackElo;
+
+	bool empty() const {
+		return !date && !event && !round && !whiteElo && !blackElo;
+	}
 };
 
 } // namespace scid::database

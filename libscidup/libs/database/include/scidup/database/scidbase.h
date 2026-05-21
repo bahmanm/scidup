@@ -72,6 +72,17 @@ enum gameExactMatchT : int {
 };
 
 struct scidBaseT {
+	struct EcoClassificationOptions {
+		bool classifyExistingCodes = true;
+		bool extendedCodes = false;
+		std::optional<scid::core::dateT> minDate;
+	};
+
+	struct RatingUpdateStats {
+		scid::core::uint changedRatings = 0;
+		scid::core::uint changedGames = 0;
+	};
+
 	struct Stats {
 		scid::core::uint flagCount[IndexEntry::IDX_NUM_FLAGS]; // Num of games with each
 		                                           // flag set.
@@ -138,6 +149,7 @@ struct scidBaseT {
 		return g < numGames() ? std::optional<GameInfo>{gameInfo(g)}
 		                      : std::nullopt;
 	}
+	scid::core::errorT updateGameInfo(gamenumT g, const GameInfoUpdate& update);
 	TagRoster tagRoster(gamenumT gnum) const {
 		return tagRoster(*getIndexEntry(gnum));
 	}
@@ -190,6 +202,24 @@ struct scidBaseT {
 	std::optional<scidup::eco::Code> inferEcoCode(
 	    const IndexEntry& ie, const scidup::eco::Book& book,
 	    bool extendedCodes) const;
+	std::pair<scid::core::errorT, size_t> classifyEcoCodes(
+	    HFilter filter, const Progress& progress, const scidup::eco::Book& book,
+	    EcoClassificationOptions options);
+	std::pair<scid::core::errorT, size_t>
+	replaceGameDates(HFilter filter, const Progress& progress,
+	                 scid::core::dateT oldDate, scid::core::dateT newDate);
+	std::pair<scid::core::errorT, size_t>
+	replaceGameEventDates(HFilter filter, const Progress& progress,
+	                      scid::core::dateT oldDate,
+	                      scid::core::dateT newDate);
+	std::pair<scid::core::errorT, size_t>
+	setPlayerRatings(HFilter filter, const Progress& progress, idNumberT player,
+	                 scid::core::ratingT rating,
+	                 scid::core::ratingTypeT ratingType);
+	template <typename TRatingResolver>
+	std::pair<scid::core::errorT, RatingUpdateStats> updatePlayerRatings(
+	    HFilter filter, const Progress& progress, bool overwrite,
+	    bool saveRatings, TRatingResolver ratingFor);
 	scid::core::errorT searchBoard(const IndexEntry& ie,
 	                               scid::core::Game& game,
 	                               scid::core::Position* pos,
@@ -361,32 +391,10 @@ struct scidBaseT {
 	                      gamenumT gameId);
 
 	/**
-	 * Transform the IndexEntries of the games included in @e hfilter.
-	 * The @e entry_op must accept a IndexEntry& parameter and return true when
-	 * the IndexEntry was modified.
-	 * @param hfilter:  HFilter containing the games to be transformed.
-	 * @param progress: a Progress object used for GUI communications.
-	 * @param entry_op: operator that will be applied to games' IndexEntry.
-	 * @returns a std::pair containing scid::core::OK (or an error code) and the number of
-	 * games modified.
-	 */
-	template <typename TOper>
-	std::pair<scid::core::errorT, size_t>
-	transformIndex(HFilter hfilter, const Progress& progress, TOper entry_op) {
-		if (auto errModify = beginTransaction())
-			return {errModify, 0};
-
-		auto res = transformIndex_(hfilter, progress, entry_op);
-		auto err = endTransaction();
-		res.first = (res.first == scid::core::OK) ? err : res.first;
-		return res;
-	}
-
-	/**
 	 * Transform the names of the games included in @e hfilter.
 	 * The function @e getID maps all the old idNumberT to the new idNumberT.
 	 * It's invoked for each game and must accept as parameters a idNumberT and
-	 * a const IndexEntry&; must return the (eventually different) idNumberT.
+	 * a const GameInfo&; must return the (eventually different) idNumberT.
 	 * @param nt:       type of the names to be modified.
 	 * @param hfilter:  HFilter containing the games to be transformed.
 	 * @param progress: a Progress object used for GUI communications.
@@ -449,6 +457,7 @@ private:
 private:
 	friend class SearchPos;
 
+	static GameInfo makeGameInfo_(const IndexEntry& ie);
 	ByteBuffer gameData(const IndexEntry& ie) const;
 	GameView gameView(const IndexEntry* ie) const;
 		scid::core::errorT openHelper(std::string_view dbType, fileModeT mode,
@@ -475,6 +484,18 @@ private:
 		std::pair<scid::core::errorT, idNumberT> addName(nameT nt, const char* name);
 
 		SortCache* getSortCache(const char* criteria);
+
+	template <typename TOper>
+	std::pair<scid::core::errorT, size_t>
+	transformIndex(HFilter hfilter, const Progress& progress, TOper entry_op) {
+		if (auto errModify = beginTransaction())
+			return {errModify, 0};
+
+		auto res = transformIndex_(hfilter, progress, entry_op);
+		auto err = endTransaction();
+		res.first = (res.first == scid::core::OK) ? err : res.first;
+		return res;
+	}
 
 	/**
 	 * Apply a transform operator to games' IndexEntry included in @e hfilter.
@@ -540,7 +561,7 @@ scidBaseT::transformNames(nameT nt, HFilter hfilter, const Progress& progress,
 		case NAME_PLAYER:
 			oldID = ie_const.GetWhite();
 			oldBlackID = ie_const.GetBlack();
-			newBlackID = getNewID(oldBlackID, ie_const);
+			newBlackID = getNewID(oldBlackID, makeGameInfo_(ie_const));
 			break;
 		case NAME_EVENT:
 			oldID = ie_const.GetEvent();
@@ -552,7 +573,7 @@ scidBaseT::transformNames(nameT nt, HFilter hfilter, const Progress& progress,
 			ASSERT(nt == NAME_ROUND);
 			oldID = ie_const.GetRound();
 		}
-		const auto newID = getNewID(oldID, ie_const);
+		const auto newID = getNewID(oldID, makeGameInfo_(ie_const));
 		if (oldID == newID && oldBlackID == newBlackID)
 			return false;
 
@@ -579,6 +600,48 @@ scidBaseT::transformNames(nameT nt, HFilter hfilter, const Progress& progress,
 	return res;
 }
 
+template <typename TRatingResolver>
+std::pair<scid::core::errorT, scidBaseT::RatingUpdateStats>
+scidBaseT::updatePlayerRatings(HFilter filter, const Progress& progress,
+                               bool overwrite, bool saveRatings,
+                               TRatingResolver ratingFor) {
+	RatingUpdateStats stats;
+	auto entry_op = [&](IndexEntry& ie) {
+		const auto date = ie.GetDate();
+		const auto whiteElo = (!overwrite && ie.GetWhiteElo() != 0)
+		                          ? 0
+		                          : ratingFor(ie.GetWhite(), date);
+		const auto blackElo = (!overwrite && ie.GetBlackElo() != 0)
+		                          ? 0
+		                          : ratingFor(ie.GetBlack(), date);
+		const auto changes = (whiteElo != 0 ? 1 : 0) + (blackElo != 0 ? 1 : 0);
+		if (changes == 0)
+			return false;
+
+		stats.changedRatings += changes;
+		stats.changedGames++;
+		if (!saveRatings)
+			return false;
+
+		if (whiteElo != 0) {
+			ie.SetWhiteElo(whiteElo);
+			ie.SetWhiteRatingType(scid::core::RATING_Elo);
+		}
+		if (blackElo != 0) {
+			ie.SetBlackElo(blackElo);
+			ie.SetBlackRatingType(scid::core::RATING_Elo);
+		}
+		return true;
+	};
+
+	if (!saveRatings) {
+		auto res = transformIndex_(filter, progress, entry_op);
+		return {res.first, stats};
+	}
+
+	auto res = transformIndex(filter, progress, entry_op);
+	return {res.first, stats};
+}
 
 } // namespace scid::database
 #endif

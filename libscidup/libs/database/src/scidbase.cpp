@@ -73,7 +73,9 @@ std::string_view codecName(CodecType codec) {
 	return {};
 }
 
-GameInfo makeGameInfo(const IndexEntry& ie) {
+} // namespace
+
+GameInfo scidBaseT::makeGameInfo_(const IndexEntry& ie) {
 	GameInfo info;
 	info.offset = ie.GetOffset();
 	info.length = ie.GetLength();
@@ -102,8 +104,6 @@ GameInfo makeGameInfo(const IndexEntry& ie) {
 	info.chessStd = ie.isChessStd();
 	return info;
 }
-
-} // namespace
 
 std::pair<ICodecDatabase*, scid::core::errorT>
 openCodec(CodecType codec, fileModeT fMode, const char* filename,
@@ -286,7 +286,37 @@ scid::core::errorT scidBaseT::loadGame(gamenumT gNum, scid::core::Game& dest,
 
 GameInfo scidBaseT::gameInfo(gamenumT g) const {
 	assert(g < numGames());
-	return makeGameInfo(*getIndexEntry(g));
+	return makeGameInfo_(*getIndexEntry(g));
+}
+
+scid::core::errorT scidBaseT::updateGameInfo(gamenumT g,
+                                             const GameInfoUpdate& update) {
+	const auto* current = getIndexEntry_bounds(g);
+	if (!current)
+		return scid::core::ERROR_BadArg;
+	if (update.empty())
+		return scid::core::OK;
+
+	IndexEntry ie = *current;
+	if (update.date)
+		ie.SetDate(*update.date);
+	if (update.event)
+		ie.SetEvent(*update.event);
+	if (update.round)
+		ie.SetRound(*update.round);
+	if (update.whiteElo)
+		ie.SetWhiteElo(*update.whiteElo);
+	if (update.blackElo)
+		ie.SetBlackElo(*update.blackElo);
+
+	auto duplicates = extractDuplicates();
+	scid::core::Game game;
+	std::array<char, 22> scidFlags{};
+	auto err = loadGame(ie, game, scidFlags.data(), scidFlags.size());
+	if (err == scid::core::OK)
+		err = saveGame(game, scidFlags.data(), g);
+	setDuplicates(std::move(duplicates));
+	return err;
 }
 
 GameView scidBaseT::gameView(const IndexEntry* ie) const {
@@ -439,6 +469,74 @@ scidBaseT::inferEcoCode(const IndexEntry& ie, const scidup::eco::Book& book,
 		ecoCode = scidup::eco::basicCode(ecoCode);
 	}
 	return ecoCode;
+}
+
+std::pair<scid::core::errorT, size_t> scidBaseT::classifyEcoCodes(
+    HFilter filter, const Progress& progress, const scidup::eco::Book& book,
+    EcoClassificationOptions options) {
+	return transformIndex(filter, progress, [&](IndexEntry& ie) {
+		if (ie.GetLength() == 0)
+			return false;
+
+		if (!options.classifyExistingCodes && ie.GetEcoCode() != 0)
+			return false;
+
+		if (options.minDate && ie.GetDate() < *options.minDate)
+			return false;
+
+		auto ecoCode = inferEcoCode(ie, book, options.extendedCodes);
+		if (!ecoCode || ie.GetEcoCode() == *ecoCode)
+			return false;
+
+		ie.SetEcoCode(*ecoCode);
+		return true;
+	});
+}
+
+std::pair<scid::core::errorT, size_t>
+scidBaseT::replaceGameDates(HFilter filter, const Progress& progress,
+                            scid::core::dateT oldDate,
+                            scid::core::dateT newDate) {
+	return transformIndex(filter, progress, [&](IndexEntry& ie) {
+		if (ie.GetDate() != oldDate)
+			return false;
+		ie.SetDate(newDate);
+		return true;
+	});
+}
+
+std::pair<scid::core::errorT, size_t>
+scidBaseT::replaceGameEventDates(HFilter filter, const Progress& progress,
+                                 scid::core::dateT oldDate,
+                                 scid::core::dateT newDate) {
+	return transformIndex(filter, progress, [&](IndexEntry& ie) {
+		if (ie.GetEventDate() != oldDate)
+			return false;
+		ie.SetEventDate(newDate);
+		return true;
+	});
+}
+
+std::pair<scid::core::errorT, size_t>
+scidBaseT::setPlayerRatings(HFilter filter, const Progress& progress,
+                            idNumberT player, scid::core::ratingT rating,
+                            scid::core::ratingTypeT ratingType) {
+	return transformIndex(filter, progress, [&](IndexEntry& ie) {
+		const bool isWhite = ie.GetWhite() == player;
+		const bool isBlack = ie.GetBlack() == player;
+		if (!isWhite && !isBlack)
+			return false;
+
+		if (isWhite) {
+			ie.SetWhiteElo(rating);
+			ie.SetWhiteRatingType(ratingType);
+		}
+		if (isBlack) {
+			ie.SetBlackElo(rating);
+			ie.SetBlackRatingType(ratingType);
+		}
+		return true;
+	});
 }
 
 scid::core::errorT scidBaseT::searchBoard(

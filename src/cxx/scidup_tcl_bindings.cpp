@@ -1327,10 +1327,9 @@ UI_res_t sc_base_duplicates(scid::database::scidBaseT* dbase, UI_handle_t ti, in
             }
         }
     }
-    auto[err, nDel] = dbase->transformIndex(filter, {}, [](scid::database::IndexEntry& ie) {
-        ie.SetDeleteFlag(true);
-        return true;
-    });
+    auto err = dbase->setFlags(
+        true, scid::database::gameFlagMaskFromChar('D'), filter);
+    const auto nDel = filter->size();
     dbase->setDuplicates(std::move(duplicates));
     progress.report(1, 1);
     return (err == scid::core::OK) ? UI_Result(ti, scid::core::OK, nDel) : UI_Result(ti, err);
@@ -1484,33 +1483,16 @@ sc_eco_base (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     scid::database::scidBaseT& dbase = *db;
-    auto entry_op = [&](scid::database::IndexEntry& ie) {
-        if (ie.GetLength() == 0)
-            return false;
-
-        // Ignore games with existing ECO code if directed:
-        if (option == ECO_NOCODE && ie.GetEcoCode() != 0)
-            return false;
-
-        // Ignore games before starting date if directed:
-        if (option == ECO_DATE && ie.GetDate() < startDate)
-            return false;
-
-        auto ecoCode = dbase.inferEcoCode(ie, *ecoBook, extendedCodes);
-        if (!ecoCode)
-            return false;
-
-        if (ie.GetEcoCode() != *ecoCode) {
-            ie.SetEcoCode(*ecoCode);
-            return true;
-        }
-        return false;
-    };
-
     std::string filter =
         (option == ECO_FILTER) ? "dbfilter" : dbase.newFilter();
     auto hf = scidup::app::tree::resolveFilter(dbase, filter);
-    auto changes = dbase.transformIndex(hf, UI_CreateProgress(ti), entry_op);
+    scid::database::scidBaseT::EcoClassificationOptions classifyOptions;
+    classifyOptions.classifyExistingCodes = option != ECO_NOCODE;
+    classifyOptions.extendedCodes = extendedCodes;
+    if (option == ECO_DATE)
+        classifyOptions.minDate = startDate;
+    auto changes = dbase.classifyEcoCodes(
+        hf, UI_CreateProgress(ti), *ecoBook, classifyOptions);
     if (option == ECO_FILTER)
         dbase.deleteFilter(filter.c_str());
 
@@ -4685,17 +4667,16 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // Do nothing if the base is not writable:
     if (!db->isOpen()  ||  db->isReadOnly()) { return TCL_OK; }
 
-    // Make a local copy of each index entry:
-    scid::database::IndexEntry ie1 = *(db->getIndexEntry(gn1 - 1));
-    scid::database::IndexEntry ie2 = *(db->getIndexEntry(gn2 - 1));
-    bool updated1 = false;
-    bool updated2 = false;
+    const auto info1 = db->gameInfo(gn1 - 1);
+    const auto info2 = db->gameInfo(gn2 - 1);
+    scid::database::GameInfoUpdate update1;
+    scid::database::GameInfoUpdate update2;
 
     // Share dates if appropriate:
     char dateStr1 [16];
     char dateStr2 [16];
-    scid::core::dateT date1 = ie1.GetDate();
-    scid::core::dateT date2 = ie2.GetDate();
+    scid::core::dateT date1 = info1.date;
+    scid::core::dateT date2 = info2.date;
     scid::core::date_DecodeToString (date1, dateStr1);
     scid::core::date_DecodeToString (date2, dateStr2);
     scid::database::strTrimDate (dateStr1);
@@ -4706,8 +4687,7 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (!scid::database::strEqual (dateStr1, dateStr2)  &&  scid::database::strIsPrefix (dateStr1, dateStr2)) {
         // Copy date grom game 2 to game 1:
         if (updateMode) {
-            ie1.SetDate (date2);
-            updated1 = true;
+            update1.date = date2;
         } else {
             appendUintElement (ti, gn1);
             AppendElement (ti, "Date");
@@ -4718,8 +4698,7 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (!scid::database::strEqual (dateStr1, dateStr2)  &&  scid::database::strIsPrefix (dateStr2, dateStr1)) {
         // Copy date grom game 1 to game 2:
         if (updateMode) {
-            ie2.SetDate (date1);
-            updated2 = true;
+            update2.date = date1;
         } else {
             appendUintElement (ti, gn2);
             AppendElement (ti, "Date");
@@ -4729,8 +4708,8 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     // Check if an event name can be updated:
-    scid::database::idNumberT event1 = ie1.GetEvent();
-    scid::database::idNumberT event2 = ie2.GetEvent();
+    scid::database::idNumberT event1 = info1.event;
+    scid::database::idNumberT event2 = info2.event;
     const char* eventStr1 = db->getNameBase()->GetName(scid::database::NAME_EVENT, event1);
     const char* eventStr2 = db->getNameBase()->GetName(scid::database::NAME_EVENT, event2);
     bool event1empty = scid::database::strEqual (eventStr1, "")  ||  scid::database::strEqual (eventStr1, "?");
@@ -4738,8 +4717,7 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (event1empty  && !event2empty) {
         // Copy event from event 2 to game 1:
         if (updateMode) {
-            ie1.SetEvent (event2);
-            updated1 = true;
+            update1.event = event2;
         } else {
             appendUintElement (ti, gn1);
             AppendElement (ti, "Event");
@@ -4750,8 +4728,7 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (event2empty  && !event1empty) {
         // Copy event from game 1 to game 2:
         if (updateMode) {
-            ie2.SetEvent (event1);
-            updated2 = true;
+            update2.event = event1;
         } else {
             appendUintElement (ti, gn2);
             AppendElement (ti, "Event");
@@ -4761,8 +4738,8 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     // Check if a round name can be updated:
-    scid::database::idNumberT round1 = ie1.GetRound();
-    scid::database::idNumberT round2 = ie2.GetRound();
+    scid::database::idNumberT round1 = info1.round;
+    scid::database::idNumberT round2 = info2.round;
     const char* roundStr1 = db->getNameBase()->GetName(scid::database::NAME_ROUND, round1);
     const char* roundStr2 = db->getNameBase()->GetName(scid::database::NAME_ROUND, round2);
     bool round1empty = scid::database::strEqual (roundStr1, "")  ||  scid::database::strEqual (roundStr1, "?");
@@ -4770,8 +4747,7 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (round1empty  && !round2empty) {
         // Copy round from game 2 to game 1:
         if (updateMode) {
-            ie1.SetRound (round2);
-            updated1 = true;
+            update1.round = round2;
         } else {
             appendUintElement (ti, gn1);
             AppendElement (ti, "Round");
@@ -4782,8 +4758,7 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (round2empty  && !round1empty) {
         // Copy round from game 1 to game 2:
         if (updateMode) {
-            ie2.SetRound (round1);
-            updated2 = true;
+            update2.round = round1;
         } else {
             appendUintElement (ti, gn2);
             AppendElement (ti, "Round");
@@ -4793,15 +4768,14 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     // Check if Elo ratings can be shared:
-    scid::core::ratingT welo1 = ie1.GetWhiteElo();
-    scid::core::ratingT belo1 = ie1.GetBlackElo();
-    scid::core::ratingT welo2 = ie2.GetWhiteElo();
-    scid::core::ratingT belo2 = ie2.GetBlackElo();
+    scid::core::ratingT welo1 = info1.whiteElo;
+    scid::core::ratingT belo1 = info1.blackElo;
+    scid::core::ratingT welo2 = info2.whiteElo;
+    scid::core::ratingT belo2 = info2.blackElo;
     if (welo1 == 0  &&  welo2 != 0) {
         // Copy White rating from game 2 to game 1:
         if (updateMode) {
-            ie1.SetWhiteElo (welo2);
-            updated1 = true;
+            update1.whiteElo = welo2;
         } else {
             appendUintElement (ti, gn1);
             AppendElement (ti, "WhiteElo");
@@ -4812,8 +4786,7 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (welo2 == 0  &&  welo1 != 0) {
         // Copy White rating from game 1 to game 2:
         if (updateMode) {
-            ie2.SetWhiteElo (welo1);
-            updated2 = true;
+            update2.whiteElo = welo1;
         } else {
             appendUintElement (ti, gn2);
             AppendElement (ti, "WhiteElo");
@@ -4824,8 +4797,7 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (belo1 == 0  &&  belo2 != 0) {
         // Copy Black rating from game 2 to game 1:
         if (updateMode) {
-            ie1.SetBlackElo (belo2);
-            updated1 = true;
+            update1.blackElo = belo2;
         } else {
             appendUintElement (ti, gn1);
             AppendElement (ti, "BlackElo");
@@ -4836,8 +4808,7 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (belo2 == 0  &&  belo1 != 0) {
         // Copy Black rating from game 1 to game 2:
         if (updateMode) {
-            ie2.SetBlackElo (belo1);
-            updated2 = true;
+            update2.blackElo = belo1;
         } else {
             appendUintElement (ti, gn2);
             AppendElement (ti, "BlackElo");
@@ -4849,26 +4820,10 @@ sc_game_tags_share (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (!updateMode)
         return TCL_OK;
 
-    auto duplicates = db->extractDuplicates();
     scid::core::errorT err1 = scid::core::OK;
     scid::core::errorT err2 = scid::core::OK;
-    if (updated1) {
-        scid::core::Game game;
-        std::array<char, 22> scidFlags{};
-        err1 = db->loadGame(ie1, game, scidFlags.data(), scidFlags.size());
-        if (err1 == scid::core::OK) {
-            err1 = db->saveGame(game, scidFlags.data(), gn1 - 1);
-        }
-    }
-    if (updated2) {
-        scid::core::Game game;
-        std::array<char, 22> scidFlags{};
-        err2 = db->loadGame(ie2, game, scidFlags.data(), scidFlags.size());
-        if (err2 == scid::core::OK) {
-            err2 = db->saveGame(game, scidFlags.data(), gn2 - 1);
-        }
-    }
-    db->setDuplicates(std::move(duplicates));
+    err1 = db->updateGameInfo(gn1 - 1, update1);
+    err2 = db->updateGameInfo(gn2 - 1, update2);
     return UI_Result(ti, err1 != scid::core::OK ? err1 : err2);
 }
 
@@ -6063,13 +6018,14 @@ sc_name_correct (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         }
     };
 
-    auto entry_op = [&](scid::database::idNumberT oldID, const scid::database::IndexEntry& ie) {
+    auto entry_op = [&](scid::database::idNumberT oldID,
+                        const scid::database::GameInfo& info) {
         auto it = corrections.find(oldID);
         if (it == corrections.end())
             return oldID;
 
         auto const& el = it->second;
-        scid::core::dateT date = ie.GetDate();
+        scid::core::dateT date = info.date;
         if (date != scid::core::ZERO_DATE) {
             if (date < el.birth || (el.death != scid::core::ZERO_DATE && date > el.death)) {
                 ++badDateCount;
@@ -6186,59 +6142,34 @@ sc_name_edit (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             return UI_Result(ti, scid::core::OK, 0);
         eventDate = g->coreGame().eventDate();
     }
-    auto inCTable = [&](const scid::database::IndexEntry& ie) {
-        if (editSelection != EDIT_CTABLE)
-            return true;
-        if (ie.GetSite() != siteId || ie.GetEvent() != eventId)
-            return false;
-        const auto entryEventDate = ie.GetEventDate();
-        return eventDate == 0 || entryEventDate == 0 ||
-               entryEventDate == eventDate;
-    };
-
     std::string filter =
         (editSelection == EDIT_FILTER) ? "dbfilter" : dbase->newFilter();
     auto hf = scidup::app::tree::resolveFilter(*dbase, filter);
+    if (editSelection == EDIT_CTABLE) {
+        for (scid::database::gamenumT gnum = 0, n = dbase->numGames(); gnum < n;
+             ++gnum) {
+            const auto info = dbase->gameInfo(gnum);
+            const auto entryEventDate = info.eventDate;
+            if (info.site != siteId || info.event != eventId ||
+                (eventDate != 0 && entryEventDate != 0 &&
+                 entryEventDate != eventDate)) {
+                hf.erase(gnum);
+            }
+        }
+    }
     auto prg = UI_CreateProgress(ti);
     std::pair<scid::core::errorT, size_t> changes;
     switch (option) {
     case OPT_DATE:
-        changes = dbase->transformIndex(hf, prg, [&](scid::database::IndexEntry& ie) {
-            if (ie.GetDate() == oldDate && inCTable(ie)) {
-                ie.SetDate(newDate);
-                return true;
-            }
-            return false;
-        });
+        changes = dbase->replaceGameDates(hf, prg, oldDate, newDate);
         break;
     case OPT_EVENTDATE:
-        changes = dbase->transformIndex(hf, prg, [&](scid::database::IndexEntry& ie) {
-            if (ie.GetEventDate() == oldDate && inCTable(ie)) {
-                ie.SetEventDate(newDate);
-                return true;
-            }
-            return false;
-        });
+        changes = dbase->replaceGameEventDates(hf, prg, oldDate, newDate);
         break;
 
     case OPT_RATING:
-        changes = dbase->transformIndex(hf, prg, [&](scid::database::IndexEntry& ie) {
-            bool bTB = inCTable(ie);
-            bool bWH = (ie.GetWhite() == oldID);
-            bool bBK = (ie.GetBlack() == oldID);
-            if (bTB && (bWH || bBK)) {
-                if (bWH) {
-                    ie.SetWhiteElo(newRating);
-                    ie.SetWhiteRatingType(newRatingType);
-                }
-                if (bBK) {
-                    ie.SetBlackElo(newRating);
-                    ie.SetBlackRatingType(newRatingType);
-                }
-                return true;
-            }
-            return false;
-        });
+        changes = dbase->setPlayerRatings(
+            hf, prg, oldID, newRating, newRatingType);
         break;
 
     default:
@@ -6247,8 +6178,8 @@ sc_name_edit (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             [&](const std::vector<scid::database::idNumberT>& v) {
                 newID = v.front(); // store the newID
             },
-            [&](scid::database::idNumberT id, const scid::database::IndexEntry& ie) {
-                return (id == oldID && inCTable(ie)) ? newID : id;
+            [&](scid::database::idNumberT id, const scid::database::GameInfo&) {
+                return (id == oldID) ? newID : id;
             });
     }
 
@@ -7144,8 +7075,6 @@ UI_res_t sc_name_ratings (UI_handle_t ti, scid::database::scidBaseT& dbase, cons
 
     if (testOnly) { return UI_Result(ti, scid::core::OK); }
 
-    scid::core::uint numChangedRatings = 0;
-    scid::core::uint numChangedGames = 0;
     const scid::database::NameBase* nb = dbase.getNameBase();
     std::vector<bool> cached(nb->GetNumNames(scid::database::NAME_PLAYER), false);
     std::vector<const scidup::spelling::PlayerElo*> vElo(nb->namebase_size(scid::database::NAME_PLAYER), NULL);
@@ -7158,43 +7087,16 @@ UI_res_t sc_name_ratings (UI_handle_t ti, scid::database::scidBaseT& dbase, cons
         return (vElo[id]) ? vElo[id]->getElo(date) : 0;
     };
 
-    auto entry_op = [&](scid::database::IndexEntry& ie) {
-        scid::core::dateT date = ie.GetDate();
-        scid::core::ratingT eloWhite = (!overwrite && ie.GetWhiteElo() != 0)
-                            ? 0
-                            : getElo(ie.GetWhite(), date);
-        scid::core::ratingT eloBlack = (!overwrite && ie.GetBlackElo() != 0)
-                            ? 0
-                            : getElo(ie.GetBlack(), date);
-        unsigned nChanges = (eloWhite != 0) ? 1 : 0;
-        nChanges += (eloBlack != 0) ? 1 : 0;
-        if (nChanges) {
-            numChangedRatings += nChanges;
-            numChangedGames++;
-            if (updateIndexFile) {
-                if (eloWhite != 0) {
-                    ie.SetWhiteElo(eloWhite);
-                    ie.SetWhiteRatingType(scid::core::RATING_Elo);
-                }
-                if (eloBlack != 0) {
-                    ie.SetBlackElo(eloBlack);
-                    ie.SetBlackRatingType(scid::core::RATING_Elo);
-                }
-                return true;
-            }
-        }
-        return false;
-    };
-
     std::string filter = (filterOnly) ? "dbfilter" : dbase.newFilter();
     auto hf = scidup::app::tree::resolveFilter(dbase, filter);
-    auto changes = dbase.transformIndex(hf, UI_CreateProgress(ti), entry_op);
+    auto changes = dbase.updatePlayerRatings(
+        hf, UI_CreateProgress(ti), overwrite, updateIndexFile, getElo);
     if (!filterOnly)
         dbase.deleteFilter(filter.c_str());
 
     UI_List res(2);
-    res.push_back(numChangedRatings);
-    res.push_back(numChangedGames);
+    res.push_back(changes.second.changedRatings);
+    res.push_back(changes.second.changedGames);
     return UI_Result(ti, changes.first, res);
 }
 
