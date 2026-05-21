@@ -258,8 +258,9 @@ public:
     void        MakeSANString (MoveAction * sm, char * s, sanFlagT flag);
 
     errorT      MakeCoordMoves(const char* moves, size_t movesLen, std::string* toSAN = nullptr);
-    errorT      ReadCoordMove(MoveAction* m, const char* s, size_t slen, bool reverse);
-    errorT      ParseMove(MoveAction* sm, const char* begin, const char* end);
+    errorT      readCoordinateMoveAction(MoveAction* m, const char* s,
+                                         size_t slen, bool reverse);
+    errorT      parseMoveAction(MoveAction* sm, const char* begin, const char* end);
 
     // Board I/O
     void        MakeLongStr (char* str) const;

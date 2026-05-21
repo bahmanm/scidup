@@ -1450,7 +1450,7 @@ Position::IsPromoMove (squareT from, squareT to)
 
 errorT Position::parseMoveSpec(MoveSpec& spec, std::string_view notation) {
 	MoveAction move;
-	auto err = ParseMove(&move, notation.data(), notation.data() + notation.size());
+	auto err = parseMoveAction(&move, notation.data(), notation.data() + notation.size());
 	if (err != OK)
 		return err;
 
@@ -1462,7 +1462,7 @@ errorT Position::readCoordinateMoveSpec(MoveSpec& spec,
                                           std::string_view notation,
                                           bool reverse) {
 	MoveAction move;
-	auto err = ReadCoordMove(&move, notation.data(), notation.size(), reverse);
+	auto err = readCoordinateMoveAction(&move, notation.data(), notation.size(), reverse);
 	if (err != OK)
 		return err;
 
@@ -1923,7 +1923,7 @@ errorT Position::MakeCoordMoves(const char* moves, size_t moveslen,
 
     while (auto len = std::find_if(moves, end, is_space) - moves) {
         MoveAction sm;
-        if (auto err = ReadCoordMove(&sm, moves, len, false))
+        if (auto err = readCoordinateMoveAction(&sm, moves, len, false))
             return err;
 
         moves = std::find_if_not(moves + len, end, is_space);
@@ -1950,15 +1950,15 @@ errorT Position::MakeCoordMoves(const char* moves, size_t moveslen,
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Position::ReadCoordMove():
+// Position::readCoordinateMoveAction():
 //      Given a move in coordinate notation,
 //      e.g. "e2e4" or "g1f3", generates the legal move it represents.
 //      Returns: OK or ERROR_InvalidMove.
 //      If "reverse" is true, coordinates in reverse order are acceptable,
 //      e.g. "f3g1" for 1.Nf3.
 //
-errorT Position::ReadCoordMove(MoveAction* m, const char* str, size_t slen,
-                               bool reverse) {
+errorT Position::readCoordinateMoveAction(MoveAction* m, const char* str,
+                                          size_t slen, bool reverse) {
     assert(m != NULL && str != NULL);
 
     auto promote = EMPTY;
@@ -2018,7 +2018,7 @@ errorT Position::ReadMovePawn(MoveAction* sm, const char* str, size_t slen,
 
 	if (slen >= 4 && // Check if it is a coordinates-style move ("e2e4")
 	    is_digit(str[1]) && is_lower(str[2]) && is_digit(str[3])) {
-		return ReadCoordMove(sm, str, slen, true);
+		return readCoordinateMoveAction(sm, str, slen, true);
 	}
 
 	MoveList mlist;
@@ -2187,7 +2187,7 @@ errorT Position::ReadMoveCastle(MoveAction* sm, std::string_view str) const {
 
 // Parse a single move from SAN-style (Nf3) or UCI (g1f3) notation.
 // If the move is legal, it stores the result in @e sm.
-errorT Position::ParseMove(MoveAction* sm, const char* str,
+errorT Position::parseMoveAction(MoveAction* sm, const char* str,
                            const char* strEnd) {
 	assert(str != NULL);
 
@@ -2234,7 +2234,7 @@ errorT Position::ParseMove(MoveAction* sm, const char* str,
 	case 7:
 		return ReadMoveCastle(sm, {str, length});
 	case 8:
-		return ParseMove(sm, str + 1, strEnd);
+		return parseMoveAction(sm, str + 1, strEnd);
 	default:
 		return ReadMove(sm, str, length, ptype);
 	};

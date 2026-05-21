@@ -2376,7 +2376,7 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                 return UI_Result(ti, scid::core::ERROR, "Error reading position.");
             scid::core::MoveAction sm;
             auto end = argv[2] + std::strlen(argv[2]);
-            if (auto err = pos->ParseMove(&sm, argv[2], end))
+            if (auto err = pos->parseMoveAction(&sm, argv[2], end))
                 return UI_Result(ti, err);
 
             char buf[scid::core::UCI_MOVE_STRING_SIZE] = {};
@@ -5120,7 +5120,7 @@ sc_move_add (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         return errorResult(ti, "Error adding move.");
 
     scid::core::MoveAction sm;
-    scid::core::errorT err = pos->ReadCoordMove(&sm, s, s[4] == 0 ? 4 : 5, true);
+    scid::core::errorT err = pos->readCoordinateMoveAction(&sm, s, s[4] == 0 ? 4 : 5, true);
     if (err == scid::core::OK) {
         scid::core::MovetextCursor cursor(editor.game().coreGame());
         if (!cursor.restore(editor.location()))

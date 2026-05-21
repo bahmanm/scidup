@@ -15,7 +15,7 @@ namespace {
 
 template <typename PosT, typename MoveT>
 auto parse_move(PosT& pos, MoveT dest, std::string_view move) {
-	return pos.ParseMove(dest, move.data(), move.data() + move.size());
+	return pos.parseMoveAction(dest, move.data(), move.data() + move.size());
 }
 
 } // namespace
@@ -45,7 +45,7 @@ TEST(Test_PositionSAN, MakeSANStringFromUCI) {
 		}
 
 		scid::core::MoveAction sm;
-		ASSERT_EQ(scid::core::OK, pos.ReadCoordMove(&sm, *it++, int(slen), false));
+		ASSERT_EQ(scid::core::OK, pos.readCoordinateMoveAction(&sm, *it++, int(slen), false));
 		pos.MakeSANString(&sm, buf, scid::core::SAN_MATETEST);
 		EXPECT_STREQ(*it, buf);
 	}
