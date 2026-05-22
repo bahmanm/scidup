@@ -56,7 +56,7 @@ inline void collectPositions(const scid::core::Game& game, TCont& dest) {
 		gamepos.RAVnum = cursor.variationIndex();
 		if (auto move = cursor.previousMove()) {
 			for (auto nag : move->metadata.nags)
-				gamepos.NAGs.push_back(nag);
+				gamepos.NAGs.push_back(scid::core::nagCode(nag));
 			gamepos.comment = move->metadata.comment;
 		} else if (auto variation = cursor.currentVariation()) {
 			gamepos.comment = variation->initialComment;

@@ -56,7 +56,7 @@ public:
 	bool setNextMoveSan(std::string_view san);
 	bool setCurrentVariationInitialComment(std::string_view comment);
 	bool setComment(std::string_view comment);
-	bool addPreviousMoveNag(std::uint8_t nag);
+	bool addPreviousMoveNag(Nag nag);
 	bool removePreviousMoveNag(bool moveNag);
 	void clearPreviousMoveNags();
 	bool promoteVariationToFirst();

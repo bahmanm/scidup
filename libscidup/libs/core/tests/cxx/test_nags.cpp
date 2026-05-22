@@ -3,24 +3,24 @@
 #include <gtest/gtest.h>
 
 TEST(Test_Nags, CommonAnnotationValues) {
-	EXPECT_EQ(1, scid::core::NAG_GoodMove);
-	EXPECT_EQ(2, scid::core::NAG_PoorMove);
-	EXPECT_EQ(3, scid::core::NAG_ExcellentMove);
-	EXPECT_EQ(4, scid::core::NAG_Blunder);
-	EXPECT_EQ(201, scid::core::NAG_Diagram);
-	EXPECT_EQ(215, scid::core::MAX_NAGS_ARRAY);
+	EXPECT_EQ(1, scid::core::nagCode(scid::core::Nag::GoodMove));
+	EXPECT_EQ(2, scid::core::nagCode(scid::core::Nag::PoorMove));
+	EXPECT_EQ(3, scid::core::nagCode(scid::core::Nag::ExcellentMove));
+	EXPECT_EQ(4, scid::core::nagCode(scid::core::Nag::Blunder));
+	EXPECT_EQ(201, scid::core::nagCode(scid::core::Nag::Diagram));
+	EXPECT_EQ(215, scid::core::maxNagCode);
 }
 
 TEST(Test_Nags, ParsePlainNagText) {
-	EXPECT_EQ(scid::core::NAG_ExcellentMove, scid::core::parseNag("!!"));
-	EXPECT_EQ(scid::core::NAG_Diagram, scid::core::parseNag("D"));
-	EXPECT_EQ(scid::core::NAG_Comment, scid::core::parseNag("$145"));
-	EXPECT_EQ(0, scid::core::parseNag("unknown"));
+	EXPECT_EQ(scid::core::Nag::ExcellentMove, scid::core::nagFromString("!!"));
+	EXPECT_EQ(scid::core::Nag::Diagram, scid::core::nagFromString("D"));
+	EXPECT_EQ(scid::core::Nag::Comment, scid::core::nagFromString("$145"));
+	EXPECT_EQ(scid::core::Nag::None, scid::core::nagFromString("unknown"));
 }
 
 TEST(Test_Nags, FormatPlainNagText) {
-	EXPECT_EQ("D", scid::core::formatNag(scid::core::NAG_Diagram, true));
-	EXPECT_EQ("!", scid::core::formatNag(scid::core::NAG_GoodMove, true));
-	EXPECT_EQ("$1", scid::core::formatNag(scid::core::NAG_GoodMove, false));
-	EXPECT_EQ("$250", scid::core::formatNag(250, true));
+	EXPECT_EQ("D", scid::core::nagToString(scid::core::Nag::Diagram, true));
+	EXPECT_EQ("!", scid::core::nagToString(scid::core::Nag::GoodMove, true));
+	EXPECT_EQ("$1", scid::core::nagToString(scid::core::Nag::GoodMove, false));
+	EXPECT_EQ("$250", scid::core::nagToString(scid::core::nagFromCode(250), true));
 }

@@ -64,7 +64,7 @@ inline bool setCurrentMoveComment(
 }
 
 inline bool addCurrentMoveNag(
-    scid::core::Game& game, scid::core::byte nag,
+    scid::core::Game& game, scid::core::Nag nag,
     const scid::core::MovetextLocation* location = nullptr) {
 	scid::core::MovetextCursor cursor(game);
 	[[maybe_unused]] const bool restored =
@@ -162,9 +162,10 @@ public:
 		if (nErrorsAllowed_ < 0)
 			return true;
 
-		auto nag_code = scid::core::parseNag(
+		auto nag_code = scid::core::nagFromString(
 		    std::string_view(token.first, token.second - token.first));
-		if (nag_code == 0 || !addCurrentMoveNag(game, nag_code, location_))
+		if (nag_code == scid::core::Nag::None ||
+		    !addCurrentMoveNag(game, nag_code, location_))
 			return logErr("Invalid annotation symbol: ", token);
 
 		return true;
@@ -210,8 +211,9 @@ public:
 		auto err = position->parseMoveSpec(
 		    spec, std::string_view(tok.first, tok.second - tok.first));
 		if (err != scid::core::OK) {
-			if (scid::core::parseNag(
-			        std::string_view(tok.first, tok.second - tok.first)))
+			if (scid::core::nagFromString(
+			        std::string_view(tok.first, tok.second - tok.first)) !=
+			    scid::core::Nag::None)
 				return visitPGN_NAG(tok);
 
 			return logFatalErr("Failed to parse the move: ", tok);

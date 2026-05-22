@@ -9,12 +9,14 @@ namespace {
 
 constexpr std::size_t MAX_NAGS_PER_MOVE = 8;
 
-bool isMoveNagValue(std::uint8_t nag) {
-	return nag >= 1 && nag <= 6;
+bool isMoveNagValue(Nag nag) {
+	const auto value = nagCode(nag);
+	return value >= 1 && value <= 6;
 }
 
-bool isPositionNagValue(std::uint8_t nag) {
-	return nag >= 10 && nag <= 21;
+bool isPositionNagValue(Nag nag) {
+	const auto value = nagCode(nag);
+	return value >= 10 && value <= 21;
 }
 
 } // namespace
@@ -280,7 +282,7 @@ bool MovetextCursor::setComment(std::string_view comment) {
 	return true;
 }
 
-bool MovetextCursor::addPreviousMoveNag(std::uint8_t nag) {
+bool MovetextCursor::addPreviousMoveNag(Nag nag) {
 	auto move = previousMove();
 	if (!move)
 		return true;
@@ -288,7 +290,7 @@ bool MovetextCursor::addPreviousMoveNag(std::uint8_t nag) {
 	auto& nags = move->metadata.nags;
 	if (nags.size() + 1 >= MAX_NAGS_PER_MOVE)
 		return false;
-	if (nag == 0)
+	if (nag == Nag::None)
 		return true;
 
 	if (isMoveNagValue(nag)) {
@@ -321,7 +323,7 @@ bool MovetextCursor::removePreviousMoveNag(bool moveNag) {
 		return true;
 
 	auto& nags = move->metadata.nags;
-	auto match = [moveNag](std::uint8_t nag) {
+	auto match = [moveNag](Nag nag) {
 		return moveNag ? isMoveNagValue(nag) : isPositionNagValue(nag);
 	};
 	auto it = std::find_if(nags.begin(), nags.end(), match);

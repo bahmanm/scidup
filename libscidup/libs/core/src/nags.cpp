@@ -10,40 +10,41 @@ namespace scid::core {
 
 namespace {
 
-std::uint8_t parseUnsigned(std::string_view text) {
+Nag parseUnsigned(std::string_view text) {
 	unsigned value = 0;
 	const auto* begin = text.data();
 	const auto* end = begin + text.size();
 	const auto result = std::from_chars(begin, end, value);
 	if (result.ec != std::errc{} || result.ptr != end || value > 255)
-		return 0;
-	return static_cast<std::uint8_t>(value);
+		return Nag::None;
+	return nagFromCode(static_cast<std::uint8_t>(value));
 }
 
 } // namespace
 
-std::string_view nagSymbol(std::uint8_t nag) {
-	if (nag >= std::size(plainNagSymbols))
+std::string_view nagToSymbol(Nag nag) {
+	const auto value = nagCode(nag);
+	if (value >= std::size(plainNagSymbols))
 		return {};
-	return plainNagSymbols[nag];
+	return plainNagSymbols[value];
 }
 
-std::string formatNag(std::uint8_t nag, bool asSymbol) {
-	if (nag == 0)
+std::string nagToString(Nag nag, bool asSymbol) {
+	if (nag == Nag::None)
 		return {};
 
 	if (asSymbol) {
-		auto symbol = nagSymbol(nag);
+		auto symbol = nagToSymbol(nag);
 		if (!symbol.empty())
 			return std::string{symbol};
 	}
 
-	return "$" + std::to_string(nag);
+	return "$" + std::to_string(nagCode(nag));
 }
 
-std::uint8_t parseNag(std::string_view text) {
+Nag nagFromString(std::string_view text) {
 	if (text.empty() || text.size() > 7)
-		return 0;
+		return Nag::None;
 
 	if (text.front() == '$')
 		return parseUnsigned(text.substr(1));
@@ -60,190 +61,190 @@ std::uint8_t parseNag(std::string_view text) {
 
 	if (at(0) == '!') {
 		if (size == 1)
-			return NAG_GoodMove;
+			return Nag::GoodMove;
 		if (at(1) == '!' && size == 2)
-			return NAG_ExcellentMove;
+			return Nag::ExcellentMove;
 		if (at(1) == '?' && size == 2)
-			return NAG_InterestingMove;
-		return 0;
+			return Nag::InterestingMove;
+		return Nag::None;
 	}
 
 	if (at(0) == '?') {
 		if (size == 1)
-			return NAG_PoorMove;
+			return Nag::PoorMove;
 		if (at(1) == '?' && size == 2)
-			return NAG_Blunder;
+			return Nag::Blunder;
 		if (at(1) == '!' && size == 2)
-			return NAG_DubiousMove;
-		return 0;
+			return Nag::DubiousMove;
+		return Nag::None;
 	}
 
 	if (at(0) == '+') {
 		if (at(1) == '=')
-			return NAG_WhiteSlight;
+			return Nag::WhiteSlight;
 		if (at(1) == '-' && size == 2)
-			return NAG_WhiteDecisive;
+			return Nag::WhiteDecisive;
 		if (at(1) == '>')
-			return NAG_WithAttack;
+			return Nag::WithAttack;
 		if (at(1) == '/' && at(2) == '-')
-			return NAG_WhiteClear;
+			return Nag::WhiteClear;
 		if (at(1) == '/' && at(2) == '=')
-			return NAG_WhiteSlight;
+			return Nag::WhiteSlight;
 		if (at(1) == '-' && at(2) == '-')
-			return NAG_WhiteCrushing;
-		return 0;
+			return Nag::WhiteCrushing;
+		return Nag::None;
 	}
 
 	if (at(0) == '=') {
 		if (size == 1)
-			return NAG_Equal;
+			return Nag::Equal;
 		if (at(1) == '+')
-			return NAG_BlackSlight;
+			return Nag::BlackSlight;
 		if (at(1) == '/' && at(2) == '+')
-			return NAG_BlackSlight;
+			return Nag::BlackSlight;
 		if (at(1) == '/' && at(2) == '&')
-			return NAG_Compensation;
-		return 0;
+			return Nag::Compensation;
+		return Nag::None;
 	}
 
 	if (at(0) == '-') {
 		if (at(1) == '+')
-			return NAG_BlackDecisive;
+			return Nag::BlackDecisive;
 		if (at(1) == '>')
-			return NAG_WithBlackAttack;
+			return Nag::WithBlackAttack;
 		if (at(1) == '/' && at(2) == '+')
-			return NAG_BlackClear;
+			return Nag::BlackClear;
 		if (at(1) == '-' && at(2) == '+')
-			return NAG_BlackCrushing;
+			return Nag::BlackCrushing;
 		if (at(1) == '-' && size == 2)
-			return NAG_See;
-		return 0;
+			return Nag::See;
+		return Nag::None;
 	}
 
 	if (at(0) == '/') {
 		if (size == 1)
-			return NAG_Diagonal;
+			return Nag::Diagonal;
 		if (at(1) == '\\')
-			return NAG_WithIdea;
-		return 0;
+			return Nag::WithIdea;
+		return Nag::None;
 	}
 
 	if (at(0) == 'R') {
 		if (size == 1)
-			return NAG_VariousMoves;
+			return Nag::VariousMoves;
 		if (at(1) == 'R')
-			return NAG_Comment;
-		return 0;
+			return Nag::Comment;
+		return Nag::None;
 	}
 
 	if (at(0) == 'z') {
 		if (at(1) == 'z')
-			return NAG_BlackZugZwang;
-		return 0;
+			return Nag::BlackZugZwang;
+		return Nag::None;
 	}
 
 	if (at(0) == 'Z') {
 		if (at(1) == 'Z')
-			return NAG_ZugZwang;
-		return 0;
+			return Nag::ZugZwang;
+		return Nag::None;
 	}
 
 	if (at(0) == 'B') {
 		if (at(1) == 'B')
-			return NAG_BishopPair;
+			return Nag::BishopPair;
 		if (at(1) == 'b')
-			return NAG_OppositeBishops;
-		return 0;
+			return Nag::OppositeBishops;
+		return Nag::None;
 	}
 
 	if (at(0) == 'o') {
 		if (at(1) == '-' && at(2) == 'o')
-			return NAG_SeparatedPawns;
+			return Nag::SeparatedPawns;
 		if (at(1) == 'o' && size == 2)
-			return NAG_UnitedPawns;
+			return Nag::UnitedPawns;
 		if (at(1) == '^' && size == 2)
-			return NAG_PassedPawn;
-		return 0;
+			return Nag::PassedPawn;
+		return Nag::None;
 	}
 
 	if (at(0) == '(') {
 		if (at(1) == '_' && at(2) == ')')
-			return NAG_BetterIs;
-		return 0;
+			return Nag::BetterIs;
+		return Nag::None;
 	}
 
 	if (at(0) == '[') {
 		if (at(1) == ']' && size == 2)
-			return NAG_OnlyMove;
+			return Nag::OnlyMove;
 		if (at(1) == '+' && at(2) == ']')
-			return NAG_SlightCentre;
+			return Nag::SlightCentre;
 		if (at(1) == '+' && at(2) == '+' && at(3) == ']')
-			return NAG_Centre;
-		return 0;
+			return Nag::Centre;
+		return Nag::None;
 	}
 
 	if (at(0) == '_') {
 		if (at(1) == '|' && at(2) == '_')
-			return NAG_Ending;
+			return Nag::Ending;
 		if (at(1) == '|' && size == 2)
-			return NAG_Without;
-		return 0;
+			return Nag::Without;
+		return Nag::None;
 	}
 
 	if (at(0) == '|') {
 		if (at(1) == '|')
-			return NAG_Etc;
+			return Nag::Etc;
 		if (at(1) == '_')
-			return NAG_With;
-		return 0;
+			return Nag::With;
+		return Nag::None;
 	}
 
 	if (at(0) == '>') {
 		if (size == 1)
-			return NAG_SlightKingSide;
+			return Nag::SlightKingSide;
 		if (at(1) == '>' && size == 2)
-			return NAG_ModerateKingSide;
+			return Nag::ModerateKingSide;
 		if (at(1) == '>' && at(2) == '>')
-			return NAG_KingSide;
-		return 0;
+			return Nag::KingSide;
+		return Nag::None;
 	}
 
 	if (at(0) == '<') {
 		if (size == 1)
-			return NAG_SlightQueenSide;
+			return Nag::SlightQueenSide;
 		if (at(1) == '<' && size == 2)
-			return NAG_ModerateQueenSide;
+			return Nag::ModerateQueenSide;
 		if (at(1) == '<' && at(2) == '<' && size == 3)
-			return NAG_QueenSide;
+			return Nag::QueenSide;
 		if (at(1) == '=' && at(2) == '>' && size == 3)
-			return NAG_File;
+			return Nag::File;
 		if (at(1) == '+' && at(2) == '>' && size == 3)
-			return NAG_SlightCounterPlay;
+			return Nag::SlightCounterPlay;
 		if (at(1) == '-' && at(2) == '>' && size == 3)
-			return NAG_BlackSlightCounterPlay;
+			return Nag::BlackSlightCounterPlay;
 		if (at(1) == '+' && at(2) == '+' && at(3) == '>' && size == 4)
-			return NAG_CounterPlay;
+			return Nag::CounterPlay;
 		if (at(1) == '-' && at(2) == '-' && at(3) == '>' && size == 4)
-			return NAG_BlackCounterPlay;
+			return Nag::BlackCounterPlay;
 		if (at(1) == '+' && at(2) == '+' && at(3) == '+' && at(4) == '>')
-			return NAG_DecisiveCounterPlay;
+			return Nag::DecisiveCounterPlay;
 		if (at(1) == '-' && at(2) == '-' && at(3) == '-' && at(4) == '>')
-			return NAG_BlackDecisiveCounterPlay;
-		return 0;
+			return Nag::BlackDecisiveCounterPlay;
+		return Nag::None;
 	}
 
 	if (text == "~=")
-		return NAG_Compensation;
+		return Nag::Compensation;
 	if (text == "~")
-		return NAG_Unclear;
+		return Nag::Unclear;
 	if (text == "x")
-		return NAG_WeakPoint;
+		return Nag::WeakPoint;
 	if (text == "N")
-		return NAG_Novelty;
+		return Nag::Novelty;
 	if (text == "D")
-		return NAG_Diagram;
+		return Nag::Diagram;
 
-	return 0;
+	return Nag::None;
 }
 
 } // namespace scid::core

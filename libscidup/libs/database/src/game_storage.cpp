@@ -306,7 +306,7 @@ void encodeMovelistLine(bool markComments,
 
 		for (auto nag : coreMove.metadata.nags) {
 			dest.emplace_back(ENCODE_NAG);
-			dest.emplace_back(nag);
+			dest.emplace_back(scid::core::nagCode(nag));
 			++stats.nags;
 		}
 		if (markComments && !coreMove.metadata.comment.empty())
@@ -401,7 +401,7 @@ scid::core::errorT decodeMovelist(ByteBuffer& buf, scid::core::Game& game,
 			    auto move = cursor.previousMove();
 			    if (!move)
 				    return false;
-			    move->metadata.nags.push_back(nag);
+			    move->metadata.nags.push_back(scid::core::nagFromCode(nag));
 			    return true;
 		    });
 		if (err)

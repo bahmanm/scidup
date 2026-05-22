@@ -147,7 +147,7 @@ previousClockComments(const scid::core::Game& game,
 	return comments;
 }
 
-static std::vector<std::uint8_t>
+static std::vector<scid::core::Nag>
 previousMoveNags(const scid::core::Game& game,
                  scid::core::MovetextLocation location) {
 	scid::core::GameCursor cursor(game);
@@ -155,10 +155,10 @@ previousMoveNags(const scid::core::Game& game,
 		return {};
 
 	auto move = cursor.previousMove();
-	return move ? move->metadata.nags : std::vector<std::uint8_t>{};
+	return move ? move->metadata.nags : std::vector<scid::core::Nag>{};
 }
 
-static std::vector<std::uint8_t>
+static std::vector<scid::core::Nag>
 nextMoveNags(const scid::core::Game& game,
              scid::core::MovetextLocation location) {
 	scid::core::GameCursor cursor(game);
@@ -166,7 +166,7 @@ nextMoveNags(const scid::core::Game& game,
 		return {};
 
 	auto move = cursor.nextMove();
-	return move ? move->metadata.nags : std::vector<std::uint8_t>{};
+	return move ? move->metadata.nags : std::vector<scid::core::Nag>{};
 }
 
 static std::string currentMoveComment(const scid::core::Game& game,
@@ -322,7 +322,7 @@ static bool removeCurrentNag(scid::core::Game& game,
 
 static bool addCurrentNag(scid::core::Game& game,
                           scid::core::MovetextLocation location,
-                          scid::core::byte nag) {
+                          scid::core::Nag nag) {
 	scid::core::MovetextCursor cursor(game);
 	if (!cursor.restore(location))
 		return false;
@@ -3356,7 +3356,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (printNags  &&  !nags.empty()  &&  !hideNextMove) {
         AppendResult (ti, "<red>", NULL);
         for (scid::core::uint nagCount = 0 ; nagCount < nags.size(); nagCount++) {
-            const auto nagstr = scid::core::formatNag(nags[nagCount], true);
+            const auto nagstr = scid::core::nagToString(nags[nagCount], true);
             if (nagCount > 0  ||  (nagstr[0] != '!' && nagstr[0] != '?')) {
                 AppendResult (ti, " ", NULL);
             }
@@ -3395,7 +3395,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (printNags  &&  !hideNextMove  &&  !nags.empty()) {
         AppendResult (ti, "<red>", NULL);
         for (scid::core::uint nagCount = 0 ; nagCount < nags.size(); nagCount++) {
-            const auto nagstr = scid::core::formatNag(nags[nagCount], true);
+            const auto nagstr = scid::core::nagToString(nags[nagCount], true);
             if (nagCount > 0  ||  (nagstr[0] != '!' && nagstr[0] != '?')) {
                 AppendResult (ti, " ", NULL);
             }
@@ -3457,9 +3457,9 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             AppendResult (ti, temp, NULL);
             auto firstNags = nextMoveNags(g.coreGame(), variationLocation);
             if (!firstNags.empty() &&
-                firstNags.front() >= scid::core::NAG_GoodMove &&
-                firstNags.front() <= scid::core::NAG_DubiousMove) {
-                const auto nagstr = scid::core::formatNag(firstNags.front(), true);
+                scid::core::nagCode(firstNags.front()) >= scid::core::nagCode(scid::core::Nag::GoodMove) &&
+                scid::core::nagCode(firstNags.front()) <= scid::core::nagCode(scid::core::Nag::DubiousMove)) {
+                const auto nagstr = scid::core::nagToString(firstNags.front(), true);
                 AppendResult (ti, "<red>", nagstr.c_str(), "</red>", NULL);
             }
             AppendResult (ti, "</run>", NULL);
@@ -4354,7 +4354,7 @@ UI_res_t sc_base_gamesummary(const scid::database::scidBaseT& base, UI_handle_t 
                 auto nags = nextMoveNags(g->coreGame(), location);
                 if (!nags.empty()) {
                     for (scid::core::uint nagCount = 0 ; nagCount < nags.size(); nagCount++) {
-                        const auto nagstr = scid::core::formatNag(nags[nagCount], true);
+                        const auto nagstr = scid::core::nagToString(nags[nagCount], true);
                         if (nagCount > 0  ||
                               (nagstr[0] != '!' && nagstr[0] != '?')) {
                             scid::database::strAppend (temp, " ");
@@ -5582,8 +5582,8 @@ sc_pos_addNag (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 	}
 	else
 	{
-		scid::core::byte nag = scid::core::parseNag(nagStr);
-		if (nag != 0) {
+		scid::core::Nag nag = scid::core::nagFromString(nagStr);
+		if (nag != scid::core::Nag::None) {
 			if (!addCurrentNag(editor.game().coreGame(), editor.location(), nag))
 				return UI_Result(ti, scid::core::ERROR, "Error updating annotations.");
 		}
@@ -5781,7 +5781,7 @@ sc_pos_getNags(ClientData, Tcl_Interp* ti, int, const char**)
         return setResult (ti, "0");
     }
     for (auto nag : nags) {
-        const auto text = scid::core::formatNag(nag, true);
+        const auto text = scid::core::nagToString(nag, true);
         AppendResult (ti, text.c_str(), " ", NULL);
     }
 

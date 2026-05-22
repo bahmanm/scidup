@@ -85,15 +85,15 @@ TEST(CoreMovetextCursorTest, SetsPreviousMoveMetadataAtCursor) {
 
 	scid::core::MoveMetadata metadata;
 	metadata.comment = "Best by test";
-	metadata.nags = {1, 14};
+	metadata.nags = {scid::core::Nag::GoodMove, scid::core::Nag::WhiteSlight};
 
 	ASSERT_TRUE(cursor.setPreviousMoveMetadata(std::move(metadata)));
 
 	auto const& move = game.movetext().mainline.moves[0];
 	EXPECT_EQ("Best by test", move.metadata.comment);
 	ASSERT_EQ(2U, move.metadata.nags.size());
-	EXPECT_EQ(1, move.metadata.nags[0]);
-	EXPECT_EQ(14, move.metadata.nags[1]);
+	EXPECT_EQ(scid::core::Nag::GoodMove, move.metadata.nags[0]);
+	EXPECT_EQ(scid::core::Nag::WhiteSlight, move.metadata.nags[1]);
 }
 
 TEST(CoreMovetextCursorTest, RefusesToSetPreviousMoveMetadataAtLineStart) {

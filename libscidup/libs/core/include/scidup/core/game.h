@@ -51,7 +51,7 @@ struct GameHeader {
 };
 
 struct MoveMetadata {
-	std::vector<std::uint8_t> nags;
+	std::vector<Nag> nags;
 	std::string comment;
 };
 
