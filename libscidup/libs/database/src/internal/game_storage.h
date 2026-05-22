@@ -27,27 +27,6 @@ scid::core::errorT decode(scid::core::Game& game, char* scidFlags,
               TagRoster const& tags, ByteBuffer buf);
 scid::core::errorT decodeMovesOnly(scid::core::Game& game, ByteBuffer& buf);
 
-struct ByteBufferAccess {
-	template <typename MoveFn, typename CommentFn, typename VariationFn,
-	          typename NagFn>
-	static std::pair<scid::core::errorT, unsigned char>
-	nextMove(ByteBuffer& buf, int varDepth, MoveFn acceptMove,
-	         CommentFn commentMarker, VariationFn changeVar, NagFn addNag) {
-		return buf.nextMove(varDepth, acceptMove, commentMarker, changeVar,
-		                    addNag);
-	}
-
-	static std::pair<scid::core::errorT, unsigned char> nextLineMove(ByteBuffer& buf) {
-		return buf.nextLineMove();
-	}
-
-	static std::pair<int, scid::core::pieceT> decodeMove(ByteBuffer& buf, scid::core::colorT toMove,
-	                                         scid::core::pieceT movingPiece, scid::core::squareT from,
-	                                         unsigned char moveCode) {
-		return buf.decodeMove(toMove, movingPiece, from, moveCode);
-	}
-};
-
 scid::core::errorT decodeEncodedMove(ByteBuffer& buf, scid::core::byte val,
                                       const scid::core::Position& pos,
                                       scid::core::MoveSpec& action);

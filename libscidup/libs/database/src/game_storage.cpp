@@ -367,8 +367,7 @@ scid::core::errorT decodeMovelist(ByteBuffer& buf, scid::core::Game& game,
 	scid::core::MoveSpec action;
 	int varDepth = 0;
 	for (;;) {
-		auto [err, val] = game_storage::ByteBufferAccess::nextMove(
-		    buf,
+		auto [err, val] = buf.nextMove(
 		    varDepth, [&](auto) { return true; },
 		    [&] {
 			    // Mark this comment as needing to be read
@@ -786,8 +785,7 @@ scid::core::errorT game_storage::decodeEncodedMove(
 		return scid::core::ERROR_Decode;
 
 	const auto ptype = scid::core::piece_Type(pos.GetPiece(from));
-	const auto [to, promo] = game_storage::ByteBufferAccess::decodeMove(
-	    buf, toMove, ptype, from, val);
+	const auto [to, promo] = buf.decodeMove(toMove, ptype, from, val);
 	if (to < 0 || to > 63)
 		return scid::core::ERROR_Decode;
 
@@ -823,7 +821,7 @@ scid::core::errorT game_storage::decodeMainlineMove(
     ByteBuffer& buf,
     const scid::core::Position& pos,
     scid::core::MoveSpec& action) {
-	auto [err, val] = ByteBufferAccess::nextLineMove(buf);
+	auto [err, val] = buf.nextLineMove();
 	if (err)
 		return err;
 
