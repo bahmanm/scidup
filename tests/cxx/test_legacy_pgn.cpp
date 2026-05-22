@@ -138,11 +138,11 @@ TEST(Test_LegacyPgn, EncodeOptionsFormatFromString) {
 
 TEST(Test_LegacyPgn, NagFormatKeepsStyledExportOutput) {
 	char nagText[20] = {};
-	scidup::app::game_printNag(scid::core::NAG_Diagram, nagText, true,
+	scidup::app::game_printNag(scid::core::Nag::Diagram, nagText, true,
 	                           scidup::app::PGN_FORMAT_HTML);
 	EXPECT_STREQ("<i>(D)</i>", nagText);
 
-	scidup::app::game_printNag(scid::core::NAG_GoodMove, nagText, false,
+	scidup::app::game_printNag(scid::core::Nag::GoodMove, nagText, false,
 	                           scidup::app::PGN_FORMAT_LaTeX);
 	EXPECT_STREQ("\\$1", nagText);
 }

@@ -24,9 +24,6 @@ namespace scid::database {
 //      Sets the standard tag values for this game, given an
 //      index file entry and a namebase that stores the
 //      player/site/event/round names.
-// TODO [Game]: Keep IndexEntry/TagRoster hydration in the database storage
-// boundary. The future core Game should not know about compact database
-// metadata records.
 //
 void game_storage::loadStandardTags(scid::core::Game& game, char* scidFlags,
                                     std::size_t scidFlagsLen,
@@ -306,7 +303,7 @@ void encodeMovelistLine(bool markComments,
 
 		for (auto nag : coreMove.metadata.nags) {
 			dest.emplace_back(ENCODE_NAG);
-			dest.emplace_back(nag);
+			dest.emplace_back(scid::core::nagCode(nag));
 			++stats.nags;
 		}
 		if (markComments && !coreMove.metadata.comment.empty())
@@ -367,8 +364,7 @@ scid::core::errorT decodeMovelist(ByteBuffer& buf, scid::core::Game& game,
 	scid::core::MoveSpec action;
 	int varDepth = 0;
 	for (;;) {
-		auto [err, val] = game_storage::ByteBufferAccess::nextMove(
-		    buf,
+		auto [err, val] = buf.nextMove(
 		    varDepth, [&](auto) { return true; },
 		    [&] {
 			    // Mark this comment as needing to be read
@@ -402,7 +398,7 @@ scid::core::errorT decodeMovelist(ByteBuffer& buf, scid::core::Game& game,
 			    auto move = cursor.previousMove();
 			    if (!move)
 				    return false;
-			    move->metadata.nags.push_back(nag);
+			    move->metadata.nags.push_back(scid::core::nagFromCode(nag));
 			    return true;
 		    });
 		if (err)
@@ -661,9 +657,6 @@ std::pair<bool, bool> mainlineInfo(const scid::core::Position* customStart,
 std::pair<IndexEntry, TagRoster> game_storage::encode(
     const scid::core::Game& coreGame, const char* scidFlags,
     std::vector<scid::core::byte>& dest) {
-	// TODO [Game]: Keep IndexEntry/TagRoster projection in the database storage
-	// boundary. Core metadata should be projected here, not stored in database
-	// codec types.
 	auto tags = TagRoster();
 	tags.event = coreGame.event().c_str();
 	tags.site = coreGame.site().c_str();
@@ -786,8 +779,7 @@ scid::core::errorT game_storage::decodeEncodedMove(
 		return scid::core::ERROR_Decode;
 
 	const auto ptype = scid::core::piece_Type(pos.GetPiece(from));
-	const auto [to, promo] = game_storage::ByteBufferAccess::decodeMove(
-	    buf, toMove, ptype, from, val);
+	const auto [to, promo] = buf.decodeMove(toMove, ptype, from, val);
 	if (to < 0 || to > 63)
 		return scid::core::ERROR_Decode;
 
@@ -823,7 +815,7 @@ scid::core::errorT game_storage::decodeMainlineMove(
     ByteBuffer& buf,
     const scid::core::Position& pos,
     scid::core::MoveSpec& action) {
-	auto [err, val] = ByteBufferAccess::nextLineMove(buf);
+	auto [err, val] = buf.nextLineMove();
 	if (err)
 		return err;
 

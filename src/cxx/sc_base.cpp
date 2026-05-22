@@ -461,7 +461,7 @@ static UI_res_t sc_base_getGameHelper(UI_handle_t ti,
 		for (const auto& nag : pos.NAGs) {
 			if (!nags.empty())
 				nags += ' ';
-			nags += scid::core::formatNag(nag, true);
+			nags += scid::core::nagToString(scid::core::nagFromCode(nag), true);
 		}
 		posInfo.push_back(nags);
 		posInfo.push_back(pos.comment);

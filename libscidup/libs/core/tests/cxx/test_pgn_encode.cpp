@@ -62,7 +62,7 @@ TEST(Test_PgnEncodeCore, EncodeCoreGame) {
 
 	auto& first = game.appendMainlineMove(
 	    {scid::core::D2, scid::core::D4, scid::core::EMPTY});
-	first.metadata.nags.push_back(scid::core::NAG_GoodMove);
+	first.metadata.nags.push_back(scid::core::Nag::GoodMove);
 	first.metadata.comment = "Best by test";
 	auto& childVariation = first.childVariations.emplace_back();
 	childVariation.initialComment = "Queen pawn alternative";
@@ -157,8 +157,8 @@ TEST(Test_PgnEncodeCore, EncodeCoreGameWithSymbolicNags) {
 	scid::core::Game game;
 	auto& first = game.appendMainlineMove(
 	    {scid::core::E2, scid::core::E4, scid::core::EMPTY});
-	first.metadata.nags.push_back(scid::core::NAG_GoodMove);
-	first.metadata.nags.push_back(scid::core::NAG_Diagram);
+	first.metadata.nags.push_back(scid::core::Nag::GoodMove);
+	first.metadata.nags.push_back(scid::core::Nag::Diagram);
 
 	std::string pgn;
 	scid::core::pgn::encode_game(
@@ -187,7 +187,7 @@ TEST(Test_PgnEncodeCore, EncodeCoreGameWithContentSelection) {
 	game.setInitialComment("Before the first move");
 	auto& first = game.appendMainlineMove(
 	    {scid::core::D2, scid::core::D4, scid::core::EMPTY});
-	first.metadata.nags.push_back(scid::core::NAG_GoodMove);
+	first.metadata.nags.push_back(scid::core::Nag::GoodMove);
 	first.metadata.comment = "Best by test";
 	auto& childVariation = first.childVariations.emplace_back();
 	childVariation.initialComment = "Queen pawn alternative";

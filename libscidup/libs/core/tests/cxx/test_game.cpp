@@ -148,7 +148,7 @@ TEST(CoreGameTest, AppendsMainlineMovesWithMetadataAndVariations) {
 	    {scid::core::E2, scid::core::E4, scid::core::EMPTY});
 	move.san = "e4";
 	move.metadata.comment = "Best by test";
-	move.metadata.nags.push_back(scid::core::NAG_GoodMove);
+	move.metadata.nags.push_back(scid::core::Nag::GoodMove);
 	auto& childVariation = move.addVariation("Alternative line");
 	auto& childMove = childVariation.line.appendMove(
 	    {scid::core::D2, scid::core::D4, scid::core::EMPTY});
@@ -163,7 +163,7 @@ TEST(CoreGameTest, AppendsMainlineMovesWithMetadataAndVariations) {
 	EXPECT_EQ("e4", savedMove.san);
 	EXPECT_EQ("Best by test", savedMove.metadata.comment);
 	ASSERT_EQ(1U, savedMove.metadata.nags.size());
-	EXPECT_EQ(scid::core::NAG_GoodMove, savedMove.metadata.nags[0]);
+	EXPECT_EQ(scid::core::Nag::GoodMove, savedMove.metadata.nags[0]);
 	ASSERT_EQ(1U, savedMove.childVariations.size());
 	EXPECT_EQ("Alternative line", savedMove.childVariations[0].initialComment);
 	ASSERT_EQ(1U, savedMove.childVariations[0].line.moves.size());
@@ -215,12 +215,12 @@ TEST(CoreGameTest, StripMovetextRemovesCommentsAndNagsButKeepsMoves) {
 	    {scid::core::E2, scid::core::E4, scid::core::EMPTY});
 	move.san = "e4";
 	move.metadata.comment = "Best by test";
-	move.metadata.nags.push_back(scid::core::NAG_GoodMove);
+	move.metadata.nags.push_back(scid::core::Nag::GoodMove);
 	auto& variation = move.addVariation("Alternative line");
 	auto& childMove = variation.line.appendMove(
 	    {scid::core::D2, scid::core::D4, scid::core::EMPTY});
 	childMove.metadata.comment = "Queen pawn";
-	childMove.metadata.nags.push_back(scid::core::NAG_InterestingMove);
+	childMove.metadata.nags.push_back(scid::core::Nag::InterestingMove);
 
 	game.stripMovetext(false, true, true);
 
@@ -241,7 +241,7 @@ TEST(CoreGameTest, StripMovetextRemovesVariationsButKeepsMainlineMetadata) {
 	auto& move = game.appendMainlineMove(
 	    {scid::core::E2, scid::core::E4, scid::core::EMPTY});
 	move.metadata.comment = "Best by test";
-	move.metadata.nags.push_back(scid::core::NAG_GoodMove);
+	move.metadata.nags.push_back(scid::core::Nag::GoodMove);
 	move.addVariation("Alternative line")
 	    .line.appendMove(
 	        {scid::core::D2, scid::core::D4, scid::core::EMPTY});
@@ -251,7 +251,7 @@ TEST(CoreGameTest, StripMovetextRemovesVariationsButKeepsMainlineMetadata) {
 	auto const& savedMove = game.movetext().mainline.moves[0];
 	EXPECT_EQ("Best by test", savedMove.metadata.comment);
 	ASSERT_EQ(1U, savedMove.metadata.nags.size());
-	EXPECT_EQ(scid::core::NAG_GoodMove, savedMove.metadata.nags[0]);
+	EXPECT_EQ(scid::core::Nag::GoodMove, savedMove.metadata.nags[0]);
 	EXPECT_TRUE(savedMove.childVariations.empty());
 }
 

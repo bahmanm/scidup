@@ -54,14 +54,6 @@ namespace scid::database {
 
 class ByteBuffer;
 class Game;
-class GameView;
-
-namespace game_storage {
-// TODO [Game]: Replace this friendship-based transitional storage decode
-// access with a proper database record reader once Game storage code is no
-// longer acting as the bridge between byte streams and core Position replay.
-struct ByteBufferAccess;
-} // namespace game_storage
 
 inline constexpr size_t MAX_TAG_LEN = 240;
 inline constexpr std::string_view commonTags[] = {
@@ -140,9 +132,6 @@ void encodeStartBoard(bool promoFlag, bool underpromoFlag, const char* FEN,
 class ByteBuffer {
 	const unsigned char* data_;
 	const unsigned char* const end_;
-
-	friend class GameView;
-	friend struct game_storage::ByteBufferAccess;
 
 public:
 	ByteBuffer(const unsigned char* data, size_t length)
@@ -234,7 +223,6 @@ public:
 		return res;
 	}
 
-private:
 	/// Extract the next move.
 	/// @returns a std::pair containing scid::core::OK and the move value.
 	///          Returns scid::core::ERROR_EndOfMoveList when the end of the game is

@@ -164,7 +164,7 @@ void setCurrentComment(scid::core::Game& game,
 
 bool addCurrentNag(scid::core::Game& game,
                    scid::core::MovetextLocation location,
-                   scid::core::byte nag) {
+                   scid::core::Nag nag) {
 	scid::core::MovetextCursor cursor(game);
 	EXPECT_TRUE(cursor.restore(location));
 	return cursor.addPreviousMoveNag(nag);
@@ -486,7 +486,7 @@ TEST(Test_Game, coreGameMovetextMirrorsLegacyMoveTree) {
 	auto const& mainline = game.movetext().mainline.moves;
 	ASSERT_EQ(3U, mainline.size());
 	ASSERT_EQ(1U, mainline[0].metadata.nags.size());
-	EXPECT_EQ(scid::core::NAG_GoodMove, mainline[0].metadata.nags[0]);
+	EXPECT_EQ(scid::core::Nag::GoodMove, mainline[0].metadata.nags[0]);
 	EXPECT_EQ("Best by test", mainline[0].metadata.comment);
 	EXPECT_TRUE(mainline[0].san.empty());
 	ASSERT_EQ(2U, mainline[0].childVariations.size());
@@ -613,21 +613,21 @@ TEST(Test_Game, coreGameMoveMetadataMirrorsProgrammaticNagMutation) {
 
 	addMove(game, location, makeCurrentMove(game, location, scid::core::E2,
 	                              scid::core::E4));
-	ASSERT_TRUE(addCurrentNag(game, location, scid::core::NAG_GoodMove));
-	ASSERT_TRUE(addCurrentNag(game, location, scid::core::NAG_PoorMove));
-	ASSERT_TRUE(addCurrentNag(game, location, scid::core::NAG_Equal));
+	ASSERT_TRUE(addCurrentNag(game, location, scid::core::Nag::GoodMove));
+	ASSERT_TRUE(addCurrentNag(game, location, scid::core::Nag::PoorMove));
+	ASSERT_TRUE(addCurrentNag(game, location, scid::core::Nag::Equal));
 
 	auto const& firstNags =
 	    game.movetext().mainline.moves[0].metadata.nags;
 	ASSERT_EQ(2U, firstNags.size());
-	EXPECT_EQ(scid::core::NAG_PoorMove, firstNags[0]);
-	EXPECT_EQ(scid::core::NAG_Equal, firstNags[1]);
+	EXPECT_EQ(scid::core::Nag::PoorMove, firstNags[0]);
+	EXPECT_EQ(scid::core::Nag::Equal, firstNags[1]);
 
 	ASSERT_TRUE(removeCurrentNag(game, location, true));
 	auto const& afterRemove =
 	    game.movetext().mainline.moves[0].metadata.nags;
 	ASSERT_EQ(1U, afterRemove.size());
-	EXPECT_EQ(scid::core::NAG_Equal, afterRemove[0]);
+	EXPECT_EQ(scid::core::Nag::Equal, afterRemove[0]);
 
 	clearCurrentNags(game, location);
 	EXPECT_TRUE(
@@ -643,7 +643,7 @@ TEST(Test_Game, coreGameVariationMetadataMirrorsProgrammaticNagMutation) {
 	addVariation(game, location);
 	addMove(game, location, makeCurrentMove(game, location, scid::core::D2,
 	                              scid::core::D4));
-	ASSERT_TRUE(addCurrentNag(game, location, scid::core::NAG_InterestingMove));
+	ASSERT_TRUE(addCurrentNag(game, location, scid::core::Nag::InterestingMove));
 
 	auto const& variationMove =
 	    game
@@ -652,7 +652,7 @@ TEST(Test_Game, coreGameVariationMetadataMirrorsProgrammaticNagMutation) {
 	        .childVariations[0]
 	        .line.moves[0];
 	ASSERT_EQ(1U, variationMove.metadata.nags.size());
-	EXPECT_EQ(scid::core::NAG_InterestingMove,
+	EXPECT_EQ(scid::core::Nag::InterestingMove,
 	          variationMove.metadata.nags[0]);
 }
 
@@ -718,7 +718,7 @@ TEST(Test_Game, coreGameMirrorsStrip) {
 	setCurrentComment(game, location, "Before the first move");
 	addMove(game, location, makeCurrentMove(game, location, scid::core::E2,
 	                              scid::core::E4));
-	ASSERT_TRUE(addCurrentNag(game, location, scid::core::NAG_GoodMove));
+	ASSERT_TRUE(addCurrentNag(game, location, scid::core::Nag::GoodMove));
 	setCurrentComment(game, location, "After e4");
 	addVariation(game, location);
 	setCurrentComment(game, location, "Alternative");

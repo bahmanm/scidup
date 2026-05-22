@@ -346,7 +346,7 @@ scid::core::errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool i
                     tb->PrintSpace();
                     colWidth--;
                 }
-                if (printDiagrams  &&  nags[i] == scid::core::NAG_Diagram) {
+                if (printDiagrams  &&  nags[i] == scid::core::Nag::Diagram) {
                     printDiagramHere = true;
                 }
                 tb->PrintWord (temp);

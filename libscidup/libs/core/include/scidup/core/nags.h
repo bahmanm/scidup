@@ -6,78 +6,85 @@
 
 namespace scid::core {
 
-// Common NAG annotation symbol values.
-// TODO [Game]: Replace these loose constants with a scoped Nag enum once the
-// Move metadata shape is settled.
-const std::uint8_t
-    NAG_GoodMove = 1,
-    NAG_PoorMove = 2,
-    NAG_ExcellentMove = 3,
-    NAG_Blunder = 4,
-    NAG_InterestingMove = 5,
-    NAG_DubiousMove = 6,
-    NAG_OnlyMove = 8,
-    NAG_Equal = 10,
-    NAG_Unclear = 13,
-    NAG_WhiteSlight = 14,
-    NAG_BlackSlight = 15,
-    NAG_WhiteClear = 16,
-    NAG_BlackClear = 17,
-    NAG_WhiteDecisive = 18,
-    NAG_BlackDecisive = 19,
-    NAG_WhiteCrushing = 20,
-    NAG_BlackCrushing = 21,
-    NAG_ZugZwang = 22,
-    NAG_BlackZugZwang = 23,
-    NAG_MoreRoom = 26,
-    NAG_DevelopmentAdvantage = 35,
-    NAG_WithInitiative = 36,
-    NAG_WithAttack = 40,
-    NAG_WithBlackAttack = 41,
-    NAG_Compensation = 44,
-    NAG_SlightCentre = 48,
-    NAG_Centre = 50,
-    NAG_SlightKingSide = 54,
-    NAG_ModerateKingSide = 56,
-    NAG_KingSide = 58,
-    NAG_SlightQueenSide = 60,
-    NAG_ModerateQueenSide = 62,
-    NAG_QueenSide = 64,
-    NAG_SlightCounterPlay = 130,
-    NAG_CounterPlay = 132,
-    NAG_DecisiveCounterPlay = 134,
-    NAG_BlackSlightCounterPlay = 131,
-    NAG_BlackCounterPlay = 133,
-    NAG_BlackDecisiveCounterPlay = 135,
-    NAG_TimeLimit = 136,
-    NAG_WithIdea = 140,
-    NAG_BetterIs = 142,
-    NAG_VariousMoves = 144,
-    NAG_Comment = 145,
-    NAG_Novelty = 146,
-    NAG_WeakPoint = 147,
-    NAG_Ending = 148,
-    NAG_File = 149,
-    NAG_Diagonal = 150,
-    NAG_BishopPair = 151,
-    NAG_OppositeBishops = 153,
-    NAG_SameBishops = 154,
-    NAG_Etc = 190,
-    NAG_DoublePawns = 191,
-    NAG_SeparatedPawns = 192,
-    NAG_UnitedPawns = 193,
-    NAG_Diagram = 201,
-    NAG_See = 210,
-    NAG_Mate = 211,
-    NAG_PassedPawn = 212,
-    NAG_MorePawns = 213,
-    NAG_With = 214,
-    NAG_Without = 215;
+enum class Nag : std::uint8_t {
+	None = 0,
+	GoodMove = 1,
+	PoorMove = 2,
+	ExcellentMove = 3,
+	Blunder = 4,
+	InterestingMove = 5,
+	DubiousMove = 6,
+	OnlyMove = 8,
+	Equal = 10,
+	Unclear = 13,
+	WhiteSlight = 14,
+	BlackSlight = 15,
+	WhiteClear = 16,
+	BlackClear = 17,
+	WhiteDecisive = 18,
+	BlackDecisive = 19,
+	WhiteCrushing = 20,
+	BlackCrushing = 21,
+	ZugZwang = 22,
+	BlackZugZwang = 23,
+	MoreRoom = 26,
+	DevelopmentAdvantage = 35,
+	WithInitiative = 36,
+	WithAttack = 40,
+	WithBlackAttack = 41,
+	Compensation = 44,
+	SlightCentre = 48,
+	Centre = 50,
+	SlightKingSide = 54,
+	ModerateKingSide = 56,
+	KingSide = 58,
+	SlightQueenSide = 60,
+	ModerateQueenSide = 62,
+	QueenSide = 64,
+	SlightCounterPlay = 130,
+	BlackSlightCounterPlay = 131,
+	CounterPlay = 132,
+	BlackCounterPlay = 133,
+	DecisiveCounterPlay = 134,
+	BlackDecisiveCounterPlay = 135,
+	TimeLimit = 136,
+	WithIdea = 140,
+	BetterIs = 142,
+	VariousMoves = 144,
+	Comment = 145,
+	Novelty = 146,
+	WeakPoint = 147,
+	Ending = 148,
+	File = 149,
+	Diagonal = 150,
+	BishopPair = 151,
+	OppositeBishops = 153,
+	SameBishops = 154,
+	Etc = 190,
+	DoublePawns = 191,
+	SeparatedPawns = 192,
+	UnitedPawns = 193,
+	Diagram = 201,
+	See = 210,
+	Mate = 211,
+	PassedPawn = 212,
+	MorePawns = 213,
+	With = 214,
+	Without = 215
+};
 
-const std::uint8_t MAX_NAGS_ARRAY = 215;
+constexpr std::uint8_t nagCode(Nag nag) {
+	return static_cast<std::uint8_t>(nag);
+}
 
-std::string formatNag(std::uint8_t nag, bool asSymbol);
-std::string_view nagSymbol(std::uint8_t nag);
-std::uint8_t parseNag(std::string_view text);
+constexpr Nag nagFromCode(std::uint8_t value) {
+	return static_cast<Nag>(value);
+}
+
+inline constexpr std::uint8_t maxNagCode = nagCode(Nag::Without);
+
+std::string nagToString(Nag nag, bool asSymbol);
+std::string_view nagToSymbol(Nag nag);
+Nag nagFromString(std::string_view text);
 
 } // namespace scid::core

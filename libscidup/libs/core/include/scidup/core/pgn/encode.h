@@ -243,7 +243,7 @@ struct MovetextEntry {
 	MovetextEntryKind kind;
 	std::string_view san;
 	std::string_view comment;
-	std::span<const std::uint8_t> nags;
+	std::span<const Nag> nags;
 };
 
 inline std::string san_for_move(scid::core::Position& position,
@@ -298,7 +298,7 @@ void encode_movetext_entry(MovetextEntry const& entry,
 
 		if (options.includeComments) {
 			for (auto nag : entry.nags) {
-				auto nag_str = formatNag(nag, options.symbolicNags);
+				auto nag_str = nagToString(nag, options.symbolicNags);
 				dest.insert(dest.end(), nag_str.begin(), nag_str.end());
 				dest.push_back('\0');
 			}
