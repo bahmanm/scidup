@@ -24,9 +24,6 @@ namespace scid::database {
 //      Sets the standard tag values for this game, given an
 //      index file entry and a namebase that stores the
 //      player/site/event/round names.
-// TODO [Game]: Keep IndexEntry/TagRoster hydration in the database storage
-// boundary. The future core Game should not know about compact database
-// metadata records.
 //
 void game_storage::loadStandardTags(scid::core::Game& game, char* scidFlags,
                                     std::size_t scidFlagsLen,
@@ -660,9 +657,6 @@ std::pair<bool, bool> mainlineInfo(const scid::core::Position* customStart,
 std::pair<IndexEntry, TagRoster> game_storage::encode(
     const scid::core::Game& coreGame, const char* scidFlags,
     std::vector<scid::core::byte>& dest) {
-	// TODO [Game]: Keep IndexEntry/TagRoster projection in the database storage
-	// boundary. Core metadata should be projected here, not stored in database
-	// codec types.
 	auto tags = TagRoster();
 	tags.event = coreGame.event().c_str();
 	tags.site = coreGame.site().c_str();
