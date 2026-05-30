@@ -1,8 +1,8 @@
 #include "scidup_app_nag_format.h"
 
 #include "scidup_app_nag_latex.h"
-#include "scidup/core/nags.h"
-#include "scidup/database/common.h"
+#include "scid/core/nags.h"
+#include "scid/database/common.h"
 
 #include <cstdio>
 #include <cstring>

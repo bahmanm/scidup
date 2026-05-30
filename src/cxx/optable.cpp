@@ -15,11 +15,11 @@
 #include "optable.h"
 #include "crosstab.h"
 #include "scidup_app_piece_translation.h"
-#include "scidup/core/dstring.h"
-#include "scidup/core/game_cursor.h"
-#include "scidup/core/notation.h"
-#include "scidup/database/game_id.h"
-#include "scidup/eco/book.h"
+#include "scid/core/dstring.h"
+#include "scid/core/game_cursor.h"
+#include "scid/core/notation.h"
+#include "scid/database/game_id.h"
+#include "scid/eco/book.h"
 #include <algorithm>
 #include <cstdio>
 #include <optional>
@@ -170,7 +170,7 @@ OpLine::Init (scid::core::Game * g, scid::core::MovetextLocation location,
     Date = g->date();
     Result = g->result();
     NumMoves = (g->mainlineHalfMoveCount() + 1) / 2;
-    EcoCode = scidup::eco::fromString(g->eco().c_str());
+    EcoCode = scid::eco::fromString(g->eco().c_str());
     WhiteElo = g->white().rating.value;
     BlackElo = g->black().rating.value;
     AvgElo = g->averageRating();
@@ -532,7 +532,7 @@ OpLine::PrintSummary (scid::core::DString * dstr, scid::core::uint format, bool 
 
 void
 OpTable::Init (const char * type, scid::core::Game * g,
-               scid::core::MovetextLocation location, scidup::eco::Book * ebook)
+               scid::core::MovetextLocation location, scid::eco::Book * ebook)
 {
     Type = scid::database::strDuplicate (type);
     TargetRows = OPTABLE_DEFAULT_ROWS;
@@ -1907,10 +1907,10 @@ OpTable::TopEcoCodes (scid::core::DString * dstr, scid::core::uint count)
     for (scid::core::uint i=0; i < NumLines; i++) {
         int ecoClass = -1;
         int ecoSubCode = -1;
-        scidup::eco::Code ecoCode = Line[i]->EcoCode;
-        if (ecoCode != scidup::eco::ECO_None) {
-            scidup::eco::String ecoStr;
-            scidup::eco::toBasicString(ecoCode, ecoStr);
+        scid::eco::Code ecoCode = Line[i]->EcoCode;
+        if (ecoCode != scid::eco::ECO_None) {
+            scid::eco::String ecoStr;
+            scid::eco::toBasicString(ecoCode, ecoStr);
             if (ecoStr[0] != 0) {
                 ecoClass = ((ecoStr[0] - 'A') * 10) + (ecoStr[1] - '0');
                 if (ecoClass < 0  ||  ecoClass >= 50) { ecoClass = -1; }

@@ -66,4 +66,4 @@ target_include_directories(
     PRIVATE "${SCIDUP_GENERATED_INCLUDE_DIR}" )
 target_link_libraries(
     scidup_main
-    PRIVATE ScidUp::Database ScidUp::Eco ScidUp::Spelling ScidUp::Libs::Polyglot Threads::Threads ScidUp::Libs::Tcl )
+    PRIVATE LibScid::Database LibScid::Eco LibScid::Spelling ScidUp::Libs::Polyglot Threads::Threads ScidUp::Libs::Tcl )

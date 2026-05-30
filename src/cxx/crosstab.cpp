@@ -15,7 +15,7 @@
 #ifndef WINCE
 
 #include "crosstab.h"
-#include "scidup/core/dstring.h"
+#include "scid/core/dstring.h"
 #include <cstdio>
 
 // Expected differences in rating according to performance
@@ -187,7 +187,7 @@ Crosstable::Destroy ()
 //      already listed.
 scid::core::errorT
 Crosstable::AddPlayer (scid::database::idNumberT id, const char * name, scid::core::ratingT elo,
-                       const scidup::spelling::SpellChecker* SpellCheck)
+                       const scid::spelling::SpellChecker* SpellCheck)
 {
     for (scid::core::uint i = 0; i < PlayerCount; i++) {
         if (PlayerData[i]->id == id) {
@@ -226,7 +226,7 @@ Crosstable::AddPlayer (scid::database::idNumberT id, const char * name, scid::co
     }
 
     if (SpellCheck != NULL ) {
-        const scidup::spelling::PlayerInfo* pInfo = SpellCheck->getPlayerInfo(name);
+        const scid::spelling::PlayerInfo* pInfo = SpellCheck->getPlayerInfo(name);
         if (pInfo != NULL) {
             scid::database::strCopy (pdata->title, pInfo->getTitle());
             scid::database::strCopy (pdata->country, pInfo->getLastCountry().c_str());

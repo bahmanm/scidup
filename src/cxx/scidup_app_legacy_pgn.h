@@ -1,7 +1,7 @@
 #pragma once
 
 #include "scidup_app_legacy_encode_options.h"
-#include "scidup/core/game.h"
+#include "scid/core/game.h"
 
 #include <utility>
 

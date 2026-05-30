@@ -12,10 +12,10 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "scidup/core/attacks.h"
-#include "scidup/core/notation.h"
-#include "scidup/core/square_collections.h"
-#include "scidup/core/square_moves.h"
+#include "scid/core/attacks.h"
+#include "scid/core/notation.h"
+#include "scid/core/square_collections.h"
+#include "scid/core/square_moves.h"
 #include "engine.h"
 #include <algorithm>
 

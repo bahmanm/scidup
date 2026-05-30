@@ -26,26 +26,26 @@
 
 
 #include "crosstab.h"
-#include "scidup/core/dstring.h"
-#include "scidup/core/game_cursor.h"
-#include "scidup/core/movetext_cursor.h"
-#include "scidup/core/nags.h"
-#include "scidup/core/notation.h"
-#include "scidup/core/pgn/encode.h"
-#include "scidup/core/pgn/traversal.h"
+#include "scid/core/dstring.h"
+#include "scid/core/game_cursor.h"
+#include "scid/core/movetext_cursor.h"
+#include "scid/core/nags.h"
+#include "scid/core/notation.h"
+#include "scid/core/pgn/encode.h"
+#include "scid/core/pgn/traversal.h"
 #include "engine.h"
-#include "scidup/database/game_id.h"
+#include "scid/database/game_id.h"
 #include "optable.h"
-#include "scidup/eco/book.h"
+#include "scid/eco/book.h"
 #include "scidup_app_legacy_pgn.h"
 #include "scidup_app_piece_translation.h"
 #include "polyglot.h"
-#include "scidup/core/position.h"
-#include "scidup/core/pgn/decode.h"
-#include "scidup/database/scidbase.h"
+#include "scid/core/position.h"
+#include "scid/core/pgn/decode.h"
+#include "scid/database/scidbase.h"
 #include "scidup_app_editor.h"
 #include "scidup_app_tree.h"
-#include <scidup/spelling/spelling.h>
+#include <scid/spelling/spelling.h>
 #include "timer.h"
 #include "dbasepool.h"
 #include "ui.h"
@@ -90,8 +90,8 @@ const int MAX_BASES = 9;
 
 
 static scidup::app::editor::EditableGame * scratchGame = NULL;      // "scratch" game for searches, etc.
-static std::unique_ptr<scidup::eco::Book> ecoBook; // eco classification book.
-static std::unique_ptr<scidup::spelling::SpellChecker> spellChk; // Name correction.
+static std::unique_ptr<scid::eco::Book> ecoBook; // eco classification book.
+static std::unique_ptr<scid::spelling::SpellChecker> spellChk; // Name correction.
 static OpTable * reports[2] = {NULL, NULL};
 
 void scid_Exit(void*) {
@@ -1123,10 +1123,10 @@ checkDuplicate (scid::database::scidBaseT * base,
         if (info1.result != info2.result) { return false; }
     }
     if (cr->sameEcoCode) {
-        scidup::eco::String a;
-        scidup::eco::String b;
-        scidup::eco::toBasicString(info1.ecoCode, a);
-        scidup::eco::toBasicString(info2.ecoCode, b);
+        scid::eco::String a;
+        scid::eco::String b;
+        scid::eco::toBasicString(info1.ecoCode, a);
+        scid::eco::toBasicString(info2.ecoCode, b);
         if (a[0] != b[0]  ||  a[1] != b[1]  ||  a[2] != b[2]) { return false; }
     }
 
@@ -1460,7 +1460,7 @@ sc_eco (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 //    If the database is read-only, games can still be classified but
 //    the results will not be scid::database::stored to the database file.
 scid::database::EcoCode
-inferEcoCode(const scid::core::Game& game, const scidup::eco::Book& book,
+inferEcoCode(const scid::core::Game& game, const scid::eco::Book& book,
              bool extendedCodes) {
     auto currentPosition = game.startPosition()
                                ? *game.startPosition()
@@ -1472,7 +1472,7 @@ inferEcoCode(const scid::core::Game& game, const scidup::eco::Book& book,
             return false;
 
         const auto eco = book.findEco(currentPosition);
-        if (eco != scidup::eco::ECO_None)
+        if (eco != scid::eco::ECO_None)
             ecoCode = eco;
 
         return true;
@@ -1491,7 +1491,7 @@ inferEcoCode(const scid::core::Game& game, const scidup::eco::Book& book,
         recordCurrentPosition();
 
     if (!extendedCodes)
-        ecoCode = scidup::eco::basicCode(ecoCode);
+        ecoCode = scid::eco::basicCode(ecoCode);
 
     return ecoCode;
 }
@@ -1500,7 +1500,7 @@ std::pair<scid::core::errorT, size_t>
 classifyEcoCodes(scid::database::scidBaseT& dbase,
                  scid::database::HFilter filter,
                  const scid::database::Progress& progress,
-                 const scidup::eco::Book& book,
+                 const scid::eco::Book& book,
                  bool classifyExistingCodes,
                  bool extendedCodes,
                  std::optional<scid::core::dateT> minDate) {
@@ -1612,12 +1612,12 @@ sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         cursor.toEnd();
         location = cursor.location();
     }
-    scidup::eco::Code ecoCode = scidup::eco::ECO_None;
+    scid::eco::Code ecoCode = scid::eco::ECO_None;
     do {
         auto pos = currentPosition(game, location);
         if (!pos) { break; }
         ecoCode = ecoBook->findEco(*pos);
-        if (ecoCode != scidup::eco::ECO_None)
+        if (ecoCode != scid::eco::ECO_None)
             break;
         scid::core::GameCursor cursor(game);
         if (!cursor.restore(location) || !cursor.previous())
@@ -1627,14 +1627,14 @@ sc_eco_game (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     auto ply = currentPly(game, location);
 
-    if (ecoCode == scidup::eco::ECO_None)
+    if (ecoCode == scid::eco::ECO_None)
         return UI_Result(ti, scid::core::OK);
 
     if (returnPly)
         return UI_Result(ti, scid::core::OK, ply);
 
-    scidup::eco::String extEco;
-    scidup::eco::toExtendedString(ecoCode, extEco);
+    scid::eco::String extEco;
+    scid::eco::toExtendedString(ecoCode, extEco);
     return UI_Result(ti, scid::core::OK, extEco);
 }
 
@@ -1647,9 +1647,9 @@ sc_eco_read (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 {
     if (argc < 3) { return TCL_OK; }
     ecoBook = nullptr;
-    auto book = scidup::eco::Book::load(argv[2]);
-    if (book.first != scidup::eco::OK) {
-        if (book.first == scidup::eco::ERROR_FileOpen) {
+    auto book = scid::eco::Book::load(argv[2]);
+    if (book.first != scid::eco::OK) {
+        if (book.first == scid::eco::ERROR_FileOpen) {
             AppendResult (ti, "Unable to open the ECO file:\n",
                               argv[2], NULL);
         } else {
@@ -1658,7 +1658,7 @@ sc_eco_read (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         }
         return book.first;
     }
-    ecoBook = std::make_unique<scidup::eco::Book>(std::move(book.second));
+    ecoBook = std::make_unique<scid::eco::Book>(std::move(book.second));
     return UI_Result(ti, scid::core::OK, ecoBook->size());
 }
 
@@ -1667,7 +1667,7 @@ sc_eco_read (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 //    Formats structured ECO book lines using the legacy text shape consumed by
 //    sc_eco_summary's translation and hypertext conversion.
 std::string
-formatEcoSummary(const scidup::eco::Book& book, std::string_view prefix)
+formatEcoSummary(const scid::eco::Book& book, std::string_view prefix)
 {
     auto res = std::string();
     auto prevCode = std::string_view();
@@ -2781,7 +2781,7 @@ sc_game_crosstable (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     }
 
     // Find all games that should be listed in the crosstable:
-    const scidup::spelling::SpellChecker* spell = spellChk.get();
+    const scid::spelling::SpellChecker* spell = spellChk.get();
     bool tableFullMessage = false;
     for (scid::core::uint i=0, n = db->numGames(); i < n; i++) {
         const auto info = db->gameInfo(i);
@@ -3246,9 +3246,9 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     AppendResult (ti, temp, NULL);
 
     if (!g.coreGame().eco().empty()) {
-        scidup::eco::String fullEcoStr;
+        scid::eco::String fullEcoStr;
         scid::database::strCopy(fullEcoStr, g.coreGame().eco().c_str());
-        scidup::eco::String basicEcoStr;
+        scid::eco::String basicEcoStr;
         scid::database::strCopy (basicEcoStr, fullEcoStr);
         if (scid::database::strLength(basicEcoStr) >= 4) { basicEcoStr[3] = 0; }
         AppendResult (ti, "   <blue><run ::windows::eco::Refresh ",
@@ -3516,9 +3516,9 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         auto ecoStr = pos ? ecoBook->findEcoString(*pos) : "";
         if (!ecoStr.empty()) {
             std::string ecoComment(ecoStr);
-            scidup::eco::Code eco = scidup::eco::fromString(ecoComment.c_str());
-            scidup::eco::String estr;
-            scidup::eco::toExtendedString(eco, estr);
+            scid::eco::Code eco = scid::eco::fromString(ecoComment.c_str());
+            scid::eco::String estr;
+            scid::eco::toExtendedString(eco, estr);
             scid::core::uint len = scid::database::strLength (estr);
             if (len >= 4) { estr[3] = 0; }
             scid::core::DString tempDStr;
@@ -4640,8 +4640,8 @@ sc_game_tags_set (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 }
             case T_ECO:
                 {
-                    scidup::eco::String ecoStr;
-                    scidup::eco::toExtendedString(scidup::eco::fromString(value), ecoStr);
+                    scid::eco::String ecoStr;
+                    scid::eco::toExtendedString(scid::eco::fromString(value), ecoStr);
                     game.coreGame().setEco(ecoStr);
                     break;
                 }
@@ -5725,12 +5725,12 @@ sc_pos_bestSquare (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         // position is found, do a small chess engine search to find
         // the best move.
 
-        scidup::eco::Code bestEco = scidup::eco::ECO_None;
-        scidup::eco::Code secondBestEco = scidup::eco::ECO_None;
+        scid::eco::Code bestEco = scid::eco::ECO_None;
+        scid::eco::Code secondBestEco = scid::eco::ECO_None;
         if (ecoBook != NULL) {
             for (scid::core::uint i=0; i < mlist.Size(); i++) {
                 pos->apply(*mlist.Get(i));
-                scidup::eco::Code eco = ecoBook->findEco(*pos);
+                scid::eco::Code eco = ecoBook->findEco(*pos);
                 pos->undo (*mlist.Get(i));
                 if (eco >= bestEco) {
                     secondBestEco = bestEco;
@@ -5741,7 +5741,7 @@ sc_pos_bestSquare (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
             }
         }
 
-        if (bestEco == scidup::eco::ECO_None  ||  bestEco == secondBestEco) {
+        if (bestEco == scid::eco::ECO_None  ||  bestEco == secondBestEco) {
             // No matching ECO position found, or a tie. So do a short
             // engine search to find the best move; 25 ms (= 1/40 s)
             // is enough to reach a few ply and select reasonable
@@ -6271,7 +6271,7 @@ sc_name_edit (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // sc_name_retrievename:
 //    Check for the right name in spellcheck and return it.
-UI_res_t sc_name_retrievename (UI_handle_t ti, const scidup::spelling::SpellChecker& sp, int argc, const char ** argv)
+UI_res_t sc_name_retrievename (UI_handle_t ti, const scid::spelling::SpellChecker& sp, int argc, const char ** argv)
 {
     const char * usageStr = "Usage: sc_name retrievename <player>";
     if (argc != 3 ) { return errorResult (ti, usageStr); }
@@ -6282,7 +6282,7 @@ UI_res_t sc_name_retrievename (UI_handle_t ti, const scidup::spelling::SpellChec
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // sc_name_elo:
 //    Search for Elo-Ratings in spellcheck file.
-static UI_res_t sc_name_elo(UI_handle_t ti, const scidup::spelling::SpellChecker& sp, int argc,
+static UI_res_t sc_name_elo(UI_handle_t ti, const scid::spelling::SpellChecker& sp, int argc,
                             const char** argv) {
 	auto usage = "Usage: sc_name elo [year] <player>";
 	if (argc < 3 || argc > 4)
@@ -6450,11 +6450,11 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
     for (scid::core::uint i=0, n = db->numGames(); i < n; i++) {
         const auto info = db->gameInfo(i);
-        scidup::eco::Code ecoCode = info.ecoCode;
+        scid::eco::Code ecoCode = info.ecoCode;
         int ecoClass = -1;
-        if (ecoCode != scidup::eco::ECO_None) {
-            scidup::eco::String ecoStr;
-            scidup::eco::toBasicString(ecoCode, ecoStr);
+        if (ecoCode != scid::eco::ECO_None) {
+            scid::eco::String ecoStr;
+            scid::eco::toBasicString(ecoCode, ecoStr);
             if (ecoStr[0] != 0) {
                 ecoClass = ((ecoStr[0] - 'A') * 10) + (ecoStr[1] - '0');
                 if (ecoClass < 0  ||  ecoClass >= 50) { ecoClass = -1; }
@@ -6553,13 +6553,13 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (tWidth > wbtWidth) { wbtWidth = tWidth; }
     const char * fmt = \
      "%s  %-*s %3u%c%02u%%   +%s%3u%s  =%s%3u%s  -%s%3u%s  %4u%c%c /%s%4u%s";
-    scidup::spelling::SpellChecker* spChecker = spellChk.get();
+    scid::spelling::SpellChecker* spChecker = spellChk.get();
 
     AppendResult (ti, startBold, playerName, endBold, newline, NULL);
 
     // Show title, country, etc if listed in player spellcheck file:
     if (spChecker != NULL) {
-        const scidup::spelling::PlayerInfo* pInfo = spChecker->getPlayerInfo(playerName);
+        const scid::spelling::PlayerInfo* pInfo = spChecker->getPlayerInfo(playerName);
         if (pInfo) { AppendResult (ti, "  ", pInfo->getComment(), newline, NULL); }
     }
     std::snprintf(temp, sizeof(temp), "  %s%u%s %s (%s: %u)",
@@ -6586,7 +6586,7 @@ sc_name_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     // Print biography if applicable:
     if (spChecker != NULL) {
         std::vector<const char*> bio;
-        const scidup::spelling::PlayerInfo* pInfo = spChecker->getPlayerInfo(playerName, &bio);
+        const scid::spelling::PlayerInfo* pInfo = spChecker->getPlayerInfo(playerName, &bio);
         if (pInfo != 0) {
             for (size_t i=0, n=bio.size(); i < n; i++) {
                 if (i == 0) {
@@ -7118,7 +7118,7 @@ sc_name_plist (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 //
 //   Returns a two-integer list: the number of changed ratings, and
 //   the number of changed games.
-UI_res_t sc_name_ratings (UI_handle_t ti, scid::database::scidBaseT& dbase, const scidup::spelling::SpellChecker& sp, int argc, const char ** argv)
+UI_res_t sc_name_ratings (UI_handle_t ti, scid::database::scidBaseT& dbase, const scid::spelling::SpellChecker& sp, int argc, const char ** argv)
 {
     const char * options[] = {
         "-update", "-test", "-change", "-filter" };
@@ -7157,7 +7157,7 @@ UI_res_t sc_name_ratings (UI_handle_t ti, scid::database::scidBaseT& dbase, cons
 
     const scid::database::NameBase* nb = dbase.getNameBase();
     std::vector<bool> cached(nb->GetNumNames(scid::database::NAME_PLAYER), false);
-    std::vector<const scidup::spelling::PlayerElo*> vElo(nb->namebase_size(scid::database::NAME_PLAYER), NULL);
+    std::vector<const scid::spelling::PlayerElo*> vElo(nb->namebase_size(scid::database::NAME_PLAYER), NULL);
 
     auto getElo = [&](scid::database::idNumberT id, scid::core::dateT date) {
         if (!cached[id]) {
@@ -7197,8 +7197,8 @@ sc_name_read (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     if (argc > 2) {
         const char * filename = argv[2];
         scid::database::Progress progress = UI_CreateProgress(ti);
-        std::pair<scid::core::errorT, std::unique_ptr<scidup::spelling::SpellChecker>> newSpell =
-            scidup::spelling::SpellChecker::create(filename, progress);
+        std::pair<scid::core::errorT, std::unique_ptr<scid::spelling::SpellChecker>> newSpell =
+            scid::spelling::SpellChecker::create(filename, progress);
         if (newSpell.first != scid::core::OK) {
             return UI_Result(ti, newSpell.first, "Error reading name spellcheck file.");
         }
@@ -7217,7 +7217,7 @@ sc_name_read (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // sc_name_spellcheck:
 //   Scan the current database for spelling corrections.
-UI_res_t sc_name_spellcheck (UI_handle_t ti, scid::database::scidBaseT& dbase, const scidup::spelling::SpellChecker& sp, int argc, const char ** argv)
+UI_res_t sc_name_spellcheck (UI_handle_t ti, scid::database::scidBaseT& dbase, const scid::spelling::SpellChecker& sp, int argc, const char ** argv)
 {
     scid::database::nameT nt = scid::database::NAME_INVALID;
     scid::core::uint maxCorrections = 20000;
@@ -7326,7 +7326,7 @@ UI_res_t sc_name_spellcheck (UI_handle_t ti, scid::database::scidBaseT& dbase, c
             correctCmd += tempStr;
 
             if (nt == scid::database::NAME_PLAYER) { // Look for a player birthdate:
-                const scidup::spelling::PlayerInfo* pInfo = sp.getPlayerInfo(corrections[i]);
+                const scid::spelling::PlayerInfo* pInfo = sp.getPlayerInfo(corrections[i]);
                 scid::core::dateT birthdate = pInfo->getBirthdate();
                 scid::core::dateT deathdate = pInfo->getDeathdate();
                 if (birthdate != scid::core::ZERO_DATE  ||  deathdate != scid::core::ZERO_DATE) {
@@ -7908,7 +7908,7 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     auto tree = base->getTreeStat(filter);
 
     auto calc_eco = [&](auto const& move) {
-        scidup::eco::Code eco = scidup::eco::ECO_None;
+        scid::eco::Code eco = scid::eco::ECO_None;
         if (ecoBook && move) {
             scid::core::MoveSpec spec{
                 move.getFrom(),
@@ -8014,9 +8014,9 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         unsigned count = 0;
         for (auto const& node : tree) {
             calc_san(node.move);
-            scidup::eco::Code eco = calc_eco(node.move);
-            scidup::eco::String ecoStr;
-            scidup::eco::toExtendedString(eco, ecoStr);
+            scid::eco::Code eco = calc_eco(node.move);
+            scid::eco::String ecoStr;
+            scid::eco::toExtendedString(eco, ecoStr);
             auto freq = long(1000ll * node.freq[0] / totals.freq[0]);
             std::snprintf(temp, sizeof(temp), "\n%2u: %-6s %-5s %7u:%3ld%c%1ld%%",
                      ++count,
@@ -8829,7 +8829,7 @@ sc_search_header (ClientData, Tcl_Interp * ti, scid::database::scidBaseT* base, 
             mWhite.resize(numNames, true);
             for (i=0; i < numNames; i++) {
                 const char * name = base->getNameBase()->GetName (scid::database::NAME_PLAYER, i);
-                const scidup::spelling::PlayerInfo* pInfo = spellChk->getPlayerInfo(name);
+                const scid::spelling::PlayerInfo* pInfo = spellChk->getPlayerInfo(name);
                 const char * title = (pInfo) ? pInfo->getTitle() : "";
                 if ((!wTitles[TITLE_GM]  &&  scid::database::strEqual(title, "gm"))
                     || (!wTitles[TITLE_GM]  &&  scid::database::strEqual(title, "hgm"))
@@ -8861,7 +8861,7 @@ sc_search_header (ClientData, Tcl_Interp * ti, scid::database::scidBaseT* base, 
             mBlack.resize(numNames, true);
             for (i=0; i < numNames; i++) {
                 const char * name = base->getNameBase()->GetName (scid::database::NAME_PLAYER, i);
-                const scidup::spelling::PlayerInfo* pInfo = spellChk->getPlayerInfo(name);
+                const scid::spelling::PlayerInfo* pInfo = spellChk->getPlayerInfo(name);
                 const char * title = (pInfo) ? pInfo->getTitle() : "";
                 if ((!bTitles[TITLE_GM]  &&  scid::database::strEqual(title, "gm"))
                     || (!bTitles[TITLE_GM]  &&  scid::database::strEqual(title, "hgm"))

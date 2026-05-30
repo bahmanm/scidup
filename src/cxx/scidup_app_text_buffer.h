@@ -16,7 +16,7 @@
 #ifndef SCID_TEXTBUF_H
 #define SCID_TEXTBUF_H
 
-#include "scidup/database/common.h"
+#include "scid/database/common.h"
 #include <stdio.h>
 
 namespace scidup::app {

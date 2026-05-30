@@ -1,6 +1,6 @@
 #pragma once
 
-#include "scidup/core/nags.h"
+#include "scid/core/nags.h"
 #include "scidup_app_legacy_encode_options.h"
 
 namespace scidup::app {

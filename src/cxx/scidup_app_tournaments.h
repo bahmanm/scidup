@@ -1,10 +1,10 @@
 #ifndef SCIDUP_APP_TOURNAMENTS_H
 #define SCIDUP_APP_TOURNAMENTS_H
 
-#include "scidup/core/game_result.h"
-#include "scidup/database/game_id.h"
-#include "scidup/database/misc.h"
-#include "scidup/database/scidbase.h"
+#include "scid/core/game_result.h"
+#include "scid/database/game_id.h"
+#include "scid/database/misc.h"
+#include "scid/database/scidbase.h"
 #include <algorithm>
 #include <numeric>
 #include <vector>

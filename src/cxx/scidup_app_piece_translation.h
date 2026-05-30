@@ -1,6 +1,6 @@
 #pragma once
 
-#include "scidup/core/primitives.h"
+#include "scid/core/primitives.h"
 
 namespace scidup::app {
 

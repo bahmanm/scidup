@@ -13,7 +13,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 #include "scidup_app_text_buffer.h"
-#include "scidup/database/misc.h"
+#include "scid/database/misc.h"
 #include <cstdio>
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

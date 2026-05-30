@@ -18,7 +18,7 @@ target_include_directories(
     PUBLIC "${CMAKE_SOURCE_DIR}/src/cxx" )
 target_link_libraries(
     scidup_tests_libs_cppsupport
-    PUBLIC ScidUp::Database ScidUp::Eco Threads::Threads )
+    PUBLIC LibScid::Database LibScid::Eco Threads::Threads )
 add_library(
     ScidUp::Tests::Libs::CppBase
     ALIAS scidup_tests_libs_cppsupport )
@@ -34,7 +34,7 @@ target_compile_definitions(
     scidup_tests_bins_cpptest
     PRIVATE
         SCIDUP_TEST_RESOURCES_DIR=\"${CMAKE_SOURCE_DIR}/tests/cxx/\"
-        SCIDUP_DATABASE_TEST_RESOURCES_DIR=\"${CMAKE_SOURCE_DIR}/libscidup/libs/database/tests/cxx/\" )
+        SCIDUP_DATABASE_TEST_RESOURCES_DIR=\"${CMAKE_SOURCE_DIR}/tests/fixtures/libscid/database/\" )
 target_link_libraries(
     scidup_tests_bins_cpptest
     PRIVATE ScidUp::Tests::Libs::CppBase gtest_main )
