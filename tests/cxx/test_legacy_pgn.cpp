@@ -5,6 +5,7 @@
 #include "scidup/database/scidbase.h"
 #include "scidup_app_legacy_pgn.h"
 #include "scidup_app_nag_format.h"
+#include "scidup_app_piece_translation.h"
 
 #include <algorithm>
 #include <array>
@@ -134,6 +135,19 @@ TEST(Test_LegacyPgn, EncodeOptionsFormatFromString) {
 
 	EXPECT_FALSE(scidup::app::LegacyGameEncodeOptions::legacyFormatFromString(
 	    "unknown", &format));
+}
+
+TEST(Test_LegacyPgn, LegacyPieceTranslationIsAppOwned) {
+	const auto savedLanguage = scidup::app::language;
+	scidup::app::language = 3; // German: N -> S, B -> L.
+
+	char san[] = "Nf3 Bc4";
+	scidup::app::transPieces(san);
+
+	EXPECT_STREQ("Sf3 Lc4", san);
+	EXPECT_EQ('S', scidup::app::transPiecesChar('N'));
+
+	scidup::app::language = savedLanguage;
 }
 
 TEST(Test_LegacyPgn, NagFormatKeepsStyledExportOutput) {

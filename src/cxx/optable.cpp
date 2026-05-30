@@ -14,11 +14,11 @@
 
 #include "optable.h"
 #include "crosstab.h"
+#include "scidup_app_piece_translation.h"
 #include "scidup/core/dstring.h"
 #include "scidup/core/game_cursor.h"
 #include "scidup/core/notation.h"
 #include "scidup/database/game_id.h"
-#include "piece_translation.h"
 #include "scidup/eco/book.h"
 #include <algorithm>
 #include <cstdio>
@@ -345,7 +345,7 @@ OpLine::PrintMove (scid::core::DString * dstr, const char * move, scid::core::ui
 
     if (format == OPTABLE_Compact) {
         strcpy(tempTrans, move);
-        scid::database::transPieces(tempTrans);
+        scidup::app::transPieces(tempTrans);
         char *ptr = tempTrans;
         char ch = *ptr; //*move;
         while (ch != 0) {
@@ -360,7 +360,7 @@ OpLine::PrintMove (scid::core::DString * dstr, const char * move, scid::core::ui
 
     if (format != OPTABLE_LaTeX) {
         strcpy(tempTrans, move);
-        scid::database::transPieces(tempTrans);
+        scidup::app::transPieces(tempTrans);
         dstr->Append(tempTrans);//(move);
         return;
     }
@@ -2320,16 +2320,16 @@ OpTable::EndMaterialReport (scid::core::DString * dstr, const char * repGames,
         for (scid::core::uint space=0; space < len; space++) { dstr->AddChar (' '); }
         char t1[10]; char t2[10];
         strcpy(t1, "     P"); strcpy(t2, "    BN");
-        scid::database::transPieces(t1); scid::database::transPieces(t2);
+        scidup::app::transPieces(t1); scidup::app::transPieces(t2);
         dstr->Append (nextCell, t1, nextCell, t2);
         strcpy(t1, "     R"); strcpy(t2, "  R,BN");
-        scid::database::transPieces(t1); scid::database::transPieces(t2);
+        scidup::app::transPieces(t1); scidup::app::transPieces(t2);
         dstr->Append (nextCell, t1, nextCell, t2);
         strcpy(t1, "     Q"); strcpy(t2, "  Q,BN");
-        scid::database::transPieces(t1); scid::database::transPieces(t2);
+        scidup::app::transPieces(t1); scidup::app::transPieces(t2);
         dstr->Append (nextCell, t1, nextCell, t2);
         strcpy(t1, "   Q,R"); strcpy(t2, "Q,R,BN");
-        scid::database::transPieces(t1); scid::database::transPieces(t2);
+        scidup::app::transPieces(t1); scidup::app::transPieces(t2);
         dstr->Append (nextCell, t1, nextCell, t2);
 //         dstr->Append (nextCell, "     P", nextCell, "    BN");
 //         dstr->Append (nextCell, "     R", nextCell, "  R,BN");

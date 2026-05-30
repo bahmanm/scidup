@@ -6,6 +6,8 @@ set(
     "${CMAKE_SOURCE_DIR}/src/cxx/dbasepool.cpp"
     "${CMAKE_SOURCE_DIR}/src/cxx/scidup_app_legacy_pgn.cpp"
     "${CMAKE_SOURCE_DIR}/src/cxx/scidup_app_nag_format.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cxx/scidup_app_piece_translation.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cxx/scidup_app_text_buffer.cpp"
 )
 add_library(
     scidup_tests_libs_cppsupport

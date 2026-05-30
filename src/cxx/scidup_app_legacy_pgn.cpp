@@ -1,6 +1,7 @@
 #include "scidup_app_nag_format.h"
 #include "scidup_app_legacy_pgn.h"
-#include "piece_translation.h"
+#include "scidup_app_piece_translation.h"
+#include "scidup_app_text_buffer.h"
 #include "scidup/core/game.h"
 #include "scidup/database/common.h"
 #include "scidup/database/misc.h"
@@ -9,7 +10,6 @@
 #include "scidup/core/nags.h"
 #include "scidup/core/notation.h"
 #include "scidup/eco/code.h"
-#include "textbuf.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -40,7 +40,7 @@ bool LegacyGameEncodeOptions::legacyFormatFromString(const char* str,
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // writeComment:
 //    Called by WriteMoveList to write a single comment.
-static void writeComment(scid::database::TextBuffer* tb, const char* preStr,
+static void writeComment(TextBuffer* tb, const char* preStr,
                          const char* comment, const char* postStr,
                          bool colorFormat, scid::core::uint numMovesPrinted) {
     const char* s = comment;
@@ -84,7 +84,7 @@ static std::string sanForMove(scid::core::Position& position,
 struct LegacyGamePgnEncoder {
 	const scid::core::Game& game;
 	const char* scidFlags;
-	scid::database::TextBuffer* tb;
+	TextBuffer* tb;
 	LegacyGameEncodeOptions options;
 	scid::core::uint numMovesPrinted = 1;
 
@@ -314,7 +314,7 @@ scid::core::errorT LegacyGamePgnEncoder::writeMoveList(bool printMoveNum, bool i
             // translate pieces
             auto translatedSan = san;
             translatedSan.push_back('\0');
-            scid::database::transPieces(translatedSan.data());
+            transPieces(translatedSan.data());
             tb->PrintWord (translatedSan.data());
         }
         colWidth -= (int) san.size();
@@ -876,7 +876,7 @@ std::pair<const char*, unsigned> LegacyGamePgnEncoder::encodeToPgnText(
     const scid::core::Game& game, const char* scidFlags,
     LegacyGameEncodeOptions options, scid::core::uint lineWidth, bool newLineAtEnd,
     bool newLineToSpaces) {
-    static scid::database::TextBuffer tbuf;
+    static TextBuffer tbuf;
 
     tbuf.Empty();
     tbuf.SetWrapColumn(lineWidth ? lineWidth : tbuf.GetBufferSize());

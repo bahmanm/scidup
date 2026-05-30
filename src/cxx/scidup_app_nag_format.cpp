@@ -1,8 +1,8 @@
 #include "scidup_app_nag_format.h"
 
+#include "scidup_app_nag_latex.h"
 #include "scidup/core/nags.h"
 #include "scidup/database/common.h"
-#include "naglatex.h"
 
 #include <cstdio>
 #include <cstring>
@@ -19,14 +19,14 @@ void game_printNag(scid::core::Nag nag, char* str, bool asSymbol, gameFormatT fo
 
 	const auto value = scid::core::nagCode(nag);
 	if (asSymbol && format == PGN_FORMAT_LaTeX &&
-	    value >= (sizeof(scid::database::evalNagsLatex) / sizeof(const char*))) {
+	    value >= (sizeof(evalNagsLatex) / sizeof(const char*))) {
 		*str = 0;
 		return;
 	}
 
 	if (asSymbol) {
 		if (format == PGN_FORMAT_LaTeX) {
-			strcpy(str, scid::database::evalNagsLatex[value]);
+			strcpy(str, evalNagsLatex[value]);
 		} else if (format == PGN_FORMAT_HTML &&
 		           nag == scid::core::Nag::Diagram) {
 			strcpy(str, "<i>(D)</i>");

@@ -1,6 +1,6 @@
-#include "piece_translation.h"
+#include "scidup_app_piece_translation.h"
 
-namespace scid::database {
+namespace scidup::app {
 
 int language = 0; // default to english
 //  0 = en,
@@ -53,4 +53,4 @@ char transPiecesChar(char c) {
 	return ret;
 }
 
-} // namespace scid::database
+} // namespace scidup::app

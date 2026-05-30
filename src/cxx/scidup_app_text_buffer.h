@@ -19,7 +19,7 @@
 #include "scidup/database/common.h"
 #include <stdio.h>
 
-namespace scid::database {
+namespace scidup::app {
 
 class TextBuffer
 {
@@ -113,10 +113,9 @@ TextBuffer::AddChar (char ch)
 }
 
 
-} // namespace scid::database
+} // namespace scidup::app
 #endif  // SCID_TEXTBUF_H
 
 ///////////////////////////////////////////////////////////////////////////
 //  EOF: textbuf.h
 ///////////////////////////////////////////////////////////////////////////
-

@@ -38,7 +38,7 @@
 #include "optable.h"
 #include "scidup/eco/book.h"
 #include "scidup_app_legacy_pgn.h"
-#include "piece_translation.h"
+#include "scidup_app_piece_translation.h"
 #include "polyglot.h"
 #include "scidup/core/position.h"
 #include "scidup/core/pgn/decode.h"
@@ -646,7 +646,7 @@ exportGame (const scid::core::Game& game, const char* scidFlags,
             FILE * exportFile,
             scidup::app::LegacyGameEncodeOptions options)
 {
-    char old_language = scid::database::language;
+    char old_language = scidup::app::language;
 
     // Format-specific settings:
     switch (options.legacyFormat) {
@@ -655,7 +655,7 @@ exportGame (const scid::core::Game& game, const char* scidFlags,
         options.addStyle(PGN_STYLE_SHORT_HEADER);
         break;
     default:
-        scid::database::language = 0;
+        scidup::app::language = 0;
         break;
     }
 
@@ -686,7 +686,7 @@ exportGame (const scid::core::Game& game, const char* scidFlags,
         //TODO:
         //if (nWrited != db->tbuf->GetByteCount()) error
     }
-    scid::database::language = old_language;
+    scidup::app::language = old_language;
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1736,7 +1736,7 @@ sc_eco_summary (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 break;
             default:
                 dstr->AddChar (ch);
-                if (inMoveList) { temp->AddChar (scid::database::transPiecesChar(ch)); }//{ temp->AddChar (ch); }
+                if (inMoveList) { temp->AddChar (scidup::app::transPiecesChar(ch)); }//{ temp->AddChar (ch); }
             }
             s++;
         }
@@ -1773,7 +1773,7 @@ sc_eco_translate (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // translateECO:
-//    Translates an ECO opening name into the current scid::database::language.
+//    Translates an ECO opening name into the current application language.
 //
 void
 translateECO (Tcl_Interp * ti, const char * strFrom, scid::core::DString * dstrTo)
@@ -2287,7 +2287,7 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
             const auto exportFileName = tcl_strings_are_utf8.c_str();
             auto exportFile = fopen(exportFileName, "wb");
             if (exportFile == NULL) return errorResult (ti, "Error opening file for exporting games.");
-            auto old_language = scid::database::language;
+            auto old_language = scidup::app::language;
             scid::core::Game game;
             std::array<char, 22> scidFlags{};
             auto encodeOptions = scidup::app::defaultLegacyGameEncodeOptions();
@@ -2300,7 +2300,7 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                 encodeOptions.legacyFormat = scidup::app::PGN_FORMAT_Plain;
                 encodeOptions.style = PGN_STYLE_TAGS | PGN_STYLE_COMMENTS |
                     PGN_STYLE_VARS;
-                scid::database::language = 0;
+                scidup::app::language = 0;
             }
             if (argc > 7) fprintf(exportFile, "%s", argv[7]);
             scid::database::Progress progress = UI_CreateProgress(ti);
@@ -2355,7 +2355,7 @@ sc_filter_old(ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
                 }
             if (err == scid::core::OK && argc > 8)
                 fprintf(exportFile, "%s", argv[8]);
-            scid::database::language = old_language;
+            scidup::app::language = old_language;
             fclose (exportFile);
             delete[] idxList;
             return UI_Result(ti, err);
@@ -2476,8 +2476,8 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
         return sc_game_tags (cd, ti, argc, argv);
 
 	    case GAME_TRUNCATE:
-	        old_language = scid::database::language;
-	        scid::database::language = 0;
+	        old_language = scidup::app::language;
+	        scidup::app::language = 0;
 	        if (argc > 2 && scid::database::strIsPrefix (argv[2], "-start")) {
 	            // "sc_game truncate -start" truncates the moves up to the
 	            // current position:
@@ -2522,7 +2522,7 @@ sc_game (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
 	            }
 	        }
         editor.setDirty();
-        scid::database::language = old_language;
+        scidup::app::language = old_language;
         break;
 
     case GAME_VARIANT:
@@ -3144,7 +3144,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 temp,
                 scid::core::notation::nextSan(g.coreGame(), location)
                     .c_str());
-            scid::database::transPieces(temp);
+            scidup::app::transPieces(temp);
             AppendResult (ti, temp, NULL);
             return TCL_OK;
 // nextMoveNT is the same as nextMove, except that the move is not translated
@@ -3168,7 +3168,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 temp, scid::core::notation::previousSan(g.coreGame(),
                                                         location)
                           .c_str());
-            scid::database::transPieces(temp);
+            scidup::app::transPieces(temp);
             AppendResult (ti, temp, NULL);
             return TCL_OK;
 // previousMoveNT is the same as previousMove, except that the move is not translated
@@ -3336,7 +3336,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         san, scid::core::notation::previousSan(g.coreGame(), location)
                  .c_str());
     strcpy(tempTrans, san);
-    scid::database::transPieces(tempTrans);
+    scidup::app::transPieces(tempTrans);
     bool printNags = true;
     if (san[0] == 0) {
         scid::database::strCopy (temp, "(");
@@ -3371,7 +3371,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
         san,
         scid::core::notation::nextSan(g.coreGame(), location).c_str());
     strcpy(tempTrans, san);
-    scid::database::transPieces(tempTrans);
+    scidup::app::transPieces(tempTrans);
     if (san[0] == 0) {
         scid::database::strCopy (temp, "(");
         scid::database::strAppend (temp, variationLevel(g.coreGame(), location) == 0 ?
@@ -3444,7 +3444,7 @@ sc_game_info (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
                 scid::core::notation::nextSan(g.coreGame(), variationLocation)
                     .c_str());
             strcpy(tempTrans, s);
-            scid::database::transPieces(tempTrans);
+            scidup::app::transPieces(tempTrans);
             std::snprintf(temp, sizeof(temp), "   <run sc_var enter %u; updateBoard -animate>v%u",
 	                     vnum, vnum+1);
             AppendResult (ti, "<green>", temp, "</green>: ", NULL);
@@ -5030,19 +5030,19 @@ sc_info (ClientData cd, Tcl_Interp * ti, int argc, const char ** argv)
       if (argc != 3) {
         return errorResult (ti, "Usage: sc_info language <lang>");
       }
-      if ( strcmp(argv[2], "en") == 0) {scid::database::language = 0;}
-      if ( strcmp(argv[2], "fr") == 0) {scid::database::language = 1;}
-      if ( strcmp(argv[2], "es") == 0) {scid::database::language = 2;}
-      if ( strcmp(argv[2], "de") == 0) {scid::database::language = 3;}
-      if ( strcmp(argv[2], "it") == 0) {scid::database::language = 4;}
-      if ( strcmp(argv[2], "ne") == 0) {scid::database::language = 5;}
-      if ( strcmp(argv[2], "cz") == 0) {scid::database::language = 6;}
-      if ( strcmp(argv[2], "hu") == 0) {scid::database::language = 7;}
-      if ( strcmp(argv[2], "no") == 0) {scid::database::language = 8;}
-      if ( strcmp(argv[2], "sw") == 0) {scid::database::language = 9;}
-      if ( strcmp(argv[2], "ca") == 0) {scid::database::language = 10;}
-      if ( strcmp(argv[2], "fi") == 0) {scid::database::language = 11;}
-      if ( strcmp(argv[2], "gr") == 0) {scid::database::language = 12;}
+      if ( strcmp(argv[2], "en") == 0) {scidup::app::language = 0;}
+      if ( strcmp(argv[2], "fr") == 0) {scidup::app::language = 1;}
+      if ( strcmp(argv[2], "es") == 0) {scidup::app::language = 2;}
+      if ( strcmp(argv[2], "de") == 0) {scidup::app::language = 3;}
+      if ( strcmp(argv[2], "it") == 0) {scidup::app::language = 4;}
+      if ( strcmp(argv[2], "ne") == 0) {scidup::app::language = 5;}
+      if ( strcmp(argv[2], "cz") == 0) {scidup::app::language = 6;}
+      if ( strcmp(argv[2], "hu") == 0) {scidup::app::language = 7;}
+      if ( strcmp(argv[2], "no") == 0) {scidup::app::language = 8;}
+      if ( strcmp(argv[2], "sw") == 0) {scidup::app::language = 9;}
+      if ( strcmp(argv[2], "ca") == 0) {scidup::app::language = 10;}
+      if ( strcmp(argv[2], "fi") == 0) {scidup::app::language = 11;}
+      if ( strcmp(argv[2], "gr") == 0) {scidup::app::language = 12;}
 
     break;
     default:
@@ -7925,7 +7925,7 @@ sc_tree_stats (ClientData, Tcl_Interp * ti, int argc, const char ** argv)
     scid::core::sanStringT tempTrans;
     auto calc_san = [&](auto const& move) {
         strcpy(tempTrans, move ? move.getSAN().c_str() : "[end]");
-        scid::database::transPieces(tempTrans);
+        scidup::app::transPieces(tempTrans);
     };
 
     if (sortMethod == SORT_ALPHA) { // icase alphabetical order
