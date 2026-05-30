@@ -16,14 +16,14 @@
 * along with Scid. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "scidup/database/common.h"
+#include "scid/database/common.h"
 #include "dbasepool.h"
-#include "scidup/core/game_positions.h"
-#include "scidup/core/nags.h"
-#include "scidup/database/game_id.h"
-#include "scidup/database/misc.h"
-#include "scidup/database/scidbase.h"
-#include "scidup/eco/code.h"
+#include "scid/core/game_positions.h"
+#include "scid/core/nags.h"
+#include "scid/database/game_id.h"
+#include "scid/database/misc.h"
+#include "scid/database/scidbase.h"
+#include "scid/eco/code.h"
 #include "scidup_app_editor.h"
 #include "scidup_app_tournaments.h"
 #include "scidup_app_tree.h"
@@ -422,8 +422,8 @@ UI_res_t sc_base_gameslist(scid::database::scidBaseT* dbase, UI_handle_t ti, int
 		char flags[16];
 		info.flagString(flags, "WBMENPTKQ!?U123456");
 		ginfo.push_back(flags);
-		scidup::eco::String ecoStr;
-		scidup::eco::toExtendedString(info.ecoCode, ecoStr);
+		scid::eco::String ecoStr;
+		scid::eco::toExtendedString(info.ecoCode, ecoStr);
 		ginfo.push_back(ecoStr);
 		std::string endMaterial = scid::database::matsig_makeString(info.finalMaterial);
 		ginfo.push_back(endMaterial);

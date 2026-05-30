@@ -18,7 +18,7 @@ target_include_directories(
     PUBLIC "${CMAKE_SOURCE_DIR}/src/cxx" )
 target_link_libraries(
     scidup_tests_libs_cppsupport
-    PUBLIC ScidUp::Database ScidUp::Eco Threads::Threads )
+    PUBLIC LibScid::Database LibScid::Eco Threads::Threads )
 add_library(
     ScidUp::Tests::Libs::CppBase
     ALIAS scidup_tests_libs_cppsupport )

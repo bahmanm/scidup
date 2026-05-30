@@ -49,6 +49,7 @@ ScidUp doesn't require a whole lot of dependencies and setup to get started hack
 - CMake 3.30+
 - A C++ compiler toolchain
 - Tcl/Tk 9 (ScidUp currently targets Tcl/Tk 9.0.3)
+- LibScid 0.1.0
 
 #### Configure and build
 
@@ -72,21 +73,24 @@ cmake --preset dev-no-checks
 cmake --build --preset dev-no-checks
 ```
 
-#### Pointing ScidUp at Tcl/Tk
+#### Pointing ScidUp at LibScid and Tcl/Tk
 
-`dev` / `dev-no-checks` do not hard-code a Tcl/Tk prefix.
+`dev` / `dev-no-checks` do not hard-code dependency prefixes.
+
+LibScid must be discoverable by CMake as a package. Point `CMAKE_PREFIX_PATH` at
+the LibScid install prefix, or install LibScid into a standard CMake search path.
 
 If you have a dedicated Tcl/Tk prefix, the most reliable approach is to use `DEPS_INSTALL_PREFIX` (ScidUp will exclusively search it to avoid mixing Tcl/Tk installations from different providers):
 
 ```sh
 export DEPS_INSTALL_PREFIX="/path/to/tcltk/prefix"
-cmake --preset dev
+cmake --preset dev -DCMAKE_PREFIX_PATH="/path/to/libscid/prefix;$DEPS_INSTALL_PREFIX"
 ```
 
 Otherwise, if your Tcl/Tk is not in a default search path, pass a prefix explicitly:
 
 ```sh
-cmake --preset dev -DCMAKE_PREFIX_PATH="/path/to/tcltk/prefix;$CMAKE_PREFIX_PATH"
+cmake --preset dev -DCMAKE_PREFIX_PATH="/path/to/libscid/prefix;/path/to/tcltk/prefix;$CMAKE_PREFIX_PATH"
 ```
 
 ## Ubuntu
@@ -130,7 +134,7 @@ Then:
 
 ```sh
 export DEPS_INSTALL_PREFIX="$HOME/scidup-deps/install"
-cmake --preset dev
+cmake --preset dev -DCMAKE_PREFIX_PATH="/path/to/libscid/prefix;$DEPS_INSTALL_PREFIX"
 cmake --build --preset dev
 ctest --preset dev --output-on-failure
 ```
@@ -174,7 +178,7 @@ Then:
 
 ```sh
 export DEPS_INSTALL_PREFIX="$HOME/scidup-deps/install"
-cmake --preset dev
+cmake --preset dev -DCMAKE_PREFIX_PATH="/path/to/libscid/prefix;$DEPS_INSTALL_PREFIX"
 cmake --build --preset dev
 ctest --preset dev --output-on-failure
 ```

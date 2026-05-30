@@ -14,10 +14,10 @@
 * along with Scid. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "scidup/core/game.h"
+#include "scid/core/game.h"
 #include "scidup_app_legacy_pgn.h"
-#include "scidup/core/game_cursor.h"
-#include "scidup/core/pgn/decode.h"
+#include "scid/core/game_cursor.h"
+#include "scid/core/pgn/decode.h"
 #include <algorithm>
 #include <cctype>
 #include <cstring>

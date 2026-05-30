@@ -17,11 +17,11 @@
 #ifndef SCID_CROSSTAB_H
 #define SCID_CROSSTAB_H
 
-#include "scidup/core/date.h"
-#include "scidup/core/dstring.h"
-#include "scidup/core/game_result.h"
-#include "scidup/database/common.h"
-#include <scidup/spelling/spelling.h>
+#include "scid/core/date.h"
+#include "scid/core/dstring.h"
+#include "scid/core/game_result.h"
+#include "scid/database/common.h"
+#include <scid/spelling/spelling.h>
 
 const scid::core::uint CROSSTABLE_MaxPlayers = 500;  // Max. number of players.
 const scid::core::uint CROSSTABLE_MaxRounds =   60;  // Max. number of Swiss event rounds.
@@ -182,7 +182,7 @@ class Crosstable
 
     scid::core::uint   NumPlayers() { return PlayerCount; }
     scid::core::errorT AddPlayer (scid::database::idNumberT id, const char * name, scid::core::ratingT elo,
-                      const scidup::spelling::SpellChecker*);
+                      const scid::spelling::SpellChecker*);
     scid::core::errorT AddResult (scid::core::uint gameNumber, scid::database::idNumberT white, scid::database::idNumberT black,
                       scid::core::resultT result, scid::core::uint round, scid::core::dateT date);
 

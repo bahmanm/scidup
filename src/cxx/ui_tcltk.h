@@ -19,7 +19,7 @@
 #ifndef SCID_UI_TCLTK_H
 #define SCID_UI_TCLTK_H
 
-#include "scidup/database/misc.h"
+#include "scid/database/misc.h"
 #include <chrono>
 #include <tcl.h>
 #include <sstream>

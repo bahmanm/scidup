@@ -82,6 +82,20 @@ jobs:
         ln -sf $DEPS_INSTALL_PREFIX/bin/tclsh9.0 $DEPS_INSTALL_PREFIX/bin/tclsh
         ln -sf $DEPS_INSTALL_PREFIX/bin/wish9.0 $DEPS_INSTALL_PREFIX/bin/wish
 
+    - name: Install LibScid
+      run: |
+        cd "$DEPS_BUILD_PREFIX"
+
+        curl -L https://github.com/bahmanm/libscid/archive/refs/tags/v0.1.0.tar.gz | tar -xzf -
+        cmake \
+          -S libscid-0.1.0 \
+          -B libscid-build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_TESTING=OFF \
+          -DLIBSCID_VERSION=0.1.0 \
+          -DCMAKE_INSTALL_PREFIX="$DEPS_INSTALL_PREFIX"
+        cmake --build libscid-build --target install --verbose
+
     - name: Configure
       run: >
         cmake
@@ -162,6 +176,21 @@ jobs:
         if (!(Test-Path "$env:DEPS_INSTALL_PREFIX\\bin\\wish.exe")) {
           Copy-Item -Force "$env:DEPS_INSTALL_PREFIX\\bin\\wish90.exe" "$env:DEPS_INSTALL_PREFIX\\bin\\wish.exe"
         }
+
+    - name: Install LibScid
+      run: |
+        Set-Location $env:DEPS_BUILD_PREFIX
+
+        curl.exe -L "https://github.com/bahmanm/libscid/archive/refs/tags/v0.1.0.tar.gz" -o libscid-v0.1.0.tar.gz
+        tar -xzf libscid-v0.1.0.tar.gz
+        cmake `
+          -S libscid-0.1.0 `
+          -B libscid-build `
+          -DCMAKE_BUILD_TYPE=Release `
+          -DBUILD_TESTING=OFF `
+          -DLIBSCID_VERSION=0.1.0 `
+          "-DCMAKE_INSTALL_PREFIX=$env:DEPS_INSTALL_PREFIX"
+        cmake --build libscid-build --target install --config Release --verbose
 
     - name: Configure
       run: |

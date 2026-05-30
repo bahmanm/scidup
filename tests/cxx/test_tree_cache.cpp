@@ -1,6 +1,6 @@
 #include "scidup_app_tree_cache.h"
 
-#include "scidup/core/position.h"
+#include "scid/core/position.h"
 
 #include <gtest/gtest.h>
 

@@ -5,11 +5,11 @@
 // library boundary: ScidUp owns the current editing session, dirty state,
 // undo/redo, push/pop state, core Game, and application/database Scid flags.
 
-#include "scidup/core/game.h"
-#include "scidup/core/game_cursor.h"
-#include "scidup/core/movetext_location.h"
-#include "scidup/database/game_id.h"
-#include "scidup/database/scidbase.h"
+#include "scid/core/game.h"
+#include "scid/core/game_cursor.h"
+#include "scid/core/movetext_location.h"
+#include "scid/database/game_id.h"
+#include "scid/database/scidbase.h"
 #include "scidup_app_undo_redo.h"
 #include <algorithm>
 #include <array>

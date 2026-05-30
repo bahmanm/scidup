@@ -2,14 +2,14 @@
 #include "scidup_app_legacy_pgn.h"
 #include "scidup_app_piece_translation.h"
 #include "scidup_app_text_buffer.h"
-#include "scidup/core/game.h"
-#include "scidup/database/common.h"
-#include "scidup/database/misc.h"
-#include "scidup/core/dstring.h"
-#include "scidup/core/game_cursor.h"
-#include "scidup/core/nags.h"
-#include "scidup/core/notation.h"
-#include "scidup/eco/code.h"
+#include "scid/core/game.h"
+#include "scid/database/common.h"
+#include "scid/database/misc.h"
+#include "scid/core/dstring.h"
+#include "scid/core/game_cursor.h"
+#include "scid/core/nags.h"
+#include "scid/core/notation.h"
+#include "scid/eco/code.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -624,7 +624,7 @@ scid::core::errorT LegacyGamePgnEncoder::encode() {
     const auto& BlackElo = coreGame.black().rating.value;
     const auto& BlackRatingType = coreGame.black().rating.type;
     const auto& Date = coreGame.date();
-    const auto EcoCode = scidup::eco::fromString(coreGame.eco().c_str());
+    const auto EcoCode = scid::eco::fromString(coreGame.eco().c_str());
     const auto& EventDate = coreGame.eventDate();
     const auto& Result = coreGame.result();
     const auto& RoundStr = coreGame.round();
@@ -733,8 +733,8 @@ scid::core::errorT LegacyGamePgnEncoder::encode() {
         if (EcoCode != 0) {
             tb->PrintString (options.isHtmlFormat() ? " &nbsp; &nbsp; " : "  ");
             if (options.isLatexFormat()) { tb->PrintString ("\\hfill "); }
-            scidup::eco::String ecoStr;
-            scidup::eco::toExtendedString(EcoCode, ecoStr);
+            scid::eco::String ecoStr;
+            scid::eco::toExtendedString(EcoCode, ecoStr);
             tb->PrintString (ecoStr);
         }
         auto annotator = findExtraTag("Annotator");
@@ -802,8 +802,8 @@ scid::core::errorT LegacyGamePgnEncoder::encode() {
                 tb->PrintString (temp);
                 }
                 if (EcoCode != 0) {
-                scidup::eco::String ecoStr;
-                scidup::eco::toExtendedString(EcoCode, ecoStr);
+                scid::eco::String ecoStr;
+                scid::eco::toExtendedString(EcoCode, ecoStr);
                 std::snprintf(temp, sizeof(temp), "[ECO \"%s\"]%s", ecoStr, newline);
                 tb->PrintString (temp);
                 }

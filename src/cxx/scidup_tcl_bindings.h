@@ -15,9 +15,9 @@
 
 
 #include "tcl.h"
-#include "scidup/database/hfilter.h"
-#include "scidup/database/misc.h"
-#include "scidup/database/scidbase.h"
+#include "scid/database/hfilter.h"
+#include "scid/database/misc.h"
+#include "scid/database/scidbase.h"
 
 
 // Macro TCL_ARGS expands to the argument-type list that any

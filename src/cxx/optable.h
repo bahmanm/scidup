@@ -15,18 +15,18 @@
 #ifndef SCID_OPTABLE_H
 #define SCID_OPTABLE_H
 
-#include "scidup/core/dstring.h"
-#include "scidup/core/game_result.h"
-#include "scidup/core/movetext_location.h"
-#include "scidup/core/notation.h"
-#include "scidup/database/common.h"
-#include "scidup/database/game_id.h"
-#include "scidup/database/game_info.h"
-#include "scidup/database/misc.h"
-#include "scidup/eco/code.h"
+#include "scid/core/dstring.h"
+#include "scid/core/game_result.h"
+#include "scid/core/movetext_location.h"
+#include "scid/core/notation.h"
+#include "scid/database/common.h"
+#include "scid/database/game_id.h"
+#include "scid/database/game_info.h"
+#include "scid/database/misc.h"
+#include "scid/eco/code.h"
 #include <string>
 
-namespace scidup::eco {
+namespace scid::eco {
 class Book;
 }
 
@@ -99,7 +99,7 @@ class OpLine
     scid::core::uint        NumMoves;
     bool        ShortGame;     // True if all game ends early enough that
                                // this line contains all its moves.
-    scidup::eco::Code           EcoCode;
+    scid::eco::Code           EcoCode;
     scid::core::uint        MoveOrderID;
     scid::core::sanStringT  Move [OPLINE_MOVES];
     scid::core::uint        NoteMoveNum;  // If a note, at what move does it start?
@@ -188,7 +188,7 @@ class OpTable
 
   public:
     OpTable (const char * type, scid::core::Game * g,
-             scid::core::MovetextLocation location, scidup::eco::Book * ecoBook) {
+             scid::core::MovetextLocation location, scid::eco::Book * ecoBook) {
         Init (type, g, location, ecoBook);
     }
     OpTable (const char * type, scid::core::Game * g,
@@ -197,7 +197,7 @@ class OpTable
     }
     ~OpTable() { Clear();  delete[] Type; }
     void Init (const char * type, scid::core::Game * g,
-               scid::core::MovetextLocation location, scidup::eco::Book * ecoBook);
+               scid::core::MovetextLocation location, scid::eco::Book * ecoBook);
     void Clear ();
     void ClearNotes ();
     void SetFormat (const char * str);

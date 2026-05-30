@@ -5,7 +5,7 @@
 // filter and cache out of the database library boundary while preserving the
 // existing Tcl-facing filter contract.
 
-#include "scidup/database/scidbase.h"
+#include "scid/database/scidbase.h"
 #include "scidup_app_tree_cache.h"
 #include <memory>
 #include <string>

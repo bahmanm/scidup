@@ -22,7 +22,7 @@
 #ifndef SCID_ENGINE_H
 #define SCID_ENGINE_H
 
-#include "scidup/core/position.h"
+#include "scid/core/position.h"
 #include "timer.h"
 
 #include <cassert>

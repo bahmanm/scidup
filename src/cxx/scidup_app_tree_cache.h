@@ -1,7 +1,7 @@
 #pragma once
 
-#include "scidup/database/game_id.h"
-#include "scidup/database/hfilter.h"
+#include "scid/database/game_id.h"
+#include "scid/database/hfilter.h"
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
