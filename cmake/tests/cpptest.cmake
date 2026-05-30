@@ -6,15 +6,16 @@ set(
     "${CMAKE_SOURCE_DIR}/src/cxx/dbasepool.cpp"
     "${CMAKE_SOURCE_DIR}/src/cxx/scidup_app_legacy_pgn.cpp"
     "${CMAKE_SOURCE_DIR}/src/cxx/scidup_app_nag_format.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cxx/scidup_app_piece_translation.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cxx/scidup_app_text_buffer.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cxx/scidup_app_tree_cache.cpp"
 )
 add_library(
     scidup_tests_libs_cppsupport
     ${SCIDUP_TESTS_LIBS_CPPSUPPORT_SOURCES} )
 target_include_directories(
     scidup_tests_libs_cppsupport
-    PUBLIC
-        "${CMAKE_SOURCE_DIR}/src/cxx"
-        "${CMAKE_SOURCE_DIR}/libscidup/libs/database/src/internal" )
+    PUBLIC "${CMAKE_SOURCE_DIR}/src/cxx" )
 target_link_libraries(
     scidup_tests_libs_cppsupport
     PUBLIC ScidUp::Database ScidUp::Eco Threads::Threads )

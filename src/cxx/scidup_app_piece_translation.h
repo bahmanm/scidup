@@ -2,7 +2,7 @@
 
 #include "scidup/core/primitives.h"
 
-namespace scid::database {
+namespace scidup::app {
 
 // Legacy application-wide piece-letter translation used by Tcl/UI export
 // compatibility. This is not part of plain PGN encoding.
@@ -14,4 +14,4 @@ extern int language; // default to english
 //  0 = en, 1 = fr, 2 = es, 3 = de
 extern const char* langPieces[];
 
-} // namespace scid::database
+} // namespace scidup::app

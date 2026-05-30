@@ -12,13 +12,13 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 
-#include "textbuf.h"
+#include "scidup_app_text_buffer.h"
 #include "scidup/database/misc.h"
 #include <cstdio>
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //### TextBuffer::Init(): Initialise the textbuffer.
-namespace scid::database {
+namespace scidup::app {
 
 void
 TextBuffer::Init (void)
@@ -154,7 +154,7 @@ scid::core::errorT
 TextBuffer::PrintWord (const char * str)
 {
     ASSERT(Current != NULL);
-    scid::core::uint length = strLength (str);
+    scid::core::uint length = scid::database::strLength (str);
     if (Column + length >= WrapColumn)    { NewLine(); }
     if (ByteCount + length >= BufferSize) { return scid::core::ERROR_BufferFull; }
     while (*str != 0) {
@@ -243,4 +243,4 @@ TextBuffer::PrintInt (scid::core::uint i, const char * str)
 //  EOF: textbuf.cpp
 ///////////////////////////////////////////////////////////////////////////
 
-} // namespace scid::database
+} // namespace scidup::app

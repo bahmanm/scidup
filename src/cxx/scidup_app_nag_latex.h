@@ -14,9 +14,9 @@
 //////////////////////////////////////////////////////////////////////
 
 
-namespace scid::database {
+namespace scidup::app {
 
-const char * evalNagsLatex [] =
+inline const char * evalNagsLatex [] =
 {
 	"",  // one for the offset
 	"!",  // $1
@@ -245,4 +245,4 @@ const char * evalNagsLatex [] =
 	""   // $224
 };
 
-} // namespace scid::database
+} // namespace scidup::app

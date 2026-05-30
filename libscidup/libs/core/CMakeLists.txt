@@ -27,6 +27,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/fullmove.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/game.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/game_cursor.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/game_positions.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/movetext_cursor.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/movetext_location.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/scidup/core/game_result.h"

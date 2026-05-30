@@ -23,7 +23,6 @@
 #include "scidup/core/pgn/traversal.h"
 #include "scidup/database/scidbase.h"
 #include "game_storage.h"
-#include "piece_translation.h"
 #include "scidup/core/pgn/decode.h"
 #include <algorithm>
 #include <array>
@@ -249,19 +248,6 @@ TEST(Test_Game, clone) {
 
 		ASSERT_EQ(nextCoreSan(game, location), nextCoreSan(clone, cloneLocation));
 	}
-}
-
-TEST(Test_Game, LegacyPieceTranslation) {
-	const auto savedLanguage = scid::database::language;
-	scid::database::language = 3; // German: N -> S, B -> L.
-
-	char san[] = "Nf3 Bc4";
-	scid::database::transPieces(san);
-
-	EXPECT_STREQ("Sf3 Lc4", san);
-	EXPECT_EQ('S', scid::database::transPiecesChar('N'));
-
-	scid::database::language = savedLanguage;
 }
 
 TEST(Test_Game, locationInPGN) {

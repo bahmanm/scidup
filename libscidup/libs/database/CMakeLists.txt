@@ -10,20 +10,17 @@ set(
     SCIDUP_DATABASE_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/codec_scid4.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/eco_code.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/filter.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_info.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_search.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_storage.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/index.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/matsig.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/misc.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/piece_translation.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/scidbase.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/searchpos.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/searchindex.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/sortcache.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/stored.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/textbuf.cpp" )
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/stored.cpp" )
 
 set(
     SCIDUP_DATABASE_PUBLIC_HEADERS
@@ -51,17 +48,12 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/containers.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/eco_code.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/filebuf.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_positions.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_search.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_storage.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/gameview.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/naglatex.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/piece_translation.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/searchpos.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/sortcache.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/stored.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/tree_cache.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/textbuf.h" )
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/stored.h" )
 
 add_library(
     scidup_database
