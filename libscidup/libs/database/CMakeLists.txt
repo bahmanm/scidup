@@ -10,7 +10,6 @@ set(
     SCIDUP_DATABASE_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/codec_scid4.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/eco_code.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/filter.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_info.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_search.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/game_storage.cpp"
@@ -54,8 +53,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/gameview.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/searchpos.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/sortcache.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/stored.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/tree_cache.h" )
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/stored.h" )
 
 add_library(
     scidup_database

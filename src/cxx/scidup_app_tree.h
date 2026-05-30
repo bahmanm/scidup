@@ -6,7 +6,7 @@
 // existing Tcl-facing filter contract.
 
 #include "scidup/database/scidbase.h"
-#include "tree_cache.h"
+#include "scidup_app_tree_cache.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -16,7 +16,7 @@ namespace scidup::app::tree {
 
 struct State {
 	std::unique_ptr<scid::database::Filter> filter = std::make_unique<scid::database::Filter>(0);
-	scid::database::TreeCache cache;
+	TreeCache cache;
 	uint64_t cacheToken = 0;
 
 	void reset(scid::database::scidBaseT const& base) {
