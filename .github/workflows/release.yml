@@ -8,6 +8,9 @@ on:
 permissions:
   contents: write
 
+env:
+  LIBSCID_VERSION: 0.1.0
+
 jobs:
   unix-build-and-package:
     runs-on: ${{ matrix.os }}
@@ -93,13 +96,13 @@ jobs:
         run: |
           cd "$DEPS_BUILD_PREFIX"
 
-          curl -L https://github.com/bahmanm/libscid/archive/refs/tags/v0.1.0.tar.gz | tar -xzf -
+          curl -L "https://github.com/bahmanm/libscid/archive/refs/tags/v${LIBSCID_VERSION}.tar.gz" | tar -xzf -
           cmake \
-            -S libscid-0.1.0 \
+            -S "libscid-${LIBSCID_VERSION}" \
             -B libscid-build \
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_TESTING=OFF \
-            -DLIBSCID_VERSION=0.1.0 \
+            -DLIBSCID_VERSION="$LIBSCID_VERSION" \
             -DCMAKE_INSTALL_PREFIX="$DEPS_INSTALL_PREFIX"
           cmake --build libscid-build --target install --verbose
 
@@ -209,14 +212,14 @@ jobs:
         run: |
           Set-Location $env:DEPS_BUILD_PREFIX
 
-          curl.exe -L "https://github.com/bahmanm/libscid/archive/refs/tags/v0.1.0.tar.gz" -o libscid-v0.1.0.tar.gz
-          tar -xzf libscid-v0.1.0.tar.gz
+          curl.exe -L "https://github.com/bahmanm/libscid/archive/refs/tags/v$env:LIBSCID_VERSION.tar.gz" -o "libscid-v$env:LIBSCID_VERSION.tar.gz"
+          tar -xzf "libscid-v$env:LIBSCID_VERSION.tar.gz"
           cmake `
-            -S libscid-0.1.0 `
+            -S "libscid-$env:LIBSCID_VERSION" `
             -B libscid-build `
             -DCMAKE_BUILD_TYPE=Release `
             -DBUILD_TESTING=OFF `
-            -DLIBSCID_VERSION=0.1.0 `
+            "-DLIBSCID_VERSION=$env:LIBSCID_VERSION" `
             "-DCMAKE_INSTALL_PREFIX=$env:DEPS_INSTALL_PREFIX"
           cmake --build libscid-build --target install --config Release --verbose
 
