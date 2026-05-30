@@ -49,7 +49,6 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/containers.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/eco_code.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/filebuf.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_positions.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_search.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/game_storage.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/gameview.h"

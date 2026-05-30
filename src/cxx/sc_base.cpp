@@ -18,7 +18,7 @@
 
 #include "scidup/database/common.h"
 #include "dbasepool.h"
-#include "game_positions.h"
+#include "scidup/core/game_positions.h"
 #include "scidup/core/nags.h"
 #include "scidup/database/game_id.h"
 #include "scidup/database/misc.h"
@@ -449,7 +449,7 @@ UI_res_t sc_base_gameslist(scid::database::scidBaseT* dbase, UI_handle_t ti, int
 
 static UI_res_t sc_base_getGameHelper(UI_handle_t ti,
                                       const scid::core::Game& game) {
-	auto positions = scid::database::gamepos::collectPositions(game);
+	auto positions = scid::core::gamepos::collectPositions(game);
 	UI_List res(positions.size());
 	UI_List posInfo(6);
 	for (const auto& pos : positions) {
