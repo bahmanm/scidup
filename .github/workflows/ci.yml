@@ -8,7 +8,7 @@ on:
     branches: [ "master" ]
 
 env:
-  LIBSCID_VERSION: 0.1.0
+  LIBSCID_CPP_VERSION: 0.3.0
 
 jobs:
   unix-build-and-test:
@@ -85,17 +85,17 @@ jobs:
         ln -sf $DEPS_INSTALL_PREFIX/bin/tclsh9.0 $DEPS_INSTALL_PREFIX/bin/tclsh
         ln -sf $DEPS_INSTALL_PREFIX/bin/wish9.0 $DEPS_INSTALL_PREFIX/bin/wish
 
-    - name: Install LibScid
+    - name: Install libscid-cpp
       run: |
         cd "$DEPS_BUILD_PREFIX"
 
-        curl -L "https://github.com/bahmanm/libscid/archive/refs/tags/v${LIBSCID_VERSION}.tar.gz" | tar -xzf -
+        curl -L "https://github.com/bahmanm/libscid/archive/refs/tags/v${LIBSCID_CPP_VERSION}.tar.gz" | tar -xzf -
         cmake \
-          -S "libscid-${LIBSCID_VERSION}" \
+          -S "libscid-${LIBSCID_CPP_VERSION}" \
           -B libscid-build \
           -DCMAKE_BUILD_TYPE=Release \
           -DBUILD_TESTING=OFF \
-          -DLIBSCID_VERSION="$LIBSCID_VERSION" \
+          -DLIBSCID_PROJECT_VERSION="$LIBSCID_CPP_VERSION" \
           -DCMAKE_INSTALL_PREFIX="$DEPS_INSTALL_PREFIX"
         cmake --build libscid-build --target install --verbose
 
@@ -180,18 +180,18 @@ jobs:
           Copy-Item -Force "$env:DEPS_INSTALL_PREFIX\\bin\\wish90.exe" "$env:DEPS_INSTALL_PREFIX\\bin\\wish.exe"
         }
 
-    - name: Install LibScid
+    - name: Install libscid-cpp
       run: |
         Set-Location $env:DEPS_BUILD_PREFIX
 
-        curl.exe -L "https://github.com/bahmanm/libscid/archive/refs/tags/v$env:LIBSCID_VERSION.tar.gz" -o "libscid-v$env:LIBSCID_VERSION.tar.gz"
-        tar -xzf "libscid-v$env:LIBSCID_VERSION.tar.gz"
+        curl.exe -L "https://github.com/bahmanm/libscid/archive/refs/tags/v$env:LIBSCID_CPP_VERSION.tar.gz" -o "libscid-v$env:LIBSCID_CPP_VERSION.tar.gz"
+        tar -xzf "libscid-v$env:LIBSCID_CPP_VERSION.tar.gz"
         cmake `
-          -S "libscid-$env:LIBSCID_VERSION" `
+          -S "libscid-$env:LIBSCID_CPP_VERSION" `
           -B libscid-build `
           -DCMAKE_BUILD_TYPE=Release `
           -DBUILD_TESTING=OFF `
-          "-DLIBSCID_VERSION=$env:LIBSCID_VERSION" `
+          "-DLIBSCID_PROJECT_VERSION=$env:LIBSCID_CPP_VERSION" `
           "-DCMAKE_INSTALL_PREFIX=$env:DEPS_INSTALL_PREFIX"
         cmake --build libscid-build --target install --config Release --verbose
 
