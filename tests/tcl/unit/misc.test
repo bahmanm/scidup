@@ -158,6 +158,28 @@ test misc-format_clock_from_seconds-formats-positive-and-negative-1.0 {format_cl
     ::misc_test::cleanup
 } -result {0:00 1:05 1:00:00 -0:05 -1:01:01}
 
+test misc-gameclock-isRunning-handles-missing-state-1.0 {gameclock isRunning treats missing clock state as stopped} -setup {
+    ::misc_test::setup
+} -body {
+    # Arrange
+    array unset ::gameclock::data
+
+    set missingState [::gameclock::isRunning]
+
+    set ::gameclock::data(running1) 0
+    set ::gameclock::data(running2) 0
+    set stoppedState [::gameclock::isRunning]
+
+    set ::gameclock::data(running2) 1
+    set runningState [::gameclock::isRunning]
+
+    # Assert
+    list $missingState $stoppedState $runningState
+} -cleanup {
+    ::misc_test::cleanup
+    array unset ::gameclock::data
+} -result {0 0 1}
+
 test misc-clock_to_seconds-parses-hms-and-ms-1.0 {clock_to_seconds parses hh:mm:ss and mm:ss with optional sign} -setup {
     ::misc_test::setup
 } -body {
@@ -293,9 +315,6 @@ test misc-CreateSelectDBWidget-selects-ref-base-and-sets-var-1.0 {CreateSelectDB
     ::misc_test::setup
 } -body {
     # Arrange
-    # TODO: CreateSelectDBWidget currently parses the displayed combobox value to
-    # extract the base number; it should instead map the selected index to the
-    # base ID directly (avoids translation/format brittleness).
     set ::misc_test::selectedBase ""
 
     ::misc_test::stubCommand sc_base {subcmd args} {
@@ -321,10 +340,11 @@ test misc-CreateSelectDBWidget-selects-ref-base-and-sets-var-1.0 {CreateSelectDB
     list \
         $::misc_test::selectedBase \
         [.sel.lb get] \
-        $::misc_test::comboValues(.sel.lb)
+        $::misc_test::comboValues(.sel.lb) \
+        [string match *scan* $::misc_test::binds(.sel.lb,<<ComboboxSelected>>)]
 } -cleanup {
     ::misc_test::cleanup
-} -result {1 {Database 1: db1} {{Database 1: db1} {Database 2: db2}}}
+} -result {1 {Database 1: db1} {{Database 1: db1} {Database 2: db2}} 0}
 
 test misc-CreateSelectDBWidget-supports-multi-digit-base-numbers-1.0 {CreateSelectDBWidget supports multi-digit base numbers} -setup {
     ::misc_test::setup

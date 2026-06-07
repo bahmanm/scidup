@@ -6,6 +6,7 @@ source [file join [file dirname [file dirname [file dirname [info script]]]] lib
 # Ensure namespaces exist prior to sourcing the module under test.
 namespace eval ::engine {}
 namespace eval ::enginewin {}
+namespace eval ::enginecfg {}
 namespace eval ::notify {}
 
 # Source the module under test.
@@ -16,6 +17,7 @@ namespace eval ::enginewin_test {
 
     variable updateDisplayCalls {}
     variable engineSendCalls {}
+    variable engineCloseCalls {}
     variable sendPositionCalls {}
     variable undoFeatureCalls {}
     variable scGameCalls {}
@@ -153,6 +155,7 @@ proc ::enginewin_test::setup {} {
 
     set ::enginewin_test::updateDisplayCalls {}
     set ::enginewin_test::engineSendCalls {}
+    set ::enginewin_test::engineCloseCalls {}
     set ::enginewin_test::sendPositionCalls {}
     set ::enginewin_test::undoFeatureCalls {}
     set ::enginewin_test::scGameCalls {}
@@ -208,6 +211,44 @@ test enginewin-listEngines-filters-and-flags-running-1.0 {listEngines returns on
 } -cleanup {
     ::enginewin_test::cleanup
 } -result {{1 EngineOne 0} {2 EngineTwo 1}}
+
+
+test enginewin-cleanup_-is-idempotent-1.0 {cleanup_ tolerates repeated cleanup for the same engine id} -setup {
+    ::enginewin_test::setup
+} -body {
+    # Arrange
+    set id 1
+    set ::enginewin::engState($id) run
+    set ::enginewin::m_(afterId,$id) after1
+    set ::enginewin::m_(position,$id) position1
+    set ::enginecfg::engConfig_$id {}
+    set ::enginewin::limits_$id {}
+    set ::enginewin::newgame_$id true
+    set ::enginewin::startTime_$id 123
+
+    ::enginewin_test::stubCommand ::engine::close {id} {
+        lappend ::enginewin_test::engineCloseCalls $id
+        return
+    }
+    ::enginewin_test::stubCommand ::notify::EngineBestMove {id move ponder} {
+        lappend ::enginewin_test::notifyCalls [list EngineBestMove $id $move $ponder]
+        return
+    }
+
+    # Act
+    ::enginewin::cleanup_ $id
+    ::enginewin::cleanup_ $id
+
+    # Assert
+    list \
+        $::enginewin_test::engineCloseCalls \
+        $::enginewin_test::notifyCalls \
+        [info exists ::enginewin::engState($id)] \
+        [info exists ::enginewin::m_(afterId,$id)] \
+        [info exists ::enginewin::newgame_$id]
+} -cleanup {
+    ::enginewin_test::cleanup
+} -result {{1 1} {{EngineBestMove 1 {} {}} {EngineBestMove 1 {} {}}} 0 0 0}
 
 
 test enginewin-sendPosition-sends-newgame-and-go-1.0 {sendPosition sends NewGame once and then Go} -setup {
