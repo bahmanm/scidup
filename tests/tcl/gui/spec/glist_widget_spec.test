@@ -590,4 +590,35 @@ test gui-glist-widget-spec-sortclick-1.0 {glist.sortClickEvent_ updates sort cha
     ::gui_glist_widget_spec_test::cleanup
 } -result {{{3 +} w+ ::glist_Arrows(0) {{.glistShell.glist 1}} {{busyCursor .glistShell.glist} {unbusyCursor .glistShell.glist}} idletasks {/tmp/base-1.si4 {3 +}}} {{3 -} w- ::glist_Arrows(1) {/tmp/base-1.si4 {3 -}}} {{3 - 4 -} w-W- ::glist_Arrows(1) ::glist_Arrows(3) {/tmp/base-1.si4 {3 - 4 -}}} {3 - 4 -} {{.glistShell.glist 1} {.glistShell.glist 1} {.glistShell.glist 1}} {{busyCursor .glistShell.glist} {unbusyCursor .glistShell.glist} {busyCursor .glistShell.glist} {unbusyCursor .glistShell.glist} {busyCursor .glistShell.glist} {unbusyCursor .glistShell.glist}}}
 
+test gui-glist-widget-spec-destroy-idempotent-1.0 {glist.destroy_ tolerates repeated cleanup} -setup {
+    ::gui_glist_widget_spec_test::setup
+} -body {
+    source [file join [::scid_test::tclDir] windows gamelist.tcl]
+    ::scid_test::gui_fixtures::glist_widget::installRuntimeStubs ::gui_glist_widget_spec_test::stubbedCommands
+
+    set w .glistShell.glist
+    set ::glistBase($w) 1
+    set ::glistFilter($w) dbfilter
+    set ::glistFirst($w) 0
+    set ::glistClickOp($w) browse
+    set ::glistSortCache($w) cache1
+    set ::glistSortStr($w) sortkey
+    set ::glistVisibleLn($w) 20
+    set ::glistLoaded($w) 1
+    set ::glistTotal($w) 100
+    set ::glistYScroll($w) {scroll command}
+    set ::glistFindBar($w) .glistShell.find
+
+    glist.destroy_ $w
+    glist.destroy_ $w
+
+    list \
+        [::scid_test::gui_fixtures::glist_widget::sortcacheCalls] \
+        [info exists ::glistSortStr($w)] \
+        [info exists ::glistVisibleLn($w)] \
+        [info exists ::glistFindBar($w)]
+} -cleanup {
+    ::gui_glist_widget_spec_test::cleanup
+} -result {{{1 release cache1}} 0 0 0}
+
 cleanupTests

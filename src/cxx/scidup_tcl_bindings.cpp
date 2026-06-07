@@ -439,6 +439,10 @@ AppendResult (Tcl_Interp* ti, const char* part, Rest... rest)
 {
     if (part != nullptr) {
         Tcl_Obj* obj = Tcl_GetObjResult(ti);
+        if (Tcl_IsShared(obj)) {
+            obj = Tcl_DuplicateObj(obj);
+            Tcl_SetObjResult(ti, obj);
+        }
         Tcl_AppendToObj(obj, part, -1);
     }
     AppendResult(ti, rest...);

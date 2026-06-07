@@ -88,13 +88,11 @@ proc ::search::Open {ref_base ref_filter title create_subwnd} {
 	grid $w.progressbar -in $w.buttons -row 0 -column 1 -columnspan 4
 	progressbar_ $w hide
 
-		bind $w <Return> [list ${w}.buttons.search invoke]
-		bind $w.buttons.search <Destroy> [list apply {{w} {
-			unset ::search::dbase_($w)
-		} ::} $w]
+	bind $w <Return> [list ${w}.buttons.search invoke]
+	bind $w.buttons.search <Destroy> [list ::search::forget_window_ $w]
 	bind $w <<NotifyFilter>> [list apply {{w} {
 		lassign %d dbase filter
-		if {$dbase eq $::search::dbase_($w) && $filter eq $::search::filter_($w)} {
+		if {[::search::tracks_filter_ $w $dbase $filter]} {
 			::search::refresh_ $w
 		}
 	}} $w]
@@ -117,6 +115,41 @@ proc ::search::CloseAll {} {
 	foreach {w} [array names ::search::dbase_] {
 		destroy $w
 	}
+}
+
+################################################################################
+# ::search::forget_window_
+#   Removes tracked state for a search window.
+# Visibility:
+#   Private.
+# Inputs:
+#   - w: Search window path.
+# Returns:
+#   - None.
+# Side effects:
+#   - Clears the tracked database for the window.
+################################################################################
+proc ::search::forget_window_ {w} {
+	unset -nocomplain ::search::dbase_($w)
+}
+
+################################################################################
+# ::search::tracks_filter_
+#   Checks whether a search window currently tracks the given database/filter.
+# Visibility:
+#   Private.
+# Inputs:
+#   - w: Search window path.
+#   - dbase: Database handle/slot identifier.
+#   - filter: Filter name.
+# Returns:
+#   - 1 when the tracked state matches, 0 otherwise.
+################################################################################
+proc ::search::tracks_filter_ {w dbase filter} {
+	if {![info exists ::search::dbase_($w)] || ![info exists ::search::filter_($w)]} {
+		return 0
+	}
+	expr {$dbase eq $::search::dbase_($w) && $filter eq $::search::filter_($w)}
 }
 
 ################################################################################

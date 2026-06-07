@@ -369,25 +369,7 @@ set ::menuHelpMessage {}
 ################################################################################
 proc translateMenuLabels {m} {
     bind $m <<MenuSelect>> {
-        set idx [%W index active]
-        if {$idx != "none"} {
-            # Tcl/Tk seems to generate strange window names for menus that
-            # are configured to be a toplevel window main menu, e.g.
-            # .menu.file get reported as ".#menu.#menu#file" and
-            # .menu.file.utils is ".#menu.#menu#file.#menu#file#utils"
-            # I have no idea why it does this, but to avoid it we
-            # convert a window paths with hashes to its true value:
-            regsub -all "\#" [winfo name %W] . win
-            set ::menuHelpMessage {}
-            catch {
-                set lbl $::MenuLabels($win,$idx)
-                set ::menuHelpMessage $::helpMessage($::language,$lbl)
-            }
-            updateStatusBar
-        } elseif {$::menuHelpMessage ne ""} {
-            set ::menuHelpMessage {}
-            updateStatusBar
-        }
+        menuSelectionChanged_ %W [%W index active]
     }
 
     set n [$m index end]
@@ -406,6 +388,28 @@ proc translateMenuLabels {m} {
                 translateMenuLabels $submenu
             }
         }
+    }
+}
+
+proc menuSelectionChanged_ {w idx} {
+    if {$idx ne "" && $idx ne "none"} {
+        # Tcl/Tk seems to generate strange window names for menus that
+        # are configured to be a toplevel window main menu, e.g.
+        # .menu.file get reported as ".#menu.#menu#file" and
+        # .menu.file.utils is ".#menu.#menu#file.#menu#file#utils".
+        # Convert paths with hashes to their true value before lookup.
+        regsub -all "\#" [winfo name $w] . win
+        set ::menuHelpMessage {}
+        if {
+            [info exists ::MenuLabels($win,$idx)] &&
+            [info exists ::helpMessage($::language,$::MenuLabels($win,$idx))]
+        } {
+            set ::menuHelpMessage $::helpMessage($::language,$::MenuLabels($win,$idx))
+        }
+        updateStatusBar
+    } elseif {$::menuHelpMessage ne ""} {
+        set ::menuHelpMessage {}
+        updateStatusBar
     }
 }
 ################################################################################

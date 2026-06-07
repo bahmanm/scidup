@@ -1295,18 +1295,18 @@ set glist_SortShortcuts { "N" "r" "m" "w" "W"
 proc glist.destroy_ {{w}} {
   if {[info exists ::glistSortCache($w)]} {
     catch { sc_base sortcache $::glistBase($w) release $::glistSortCache($w) }
-    unset ::glistSortCache($w)
+    unset -nocomplain ::glistSortCache($w)
   }
-  unset ::glistSortStr($w)
+  unset -nocomplain ::glistSortStr($w)
   unset -nocomplain ::glistBase($w)
   unset -nocomplain ::glistFilter($w)
   unset -nocomplain ::glistFirst($w)
   unset -nocomplain ::glistClickOp($w)
-  unset ::glistVisibleLn($w)
-  unset ::glistLoaded($w)
-  unset ::glistTotal($w)
-  unset ::glistYScroll($w)
-  unset ::glistFindBar($w)
+  unset -nocomplain ::glistVisibleLn($w)
+  unset -nocomplain ::glistLoaded($w)
+  unset -nocomplain ::glistTotal($w)
+  unset -nocomplain ::glistYScroll($w)
+  unset -nocomplain ::glistFindBar($w)
 }
 
 ################################################################################

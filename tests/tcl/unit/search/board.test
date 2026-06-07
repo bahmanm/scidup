@@ -475,4 +475,40 @@ test CloseAll-destroys-windows-1.0 {CloseAll destroys all windows referenced in 
 } -result {.w1 .w2}
 
 
+test forget_window_-is-idempotent-1.0 {forget_window_ tolerates an already forgotten window} -setup {
+    ::board_search_test::setup
+} -body {
+    # Arrange
+    set w .w
+    set ::search::dbase_($w) 1
+
+    # Act
+    ::search::forget_window_ $w
+    ::search::forget_window_ $w
+
+    # Assert
+    info exists ::search::dbase_($w)
+} -cleanup {
+    ::board_search_test::cleanup
+} -result 0
+
+
+test tracks_filter_-missing-state-1.0 {tracks_filter_ returns false when window state has already been removed} -setup {
+    ::board_search_test::setup
+} -body {
+    # Arrange
+    set w .w
+    set ::search::filter_($w) dbfilter
+
+    # Act / Assert
+    list \
+        [::search::tracks_filter_ $w 1 dbfilter] \
+        [set ::search::dbase_($w) 1] \
+        [::search::tracks_filter_ $w 1 dbfilter] \
+        [::search::tracks_filter_ $w 1 other]
+} -cleanup {
+    ::board_search_test::cleanup
+} -result {0 1 1 0}
+
+
 cleanupTests

@@ -752,15 +752,16 @@ proc closeProgressWindow {{force false}} {
 ################################################################################
 proc CreateSelectDBWidget {{w} {varname} {ref_base ""} {readOnly 1}} {
   set listbases {}
+  set baseIds {}
   if {$ref_base == ""} { set ref_base [sc_base current] }
   set tr_database [tr Database]
-  set tr_prefix_len [expr {[string length $tr_database] + 1}]
   set selected 0
   foreach i [sc_base list] {
       if {$readOnly || ![sc_base isReadOnly $i]} {
         set fname [::file::BaseName $i]
         if {$i == $ref_base} { set selected [llength $listbases] }
         lappend listbases "$tr_database $i: $fname"
+        lappend baseIds $i
       }
   }
 
@@ -768,15 +769,13 @@ proc CreateSelectDBWidget {{w} {varname} {ref_base ""} {readOnly 1}} {
   grid $w.lb -sticky news
   grid columnconfigure $w 0 -weight 1
 
-  bind $w.lb <<ComboboxSelected>> [list apply {{w varName prefixLen} {
+  bind $w.lb <<ComboboxSelected>> [list apply {{w varName baseIds} {
     upvar #0 $varName var
-    # The combobox value is of the form "<Database> <n>: <name>".
-    # Use `scan` to extract the full (possibly multi-digit) base number.
-    #
-    # NOTE: This still relies on parsing the displayed string. A more robust
-    # approach is to map the selected index to the base ID directly.
-    scan [string range [$w get] $prefixLen end] %d var
-  } ::} $w.lb $varname $tr_prefix_len]
+    set idx [$w current]
+    if {$idx >= 0 && $idx < [llength $baseIds]} {
+      set var [lindex $baseIds $idx]
+    }
+  } ::} $w.lb $varname $baseIds]
   $w.lb current $selected
   event generate $w.lb <<ComboboxSelected>>
 }
@@ -1228,10 +1227,10 @@ namespace eval gameclock {
   ################################################################################
   proc isRunning { } {
     global ::gameclock::data
-    catch {
-      if {$data(running1) || $data(running2)} { return 1 }
+    expr {
+      ([info exists data(running1)] && $data(running1)) ||
+      ([info exists data(running2)] && $data(running2))
     }
-    return 0
   }
 }
 ################################################################################

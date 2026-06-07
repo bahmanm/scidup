@@ -259,6 +259,11 @@ proc ::menus_test::setup {} {
 
     # Restore default translation for non-test initialisation.
     ::menus_test::stubCommand tr {s} { return $s }
+    ::menus_test::stubCommand updateStatusBar {} {
+        lappend ::menus_test::statusUpdates updateStatusBar
+        return
+    }
+    set ::menus_test::statusUpdates {}
 
     # Provide a useful winfo exists for functions that guard on it.
     ::menus_test::stubCommand winfo {subcmd args} {
@@ -287,6 +292,7 @@ proc ::menus_test::cleanup {} {
     unset -nocomplain ::highlightLastMoveColor
     unset -nocomplain ::menuLabel
     unset -nocomplain ::menuUnder
+    unset -nocomplain ::menus_test::statusUpdates
 }
 
 # ---- Tests ----
@@ -347,6 +353,38 @@ test menus-menuConfig-configures-by-stored-label-1.0 {menuConfig locates entries
 } -cleanup {
     ::menus_test::cleanup
 } -result {disabled}
+
+test menus-menuSelectionChanged_-ignores-empty-index-1.0 {menuSelectionChanged_ ignores empty active menu indices} -setup {
+    ::menus_test::setup
+} -body {
+    # Arrange
+    set ::menuHelpMessage stale
+
+    # Act
+    menuSelectionChanged_ .menu.search ""
+
+    # Assert
+    list $::menuHelpMessage $::menus_test::statusUpdates
+} -cleanup {
+    ::menus_test::cleanup
+} -result {{} updateStatusBar}
+
+test menus-menuSelectionChanged_-ignores-missing-label-1.0 {menuSelectionChanged_ does not read missing MenuLabels entries} -setup {
+    ::menus_test::setup
+} -body {
+    # Arrange
+    set ::language E
+    unset -nocomplain ::MenuLabels(.menu.search,1)
+    set ::menuHelpMessage stale
+
+    # Act
+    menuSelectionChanged_ .menu.search 1
+
+    # Assert
+    list $::menuHelpMessage $::menus_test::statusUpdates
+} -cleanup {
+    ::menus_test::cleanup
+} -result {{} updateStatusBar}
 
 test menus-configMenuText-prefers-language-specific-labels-1.0 {configMenuText uses language-specific label/underline when present} -setup {
     ::menus_test::setup

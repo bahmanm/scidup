@@ -153,16 +153,7 @@ proc ::enginewin::Open { {id ""} {enginename ""} } {
     bind $w <<NotifyNewGame>> [list set ::enginewin::newgame_$id true]
 
     # The engine should be closed before the debug .text is destroyed
-    bind $w.config <Destroy> [list apply {{id} {
-        unset ::enginewin::engState($id)
-        ::engine::close $id
-        array unset ::enginewin::m_ *,$id
-        unset ::enginecfg::engConfig_$id
-        unset ::enginewin::limits_$id
-        unset ::enginewin::newgame_$id
-        unset ::enginewin::startTime_$id
-        ::notify::EngineBestMove $id {} {}
-    } ::} $id]
+    bind $w.config <Destroy> [list ::enginewin::cleanup_ $id]
 
     ::options.store ::enginewin_lastengine($id) ""
     set ::enginewin::engState($id) {}
@@ -178,6 +169,29 @@ proc ::enginewin::Open { {id ""} {enginename ""} } {
     }
     catch { ::enginewin::connectEngine $id $enginename }
     return $id
+}
+
+################################################################################
+# ::enginewin::cleanup_
+#   Cleans up state for a closed engine window.
+# Visibility:
+#   Private.
+# Inputs:
+#   - id: Engine slot.
+# Returns:
+#   - None.
+# Side effects:
+#   - Closes the engine process/connection and clears per-engine UI state.
+################################################################################
+proc ::enginewin::cleanup_ {id} {
+    unset -nocomplain ::enginewin::engState($id)
+    ::engine::close $id
+    array unset ::enginewin::m_ *,$id
+    unset -nocomplain ::enginecfg::engConfig_$id
+    unset -nocomplain ::enginewin::limits_$id
+    unset -nocomplain ::enginewin::newgame_$id
+    unset -nocomplain ::enginewin::startTime_$id
+    ::notify::EngineBestMove $id {} {}
 }
 
 # Creates $w.display, where the pv lines sent by the engine will be shown.
